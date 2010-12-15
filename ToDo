@@ -1,0 +1,11 @@
+Incorporate all the SafeBuf stuff
+Produce native format graphics files
+Fix how equations handle symbols
+Add \func definition to latex file
+Revise README
+Revise INSTALL
+Revert default directory name
+figure out which files in PREF folder can be removed
+eliminate SetDollar from eqns.c
+fix usage() in rtfPrep
+work on graphics support

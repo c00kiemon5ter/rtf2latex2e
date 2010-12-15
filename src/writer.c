@@ -48,7 +48,8 @@ extern FILE *ifp, *ofp;
 # define SAVE_LEVELS    0
 # define        NumberOfPreferences 16
 
-const char *preferenceList[] = { "outputMapFile",
+const char *preferenceList[] = { 
+    "outputMapFile",
     "ignoreRulerSettings",
     "paperWidth",
     "leftMargin",
@@ -66,7 +67,8 @@ const char *preferenceList[] = { "outputMapFile",
     "swpMode"
 };
 
-const char *objectClassList[] = { "Unknown",
+const char *objectClassList[] = { 
+    "Unknown",
     "Equation",
     "equation",
     "Word.Picture",
@@ -74,12 +76,20 @@ const char *objectClassList[] = { "Unknown",
     (char *) NULL
 };
 
-const char *justificationList[] =
-    { "\\raggedright", "\\centering", "\\raggedleft" };
+const char *justificationList[] = {
+    "\\raggedright", 
+    "\\centering", 
+    "\\raggedleft" 
+};
 
-const char *environmentList[] = { "flushleft", "center", "flushright" };
+const char *environmentList[] = { 
+    "flushleft", 
+    "center", 
+    "flushright" 
+};
 
-const char *fontSizeList[] = { "\\tiny",
+const char *fontSizeList[] = { 
+    "\\tiny",
     "\\scriptsize",
     "\\footnotesize",
     "\\small",
@@ -89,6 +99,20 @@ const char *fontSizeList[] = { "\\tiny",
     "\\LARGE",
     "\\huge",
     "\\Huge"
+};
+
+const char *r2lList[] = { 
+    "documentclass",
+    "bold",
+    "nobold",
+    "italic",
+    "noitalic",
+    "underline",
+    "smallcaps",
+    "heading1",
+    "heading2",
+    "heading3",
+    "table"
 };
 
 
@@ -167,18 +191,6 @@ static char *outMap[rtfSC_MaxChar];
 #define NumberOfR2LMappings     11
 static char *r2lMap[NumberOfR2LMappings];
 static boolean r2lMapPresent = true;
-char *r2lList[] = { "documentclass",
-    "bold",
-    "nobold",
-    "italic",
-    "noitalic",
-    "underline",
-    "smallcaps",
-    "heading1",
-    "heading2",
-    "heading3",
-    "table"
-};
 
 static char *boldString, *noBoldString, *italicString, *noItalicString;
 static char *underlineString, *smallcapsString;
