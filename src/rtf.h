@@ -106,7 +106,7 @@ extern short	rtfLinePos;		/* input line position */
  * - recompile your translators.
  */
 
-# include	"rtf-ctrldef.h"
+# include	"rtfprep/rtf-ctrldef.h"
 
 /* -------------------------------------------------------- */
 
@@ -194,7 +194,7 @@ extern short	rtfLinePos;		/* input line position */
  * Defines for standard character names
  */
 
-# include	"rtf-namedef.h"
+# include	"rtfprep/rtf-namedef.h"
 
 /* -------------------------------------------------------- */
 

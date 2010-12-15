@@ -1,3 +1,5 @@
+VERSION = 1.2.0
+
 CC?=gcc
 TAR?=gnutar
 RM?=rm -f
@@ -27,27 +29,24 @@ BINARY_NAME=rtf2latex$(EXE_SUFFIX)
 # Location of binary, man, info, and support files - adapt as needed
 BIN_INSTALL=$(PREFIX)/bin
 MAN_INSTALL=$(PREFIX)/$(PKGMANDIR)/man1
-INFO_INSTALL=$(PREFIX)/info
 SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex
-PREF_INSTALL=$(PREFIX)/share/rtf2latex/pref
 
 # Nothing to change below this line
 
 CFLAGS:=$(CFLAGS) $(PLATFORM) -DPREFDIR=\"$(PREF_INSTALL)\"
 
-LIBS= -lm
-
-R2L_VERSION:="latex2rtf-`grep 'Version' version.h | sed 's/[^"]*"\([^" ]*\).*/\1/'`"
+LIBS= 
 
 SRCS=src/LaTeX2e-writer.c      src/cole_decode.c         src/figure2eps.c \
      src/cole.c                src/cole_support.c        src/jpeg2eps.c   \
      src/cole_internal.c       src/cole_version.c        src/reader.c     \
-     src/cole_encode.c         src/eqn.c                 src/main.c \
-     src/tokenscan.c
+     src/cole_encode.c         src/eqn.c                 src/main.c 
 
-HDRS=src/cole.h          src/cole_internal.h src/rtf-ctrldef.h   src/rtf.h       \
-     src/stdcharnames.h  src/tokenscan.h     src/eqn.h           src/jpeg2eps.h  \
-     src/rtf-namedef.h   src/rtf2LaTeX2e.h   src/cole_support.h
+HDRS=src/cole.h        src/cole_internal.h   src/rtf.h       src/eqn.h   \
+     src/jpeg2eps.h    src/rtf2LaTeX2e.h     src/cole_support.h
+
+RTFPREP_SRCS = src/rtfprep/Makefile     src/rtfprep/rtf-controls  src/rtfprep/rtfprep.c  src/rtfprep/standard-names \
+               src/rtfprep/tokenscan.c  src/rtfprep/tokenscan.h  
 
 PREFS=pref/TeX-map           pref/TeX-map.latin1    pref/cp437.map         pref/r2l-map \
       pref/TeX-map.applemac  pref/ansi-sym          pref/cp850.map         pref/r2l-pref \
@@ -61,20 +60,31 @@ DOCS= doc/GPL_license          doc/rtf2LaTeX2eDoc.html  doc/rtf2latex2eSWP.tex  
      doc/rtfReader.dvi         doc/rtf2LaTeX2eDoc.dvi   doc/rtf2LaTeX2eDoc.tex   \
      doc/rtfReader.pdf
 
+TEST = test/Makefile      test/arch.rtf      test/fig-jpeg.rtf  test/multiline.rtf test/rtf.rtf \
+       test/arch-mac.rtf  test/equation.rtf  test/mapping.rtf   test/rtf-misc.rtf  test/table.rtf \
+       test/test.rtf
+
 README= README INSTALL
 
-TEST=  test/Equation.rtf    test/JPEG_Image.rtf  test/table.rtf       test/test.rtf
+TEST = test/Makefile      test/arch.rtf      test/fig-jpeg.rtf  test/multiline.rtf test/rtf.rtf \
+       test/arch-mac.rtf  test/equation.rtf  test/mapping.rtf   test/rtf-misc.rtf  test/table.rtf
 	
 OBJS=src/LaTeX2e-writer.o      src/cole_decode.o         src/figure2eps.o \
      src/cole.o                src/cole_support.o        src/jpeg2eps.o   \
      src/cole_internal.o       src/cole_version.o        src/reader.o     \
      src/cole_encode.o         src/eqn.o                 src/main.o \
-     src/tokenscan.o
+     src/rtfprep/tokenscan.o
 
 all : checkdir rtf2latex
 
 rtf2latex: $(OBJS) $(HDRS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS)	$(LIBS) -o $(BINARY_NAME)
+
+src/main.o: Makefile src/main.c
+	$(CC) $(CFLAGS) -DLIBDIR=\"$(SUPPORT_INSTALL)\" -c src/main.c -o src/main.o
+
+src/rtfprep/rtf-ctrldef.h  src/rtfprep/rtf-namedef.h  src/rtfprep/stdcharnames.h src/rtfprep/tokenscan.o:
+	cd src/rtfprep && make
 
 check test: rtf2latex
 	cd test && $(MAKE) clean
@@ -83,73 +93,67 @@ check test: rtf2latex
 
 checkdir: $(README) $(SRCS) $(HDRS) $(PREFS) $(TEST) Makefile
 
-clean: checkdir
-	-$(RM) $(OBJS) core $(BINARY_NAME)
-	-$(RMDIR) tmp
-
 depend: $(SRCS)
 	$(CC) -MM $(SRCS) >makefile.depend
 	@echo "***** Append makefile.depend to Makefile manually ******"
 
-dist: checkdir releasedate latex2rtf doc $(SRCS) $(HDRS) $(CFGS) $(README) Makefile vms_make.com $(SCRIPTS) $(DOCS) $(TEST)
-	$(MAKE) releasedate
-	$(MKDIR) $(L2R_VERSION)
-	$(MKDIR) $(L2R_VERSION)/cfg
-	$(MKDIR) $(L2R_VERSION)/doc
-	$(MKDIR) $(L2R_VERSION)/test
-	$(MKDIR) $(L2R_VERSION)/scripts
-	ln $(SRCS)         $(L2R_VERSION)
-	ln $(HDRS)         $(L2R_VERSION)
-	ln $(README)       $(L2R_VERSION)
-	ln Makefile        $(L2R_VERSION)
-	ln vms_make.com    $(L2R_VERSION)
-	ln $(CFGS)         $(L2R_VERSION)/cfg
-	ln $(DOCS)         $(L2R_VERSION)/doc
-	ln $(SCRIPTS)      $(L2R_VERSION)/scripts
-	ln $(TEST)         $(L2R_VERSION)/test
-	$(TAR) cvfz $(L2R_VERSION).tar.gz $(L2R_VERSION)
-	$(RMDIR) $(L2R_VERSION)
+dist: checkdir doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREF) $(DOCS) $(TEST) Makefile
+	$(MKDIR)           rtf2latex2e-$(VERSION)
+	$(MKDIR)           rtf2latex2e-$(VERSION)/pref
+	$(MKDIR)           rtf2latex2e-$(VERSION)/doc
+	$(MKDIR)           rtf2latex2e-$(VERSION)/test
+	$(MKDIR)           rtf2latex2e-$(VERSION)/src
+	$(MKDIR)           rtf2latex2e-$(VERSION)/src/rtfprep
+	ln $(README)       rtf2latex2e-$(VERSION)
+	ln Makefile        rtf2latex2e-$(VERSION)
+	ln $(SRCS)         rtf2latex2e-$(VERSION)/src
+	ln $(HDRS)         rtf2latex2e-$(VERSION)/src
+	ln $(RTFPREP_SRCS) rtf2latex2e-$(VERSION)/src/rtfprep
+	ln $(PREF)         rtf2latex2e-$(VERSION)/pref
+	ln $(DOCS)         rtf2latex2e-$(VERSION)/doc
+	ln $(TEST)         rtf2latex2e-$(VERSION)/test
+	tar cvf - rtf2latex2e-$(VERSION) | gzip > rtf2latex2e-$(VERSION).tar.gz
+	rm -rf rtf2latex2e-$(VERSION)
+	
+doc/rtf2LaTeX2eDoc.html: doc
+doc/rtf2LaTeX2eDoc.pdf : doc
 
-uptodate:
-	perl -pi.bak -e '$$date=scalar localtime; s/\(.*/($$date)";/' version.h
-	$(RM) version.h.bak
-
-releasedate:
-	perl -pi.bak -e '$$date=scalar localtime; s/\(.*/(released $$date)";/; s/d ..../d /;s/\d\d:\d\d:\d\d //;' version.h
-	$(RM) version.h.bak
-
-doc: doc/latex2rtf.texi doc/Makefile
+doc: doc/rtf2LaTeX2eDoc.tex doc/Makefile
 	cd doc && $(MAKE) -k
 
-install: latex2rtf doc/latex2rtf.1 $(CFGS) scripts/latex2png
-	cd doc && $(MAKE)
-	$(MKDIR) $(BIN_INSTALL)
-	$(MKDIR) $(MAN_INSTALL)
-	$(MKDIR) $(CFG_INSTALL)
-	cp $(BINARY_NAME)     $(BIN_INSTALL)
-	cp scripts/latex2png  $(BIN_INSTALL)
-	cp doc/latex2rtf.1    $(MAN_INSTALL)
-	cp doc/latex2png.1    $(MAN_INSTALL)
-	cp $(CFGS)            $(CFG_INSTALL)
-	cp doc/latex2rtf.html $(SUPPORT_INSTALL)
-	cp doc/latex2rtf.pdf  $(SUPPORT_INSTALL)
-	cp doc/latex2rtf.txt  $(SUPPORT_INSTALL)
-	@echo
-	@echo "rtf2latex has been installed in $(INSTALL_DIR)"
-	@echo
-	@echo "Please set the environment variable RTF2LATEX2E_DIR to $(INSTALL_DIR)."
-	@echo
+install: rtf2latex2e $(PREF) doc/rtf2LaTeX2eDoc.html doc/rtf2LaTeX2eDoc.pdf
+	$(MKDIR)                   $(BIN_INSTALL)
+	$(MKDIR)                   $(SUPPORT_INSTALL)
+	cp $(BINARY_NAME)          $(BIN_INSTALL)
+	cp $(PREF)                 $(SUPPORT_INSTALL)
+	cp doc/rtf2LaTeX2eDoc.html $(SUPPORT_INSTALL)
+	cp doc/rtf2LaTeX2eDoc.pdf  $(SUPPORT_INSTALL)
+	@echo "******************************************************************"
+	@echo "*** rtf2latex2e successfully installed as \"$(BINARY_NAME)\""
+	@echo "*** in directory \"$(BIN_INSTALL)\""
+	@echo "***"
+	@echo "*** rtf2latex2e was compiled to search for its configuration files in"
+	@echo "***           \"$(SUPPORT_INSTALL)\" "
+	@echo "***"
+	@echo "*** If the configuration files are moved then either"
+	@echo "***   1) set the environment variable RTFPATH to this new location, or"
+	@echo "***   2) use the command line option -P /path/to/prefs, or"
+	@echo "***   3) edit the Makefile and recompile"
+	@echo "******************************************************************"
 
-install-info: doc/latex2rtf.info
-	$(MKDIR) $(INFO_INSTALL)
-	cp doc/latex2rtf.info $(INFO_INSTALL)
-	install-info --info-dir=$(INFO_INSTALL) doc/latex2rtf.info
-
+clean: 
+	rm -f $(OBJS) $(BINARY_NAME)
+	cd test   && make clean
+	cd doc    && make clean
+	cd src/rtfprep && make clean
+	
 realclean: checkdir clean
-	$(RM) makefile.depend $(L2R_VERSION).tar.gz
-	cd doc && $(MAKE) clean
-	cd test && $(MAKE) clean
-
+	rm -f makefile.depend rtf2latex2e-$(VERSION).tar.gz
+	rm -f src/rtf-ctrldef.h  src/rtf-namedef.h  src/stdcharnames.h
+	cd test   && make realclean
+	cd doc    && make realclean
+	cd src/rtfprep && make realclean
+	
 appleclean:
 	sudo xattr -r -d com.apple.FinderInfo ../trunk
 	sudo xattr -r -d com.apple.TextEncoding ../trunk
@@ -157,19 +161,19 @@ appleclean:
 splint: 
 	splint -weak $(SRCS) $(HDRS)
 	
-.PHONY: all check checkdir clean depend dist doc install install_info realclean latex2rtf uptodate releasedate splint fullcheck
+.PHONY: all check checkdir clean depend dist doc install realclean test
 
 # created using "make depend"
-cole.o: src/cole.c
-cole_decode.o: src/cole_decode.c src/cole.h src/cole_support.h src/cole_internal.h
-cole_encode.o: src/cole_encode.c src/cole.h src/cole_support.h src/cole_internal.h
-cole_internal.o: src/cole_internal.c src/cole_internal.h src/cole_support.h
-cole_support.o: src/cole_support.c
-cole_version.o: src/cole_version.c
-LaTeX2e-writer.o: src/LaTeX2e-writer.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/tokenscan.h src/cole.h src/rtf2LaTeX2e.h src/eqn.h
-figure2eps.o: src/figure2eps.c
-jpeg2eps.o: src/jpeg2eps.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/rtf2LaTeX2e.h src/tokenscan.h src/jpeg2eps.h
-reader.o: src/reader.c src/tokenscan.h src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/rtf2LaTeX2e.h src/stdcharnames.h
-eqn.o: src/eqn.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/rtf2LaTeX2e.h src/eqn.h
-main.o: src/main.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/rtf2LaTeX2e.h
-tokenscan.o: src/tokenscan.c src/tokenscan.h
+src/cole.o:          src/cole.c
+src/cole_decode.o:   src/cole_decode.c src/cole.h src/cole_support.h src/cole_internal.h
+src/cole_encode.o:   src/cole_encode.c src/cole.h src/cole_support.h src/cole_internal.h
+src/cole_internal.o: src/cole_internal.c src/cole_internal.h src/cole_support.h
+src/cole_support.o:  src/cole_support.c
+src/cole_version.o:  src/cole_version.c
+src/LaTeX2e-writer.o: src/LaTeX2e-writer.c src/rtf.h src/rtfprep/tokenscan.h src/cole.h src/rtf2LaTeX2e.h src/eqn.h
+src/figure2eps.o:    src/figure2eps.c
+src/jpeg2eps.o:      src/jpeg2eps.c src/rtf.h src/rtf2LaTeX2e.h src/rtfprep/tokenscan.h src/jpeg2eps.h
+src/reader.o:        src/reader.c src/rtfprep/tokenscan.h src/rtf.h src/rtf2LaTeX2e.h src/rtfprep/stdcharnames.h
+src/eqn.o:           src/eqn.c src/rtf.h src/rtf2LaTeX2e.h src/eqn.h
+src/main.o:          src/main.c src/rtf.h src/rtf2LaTeX2e.h
+src/rtf.h:           src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h

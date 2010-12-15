@@ -1,0 +1,753 @@
+{\rtf1\mac\deff1
+{\fonttbl
+{\f6\fnil Bookman;}
+{\f5\fnil Palatino;}
+{\f4\fnil Symbol;}
+{\f3\fnil Courier;}
+{\f2\fnil Helvetica;}
+{\f1\fnil Times;}
+}
+\paperh15840 \paperw12240
+\margl1440 \margr2160 \pard \f1\i0\b0
+\fs20 \fs16 \fs20 \fs24 \f1\i0\b0
+\b \fs28 \pard \qc \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+RTF Tools
+\par
+{\sl-84\sa0\sb0\par}
+Macintosh Driver Architecture
+\par
+\f1\i0\b0
+\i {\sl-280\sa0\sb0\par}
+\fs20 Paul DuBois
+\par
+dubois@primate.wisc.edu
+\par
+\f1\i0\b0
+{\sl-140\sa0\sb0\par}
+Wisconsin Regional Primate Research Center
+\par
+Revision date:  6 April 1994
+\par
+{\sl-280\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Introduction\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+This document accompanies \f1\i0\b0
+
+\i RTF Tools Translator Architecture\f1\i0\b0
+, which you are assumed 
+to be familiar with. It describes how the Macintosh 
+translator drivers are set up.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The AppInfo Structure\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The Macintosh versions of the RTF translators included 
+in the RTF Tools distribution provide a standard Macintosh 
+interface (windows, menus, etc.). They all use pretty 
+much the same driver code, so there is a reasonable 
+amount of consistency from translator to translator. 
+In fact, most of the driver is absorbed into a wrapper 
+that\'d5s provided as a library. When a translator 
+starts up, the driver calls the wrapper and passes 
+it a pointer to an \f1\i0\b0
+
+\i AppInfo\f1\i0\b0
+ structure that contains information instructing 
+the wrapper how to behave:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+int
+\par
+main (void)
+\par
+\{
+\par
+\tab MacintoshWrapper (&myAppInfo);
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+The structure looks like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+typedef\tab struct AppInfo\tab AppInfo;
+\par
+{\sl-200\sa0\sb0\par}
+struct AppInfo
+\par
+\{
+\par
+\tab void\tab (*pMenuInit) ();\tab \tab /* application-specific 
+menu setup */
+\par
+\tab void\tab (*pMenuAdjust) ();\tab \tab /* application-specific 
+menu adjustment */
+\par
+{\sl-200\sa0\sb0\par}
+\tab void\tab (*pWriterInit) ();\tab \tab /* writer 
+one-time initialization */
+\par
+\tab void\tab (*pWriterEnd) ();\tab \tab /* writer 
+one-time cleanup */
+\par
+{\sl-200\sa0\sb0\par}
+\tab int\tab \tab (*pWriterBeginFile) ();\tab /* per-file 
+initialization */
+\par
+\tab void\tab (*pWriterEndFile) ();\tab /* per-file 
+cleanup */
+\par
+{\sl-200\sa0\sb0\par}
+\tab void\tab (*pPrefs) ();\tab \tab \tab /* function 
+to handle Preferences dialog */
+\par
+{\sl-200\sa0\sb0\par}
+\tab Str31\tab inputSuffix;\tab \tab \tab /* input 
+file suffix to strip if present */
+\par
+\tab Str31\tab outputSuffix;\tab \tab \tab /* output 
+file suffix for autonaming */
+\par
+\tab Str31\tab errorSuffix;\tab \tab \tab /* error 
+file suffix for autonaming */
+\par
+{\sl-200\sa0\sb0\par}
+\tab long\tab outputCreator;\tab \tab \tab /* creator 
+of output files */
+\par
+\tab long\tab errorCreator;\tab \tab \tab /* creator 
+of error files */
+\par
+{\sl-200\sa0\sb0\par}
+\tab int\tab \tab flags;\tab \tab \tab \tab \tab /* 
+flags to control wrapper behavior */
+\par
+\};
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+This structure contains several function pointers. 
+If the translator has no need for a given function, 
+specify \f3\i0\b0
+nil\f1\i0\b0
+ in the \f1\i0\b0
+
+\i AppInfo\f1\i0\b0
+ structure.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The structure members are used as follows:
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+pMenuInit\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+A pointer to a function to call that allows the driver 
+to add its own menus to the menu bar. It\'d5s defined 
+like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li900 \sl200 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+void
+\par
+MyMenuInit (void)
+\par
+\{
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \li500 \sl240 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+The wrapper provides Apple, File, and Edit menus. If 
+the driver needs to add other menus, it should do so 
+in this function. The function doesn\'d5t need to call 
+\f1\i0\b0
+\i DrawMenuBar()\f1\i0\b0
+ because the wrapper calls it after calling 
+the function.
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+pMenuAdjust\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+A pointer to a function to call when a mouse click 
+occurs in the menu bar. It\'d5s defined like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li900 \sl200 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+void
+\par
+MyMenuAdjust (void)
+\par
+\{
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \li500 \sl240 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+If the driver provides any of its own menus and the 
+state of any items in them need to be adjusted (enabled, 
+disabled, checked, etc.) before the user sees them, 
+use this function to do so.
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+pWriterInit\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+A pointer to a function that performs one-time writer 
+initialization before any input files are processed. 
+It\'d5s defined like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li900 \sl200 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+void
+\par
+MyWriterInit (void)
+\par
+\{
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+pWriterEnd\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+A pointer to a function that performs one-time writer 
+cleanup after all input files have been processed. 
+It\'d5s defined like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li900 \sl200 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+void
+\par
+MyWriterEnd (void)
+\par
+\{
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+pWriterBeginFile\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+A pointer to a function to call to tell the writer 
+to get ready to generate a new output file. It\'d5s 
+defined like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li900 \sl200 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+int
+\par
+MyWriterBeginFile (void)
+\par
+\{
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \li500 \sl240 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+When this function is called, the wrapper will already 
+have opened the input file and called \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+, installed the input file name into the RTF 
+library by calling \f1\i0\b0
+
+\i RTFSetInputName()\f1\i0\b0
+, and opened the error file if there 
+is one. If there is an output file, the wrapper will 
+have installed its name by calling \f1\i0\b0
+
+\i RTFSetOutputName()\f1\i0\b0
+, and, if the \f3\i0\b0
+autoOpenOutputFile\f1\i0\b0
+ 
+flag is set (see below), will have opened it on \f1\i0\b0
+
+\i stdout\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+If the wrapper doesn\'d5t open the output file and 
+one is to be generated, this function must open it.
+\par
+{\sl-120\sa0\sb0\par}
+The function should return non-zero for success (it 
+was able to set up for a new file), zero otherwise 
+(setup failed).
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+pWriterEndFile\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+A pointer to a function to call to tell the writer 
+to clean up after an input file has been read. It\'d5s 
+defined like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li900 \sl200 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+void
+\par
+MyWriterEndFile (void)
+\par
+\{
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \li500 \sl240 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+The function should generate any final output that 
+may be necessary. If the wrapper opened the output 
+file, the wrapper will also close it after this function 
+returns. Otherwise the function should close the file 
+itself.
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+pPrefs\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+A pointer to a function to call to process a preferences 
+dialog. It\'d5s defined like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li900 \sl200 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+void
+\par
+MyPrefsDialog (void)
+\par
+\{
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \li500 \sl240 
+\tx1220 \tx1540 \tx1860 \tx2180 \tx2500 \tx2820 \tx3140 \tx3460 \tx3780 \tx4100 \tx4420 \tx4740 \tx5060 \tx5380 \tx5700 \tx6020 \tx6340 \tx6660 \tx6980 \tx7300 
+This function is ignored by the wrapper unless the 
+\f3\i0\b0
+prefsInEditMenu\f1\i0\b0
+ flags is set (see below). If the flag 
+is set, the wrapper adds a gray line and a \'d2Preferences...\'d3 
+item to the bottom of the Edit menu and calls this 
+function when the user selects the item.
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+inputSuffix\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+outputSuffix\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+errorSuffix\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+These suffixes are used in constructing default output 
+and error file names. They should be specified as Pascal 
+strings and must be non-\f3\i0\b0
+nil\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+The names are constructed by stripping the input suffix 
+off the input file name if it\'d5s present and then 
+adding the output or error suffix. The input and error 
+suffixes are typically \f3\i0\b0
+.rtf\f1\i0\b0
+ and \f3\i0\b0
+.err\f1\i0\b0
+. The output suffix 
+varies by translator.
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\b Example:\f1\i0\b0
+ If the input, output, and error suffixes are 
+\f3\i0\b0
+.rtf\f1\i0\b0
+, \f3\i0\b0
+.txt\f1\i0\b0
+, and \f3\i0\b0
+.err\f1\i0\b0
+, the default names for the input 
+file \f1\i0\b0
+
+\i testfile.rtf\f1\i0\b0
+ will be \f1\i0\b0
+
+\i testfile.txt\f1\i0\b0
+ and \f1\i0\b0
+
+\i testfile.err\f1\i0\b0
+. Since the input suffix is only stripped 
+if it\'d5s present, the default output and error file 
+names for an input file named \f1\i0\b0
+
+\i testfile\f1\i0\b0
+ would be the same. If the input file were 
+\f1\i0\b0
+\i testfile.doc\f1\i0\b0
+, the default names would be \f1\i0\b0
+
+\i testfile.doc.txt\f1\i0\b0
+ and \f1\i0\b0
+
+\i testfile.doc.err\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+The output and error suffixes are not used if the translator 
+doesn\'d5t generate output and error files, but if 
+it does, the suffixes should not be empty.
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+outputCreator\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+errorCreator\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+Creator signatures of the applications that should 
+own output and error files created by the translator. 
+A default of \f3\i0\b0
+\'d5ttxt\'d5\f1\i0\b0
+ (TeachText) is used if the 
+creator is given as zero in the \f1\i0\b0
+
+\i AppInfo\f1\i0\b0
+ structure.
+\par
+{\sl-120\sa0\sb0\par}
+Output and error files, if created by the wrapper, 
+are always \f3\i0\b0
+\'d5TEXT\'d5\f1\i0\b0
+ files. If the translator wants 
+to create output files with a type other than \f3\i0\b0
+\'d5TEXT\'d5\f1\i0\b0
+, 
+it should tell the wrapper not to open output files 
+and should open them itself. However, since file type 
+is a Macintosh-specific thing and since the translator\'d5s 
+writer code should be written to be system-independent, 
+the writer cannot portably be written to set the file 
+type. Once way to deal with this problem is to have 
+the driver provide a function for opening output files 
+which is called by the \f1\i0\b0
+
+\i pWriterBeginFile\f1\i0\b0
+ function and which is appropriate 
+for the type of system for which the driver is written.
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+flags\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+Flags controlling how the wrapper behaves. The value 
+of this member should be zero or constructed as a combination 
+of the following flags, or\'d5ed together:
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li1220 \fi-500 \sl240 
+\tx1720 \tx500 \tqr 
+persistentStatus\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li1220 \sl240 
+\tx1720 \tx500 \tqr 
+If \f3\i0\b0
+persistentStatus\f1\i0\b0
+ is set, the status window is always 
+visible. Otherwise, it\'d5s visible only during file 
+translations.
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li1220 \fi-500 \sl240 
+\tx1720 \tx500 \tqr 
+prefsInEditMenu\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li1220 \sl240 
+\tx1720 \tx500 \tqr 
+If \f3\i0\b0
+prefsInEditMenu\f1\i0\b0
+ is set, the wrapper adds a gray 
+line and a \'d2Preferences...\'d3 item to the bottom 
+of the Edit menu, and calls the \f3\i0\b0
+pPrefs\f1\i0\b0
+ function in 
+the \f1\i0\b0
+
+\i AppInfo\f1\i0\b0
+ structure to process the preferences dialog 
+when the user selects the item.
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li1220 \fi-500 \sl240 
+\tx1720 \tx500 \tqr 
+usesOutputFile\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li1220 \sl240 
+\tx1720 \tx500 \tqr 
+If \f3\i0\b0
+usesOutputFile\f1\i0\b0
+ is set, it means the translator expects 
+to write to an output file. If the flag is set, the 
+\f3\i0\b0
+autoNameOutputFile\f1\i0\b0
+ and \f3\i0\b0
+autoOpenOutputFile\f1\i0\b0
+ flags are 
+also examined (they\'d5re ignored if \f3\i0\b0
+usesOutputFile\f1\i0\b0
+ 
+isn\'d5t set).
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li1220 \fi-500 \sl240 
+\tx1720 \tx500 \tqr 
+autoNameOutputFile\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li1220 \sl240 
+\tx1720 \tx500 \tqr 
+If \f3\i0\b0
+autoNameOutputFile\f1\i0\b0
+ is set, the output filename is 
+automatically generated, and the user can\'d5t override 
+it. If the flag isn\'d5t set, the name is still generated 
+and used as the suggested default. The user can override 
+it by means of a standard file dialog.
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li1220 \fi-500 \sl240 
+\tx1720 \tx500 \tqr 
+autoOpenOutputFile\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li1220 \sl240 
+\tx1720 \tx500 \tqr 
+If \f3\i0\b0
+autoOpenOutputFile\f1\i0\b0
+ is set, the output file is opened 
+by the wrapper on \f1\i0\b0
+
+\i stdout.\f1\i0\b0
+ Otherwise, the writer is expected to open the 
+output file itself.
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li1220 \fi-500 \sl240 
+\tx1720 \tx500 \tqr 
+usesErrorFile\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+autoNameErrorFile\f1\i0\b0
+\tab 
+\par
+{\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \qj \li1220 \sl240 
+\tx1720 \tx500 \tqr 
+usesErrorFile\f1\i0\b0
+ and \f3\i0\b0
+autoNameErrorFile\f1\i0\b0
+ are similar to 
+\f3\i0\b0
+autoNameOutputFile\f1\i0\b0
+ and \f3\i0\b0
+autoOpenOutputFile\f1\i0\b0
+, but they 
+apply to the error file. There is no \f3\i0\b0
+autoOpenErrorFile\f1\i0\b0
+; 
+if an error file name is used, the wrapper always opens 
+it (on \f1\i0\b0
+
+\i stderr\f1\i0\b0
+).
+\par
+{\sl-120\sa0\sb0\par}
+The writer can call \f1\i0\b0
+
+\i RTFMsg()\f1\i0\b0
+ and \f1\i0\b0
+
+\i RTFPanic()\f1\i0\b0
+ to generate diagnostic output even if no 
+error file is created, because such output goes to 
+the log window anyway.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Subverting pWriterInit\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+If the driver needs to do its own initialization (e.g., 
+to read a preferences file), it can do this by specifying 
+a driver function instead of a writer function for 
+the \f1\i0\b0
+
+\i pWriterInit\f1\i0\b0
+ member of the \f1\i0\b0
+
+\i AppInfo\f1\i0\b0
+ structure. You can use this function to initialize 
+the driver and then call any writer initialization 
+function that may be necessary. When the driver initialization 
+function is called, the \f1\i0\b0
+
+\i pMenuInit\f1\i0\b0
+ function will already have been called, but 
+none of the rest of the \f1\i0\b0
+
+\i AppInfo\f1\i0\b0
+ structure will have been used. This means you 
+can read a preferences file to get suffix settings 
+and so forth and install them in the \f1\i0\b0
+
+\i AppInfo\f1\i0\b0
+ structure with the expectation that the wrapper 
+will use them properly.
+\par
+}

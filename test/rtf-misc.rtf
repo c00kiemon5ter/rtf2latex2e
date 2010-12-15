@@ -1,0 +1,377 @@
+{\rtf1\mac\deff1
+{\fonttbl
+{\f6\fnil Bookman;}
+{\f5\fnil Palatino;}
+{\f4\fnil Symbol;}
+{\f3\fnil Courier;}
+{\f2\fnil Helvetica;}
+{\f1\fnil Times;}
+}
+\paperh15840 \paperw12240
+\margl1440 \margr2160 \pard \f1\i0\b0
+\fs20 \fs16 \fs20 \fs24 \f1\i0\b0
+\b \fs28 \pard \qc \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+RTF Miscellany
+\par
+\f1\i0\b0
+\i {\sl-280\sa0\sb0\par}
+\fs20 Paul DuBois
+\par
+dubois@primate.wisc.edu
+\par
+\f1\i0\b0
+{\sl-140\sa0\sb0\par}
+Wisconsin Regional Primate Research Center
+\par
+Revision date:  5 April 1994
+\par
+{\sl-280\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Introduction\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+This document contains a few scribblings about things 
+which don\'d5t seem to be covered in the RTF specification. 
+Any or all conjectures here may be false; if so, I\'d5d 
+like to know about it. Counterexamples or references 
+to corrections would be appreciated, as my conclusions 
+are based on observation.
+\par
+{\sl-120\sa0\sb0\par}
+Nomenclature:
+\par
+{\sl-120\sa0\sb0\par}
+\pard \ql \li720 \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+WfM\tab Word for Macintosh
+\par
+WfW\tab Word for Windows
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Page Orientation\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+WfM and WfW write the paper width and height correctly, 
+but they don\'d5t write \f3\i0\b0
+\\landscape\f1\i0\b0
+ into landscape 
+documents. I consider this a bug. Another bug is that 
+if you read such an RTF document back into WfM, it 
+sets the page orientation back to portrait. The same 
+might be true of WfW.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Tab Handling\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+When a new group begins (with \'d2\f3\i0\b0
+\{\f1\i0\b0
+\'d3), it inherits 
+the tab stops of the group within which it occurs. 
+However, if any tabs are explicitly set within the 
+group, they override the inherited set.
+\par
+{\sl-120\sa0\sb0\par}
+The same is true with regard to tabs stops that a group 
+may get as a result of a style setting. If tabs are 
+set within the style, they override inherited tabs. 
+Again, however, if tabs are explicitly set within the 
+group, they override not only any inherited tabs, but 
+any tabs that may have been set within the style.
+\par
+{\sl-120\sa0\sb0\par}
+For translator purposes, the upshot is that it\'d5s 
+necessary to know when a style is being expanded (so 
+you know to override inherited tabs), and when the 
+expansion is done (so you know when to override style 
+tabs).
+\par
+{\sl-120\sa0\sb0\par}
+Tabs may be associated with a leader character, and 
+may have a justification attribute. I have seen an 
+RTF specification (non-Microsoft) which claimed that 
+justifications apply to the last specified tab position. 
+My experience is that the opposite is true. (The Microsoft 
+spec seems to be silent on this point.) The leader 
+character does indeed apply to following tab positions, 
+but the justification attribute applies to the next 
+tab position specified. If no justification is given, 
+the tab defaults to left-justified.
+\par
+{\sl-120\sa0\sb0\par}
+For translators, this means that if a justification 
+indicator occurs, you apply it when the next tabstop 
+position is given, otherwise the tabstop is left-justified.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Styles\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The \'d2Normal\'d3 style definition does not seem to 
+ever include a style number within it, unlike all others. 
+Normal style is assigned style number 0.
+\par
+{\sl-120\sa0\sb0\par}
+The normal style name need not be exactly \'d2Normal\'d3. 
+It might have some suffix, e.g., \'d2Normal-blurfl\'d3. 
+Also, it has been reported that in Germany, \'d2Standard\'d3 
+is used rather than \'d2Normal\'d3 by some programs.
+\par
+{\sl-120\sa0\sb0\par}
+Style number 222 is special \'d1 it means \'d2no style\'d3. 
+(Why 222? I dunno.) So, the following line in a style 
+definition means the style is based on no other style:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+\\sbasedon222
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+The Normal style definition usually contains \f3\i0\b0
+\\sbasedon222\f1\i0\b0
+ 
+whereas most other styles contain \f3\i0\b0
+\\sbasedon0\f1\i0\b0
+ (based 
+on Normal).
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Stylesheet entries might leave out the \f3\i0\b0
+\\sbasedon\f1\i0\b0
+ control 
+word (WfW does this). In this case, the default is 
+taken to be \'d2no style\'d3. I\'d5ve only seen this 
+in Normal style entries. I have not seen any documents 
+where the \f3\i0\b0
+\\snext\f1\i0\b0
+ control word is left out, but if 
+it is, a style is taken to be own next style.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Restoring Defaults\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Apparently, when \f3\i0\b0
+\\pard\f1\i0\b0
+ is encountered, the way to 
+restore paragraph defaults is to restore not only all 
+the static initial paragraph formatting values, but 
+also to apply the Normal style.
+\par
+{\sl-120\sa0\sb0\par}
+The control word \f3\i0\b0
+\\plain\f1\i0\b0
+ is much like \f3\i0\b0
+\\pard\f1\i0\b0
+ but for 
+characters. Why it\'d5s not \f3\i0\b0
+\\chard\f1\i0\b0
+ I don\'d5t know, 
+but the effect is not only to restore character style 
+to plain, but also default font size, expansion value, 
+etc.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Special Characters\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Different character sets may be specified in different 
+RTF documents (e.g., \f3\i0\b0
+\\ansi\f1\i0\b0
+, \f3\i0\b0
+\\mac\f1\i0\b0
+), and characters 
+within one set may have no representation in another 
+set. For instance, the Apple character in the Macintosh 
+character set has no counterpart in the ANSI character 
+set. This constitutes a failure of RTF to provide machine 
+independence.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Fonts\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The default font (specified with \f3\i0\b0
+\\deff\f1\i0\b0
+) need not be 
+included in the font table. Don\'d5t assume it will 
+be there.
+\par
+{\sl-120\sa0\sb0\par}
+The font name for a given font may vary among systems. 
+\'d2Times Roman\'d3 in WfM is \'d2Tms Rmn\'d3 in WfW. 
+The font family may also differ. WfM associates \f3\i0\b0
+\\ftech\f1\i0\b0
+ 
+with the Symbol font, whereas WfW associates it with 
+\f3\i0\b0
+\\fdecor\f1\i0\b0
+. Another failure of machine independence.
+\par
+{\sl-120\sa0\sb0\par}
+Presumably the font name differences are related to 
+the method (or lack of it) provided by underlying system 
+software for referring to fonts from within programs. 
+Translators, which may be writing output for target 
+systems having an entirely different set of conventions, 
+should provide their own mechanism for mapping RTF 
+font names onto the fonts that are available.
+\par
+{\sl-120\sa0\sb0\par}
+It is instructive to observe that neither WfM nor WfW 
+do particularly well at figuring out the fonts used 
+in an RTF document created by the other.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Tables\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The Microsoft RTF specification says very little about 
+the constraints on the order in which table formatting 
+control words may appear. The inferences below are 
+based on inspection of several RTF tables, but as this 
+is an inductive process, it\'d5s hard to say whether 
+they are generally true, or only true of those files 
+at which I\'d5ve looked.
+\par
+{\sl-120\sa0\sb0\par}
+Cells are like tabs in that a cell may have a position 
+and other attributes. The position applies to the right 
+edge. The other attributes, if specified, occur \f1\i0\b0
+
+\i before\f1\i0\b0
+ the position specifier.
+\par
+{\sl-120\sa0\sb0\par}
+In the table layout information at the beginning of 
+the table, cell border control words are \f1\i0\b0
+
+\i followed\f1\i0\b0
+ immediately by a border type control word. 
+This is one place where a translator may want to read 
+ahead in the input stream to get the border type. It 
+appears that more than one border type word may follow 
+the cell border control word, \f3\i0\b0
+\\clbrdrb\\brdrsh\\brdrs\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+It appears that \f3\i0\b0
+\\trowd\f1\i0\b0
+ occurs as the first control 
+word of a table, the row ends with \f3\i0\b0
+\\row\f1\i0\b0
+, and everything 
+between specifies the format and content of the row. 
+It further appears that the table \'d2state\'d3 is 
+completely independent of the grouping level.
+\par
+{\sl-120\sa0\sb0\par}
+Cells begin with the \f1\i0\b0
+
+\i first\f1\i0\b0
+ \f3\i0\b0
+\\intbl\f1\i0\b0
+ and after \f1\i0\b0
+
+\i each\f1\i0\b0
+ \f3\i0\b0
+\\cell\f1\i0\b0
+ control word. Cells end after each \f3\i0\b0
+\\cell\f1\i0\b0
+ 
+and \f3\i0\b0
+\\row\f1\i0\b0
+ control word. Cells can \f1\i0\b0
+
+\i not\f1\i0\b0
+ be assumed to begin with every \f3\i0\b0
+\\intbl\f1\i0\b0
+ since every 
+paragraph within a table cell begins with that control 
+word.
+\par
+{\sl-120\sa0\sb0\par}
+Tabs specified within a cell are relative to the left 
+edge of the cell, not the left margin of the page.
+\par
+{\sl-120\sa0\sb0\par}
+WfM seems to write an empty cell at the end of each 
+row. For instance, if there are three cells, there 
+will be three token sequences, each ending with \f3\i0\b0
+\\cell\f1\i0\b0
+, 
+then another sequence (typically \f3\i0\b0
+\\pard\\intbl\f1\i0\b0
+) ending 
+with \f3\i0\b0
+\\row\f1\i0\b0
+. This probably corresponds to the \'d2ghost\'d3 
+column you see at the end of tables when you select 
+them or show formatting codes.
+\par
+}

@@ -23,7 +23,7 @@
 # include       <ctype.h>
 
 # include       "rtf.h"
-# include       "tokenscan.h"
+# include       "rtfprep/tokenscan.h"
 # include       "cole.h"
 # include       "rtf2LaTeX2e.h"
 # include   "eqn.h"

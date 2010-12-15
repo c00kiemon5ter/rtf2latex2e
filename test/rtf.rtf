@@ -1,0 +1,2461 @@
+{\rtf1\mac\deff1
+{\fonttbl
+{\f6\fnil Bookman;}
+{\f5\fnil Palatino;}
+{\f4\fnil Symbol;}
+{\f3\fnil Courier;}
+{\f2\fnil Helvetica;}
+{\f1\fnil Times;}
+}
+\paperh15840 \paperw12240
+\margl1440 \margr2160 \pard \f1\i0\b0
+\fs20 \fs16 \fs20 \fs24 \f1\i0\b0
+\b \fs28 \pard \qc \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+A Tool for RTF Processing
+\par
+{\sl-140\sa0\sb0\par}
+Release 1.10
+\par
+\f1\i0\b0
+\i {\sl-280\sa0\sb0\par}
+\fs20 Paul DuBois
+\par
+dubois@primate.wisc.edu
+\par
+\f1\i0\b0
+{\sl-140\sa0\sb0\par}
+Wisconsin Regional Primate Research Center
+\par
+Revision date:  5 April 1994
+\par
+{\sl-280\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Introduction\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+This document describes a general purpose tool for 
+processing RTF files\'d1an RTF reader which may be 
+configured in a well-defined manner to allow it to 
+be used with a variety of writers generating different 
+output formats. This provides a method for generating 
+RTF-to-\f1\i0\b0
+
+\i XXX\f1\i0\b0
+ translators.
+\par
+{\sl-120\sa0\sb0\par}
+I assume that you have some familiarity with RTF syntax 
+and semantics, and that you\'d5re willing to study 
+the source code of the RTF distribution described here. 
+If you don\'d5t have the RTF specification, you can 
+get it from the FTP site listed under \'d2Distribution 
+Availability\'d3 at the end of this document. References 
+to \'d2the specification\'d3 refer to the RTF specification 
+document.
+\par
+{\sl-120\sa0\sb0\par}
+If you use this tool and find that you have an RTF 
+file that won\'d5t pass through the sample translator 
+\f1\i0\b0
+\i rtf2null\f1\i0\b0
+, or for which \f1\i0\b0
+
+\i rtf2null\f1\i0\b0
+ announces unknown symbols, please contact 
+me so the tool can be improved. It is best if you can 
+supply the RTF file for which this behavior is observed.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Theory of Operation\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+{\sl-320\sa0\sb0\par}
+\fs20 \fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Translator Architecture\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+This is a brief description of how translators are 
+designed. For more details, see the document \f1\i0\b0
+
+\i RTF Tools Translator Architecture\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+There are three components to an RTF translator: reader 
+code, writer code, and driver code. These break down 
+as follows.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+reader\tab 
+\par
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+Responsible for peeling tokens out of the input stream, 
+classifying them, and causing the writer to process 
+them.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+writer\tab 
+\par
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+Responsible for translating tokens from the input stream 
+into the required output format.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 \tx500 \tqr 
+driver\tab 
+\par
+\pard \qj \li500 \sl240 
+\tx1000 \tx500 \tqr 
+Responsible for making sure the reader and writer are 
+initialized, and for calling the reader, to cause translation 
+to occur.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+This architecture allows the reader to remain constant, 
+so that different translators can be built by supplying 
+different writer and driver code. Also, for a given 
+translator, the reader and writer remain constant and 
+the translator can be ported to different types of 
+systems by supplying system-specific driver code.
+\par
+{\sl-120\sa0\sb0\par}
+In practice, to build a new translator, you supply 
+a \f1\i0\b0
+
+\i main()\f1\i0\b0
+ function and the writer code, and link in the 
+RTF reader. \f1\i0\b0
+
+\i main()\f1\i0\b0
+ includes the driver code and is responsible 
+to see that the following are done:
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \fi-300 \sl240 
+\tx600 \tx300 \tqr 
+\'a5\tab Determine which files are to be translated
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab Configure the reader, which may involve:
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li600 \fi-300 \sl240 
+\tx900 \tx300 \tqr 
+\'d1\tab Reset the input stream if necessary
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li600 \fi-300 \sl240 
+\tx900 \tx300 \tqr 
+\'d1\tab Configure other reader behavior, such as whether 
+or not to process the font and color tables internally
+\par
+{\sl-120\sa0\sb0\par}
+\'d1\tab Install writer callbacks into the reader so 
+it knows what functions to call when various kinds 
+of tokens occur
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \fi-300 \sl240 
+\tx600 \tx300 \tqr 
+\'a5\tab Initialize the writer
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \fi-300 \sl240 
+\tx600 \tx300 \tqr 
+\'a5\tab Call the reader to process the input stream
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab Terminate the writer
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+A minimal translator (for a UNIX system) looks something 
+like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+# include\tab <stdio.h>
+\par
+# include\tab "rtf.h"
+\par
+{\sl-200\sa0\sb0\par}
+int
+\par
+main ()
+\par
+\{
+\par
+\tab RTFSetOpenLibFileProc (UnixOpenLibFile);
+\par
+\tab RTFInit ();
+\par
+\tab RTFRead ();
+\par
+\tab exit (0);
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+This installs a function that\'d5s suitable for opening 
+RTF library files on a UNIX system, initializes the 
+reader, and calls it to read \f1\i0\b0
+
+\i stdin\f1\i0\b0
+ (the default input stream). The writer portion 
+is null (i.e., there is no writer), so all that happens 
+is that the reader tokenizes the input and discards 
+it. That isn\'d5t very interesting; most of the sample 
+translators are examples of more elaborate translators.
+\par
+{\sl-240\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Reader Operation\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Each time a token is read, several global variables 
+are set:
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\i \pard \ql \li720 \sl240 
+\tx2880 
+rtfClass\f1\i0\b0
+\tab token class
+\par
+\f1\i0\b0
+\i rtfMajor\f1\i0\b0
+\tab token major number
+\par
+\f1\i0\b0
+\i rtfMinor\f1\i0\b0
+\tab token minor number
+\par
+\f1\i0\b0
+\i rtfParam\f1\i0\b0
+\tab token parameter value
+\par
+\f1\i0\b0
+\i rtfTextBuf\f1\i0\b0
+\tab token text
+\par
+\f1\i0\b0
+\i rtfTextLen\f1\i0\b0
+\tab length of token (including parameter 
+text)
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Tokens are classified using up to three numbers: token 
+class, and major and minor numbers. The major and minor 
+numbers may be meaningless depending on the kind of 
+token.
+\par
+{\sl-120\sa0\sb0\par}
+The class number can be:
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\i \pard \ql \li720 \sl240 
+\tx2880 
+rtfUnknown\f1\i0\b0
+\tab unrecognized token
+\par
+\f1\i0\b0
+\i rtfGroup\f1\i0\b0
+\tab \'d2\{\'d3 or \'d2\}\'d3
+\par
+\f1\i0\b0
+\i rtfText\f1\i0\b0
+\tab plain text character
+\par
+\f1\i0\b0
+\i rtfControl\f1\i0\b0
+\tab token beginning with \'d2\\\'d3
+\par
+\f1\i0\b0
+\i rtfEOF\f1\i0\b0
+\tab fake class number; indicates end of input 
+stream
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+There are some exceptions. A few tokens beginning with 
+\f3\i0\b0
+\\\f1\i0\b0
+ actually belong to other classes, a tab character 
+is treated like \f3\i0\b0
+\\tab\f1\i0\b0
+, and unrecognized tokens are 
+put in class \f1\i0\b0
+
+\i rtfUnknown\f1\i0\b0
+ no matter what they look like.
+\par
+{\sl-120\sa0\sb0\par}
+Within a class, tokens are assigned a major number, 
+and perhaps a minor number. For the \f1\i0\b0
+
+\i rtfText\f1\i0\b0
+ class, the major number is the value of the 
+input character (0..255), and the minor number is assigned 
+a standard character code. Text characters have different 
+mappings in different RTF character sets, so to avoid 
+the problems associated with this, the reader maps 
+the character onto a standard character code using 
+a charset-dependent translation table. Translators 
+should generally use the standard character code in 
+\f1\i0\b0
+\i rtfMinor\f1\i0\b0
+ rather than the raw character code in \f1\i0\b0
+
+\i rtfMajor\f1\i0\b0
+. Character mapping issues are described further 
+in the document \f1\i0\b0
+
+\i RTF Tools Character Mapping\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+A \'d2plain text\'d3 character can be a literal character, 
+a character specified in hex notation (\f3\i0\b0
+\\'\f1\i0\b0
+\f1\i0\b0
+
+\i xx\f1\i0\b0
+) or one of the special escaped characters (\f3\i0\b0
+\\\{\f1\i0\b0
+, 
+\f3\i0\b0
+\\\}\f1\i0\b0
+, \f3\i0\b0
+\\\\\f1\i0\b0
+). The sequence \f3\i0\b0
+\\:\f1\i0\b0
+ is treated as a plain 
+text colon. This is arguably wrong; the rationale is 
+given later under the description of the \f1\i0\b0
+
+\i RTFGetToken()\f1\i0\b0
+ function.
+\par
+{\sl-120\sa0\sb0\par}
+For the \f1\i0\b0
+
+\i rtfControl\f1\i0\b0
+ class, most tokens have both a major and 
+minor number. For instance, all paragraph attribute 
+control symbols have major number \f1\i0\b0
+
+\i rtfParAttr\f1\i0\b0
+ and a minor number indicating a paragraph 
+formatting property, such as \f1\i0\b0
+
+\i rtfLeftIndent\f1\i0\b0
+ or \f1\i0\b0
+
+\i rtfSpaceBefore\f1\i0\b0
+. A few oddball control tokens have no 
+minor number.
+\par
+{\sl-120\sa0\sb0\par}
+Control symbols may have a parameter value, e.g., \f3\i0\b0
+\\margr720\f1\i0\b0
+ 
+specifies a right margin (in units of 720 twentieths 
+of a point).
+\par
+{\sl-120\sa0\sb0\par}
+If no parameter value is given, \f1\i0\b0
+
+\i rtfParam\f1\i0\b0
+ is \f1\i0\b0
+
+\i rtfNoParam\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+Ideally, there should never be any tokens in the \f1\i0\b0
+
+\i rtfUnknown\f1\i0\b0
+ class, but as the RTF standard continues 
+to develop, unknown tokens are inevitable.
+\par
+{\sl-120\sa0\sb0\par}
+To write a translator, you\'d5ll need to familiarize 
+yourself with the token classification scheme by reading 
+\f1\i0\b0
+\i rtf.h\f1\i0\b0
+. A skeleton translator \f1\i0\b0
+
+\i rtfskel\f1\i0\b0
+ is included with the distribution and may be 
+used as a basis for new translators.
+\par
+{\sl-120\sa0\sb0\par}
+As of release 1.10, the reader allows an 8-bit character 
+set since the current RTF specification (version 1.2) 
+now allows 8-bit characters. Formerly, if the reader 
+saw an 8-bit character, it converted the character 
+to the equivalent \f3\i0\b0
+\\'\f1\i0\b0
+\f1\i0\b0
+
+\i xx\f1\i0\b0
+ hex notation sequence and returned that as the token.
+\par
+{\sl-120\sa0\sb0\par}
+Generally, a translator will configure the RTF reader 
+to call particular writer functions when certain kinds 
+of tokens are encountered in the input stream. These 
+functions are known as \f1\i0\b0
+
+\i class callbacks\f1\i0\b0
+. Writer callbacks can be registered 
+with the reader using \f1\i0\b0
+
+\i RTFSetClassCallback()\f1\i0\b0
+ for each token class.
+\par
+{\sl-120\sa0\sb0\par}
+The reader reads each token, classifies it, and sends 
+it to a token routing function \f1\i0\b0
+
+\i RTFRouteToken()\f1\i0\b0
+, which tries to find a writer callback 
+function to process the token. Tokens in a given class 
+are ignored if no callback is registered for the class.
+\par
+{\sl-120\sa0\sb0\par}
+Class callbacks make it quite easy to receive notification 
+when certain types of tokens occur in the input. For 
+instance, a crude RTF text extractor could be written 
+by installing a callback function for the \f1\i0\b0
+
+\i rtfText\f1\i0\b0
+ class.[1]
+\fs16 \par
+{\sl-60\sa0\sb0\par}
+\pard \qj \ri720 \fi200 \sl200 [1] Reasons this is a crude translator are that: (i) 
+some text characters occur in contexts where the characters 
+are not intended to be output, e.g., font tables, stylesheets; 
+(ii) some control symbols like \f3\i0\b0
+\\tab\f1\i0\b0
+ represent output 
+text characters; (iii) it writes output based on the 
+raw input character value in \f1\i0\b0
+
+\i rtfMajor\f1\i0\b0
+ rather than mapping the standard character 
+code in \f1\i0\b0
+
+\i rtfMinor\f1\i0\b0
+. The sample translator \f1\i0\b0
+
+\i rtf2text\f1\i0\b0
+ addresses these problems in a (slightly) more 
+sophisticated manner.
+\par
+\fs20 \pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Whenever the function is invoked, \f1\i0\b0
+
+\i rtfMajor\f1\i0\b0
+ will contain a value in the range 0..255 representing 
+the character value.
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+# include\tab <stdio.h>
+\par
+# include\tab "rtf.h"
+\par
+{\sl-200\sa0\sb0\par}
+void
+\par
+TextCallback ()
+\par
+\{
+\par
+\tab putchar (rtfMajor);
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+int
+\par
+main ()
+\par
+\{
+\par
+\tab RTFSetOpenLibFileProc (UnixOpenLibFile);
+\par
+\tab RTFInit ();
+\par
+\tab RTFSetClassCallback (rtfText, TextCallback);
+\par
+\tab RTFRead ();
+\par
+\tab exit (0);
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+Callbacks for the \f1\i0\b0
+
+\i rtfControl\f1\i0\b0
+ and \f1\i0\b0
+
+\i rtfGroup\f1\i0\b0
+ classes typically operate by selecting on 
+the token major number to determine the action to take. 
+A callback for the \f1\i0\b0
+
+\i rtfGroup\f1\i0\b0
+ class usually will do something like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+void
+\par
+BraceCallback ()
+\par
+\{
+\par
+\tab switch (rtfMajor)
+\par
+\tab \{
+\par
+\tab case rtfBeginGroup:
+\par
+\tab \tab \f1\i0\b0
+
+\i ...push state...\f1\i0\b0
+
+\par
+\tab \tab break;
+\par
+\tab case rtfEndGroup:
+\par
+\tab \tab \f1\i0\b0
+
+\i ...pop state...\f1\i0\b0
+
+\par
+\tab \tab break;
+\par
+\tab \}
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 {\sl-240\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Destination Readers\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Grouping in RTF documents occurs within braces \'d2\{\'d3 
+and \'d2\}\'d3. One kind of group is the \f1\i0\b0
+
+\i destination\f1\i0\b0
+. The token immediately following the opening 
+brace is a destination control symbol. These indicate 
+such things as headers, footers, footnotes, etc.
+\par
+{\sl-120\sa0\sb0\par}
+Three destinations which specify information for internal 
+use (i.e., information which affects output but isn\'d5t 
+itself written) are the font table, color table and 
+stylesheet. Since these three destinations occur so 
+commonly and have a special syntax, the RTF reader 
+by default gobbles them up itself when it recognizes 
+them. The functions which do this are called \f1\i0\b0
+
+\i destination readers\f1\i0\b0
+ and are probably the nearest thing 
+in the reader to what might be called parsers. They 
+are installed by default so that translators can be 
+written without the burden of understanding the syntax 
+or digesting the contents of these destinations. Each 
+of them constructs a list of the entries specified 
+in the destination and the reader includes functions 
+providing access to these lists.
+\par
+{\sl-120\sa0\sb0\par}
+Translators can turn off or override these defaults 
+with \f1\i0\b0
+
+\i RTFSetDestinationCallback()\f1\i0\b0
+ if necessary. To override 
+one, pass the address of a different destination reader 
+function. To turn one off, pass \f3\i0\b0
+NULL\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+Destination callbacks may be called for any destination, 
+not just \f1\i0\b0
+
+\i rtfFontTbl\f1\i0\b0
+, \f1\i0\b0
+
+\i rtfColorTbl\f1\i0\b0
+ and \f1\i0\b0
+
+\i rtfStyleSheet\f1\i0\b0
+. Destinations for which no callback is 
+registered are not treated specially.
+\par
+{\sl-120\sa0\sb0\par}
+Other destinations for which there is a default reader 
+are the information (\f3\i0\b0
+\\info\f1\i0\b0
+), picture (\f3\i0\b0
+\\pict\f1\i0\b0
+), and 
+object (\f3\i0\b0
+\\object\f1\i0\b0
+) destinations; all they do is skip 
+to the end of the group.
+\par
+{\sl-240\sa0\sb0\par}
+\f1\i0\b0
+\b Using the Built-in Destination Readers\f1\i0\b0
+
+\par
+{\sl-240\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+The font table, color table and stylesheet information 
+is maintained internally, and the reader either acts 
+on that information itself, or allows itself to be 
+queried by the writer about it, as described below. 
+These descriptions do not apply if the translator shuts 
+off or overrides the default destination readers, of 
+course.
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\b Stylesheet\'d1\f1\i0\b0
+The reader acts on this itself. When 
+the stylesheet destination is encountered, the style 
+contents are remembered. Thereafter, whenever the writer 
+receives notification that a style number control symbol 
+(\f3\i0\b0
+\\s\f1\i0\b0
+\f1\i0\b0
+
+\i nnn\f1\i0\b0
+) has occurred, it can call \f1\i0\b0
+
+\i RTFExpandStyle(rtfParam)\f1\i0\b0
+ to cause the style to be expanded. 
+The reader consults contents of the stylesheet and 
+each token in the style definition is routed in turn 
+back to the writer. This effects a sort of macro expansion.
+\par
+{\sl-120\sa0\sb0\par}
+If the writer doesn\'d5t care about style expansion, 
+it simply refrains from calling \f1\i0\b0
+
+\i RTFExpandStyle()\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+If the writer wants information about a style, it can 
+call \f1\i0\b0
+
+\i RTFGetStyle()\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\b Font table\'d1\f1\i0\b0
+For each entry in the font table, the 
+font number, type and name are maintained by the reader. 
+The writer finds out that a font number has been specified 
+in the input when its control class callback is invoked 
+and \f1\i0\b0
+
+\i rtfMajor\f1\i0\b0
+ = \f1\i0\b0
+
+\i rtfCharAttr\f1\i0\b0
+ and \f1\i0\b0
+
+\i rtfMinor\f1\i0\b0
+ = \f1\i0\b0
+
+\i rtfFontNum\f1\i0\b0
+. To obtain a pointer to the appropriate 
+\f1\i0\b0
+\i RTFFont\f1\i0\b0
+ structure, the reader function \f1\i0\b0
+
+\i RTFGetFont(rtfParam)\f1\i0\b0
+ may be called.
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\b Color table\'d1\f1\i0\b0
+For each entry in the color table, the 
+color number is maintained along with the red, green 
+and blue values. The writer finds out that a color 
+number has been specified in the input when its control 
+class callback is invoked and \f1\i0\b0
+
+\i rtfMajor\f1\i0\b0
+ = \f1\i0\b0
+
+\i rtfCharAttr\f1\i0\b0
+ and \f1\i0\b0
+
+\i rtfMinor\f1\i0\b0
+ = \f1\i0\b0
+
+\i rtfColorNum\f1\i0\b0
+. To obtain a pointer to the appropriate 
+\f1\i0\b0
+\i RTFColor\f1\i0\b0
+ structure, the reader function \f1\i0\b0
+
+\i RTFGetColor(rtfParam)\f1\i0\b0
+ may be called.
+\par
+{\sl-120\sa0\sb0\par}
+One subtle point about the built-in destination readers: 
+destinations cannot be recognized until \f1\i0\b0
+
+\i after\f1\i0\b0
+ the occurrence of the \'d2\{\'d3 symbol that 
+begins the destination. This means the writer, if it 
+maintains a state stack, will already have pushed a 
+state. In order to allow the writer to properly pop 
+that state in response to the \'d2\}\'d3, these destination 
+readers feed the \'d2\}\'d3 back into the token router 
+after they pull it from the input stream. What the 
+writer actually sees is a \'d2\{\'d3 followed immediately 
+by a \'d2\}\'d3.
+\par
+{\sl-120\sa0\sb0\par}
+Applications that maintain a state stack may find it 
+necessary to do something similar if they supply their 
+own destination readers.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Programming Interface\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Source files using the RTF reader should #include \f1\i0\b0
+
+\i rtf.h\f1\i0\b0
+. The library files common to all translators 
+are used to build a library \f1\i0\b0
+
+\i librtf.a\f1\i0\b0
+ in the distribution\'d5s \f1\i0\b0
+
+\i lib\f1\i0\b0
+ directory. This library should be part of the final 
+application link.
+\par
+{\sl-120\sa0\sb0\par}
+The best way to learn how these source files work is 
+to study the sample translators, which vary in complexity 
+from very simple (e.g., \f1\i0\b0
+
+\i rtf2text\f1\i0\b0
+, \f1\i0\b0
+
+\i rtfwc\f1\i0\b0
+), to wretchedly messy (e.g., \f1\i0\b0
+
+\i rtf2troff\f1\i0\b0
+). You should be aware that one implication 
+of the way the translators are built (callbacks and 
+switch statements) is that it\'d5s quite easy to build 
+them incrementally. You can start with a very bare-bones 
+model, and start plugging in callbacks as you progress. 
+Within the callbacks, your switch statements can progressively 
+handle more cases.
+\par
+{\sl-120\sa0\sb0\par}
+An alternative approach is to start with a copy of 
+\f1\i0\b0
+\i rtfskel\f1\i0\b0
+, which includes a full set of class callbacks 
+and complete switch statements for all tokens. Each 
+case is empty; you simply add code for those cases 
+you want to handle. You can also rip out the code for 
+the cases you don\'d5t care about.
+\par
+{\sl-240\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Types\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Most types are pretty standard. The one of note is 
+\f1\i0\b0
+\i RTFFuncPtr\f1\i0\b0
+, a generic function pointer which is defined 
+like so:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+typedef\tab void (*RTFFuncPtr) ();
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+That is, it\'d5s a pointer to a function that takes 
+no arguments and returns no value.
+\par
+{\sl-240\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Global variables\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The global RTF reader variables are:
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \ql \li720 \sl240 
+\tx1584 \tx3600 
+int\tab rtfClass;\tab token class
+\par
+int\tab rtfMajor;\tab token major number
+\par
+int\tab rtfMinor;\tab token minor number
+\par
+int\tab rtfParam;\tab parameter value for control symbols
+\par
+char\tab *rtfTextBuf;\tab token text
+\par
+int\tab rtfTextLen;\tab length of token text
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+These variables always apply to the token with which 
+the writer should be concerned. This may be either 
+the last token read or the current token within a style 
+which is being reprocessed.
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\b Warning:\f1\i0\b0
+ \f1\i0\b0
+
+\i rtfTextBuf\f1\i0\b0
+ is \f3\i0\b0
+NULL\f1\i0\b0
+ until \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+ has been called.
+\par
+{\sl-120\sa0\sb0\par}
+Two other global variables which may be of interest 
+provide the current input line number and position 
+within the line:
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \ql \li720 \sl240 
+\tx1584 \tx3600 
+long\tab rtfLineNum;\tab current input line
+\par
+int\tab rtfLinePos;\tab position within current line
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+These variables can be used to provide feedback to 
+the user when a problem is found in an input file as 
+to the location of the problem. They indicate the position 
+immediately after the last token read.
+\par
+{\sl-240\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Functions\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFInit ()
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Initialize the RTF reader. This should be called once 
+for each input file to be processed. It performs some 
+initialization such as computing hash values for the 
+token lookup table and installation of some built-in 
+destination and token class readers.
+\par
+{\sl-140\sa0\sb0\par}
+\f1\i0\b0
+\i RTFInit()\f1\i0\b0
+ may be called multiple times. Each invocation 
+resets the reader\'d5s state completely, except that 
+the input stream is not disturbed.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFRead ()
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\i \pard \qj \li360 \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+RTFRead()\f1\i0\b0
+ calls \f1\i0\b0
+
+\i RTFGetToken()\f1\i0\b0
+ to tokenize the input stream and \f1\i0\b0
+
+\i RTFRouteToken()\f1\i0\b0
+ to process each token, until input 
+is exhausted. When \f1\i0\b0
+
+\i RTFRead()\f1\i0\b0
+ returns, input has been completely read and 
+the writer can perform any cleanup or termination needed.
+\par
+{\sl-140\sa0\sb0\par}
+If you want to read multiple files per invocation of 
+your translator, you should do the following for each 
+file: call \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+, install callbacks, etc., then call \f1\i0\b0
+
+\i RTFRead()\f1\i0\b0
+.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFRouteToken ()
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+This routine decides what to do with the current token 
+and routes it to the correct place for processing. 
+Usually this is directly to the writer via a class 
+callback. The token is \f1\i0\b0
+
+\i not\f1\i0\b0
+ passed to the writer (i.e., the class callback 
+is bypassed) when it is a destination token for which 
+a reader callback is installed.
+\par
+{\sl-140\sa0\sb0\par}
+By default, built-in readers are installed for font 
+table, color table, stylesheet and information and 
+picture group destinations. The built-in readers can 
+be disabled if the writer wants to see all tokens directly.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+int
+\par
+RTFGetToken ()
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Reads one token from the input stream, classifies it, 
+sets the global variables, and returns the class number. 
+If the class is \f1\i0\b0
+
+\i rtfEOF\f1\i0\b0
+ the end of the input stream has been reached. 
+Newlines (\f3\i0\b0
+\\n\f1\i0\b0
+), carriage returns (\f3\i0\b0
+\\r\f1\i0\b0
+), and nulls are 
+silently discarded by \f1\i0\b0
+
+\i RTFGetToken()\f1\i0\b0
+, as they have no meaning. All are passed 
+to the token hook if one is installed, however.
+\par
+{\sl-140\sa0\sb0\par}
+The sequence \f3\i0\b0
+\\:\f1\i0\b0
+ is treated as a plain text character, 
+with \f1\i0\b0
+
+\i rtfClass\f1\i0\b0
+ set to \f1\i0\b0
+
+\i rtfText\f1\i0\b0
+ and \f1\i0\b0
+
+\i rtfMajor\f1\i0\b0
+ set to the colon ASCII code. Strictly speaking, 
+\f3\i0\b0
+\\:\f1\i0\b0
+ is the control word for an index subentry, but 
+some versions of Microsoft Word write out plain text 
+colons with a preceding backslash, while others don\'d5t. 
+This unfortunate ambiguity results in an ugly dilemma. 
+It seems the lesser burden to require translators to 
+recognize that plain text colons should \'d2really\'d3 
+be treated as index subentry indicators while inside 
+of an index entry destination, than to recognize that 
+an index subentry control word should \'d2really\'d3 
+be treated as a plain text colon everywhere else.
+\par
+{\sl-140\sa0\sb0\par}
+Writer code usually does not call \f1\i0\b0
+
+\i RTFGetToken()\f1\i0\b0
+ directly except within specialized destination 
+readers. Driver code usually does not call \f1\i0\b0
+
+\i RTFGetToken()\f1\i0\b0
+ if it calls \f1\i0\b0
+
+\i RTFRead()\f1\i0\b0
+. However, the following loop is an alternative 
+to \f1\i0\b0
+
+\i RTFRead()\f1\i0\b0
+:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li760 \sl200 
+\tx1080 \tx1400 \tx1720 \tx2040 \tx2360 \tx2680 \tx3000 \tx3320 \tx3640 \tx3960 \tx4280 \tx4600 \tx4920 \tx5240 \tx5560 \tx5880 \tx6200 \tx6520 \tx6840 \tx7160 
+while (RTFGetToken () != rtfEOF)
+\par
+\{
+\par
+\tab RTFRouteToken ();
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\pard \qj \li360 \sl280 
+\tx1080 \tx1400 \tx1720 \tx2040 \tx2360 \tx2680 \tx3000 \tx3320 \tx3640 \tx3960 \tx4280 \tx4600 \tx4920 \tx5240 \tx5560 \tx5880 \tx6200 \tx6520 \tx6840 \tx7160 
+If a driver wants to regain control after reading each 
+token, this loop may be preferable to \f1\i0\b0
+
+\i RTFRead()\f1\i0\b0
+.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+int
+\par
+RTFUngetToken ()
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Pushes the last token back on the input stream so that 
+\f1\i0\b0
+\i RTFGetToken()\f1\i0\b0
+ returns it again. You can\'d5t put back 
+the same token twice unless you read it again in the 
+interim.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+int
+\par
+RTFPeekToken ()
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Reads a token from the input stream and sets the global 
+token variables, but does not remove the token from 
+the input stream.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSetToken (class, major, minor, param, text)
+\par
+int\tab class, major, minor, param;
+\par
+char\tab *text;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+It is sometimes useful to construct a fake token and 
+run it through the token router to cause the effects 
+of the token to be applied. \f1\i0\b0
+
+\i RTFSetToken()\f1\i0\b0
+ allows you to do this, by setting the 
+reader\'d5s global variables to the values supplied. 
+If \f1\i0\b0
+
+\i param\f1\i0\b0
+ is \f1\i0\b0
+
+\i rtfNoParam\f1\i0\b0
+, the token text \f1\i0\b0
+
+\i rtfTextBuf\f1\i0\b0
+ is constructed from \f1\i0\b0
+
+\i text\f1\i0\b0
+ and \f1\i0\b0
+
+\i param\f1\i0\b0
+, otherwise \f1\i0\b0
+
+\i rtfTextBuf\f1\i0\b0
+ is just copied from \f1\i0\b0
+
+\i text\f1\i0\b0
+.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSetReadHook (f)
+\par
+RTFFuncPtr\tab f;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Install a function to be called by \f1\i0\b0
+
+\i RTFGetToken()\f1\i0\b0
+ after each token is read from the input 
+stream. The function takes no arguments and returns 
+no value. Within the function, information about the 
+current token can be obtained from the global variables. 
+This function is for token examination purposes only, 
+and should not modify those variables.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+RTFFuncPtr
+\par
+RTFGetReadHook ()
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns a pointer to the current read hook, or \f3\i0\b0
+NULL\f1\i0\b0
+ 
+if there isn\'d5t one.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSkipGroup ()
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+This function can be called to skip to the end of the 
+current group (including any subgroups). It\'d5s useful 
+for explicitly ignoring \f3\i0\b0
+\\*\\\f1\i0\b0
+\f1\i0\b0
+
+\i dest\f1\i0\b0
+ groups, where \f1\i0\b0
+
+\i dest\f1\i0\b0
+ is an unrecognized destination, or for causing 
+groups that you don\'d5t want to deal with to effectively 
+\'d2disappear\'d3 from the input stream.
+\par
+{\sl-140\sa0\sb0\par}
+Calling this function in the middle of expanding a 
+style may cause problems. However, it is typically 
+called when you have just seen a destination symbol, 
+which won\'d5t happen during a style expansion\'d1I 
+think.
+\par
+{\sl-140\sa0\sb0\par}
+Be careful with this function if your writer maintains 
+a state stack, because you will already have pushed 
+a state when the opening group brace was seen. After 
+\f1\i0\b0
+\i RTFSkipGroup()\f1\i0\b0
+ returns, the group closing brace has 
+been read, and you\'d5ll need to pop a state. All global 
+token variables will still be set to the closing brace, 
+so you may only need to call \f1\i0\b0
+
+\i RTFRouteToken()\f1\i0\b0
+ to cause the state to be unstacked.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFExpandStyle (num)
+\par
+int\tab num;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Performs style expansion of the given style number, 
+or does nothing if there is no such style. The writer 
+should call this when it notices that the current token 
+is a style number indicator.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSetStream (stream)
+\par
+FILE\tab *stream;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Redirects the RTF reader to the given stream. This 
+should be called before any reading is done. The default 
+input stream is \f1\i0\b0
+
+\i stdin\f1\i0\b0
+. An alternative to \f1\i0\b0
+
+\i RTFSetStream()\f1\i0\b0
+ is to simply \f1\i0\b0
+
+\i freopen()\f1\i0\b0
+ the input file on \f1\i0\b0
+
+\i stdin\f1\i0\b0
+ (that\'d5s what all the sample translators do).
+\par
+{\sl-140\sa0\sb0\par}
+The input stream is \f1\i0\b0
+
+\i not\f1\i0\b0
+ modified by \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSetClassCallback (class, callback)
+\par
+int\tab \tab class;
+\par
+RTFFuncPtr\tab callback;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Installs a writer callback function for the given token 
+class. The first argument is a class number, the second 
+is the function to call when tokens from that class 
+are encountered in the input stream. This will cause 
+\f1\i0\b0
+\i RTFRouteToken()\f1\i0\b0
+ to invoke the callback when it encounters 
+a token in the class. If \f1\i0\b0
+
+\i callback\f1\i0\b0
+ is \f3\i0\b0
+NULL\f1\i0\b0
+ (which is the default for all classes), 
+tokens in the class are ignored, i.e., discarded.
+\par
+{\sl-140\sa0\sb0\par}
+The callback should take no arguments and return no 
+value. Within the callback, information about the current 
+token can be obtained from the global variables.
+\par
+{\sl-140\sa0\sb0\par}
+Installing a callback for the \f1\i0\b0
+
+\i rtfEOF\f1\i0\b0
+ \'d2class\'d3 is silly and has no effect.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+RTFFuncPtr
+\par
+RTFGetClassCallback (class)
+\par
+int\tab class;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns a pointer to the callback function for the 
+given token class, or \f3\i0\b0
+NULL\f1\i0\b0
+ if there isn\'d5t one.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSetDestinationCallback (dest, callback)
+\par
+int\tab \tab dest;
+\par
+RTFFuncPtr\tab callback;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Installs a callback function for the given destination 
+(\f1\i0\b0
+
+\i dest\f1\i0\b0
+ is a token minor number). When \f1\i0\b0
+
+\i RTFRouteToken()\f1\i0\b0
+ sees a token with class \f1\i0\b0
+
+\i rtfControl\f1\i0\b0
+ and major number \f1\i0\b0
+
+\i rtfDestination\f1\i0\b0
+, it checks whether there is a callback 
+for the destination indicated by the minor number. 
+If so, it invokes it. If \f1\i0\b0
+
+\i callback\f1\i0\b0
+ is \f3\i0\b0
+NULL\f1\i0\b0
+, the given destination is not treated 
+specially (the control class callback is invoked as 
+usual). By default, destination callbacks are installed 
+for the font table, color table, stylesheet, and information 
+and picture group.
+\par
+{\sl-140\sa0\sb0\par}
+The callback should take no arguments and return no 
+value. When the functon is invoked, the current token 
+will be the destination token following the destination\'d5s 
+initial opening brace \f3\i0\b0
+\{\f1\i0\b0
+. (For optional destinations, 
+the destination token follows the \f3\i0\b0
+\\*\f1\i0\b0
+ symbol.)
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+RTFFuncPtr
+\par
+RTFGetDestinationCallback (dest)
+\par
+int\tab dest;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns a pointer to the callback function for the 
+given token class, or \f3\i0\b0
+NULL\f1\i0\b0
+ if there isn\'d5t one.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+RTFStyle *
+\par
+RTFGetStyle (num)
+\par
+int\tab num;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns a pointer to the \f1\i0\b0
+
+\i RTFStyle\f1\i0\b0
+ structure for the given style number. The 
+\'d2Normal\'d3 style number is 0. Pass \'d01 to get 
+a pointer to the first style in the list. Styles are 
+not stored in any particular order.
+\par
+{\sl-140\sa0\sb0\par}
+Be sure to check the result; it might be \f3\i0\b0
+NULL\f1\i0\b0
+.
+\par
+{\sl-140\sa0\sb0\par}
+This function is meaningless if the default stylesheet 
+destination reader is overridden.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+RTFFont *
+\par
+RTFGetFont (num)
+\par
+int\tab num;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns a pointer to the \f1\i0\b0
+
+\i RTFFont\f1\i0\b0
+ structure for the given font number. Pass \'d01 
+to get a pointer to the first font in the list. Fonts 
+are not stored in any particular order.
+\par
+{\sl-140\sa0\sb0\par}
+Be sure to check the result; it might be \f3\i0\b0
+NULL\f1\i0\b0
+. In particular, 
+you might think that passing the number specified with 
+the \f3\i0\b0
+\\deff\f1\i0\b0
+ (default font) control symbol would always 
+yield a valid font structure, but that\'d5s not true. 
+The default font might not be listed in the font table.
+\par
+{\sl-140\sa0\sb0\par}
+This function is meaningless if the default font table 
+destination reader is overridden.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+RTFColor *
+\par
+RTFGetColor (num)
+\par
+int\tab num;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns a pointer to the \f1\i0\b0
+
+\i RTFColor\f1\i0\b0
+ structure for the given color number. Pass 
+\'d01 to get a pointer to the first color in the list. 
+Colors are not stored in any particular order. If the 
+color values in the entry are \'d01, the default color 
+should be used. The default color is translator-dependent.
+\par
+{\sl-140\sa0\sb0\par}
+Be sure to check the result; it might be \f3\i0\b0
+NULL\f1\i0\b0
+. I think 
+this means you should use the default color.
+\par
+{\sl-140\sa0\sb0\par}
+This function is meaningless if the default color table 
+destination reader is overridden.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+int
+\par
+RTFCheckCM (class, major)
+\par
+int\tab class, major;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns non-zero if \f1\i0\b0
+
+\i rtfClass\f1\i0\b0
+ and \f1\i0\b0
+
+\i rtfMajor\f1\i0\b0
+ are equal to \f1\i0\b0
+
+\i class\f1\i0\b0
+ and \f1\i0\b0
+
+\i major\f1\i0\b0
+, respectively, zero otherwise.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+int
+\par
+RTFCheckCMM (class, major, minor)
+\par
+int\tab class, major, minor;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns non-zero if \f1\i0\b0
+
+\i rtfClass\f1\i0\b0
+, \f1\i0\b0
+
+\i rtfMajor\f1\i0\b0
+ and \f1\i0\b0
+
+\i rtfMinor\f1\i0\b0
+ are equal to \f1\i0\b0
+
+\i class\f1\i0\b0
+, \f1\i0\b0
+
+\i major\f1\i0\b0
+ and \f1\i0\b0
+
+\i minor\f1\i0\b0
+, respectively, zero otherwise.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+int
+\par
+RTFCheckMM (major, minor)
+\par
+int\tab major, minor;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns non-zero if \f1\i0\b0
+
+\i rtfMajor\f1\i0\b0
+ and \f1\i0\b0
+
+\i rtfMinor\f1\i0\b0
+ are equal to \f1\i0\b0
+
+\i major\f1\i0\b0
+ and \f1\i0\b0
+
+\i minor\f1\i0\b0
+, respectively, zero otherwise.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+char *
+\par
+RTFAlloc (size)
+\par
+int\tab size;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns a pointer to a block of memory \f1\i0\b0
+
+\i size\f1\i0\b0
+ bytes long, or \f3\i0\b0
+NULL\f1\i0\b0
+ if insufficient memory was 
+available.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+char *
+\par
+RTFStrSave (s)
+\par
+char\tab *s;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Allocates a block of memory big enough for a copy of 
+the given string (including terminating null byte), 
+copies the string into it, and returns a pointer to 
+the copy. Returns \f3\i0\b0
+NULL\f1\i0\b0
+ if insufficient memory was available.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFFree (p)
+\par
+char\tab *p;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Frees the block of memory pointed to by \f1\i0\b0
+
+\i p\f1\i0\b0
+, which should have been allocated by \f1\i0\b0
+
+\i RTFAlloc()\f1\i0\b0
+ or \f1\i0\b0
+
+\i RTFStrSave()\f1\i0\b0
+. It is safe to pass \f3\i0\b0
+NULL\f1\i0\b0
+ to this routine.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFCharToHex (c)
+\par
+char\tab c;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns 0..15 for the characters \'d40\'d4..\'d49\'d4,\'d4a\'d4..\'d4f\'d4.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFHexToChar (i)
+\par
+int\tab i;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns the characters \'d40\'d4..\'d49\'d4,\'d4a\'d4..\'d4f\'d4 
+for 0..15.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+int
+\par
+RTFReadCharSetMap (file, csId)
+\par
+char\tab *file;
+\par
+int\tab csId;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Reads a charset map file into the charset map indicated 
+by \f1\i0\b0
+
+\i csId\f1\i0\b0
+, which should be either \f1\i0\b0
+
+\i rtfCSGeneral\f1\i0\b0
+ or \f1\i0\b0
+
+\i rtfCSSymbol\f1\i0\b0
+. Returns non-zero for success, zero otherwise.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSetCharSetMap (file, csId)
+\par
+char\tab *file;
+\par
+int\tab csId;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Specify the name of the file to be read for the charset 
+map indicated by \f1\i0\b0
+
+\i csId\f1\i0\b0
+ (which should be either \f1\i0\b0
+
+\i rtfCSGeneral\f1\i0\b0
+ or \f1\i0\b0
+
+\i rtfCSSymbol\f1\i0\b0
+) when auto-charset-file reading is done. 
+This can be used to override the default charset map 
+names. \f1\i0\b0
+
+\i RTFSetCharSetMap()\f1\i0\b0
+ should be called after \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+ but before you begin reading any input.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSetCharSet (csId)
+\par
+int\tab csId;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Switches to the charset map given by \f1\i0\b0
+
+\i csId\f1\i0\b0
+, which should be either \f1\i0\b0
+
+\i rtfCSGeneral\f1\i0\b0
+ or \f1\i0\b0
+
+\i rtfCSSymbol\f1\i0\b0
+.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+int
+\par
+RTFGetCharSet ()
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Returns the id of the current charset map, either \f1\i0\b0
+
+\i rtfCSGeneral\f1\i0\b0
+ or \f1\i0\b0
+
+\i rtfCSSymbol\f1\i0\b0
+.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+int
+\par
+RTFMapChar (c)
+\par
+int\tab c;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Maps in input character onto a standard character code.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+int
+\par
+RTFStdCharCode (name)
+\par
+char\tab *name;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Given a standard character name, returns the standard 
+code corresponding to the name, or \'d01 if the name 
+is unknown.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+char *
+\par
+RTFStdCharName (code)
+\par
+int\tab code;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Given a standard character code, returns a string pointing 
+to the standard character name, or \f3\i0\b0
+NULL\f1\i0\b0
+ if the code 
+is unknown.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+int
+\par
+RTFReadOutputMap (file, outMap, reinit)
+\par
+char\tab *file;
+\par
+char\tab *outMap[];
+\par
+int\tab reinit;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+Reads an output map from the named file into \f1\i0\b0
+
+\i outMap\f1\i0\b0
+. If \f1\i0\b0
+
+\i reinit\f1\i0\b0
+ is non-zero, the map is cleared first. See the 
+document \f1\i0\b0
+
+\i RTF Tools Character Mapping\f1\i0\b0
+ for further details.
+\par
+{\sl-140\sa0\sb0\par}
+Generally, the output map needs to be read only once.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSetInputName (name)
+\par
+char\tab *name;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+void
+\par
+RTFSetOutputName (name)
+\par
+char\tab *name;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+These functions tell the RTF library the input or output 
+file names. They\'d5re called by driver code so that 
+writer code can determine the names by calling \f1\i0\b0
+
+\i RTFGetInputName()\f1\i0\b0
+ and \f1\i0\b0
+
+\i RTFGetOutputName()\f1\i0\b0
+. Since \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+ sets the names to \f3\i0\b0
+NULL\f1\i0\b0
+, the driver should 
+set the names after calling \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+ but before calling the writer to tell it 
+to set up for a new file.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+char *
+\par
+RTFGetInputName ()
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+char *
+\par
+RTFGetOutputName ()
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+These functions return pointers to the current input 
+and output file names, assuming the driver has set 
+them up. The caller should make a copy of the strings 
+returned if it wants to modify them.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFMsg (args ...)
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+This function generates a diagnostic message. It takes 
+\f1\i0\b0
+\i printf()\f1\i0\b0
+-like arguments.
+\par
+{\sl-140\sa0\sb0\par}
+See the description of \f1\i0\b0
+
+\i RTFSetMsgProc()\f1\i0\b0
+.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFPanic (args ...)
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+This function generates an error message and terminates 
+the process. It takes \f1\i0\b0
+
+\i printf()\f1\i0\b0
+-like arguments.
+\par
+{\sl-140\sa0\sb0\par}
+See the description of \f1\i0\b0
+
+\i RTFSetPanicProc()\f1\i0\b0
+.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+FILE *
+\par
+RTFOpenLibFile (name, mode)
+\par
+char\tab *name;
+\par
+char\tab *mode;
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+This function opens a library file and returns a \f3\i0\b0
+FILE\f1\i0\b0
+ 
+pointer to it, or \f3\i0\b0
+NULL\f1\i0\b0
+ if the file could not be opened.
+\par
+{\sl-140\sa0\sb0\par}
+See the description of \f1\i0\b0
+
+\i RTFSetOpenLibFileProc()\f1\i0\b0
+.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSetMsgProc (proc)
+\par
+void\tab (*proc) ();
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+This function installs a function for use by \f1\i0\b0
+
+\i RTFMsg()\f1\i0\b0
+; see \f1\i0\b0
+
+\i RTF Tools Translator Architecture\f1\i0\b0
+ for details.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSetPanicProc (proc)
+\par
+void\tab (*proc) ();
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+This function installs a function for use by \f1\i0\b0
+
+\i RTFPanic()\f1\i0\b0
+; see \f1\i0\b0
+
+\i RTF Tools Translator Architecture\f1\i0\b0
+ for details.
+\par
+\fs20 \f3\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\f3\i0\b0
+\pard \ql \sl240 
+\tx1152 
+void
+\par
+RTFSetOpenLibFileProc (proc)
+\par
+FILE\tab *(*proc) ();
+\par
+\fs24 \f1\i0\b0
+\fs20 \f3\i0\b0
+\fs24 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\pard \qj \li360 \sl280 
+\tx320 \tx640 \tx960 \tx1280 \tx1600 \tx1920 \tx2240 \tx2560 \tx2880 \tx3200 \tx3520 \tx3840 \tx4160 \tx4480 \tx4800 \tx5120 \tx5440 \tx5760 \tx6080 \tx6400 
+This function installs a function that the library 
+will use to open library files. The driver must call 
+this when it starts up or \f1\i0\b0
+
+\i RTFOpenLibFile()\f1\i0\b0
+ will always return \f3\i0\b0
+NULL\f1\i0\b0
+. The function 
+should take a library file basename and open mode, 
+open the file, and return the \f3\i0\b0
+FILE\f1\i0\b0
+ pointer, or \f3\i0\b0
+NULL\f1\i0\b0
+ 
+if the file could not be found and opened.
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 \fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Distribution Availability\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+This software may be redistributed without restriction 
+and used for any purpose whatsoever.
+\par
+{\sl-120\sa0\sb0\par}
+The RTF Tools distribution is available for anonymous 
+\f1\i0\b0
+\i ftp\f1\i0\b0
+ access on \f1\i0\b0
+
+\i ftp.primate.wisc.edu\f1\i0\b0
+. Look in the \f1\i0\b0
+
+\i /pub/RTF\f1\i0\b0
+ directory. Updates appear there as they become 
+available.
+\par
+{\sl-120\sa0\sb0\par}
+A version of the RTF specification is available in 
+this directory, as a binhex\'d5ed Word for Macintosh 
+document and in RTF and PostScript formats.
+\par
+{\sl-120\sa0\sb0\par}
+The software and documentation may also be accessed 
+using gopher by connecting to \f1\i0\b0
+
+\i gopher.primate.wisc.edu\f1\i0\b0
+ or using World Wide Web by 
+connecting to \f1\i0\b0
+
+\i www.primate.wisc.edu\f1\i0\b0
+ using the URL \f1\i0\b0
+
+\i http://www.primate.wisc.edu/\f1\i0\b0
+. In both cases, look under 
+\'d2Primate Center Software Archives\'d3.
+\par
+{\sl-120\sa0\sb0\par}
+If you do not have Internet access, send requests to 
+\f1\i0\b0
+\i software@primate.wisc.edu\f1\i0\b0
+. Bug reports and questions 
+should be sent to this address as well.
+\par
+{\sl-120\sa0\sb0\par}
+If you use this software as the basis for a translater 
+not included in the current collection, please send 
+me a description that indicates how it may be obtained 
+and I\'d5ll add the description to the archive site.
+\par
+}

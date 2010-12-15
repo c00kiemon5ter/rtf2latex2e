@@ -1,0 +1,610 @@
+{\rtf1\mac\deff1
+{\fonttbl
+{\f6\fnil Bookman;}
+{\f5\fnil Palatino;}
+{\f4\fnil Symbol;}
+{\f3\fnil Courier;}
+{\f2\fnil Helvetica;}
+{\f1\fnil Times;}
+}
+\paperh15840 \paperw12240
+\margl1440 \margr2160 \pard \f1\i0\b0
+\fs20 \fs16 \fs20 \fs24 \f1\i0\b0
+\b \pard \qc \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+RTF Tools
+\par
+{\sl-56\sa0\sb0\par}
+Character Mapping
+\par
+\f1\i0\b0
+\i {\sl-280\sa0\sb0\par}
+\fs20 Paul DuBois
+\par
+dubois@primate.wisc.edu
+\par
+\f1\i0\b0
+{\sl-140\sa0\sb0\par}
+Wisconsin Regional Primate Research Center
+\par
+Revision date:  5 April 1994
+\par
+{\sl-240\sa0\sb0\par}
+\f1\i0\b0
+\b \pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+1. Introduction
+\par
+\f1\i0\b0
+{\sl-120\sa0\sb0\par}
+Text characters in an RTF file may be specified as 
+literal characters or using \\'\f1\i0\b0
+
+\i xx\f1\i0\b0
+ notation, where \f1\i0\b0
+
+\i xx\f1\i0\b0
+ is the hex value of the character. RTF files also 
+contain a control word that specifies the character 
+set that\'d5s used within the document and governs 
+the interpretation of character values. The charset 
+control words are:
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \ql \li720 \sl240 
+\tx2160 
+\\ansi\tab ANSI (default)
+\par
+\\mac\tab Apple Macintosh
+\par
+\\pc\tab IBM PC
+\par
+\\pca\tab IBM PC page 850, used by IBM Personal System/2
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Although the four charsets don\'d5t appear to differ 
+for characters in the ASCII range (below 128), they 
+differ considerably above the ASCII range (128\'d0255). 
+For example, the ANSI, Macintosh, and PC charsets represent 
+the degree sign (\'d2\'a1\'d3) as \\'b0, \\'a1, and 
+\\'f8. Furthermore, even for a given charset, character 
+values in the Symbol font represent different characters 
+than they do generally. For example \'d2a\'d3 in Symbol 
+font is \'d2{\f4\i0\b0
+a}\'d3.
+\par
+{\sl-120\sa0\sb0\par}
+The RTF Tools distribution uses a translation model 
+that divides translation effort between reader code 
+that tokenizes the RTF input stream and writer code 
+that decides what to write based on the current token. 
+The reader is common to all translators; writer code 
+differs on a per-translator basis. In order to free 
+writer code from charset dependencies, the reader performs 
+input character mapping onto a charset-independent 
+set of character codes. This makes it unnecessary to 
+duplicate charset-dependent decisions in each writer.
+\par
+{\sl-240\sa0\sb0\par}
+\f1\i0\b0
+\b 2. Character Translation
+\par
+\f1\i0\b0
+{\sl-120\sa0\sb0\par}
+Input RTF characters are mapped to output sequences 
+like this:
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 
+\'a5\tab When a text character (i.e., a token in the 
+\f1\i0\b0
+\i rtfText\f1\i0\b0
+ class) is read, the reader maps it onto a \'d2standard\'d3 
+character code, using a translation table selected 
+by taking into account the charset used by the input 
+file and whether or not the font is Symbol. \f1\i0\b0
+
+\i rtfMajor\f1\i0\b0
+ and \f1\i0\b0
+
+\i rtfMinor\f1\i0\b0
+ are set to the input character value and the 
+standard character code, respectively. If there is 
+no entry for the RTF character in the translation table, 
+\f1\i0\b0
+\i rtfMinor\f1\i0\b0
+ is set to \f1\i0\b0
+
+\i rtfSC_nothing\f1\i0\b0
+ (0).
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab At output time, the writer maps the standard 
+character code to an appropriate output sequence. Typically 
+the writer does this by consulting an output map that 
+specifies the appropriate output sequence for each 
+standard character code.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Using this method, the writer has access to the original 
+input character if it needs it for some reason (\f1\i0\b0
+
+\i rtfMajor\f1\i0\b0
+), but also can work with a charset-independent 
+representaton of the character (\f1\i0\b0
+
+\i rtfMinor\f1\i0\b0
+).
+\par
+{\sl-240\sa0\sb0\par}
+\f1\i0\b0
+\b 2.1. Standard Character Representation
+\par
+\f1\i0\b0
+{\sl-120\sa0\sb0\par}
+Charset maps and output maps are represented as simple 
+text files that are read when a translator runs. In 
+map files, the standard characters are represented 
+by names patterned after those used in Adobe Font Metric 
+(AFM) files. For example, \'d2space\'d3, \'d2quotedblleft\'d3, 
+and \'d2bullet\'d3 represent the space, left double 
+quote, and bullet characters. When map files are read 
+in, the standard names are converted to integers in 
+the range 0..\f1\i0\b0
+
+\i rtfSC_MaxChar\f1\i0\b0
+\'d01, where \f1\i0\b0
+
+\i rtfSC_MaxChar\f1\i0\b0
+ is the number of standard characters 
+recognized.
+\par
+{\sl-120\sa0\sb0\par}
+The set of standard characters contains characters 
+represented by the charsets. It also contains characters 
+represented by certain RTF \'d2special-character\'d3 
+control words, such as \'d2nobrkspace\'d3 for the unbreakable-space 
+control word \'d2\\~\'d3.
+\par
+{\sl-120\sa0\sb0\par}
+By keeping charset and output sequence maps in files 
+instead of compiling them in, translations can be changed 
+or fixed by editing text files rather than by recompiling 
+programs.
+\par
+{\sl-240\sa0\sb0\par}
+\f1\i0\b0
+\b 2.2. Map Locations
+\par
+\f1\i0\b0
+{\sl-120\sa0\sb0\par}
+The charset map files are found within the distribution 
+in the \f1\i0\b0
+
+\i LIBSRC\f1\i0\b0
+ directory and are installed in \f1\i0\b0
+
+\i LIBDIR\f1\i0\b0
+. Individual translators provide output maps 
+in their own source directory and install the maps 
+in \f1\i0\b0
+
+\i LIBDIR\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+The map reading functions \f1\i0\b0
+
+\i RTFReadCharsetMap()\f1\i0\b0
+ and \f1\i0\b0
+
+\i RTFReadOutputMap()\f1\i0\b0
+ look for charset and output map 
+files in the current directory before looking in \f1\i0\b0
+
+\i LIBDIR\f1\i0\b0
+. This allows users to copy maps from \f1\i0\b0
+
+\i LIBDIR\f1\i0\b0
+ into their current directory, modify the copies, 
+and have the translators use the modified copies instead.
+\par
+{\sl-240\sa0\sb0\par}
+\f1\i0\b0
+\b 2.3. Charset Map Format
+\par
+\f1\i0\b0
+{\sl-120\sa0\sb0\par}
+General and symbol charset maps are stored in the text 
+files \f1\i0\b0
+
+\i ansi-gen\f1\i0\b0
+, \f1\i0\b0
+
+\i ansi-sym\f1\i0\b0
+, \f1\i0\b0
+
+\i mac-gen\f1\i0\b0
+, \f1\i0\b0
+
+\i mac-sym\f1\i0\b0
+, \f1\i0\b0
+
+\i pc-gen\f1\i0\b0
+, \f1\i0\b0
+
+\i pc-sym\f1\i0\b0
+, \f1\i0\b0
+
+\i pca-gen\f1\i0\b0
+, and \f1\i0\b0
+
+\i pca-sym\f1\i0\b0
+. Each line of a charset file associates an 
+RTF character value (field 2) with the standard character 
+name to which the RTF character corresponds (field 
+1). Here\'d5s a sample from \f1\i0\b0
+
+\i ansi-gen\f1\i0\b0
+:
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \ql \li720 \sl240 
+\tx2880 
+parenleft\tab (
+\par
+parenright\tab )
+\par
+space\tab \tab " "
+\par
+quotedbl\tab '"'
+\par
+quoteright\tab "'"
+\par
+quoteleft\tab "`"
+\par
+a\tab \tab a
+\par
+b\tab \tab b
+\par
+c\tab \tab c
+\par
+bullet\tab \tab 0x95
+\par
+emdash\tab \tab 0x96
+\par
+endash\tab \tab 0x97
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Character values may be given as a single character 
+(in which case the ASCII value is used), or as a hex 
+number 0x\f1\i0\b0
+
+\i yy\f1\i0\b0
+. Single or double quotes may be used to quote values 
+containing whitespace or quotes (e.g., use single quotes 
+to quote a double-quote).
+\par
+{\sl-120\sa0\sb0\par}
+Lines with a \'d2#\'d3 in column one are taken as comments. 
+Comments and blank lines are ignored.
+\par
+{\sl-240\sa0\sb0\par}
+\f1\i0\b0
+\b 2.4. Output Sequence Map Format
+\par
+\f1\i0\b0
+{\sl-120\sa0\sb0\par}
+Writers can encode the map associating standard character 
+codes and output sequences any way they want. However, 
+a map can be stored in a text file and read easily 
+with \f1\i0\b0
+
+\i RTFReadOutputMap()\f1\i0\b0
+ if the map file uses a format such 
+that: (i) field 1 is the standard character name, just 
+as in the charset maps; (ii) field 2 is the output 
+sequence to produce for the character named in field 
+1; (iii) comments are specified as in charset maps.
+\par
+{\sl-120\sa0\sb0\par}
+Here\'d5s part of the \f1\i0\b0
+
+\i groff-map\f1\i0\b0
+ file used by \f1\i0\b0
+
+\i rtf2troff\f1\i0\b0
+ to produce output for \f1\i0\b0
+
+\i groff\f1\i0\b0
+:
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \ql \li720 \sl240 
+\tx2880 
+a\tab \tab a
+\par
+b\tab \tab b
+\par
+c\tab \tab c
+\par
+quotedblleft\tab "``"
+\par
+quotedblright\tab "''"
+\par
+bullet\tab \tab \\(bu
+\par
+emdash\tab \tab \\(em
+\par
+AE\tab \tab \\(AE
+\par
+ae\tab \tab \\(ae
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+To read an output file, declare an array of character 
+pointers to hold the output sequences and call \f1\i0\b0
+
+\i RTFReadOutputMap()\f1\i0\b0
+:
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \ql \li720 \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+char\tab *outMap[rtfSC_MaxChar];
+\par
+{\sl-240\sa0\sb0\par}
+if (RTFReadOutputMap (outputMapName, outMap, 1) == 
+0)
+\par
+\tab RTFPanic ("Cannot read output map %sn", outputMapName);
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Like \f1\i0\b0
+
+\i RTFReadCharSet()\f1\i0\b0
+, \f1\i0\b0
+
+\i RTFReadOutputMap()\f1\i0\b0
+ looks first in the current directory 
+and then \f1\i0\b0
+
+\i LIBDIR\f1\i0\b0
+ for the file (unless the file is specified as 
+an absolute pathname).
+\par
+{\sl-120\sa0\sb0\par}
+The last argument to \f1\i0\b0
+
+\i RTFReadOutputMap()\f1\i0\b0
+ is 1 or 0, depending on whether 
+or not you want the map to be initialized before the 
+file is read. (It is sometimes useful to construct 
+a map from several sources, in which case you initialize 
+the map only for the first file read, not the second 
+and subsequent ones. See \f1\i0\b0
+
+\i rtf2troff\f1\i0\b0
+ for an example.)
+\par
+{\sl-120\sa0\sb0\par}
+To convert a standard character code to an output sequence, 
+use the code as in index into the output map array:
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \ql \li720 \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+seq = outMap[rtfMinor];
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Output mapping varies from simple to relatively complex. 
+\f1\i0\b0
+\i rtf2text\f1\i0\b0
+ uses a single output map, \f1\i0\b0
+
+\i text-map.\f1\i0\b0
+ For \f1\i0\b0
+
+\i rtf2troff\f1\i0\b0
+, it\'d5s not so simple. \f1\i0\b0
+
+\i rtf2troff\f1\i0\b0
+ selects an output map that\'d5s specific 
+to the version of \f1\i0\b0
+
+\i troff\f1\i0\b0
+ you want output for (\f1\i0\b0
+
+\i xroff-map\f1\i0\b0
+, \f1\i0\b0
+
+\i groff-map\f1\i0\b0
+, etc.). This is because special characters 
+are typically represented in \f1\i0\b0
+
+\i troff\f1\i0\b0
+ by escape sequences (such as \'d2\\(de\'d3 for 
+the degree symbol), but different versions of \f1\i0\b0
+
+\i troff\f1\i0\b0
+ support differing sets of escape sequences. If 
+\f1\i0\b0
+\i rtf2troff\f1\i0\b0
+ can\'d5t find a map for your version of \f1\i0\b0
+
+\i troff\f1\i0\b0
+, it reads a \'d2generic\'d3 \f1\i0\b0
+
+\i troff\f1\i0\b0
+ map.
+\par
+{\sl-120\sa0\sb0\par}
+If an \f1\i0\b0
+
+\i \'d0m\f1\i0\b0
+ argument is given on the command line, \f1\i0\b0
+
+\i rtf2troff\f1\i0\b0
+ also looks for an output map corresponding 
+to the named macro package and combines it with the 
+\f1\i0\b0
+\i troff\f1\i0\b0
+-version map. This is because macro packages sometimes 
+provide escape sequences of their own to support additional 
+special characters.
+\par
+{\sl-240\sa0\sb0\par}
+\f1\i0\b0
+\b 3. Dealing with Missing Map Entries
+\par
+\f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\b Problem 1:\f1\i0\b0
+ The charset maps provided in the distribution 
+are fairly complete. However, it is still possible 
+that a map will have no entry for a given input character. 
+In this case, the reader sets \f1\i0\b0
+
+\i rtfMinor\f1\i0\b0
+ to \f1\i0\b0
+
+\i rtfSC_nothing\f1\i0\b0
+. This is a legal character code, and 
+you can treat it various ways. One approach is to put 
+an entry for the name \'d2nothing\'d3 in your output 
+map, e.g.,
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \ql \li720 \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+nothing\tab "[[CHARACTER DROPPED]]"
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+This way, when the writer translates characters to 
+output sequences, it need make no special effort for 
+characters that are missing from the charset map, and 
+an obvious marker appears in the output. However, this 
+approach doesn\'d5t provide any clue about what the 
+character was.
+\par
+{\sl-120\sa0\sb0\par}
+Alternatively, you can try to show some representation 
+of missing characters in the output:
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \ql \li720 \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+if (rtfMinor != rtfSC_nothing)
+\par
+\tab /* print normal output sequence here */
+\par
+else if (rtfMajor < 128)\tab /* in ASCII range */
+\par
+\tab printf ("[[%c]]", rtfMajor);
+\par
+else\tab \tab \tab \tab /* non-ASCII, print hex value 
+*/
+\par
+\tab printf ("[[\\\\'%02x]]", rtfMajor)
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\b \pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Problem 2:\f1\i0\b0
+ If there is no entry for a standard character 
+code in the output map, the output sequence will be 
+NULL. One way to deal with this is to print the standard 
+character name:
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\pard \ql \li720 \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+char *seq;
+\par
+{\sl-240\sa0\sb0\par}
+seq = outMap[rtfMinor];
+\par
+if (seq != (char *) NULL)
+\par
+\tab fputs (seq, stdout);
+\par
+else
+\par
+\tab printf ("[[%s]]", RTFStdCharName (rtfMinor));
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-240\sa0\sb0\par}
+\f1\i0\b0
+\b \pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+4. Additional Charsets
+\par
+\f1\i0\b0
+{\sl-120\sa0\sb0\par}
+The mapping mechanism described here handles the four 
+existing charsets uniformly. If/when the RTF specification 
+is modified to allow additional charsets, it should 
+be easy to provide support for them with no change 
+to writer code:
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li500 \fi-500 \sl240 
+\tx1000 
+\'a5\tab Add a #define for the charset control word 
+to \f1\i0\b0
+
+\i rtf.h\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab Add an entry for the control word to the \f1\i0\b0
+
+\i rtfKey\f1\i0\b0
+[] array in \f1\i0\b0
+
+\i reader.c\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab Create and install general and symbol charset 
+map files.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+With those changes made, translators can simply be 
+recompiled and should automatically work for RTF files 
+using the new charset.
+\par
+}

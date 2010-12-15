@@ -11,7 +11,7 @@
 # include       <stdlib.h>
 # include       <time.h>
 # include       "rtf.h"
-# include       "tokenscan.h"
+# include       "rtfprep/tokenscan.h"
 # include       "rtf2LaTeX2e.h"
 # include       "jpeg2eps.h"
 

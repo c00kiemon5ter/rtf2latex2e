@@ -1,0 +1,1080 @@
+major	rtfVersion
+
+minor	rtfVersionNum		rtf
+
+major	rtfDefFont
+
+minor	rtfDefFontNum		deff
+
+/*
+ * Charset names
+ */
+
+major	rtfCharSet
+
+minor	rtfMacCharSet		mac
+minor	rtfAnsiCharSet		ansi
+minor	rtfPcCharSet		pc
+minor	rtfPcaCharSet		pca
+
+
+/*
+ * Destinations - minor numbers must be zero-based and sequential
+ * rtfMinDestination and rtfMaxDestinations are set to the lowest
+ * and highest destination numbers.  Note that the particular macros
+ * to which they are equated may change if you add destinations!
+ */
+
+major	rtfDestination
+
+/* lowest destination number */
+# define	rtfMinDestination	(rtfFontTbl)
+
+minor	rtfFontTbl		fonttbl
+minor	rtfFontAltName		falt
+minor	rtfEmbeddedFont		fontemb
+minor	rtfFontFile		fontfile
+minor	rtfFileTbl		filetbl
+minor	rtfFileInfo		file
+minor	rtfColorTbl		colortbl
+minor	rtfStyleSheet		stylesheet
+minor	rtfKeyCode		keycode
+minor	rtfRevisionTbl		revtbl
+minor	rtfInfo			info
+minor	rtfITitle		title
+minor	rtfISubject		subject
+minor	rtfIAuthor		author
+minor	rtfIOperator		operator
+minor	rtfIKeywords		keywords
+minor	rtfIComment		comment
+minor	rtfIDoccomm		doccomm
+/* \verscomm may not exist -- was seen in earlier spec version */
+minor	rtfIVerscomm		verscomm
+minor	rtfICreateTime		creatim
+minor	rtfIRevisionTime	revtim
+minor	rtfIPrintTime		printim
+minor	rtfIBackupTime		buptim
+minor	rtfNextFile		nextfile
+minor	rtfTemplate		template
+minor	rtfFNSep		ftnsep
+minor	rtfFNContSep		ftnsepc
+minor	rtfFNContNotice		ftncn
+minor	rtfENSep		aftnsep
+minor	rtfENContSep		aftnsepc
+minor	rtfENContNotice		aftncn
+minor	rtfParNumLevelStyle	pnseclvl
+minor	rtfHeader		header
+minor	rtfFooter		footer
+minor	rtfHeaderLeft		headerl
+minor	rtfHeaderRight		headerr
+minor	rtfHeaderFirst		headerf
+minor	rtfFooterLeft		footerl
+minor	rtfFooterRight		footerr
+minor	rtfFooterFirst		footerf
+minor	rtfParNumText		pntext
+minor	rtfParNumbering		pn
+minor	rtfParNumTextAfter	pntxta
+minor	rtfParNumTextBefore	pntxtb
+minor	rtfBookmarkStart	bkmkstart
+minor	rtfBookmarkEnd		bkmkend
+minor	rtfPict			pict
+minor	rtfObject		object
+minor	rtfObjClass		objclass
+minor	rtfObjName		objname
+minor	rtfObjTime		objtime
+minor	rtfObjData		objdata
+minor	rtfObjAlias		objalias
+minor	rtfObjSection		objsect
+minor	rtfObjResult		result
+/* \objitem and \objtopic aren't documented in the spec! */
+minor	rtfObjItem		objitem
+minor	rtfObjTopic		objtopic
+minor	rtfDrawObject		do
+minor	rtfFootnote		footnote
+minor	rtfAnnotRefStart	atrfstart
+minor	rtfAnnotRefEnd		atrfend
+minor	rtfAnnotID		atnid
+minor	rtfAnnotAuthor		atnauthor
+minor	rtfAnnotation		annotation
+minor	rtfAnnotRef		atnref
+minor	rtfAnnotTime		atntime
+minor	rtfAnnotIcon		atnicn
+minor	rtfField		field
+minor	rtfFieldInst		fldinst
+minor	rtfFieldResult		fldrslt
+minor	rtfDataField		datafield
+minor	rtfIndex		xe
+minor	rtfIndexText		txe
+minor	rtfIndexRange		rxe
+minor	rtfTOC			tc
+/* NeXT-specific -- non-standard */
+minor	rtfNeXTGraphic		NeXTGraphic
+/* NeXT-specific -- non-standard */
+minor	rtfNeXTHelpMarker	NeXTHelpMarker
+/* NeXT-specific -- non-standard */
+minor	rtfNeXTHelpLink	NeXTHelpLink
+minor	rtfDrawTextBoxText	dptxbxtext
+/* added by Ujwal Sathyam */
+minor	rtfSp			sp
+minor	rtfWord97Object		shp 
+minor	rtfWord97ObjectGroup	shpgrp
+minor	rtfWord97Picture	shppict
+minor	rtfWord97NoPicture	nonshppict
+minor	rtfDocvar		docvar
+minor	rtfUpr			upr
+minor	rtfFchars		fchars
+minor	rtfLchars		lchars
+minor	rtfPgdsctbl		pgdsctbl			
+minor	rtfTOCN			tcn
+
+comment rtfMaxDestination should be set equal to
+comment the final destination symbol.
+comment
+/* highest destination number */
+# define	rtfMaxDestination	(rtfTOCN)
+
+/* number of destinations */
+# define	rtfNumDestinations	(rtfMaxDestination - rtfMinDestination + 1)
+
+/*
+ * Font families
+ */
+
+major	rtfFontFamily
+
+minor	rtfFFNil		fnil
+minor	rtfFFRoman		froman
+minor	rtfFFSwiss		fswiss
+minor	rtfFFModern		fmodern
+minor	rtfFFScript		fscript
+minor	rtfFFDecor		fdecor
+minor	rtfFFTech		ftech
+minor	rtfFFBidirectional	fbidi
+
+/*
+ * Font attributes
+ */
+
+major	rtfFontAttr
+
+minor	rtfFontCharSet		fcharset
+minor	rtfFontPitch		fprq
+minor	rtfFontCodePage		cpg
+minor	rtfFTypeNil		ftnil
+minor	rtfFTypeTrueType	fttruetype
+minor	rtfAnsiCodePage		ansicpg
+
+/*
+ * Color names
+ */
+
+major	rtfColorName
+
+minor	rtfRed			red
+minor	rtfGreen		green
+minor	rtfBlue			blue
+
+/*
+ * File table attributes
+ */
+
+major	rtfFileAttr
+
+minor	rtfFileNum		fid
+minor	rtfFileRelPath		frelative
+minor	rtfFileOSNum		fosnum
+
+/*
+ * File sources
+ */
+
+major	rtfFileSource
+
+minor	rtfSrcMacintosh	fvalidmac
+minor	rtfSrcDOS		fvaliddos
+minor	rtfSrcNTFS		fvalidntfs
+minor	rtfSrcHPFS		fvalidhpfs
+minor	rtfSrcNetwork		fnetwork
+
+/*
+ * Style attributes
+ */
+
+major	rtfStyleAttr
+
+minor	rtfAdditive		additive
+minor	rtfBasedOn		sbasedon
+minor	rtfNext			snext
+
+/*
+ * Key code attributes
+ */
+
+major	rtfKeyCodeAttr
+
+minor	rtfAltKey		alt
+minor	rtfShiftKey		shift
+minor	rtfControlKey		ctrl
+minor	rtfFunctionKey		fn
+
+/*
+ * Document formatting attributes
+ */
+
+major	rtfDocAttr
+
+minor	rtfDefTab		deftab
+minor	rtfHyphHotZone		hyphhotz
+minor	rtfHyphConsecLines	hyphconsec
+minor	rtfHyphCaps		hyphcaps
+minor	rtfHyphAuto		hyphauto
+minor	rtfLineStart		linestart
+minor	rtfFracWidth		fracwidth
+/*
+ * \makeback was given in old version of spec, it's now
+ * listed as \makebackup.  Accept both.
+ */
+minor	rtfMakeBackup		makeback makebackup
+minor	rtfRTFDefault		defformat
+minor	rtfPSOverlay		psover
+minor	rtfDocTemplate		doctemp
+minor	rtfDefLanguage		deflang
+
+minor	rtfFENoteType		fet
+minor	rtfFNoteEndSect		endnotes
+minor	rtfFNoteEndDoc		enddoc
+minor	rtfFNoteText		ftntj
+minor	rtfFNoteBottom		ftnbj
+minor	rtfENoteEndSect		aendnotes
+minor	rtfENoteEndDoc		aenddoc
+minor	rtfENoteText		aftntj
+minor	rtfENoteBottom		aftnbj
+minor	rtfFNoteStart		ftnstart
+minor	rtfENoteStart		aftnstart
+minor	rtfFNoteRestartPage	ftnrstpg
+minor	rtfFNoteRestart		ftnrestart
+minor	rtfFNoteRestartCont	ftnrstcont
+minor	rtfENoteRestart		aftnrestart
+minor	rtfENoteRestartCont	aftnrstcont
+minor	rtfFNoteNumArabic	ftnnar
+minor	rtfFNoteNumLLetter	ftnnalc
+minor	rtfFNoteNumULetter	ftnnauc
+minor	rtfFNoteNumLRoman	ftnnrlc
+minor	rtfFNoteNumURoman	ftnnruc
+minor	rtfFNoteNumChicago	ftnnchi
+minor	rtfENoteNumArabic	aftnnar
+minor	rtfENoteNumLLetter	aftnnalc
+minor	rtfENoteNumULetter	aftnnauc
+minor	rtfENoteNumLRoman	aftnnrlc
+minor	rtfENoteNumURoman	aftnnruc
+minor	rtfENoteNumChicago	aftnnchi
+
+minor	rtfPaperWidth		paperw
+minor	rtfPaperHeight		paperh
+minor	rtfPaperSize		psz
+minor	rtfLeftMargin		margl
+minor	rtfRightMargin		margr
+minor	rtfTopMargin		margt
+minor	rtfBottomMargin		margb
+minor	rtfFacingPage		facingp
+minor	rtfGutterWid		gutter
+minor	rtfMirrorMargin		margmirror
+minor	rtfLandscape		landscape
+minor	rtfPageStart		pgnstart
+minor	rtfWidowCtrl		widowctrl
+
+minor	rtfLinkStyles		linkstyles
+
+minor	rtfNoAutoTabIndent	notabind
+minor	rtfWrapSpaces		wraptrsp
+minor	rtfPrintColorsBlack	prcolbl
+minor	rtfNoExtraSpaceRL	noextrasprl
+minor	rtfNoColumnBalance	nocolbal
+minor	rtfCvtMailMergeQuote	cvmme
+minor	rtfSuppressTopSpace	sprstsp
+minor	rtfSuppressPreParSpace	sprsspbf
+minor	rtfCombineTblBorders	otblrul
+minor	rtfTranspMetafiles	transmf
+minor	rtfSwapBorders		swpbdr
+minor	rtfShowHardBreaks	brkfrm
+
+minor	rtfFormProtected	formprot
+minor	rtfAllProtected		allprot
+minor	rtfFormShading		formshade
+minor	rtfFormDisplay		formdisp
+minor	rtfPrintData		printdata
+
+minor	rtfRevProtected		revprot
+minor	rtfRevisions		revisions
+minor	rtfRevDisplay		revprop
+minor	rtfRevBar		revbar
+
+minor	rtfAnnotProtected	annotprot
+
+minor	rtfRTLDoc		rtldoc
+minor	rtfLTRDoc		ltrdoc
+
+/*
+ * Section formatting attributes
+ */
+
+major	rtfSectAttr
+
+minor	rtfSectDef		sectd
+minor	rtfENoteHere		endnhere
+minor	rtfPrtBinFirst		binfsxn
+minor	rtfPrtBin		binsxn
+minor	rtfSectStyleNum		ds
+minor	rtfSectUnlocked		sectunlocked
+
+minor	rtfNoBreak		sbknone
+minor	rtfColBreak		sbkcol
+minor	rtfPageBreak		sbkpage
+minor	rtfEvenBreak		sbkeven
+minor	rtfOddBreak		sbkodd
+
+minor	rtfColumns		cols
+minor	rtfColumnSpace		colsx
+minor	rtfColumnNumber		colno
+minor	rtfColumnSpRight	colsr
+minor	rtfColumnWidth		colw
+minor	rtfColumnLine		linebetcol
+
+minor	rtfLineModulus		linemod
+minor	rtfLineDist		linex
+minor	rtfLineStarts		linestarts
+minor	rtfLineRestart		linerestart
+minor	rtfLineRestartPg	lineppage
+minor	rtfLineCont		linecont
+
+minor	rtfSectPageWid		pgwsxn
+minor	rtfSectPageHt		pghsxn
+minor	rtfSectMarginLeft	marglsxn
+minor	rtfSectMarginRight	margrsxn
+minor	rtfSectMarginTop	margtsxn
+minor	rtfSectMarginBottom	margbsxn
+minor	rtfSectMarginGutter	guttersxn
+minor	rtfSectLandscape	lndscpsxn
+minor	rtfTitleSpecial		titlepg
+minor	rtfHeaderY		headery
+minor	rtfFooterY		footery
+
+minor	rtfPageStarts		pgnstarts
+minor	rtfPageCont		pgncont
+minor	rtfPageRestart		pgnrestart
+minor	rtfPageNumRight		pgnx
+minor	rtfPageNumTop		pgny
+minor	rtfPageDecimal		pgndec
+minor	rtfPageURoman		pgnucrm
+minor	rtfPageLRoman		pgnlcrm
+minor	rtfPageULetter		pgnucltr
+minor	rtfPageLLetter		pgnlcltr
+minor	rtfPageNumLevel		pgnhn
+minor	rtfPageNumHyphSep	pgnhnsh
+minor	rtfPageNumSpaceSep	pgnhnsp
+minor	rtfPageNumColonSep	pgnhnsc
+minor	rtfPageNumEmdashSep	pgnhnsm
+minor	rtfPageNumEndashSep	pgnhnsn
+
+/* \vertalt was misspelled as \vertal in specification 1.0 */
+minor	rtfTopVAlign		vertalt
+minor	rtfBottomVAlign		vertalb
+minor	rtfCenterVAlign		vertalc
+minor	rtfJustVAlign		vertalj
+
+minor	rtfRTLSect		rtlsect
+minor	rtfLTRSect		ltrsect
+
+/*
+ * I've seen these listed as section attributes in an old spec,
+ * but not in real files...
+ */
+/* rtfNoBreak		nobreak*/
+/* rtfColBreak		colbreak*/
+/* rtfPageBreak		pagebreak*/
+/* rtfEvenBreak		evenbreak*/
+/* rtfOddBreak		oddbreak*/
+
+/*
+ * Paragraph formatting attributes
+ */
+
+major	rtfParAttr
+
+minor	rtfParDef		pard
+minor	rtfStyleNum		s
+minor	rtfHyphenate		hyphpar
+minor	rtfInTable		intbl
+minor	rtfKeep			keep
+minor	rtfNoWidowControl	nowidctlpar
+minor	rtfKeepNext		keepn
+minor	rtfOutlineLevel		level
+minor	rtfNoLineNum		noline
+minor	rtfPBBefore		pagebb
+minor	rtfSideBySide		sbys
+minor	rtfQuadLeft		ql
+minor	rtfQuadRight		qr
+minor	rtfQuadJust		qj
+minor	rtfQuadCenter		qc
+minor	rtfFirstIndent		fi
+minor	rtfLeftIndent		li
+minor	rtfRightIndent		ri
+minor	rtfSpaceBefore		sb
+minor	rtfSpaceAfter		sa
+minor	rtfSpaceBetween		sl
+minor	rtfSpaceMultiply	slmult
+
+minor	rtfSubDocument		subdocument
+
+minor	rtfRTLPar		rtlpar
+minor	rtfLTRPar		ltrpar
+
+minor	rtfTabPos		tx
+/*
+ * FrameMaker writes \tql (to mean left-justified tab, apparently)
+ * although it's not in the spec.  It's also redundant, since lj
+ * tabs are the default.
+ */
+minor	rtfTabLeft		tql
+minor	rtfTabRight		tqr
+minor	rtfTabCenter		tqc
+minor	rtfTabDecimal		tqdec
+minor	rtfTabBar		tb
+minor	rtfLeaderDot		tldot
+minor	rtfLeaderHyphen		tlhyph
+minor	rtfLeaderUnder		tlul
+minor	rtfLeaderThick		tlth
+minor	rtfLeaderEqual		tleq
+
+minor	rtfParLevel		pnlvl
+minor	rtfParBullet		pnlvlblt
+minor	rtfParSimple		pnlvlbody
+minor	rtfParNumCont		pnlvlcont
+minor	rtfParNumOnce		pnnumonce
+minor	rtfParNumAcross		pnacross
+minor	rtfParHangIndent	pnhang
+minor	rtfParNumRestart	pnrestart
+minor	rtfParNumCardinal	pncard
+minor	rtfParNumDecimal	pndec
+minor	rtfParNumULetter	pnucltr
+minor	rtfParNumURoman		pnucrm
+minor	rtfParNumLLetter	pnlcltr
+minor	rtfParNumLRoman		pnlcrm
+minor	rtfParNumOrdinal	pnord
+minor	rtfParNumOrdinalText	pnordt
+minor	rtfParNumBold		pnb
+minor	rtfParNumItalic		pni
+minor	rtfParNumAllCaps	pncaps
+minor	rtfParNumSmallCaps	pnscaps
+minor	rtfParNumUnder		pnul
+minor	rtfParNumDotUnder	pnuld
+minor	rtfParNumDbUnder	pnuldb
+minor	rtfParNumNoUnder	pnulnone
+minor	rtfParNumWordUnder	pnulw
+minor	rtfParNumStrikethru	pnstrike
+minor	rtfParNumForeColor	pncf
+minor	rtfParNumFont		pnf
+minor	rtfParNumFontSize	pnfs
+minor	rtfParNumIndent		pnindent
+minor	rtfParNumSpacing	pnsp
+minor	rtfParNumInclPrev	pnprev
+minor	rtfParNumCenter		pnqc
+minor	rtfParNumLeft		pnql
+minor	rtfParNumRight		pnqr
+minor	rtfParNumStartAt	pnstart
+
+minor	rtfBorderTop		brdrt
+minor	rtfBorderBottom		brdrb
+minor	rtfBorderLeft		brdrl
+minor	rtfBorderRight		brdrr
+minor	rtfBorderBetween	brdrbtw
+minor	rtfBorderBar		brdrbar
+minor	rtfBorderBox		box
+minor	rtfBorderSingle		brdrs
+minor	rtfBorderThick		brdrth
+minor	rtfBorderShadow		brdrsh
+minor	rtfBorderDouble		brdrdb
+minor	rtfBorderDot		brdrdot
+minor	rtfBorderDash		brdrdash
+minor	rtfBorderHair		brdrhair
+minor	rtfBorderWidth		brdrw
+minor	rtfBorderColor		brdrcf
+minor	rtfBorderSpace		brsp
+
+minor	rtfShading		shading
+minor	rtfBgPatH		bghoriz
+minor	rtfBgPatV		bgvert
+minor	rtfFwdDiagBgPat		bgfdiag
+minor	rtfBwdDiagBgPat		bgbdiag
+minor	rtfHatchBgPat		bgcross
+minor	rtfDiagHatchBgPat	bgdcross
+minor	rtfDarkBgPatH		bgdkhoriz
+minor	rtfDarkBgPatV		bgdkvert
+minor	rtfFwdDarkBgPat		bgdkfdiag
+minor	rtfBwdDarkBgPat		bgdkbdiag
+minor	rtfDarkHatchBgPat	bgdkcross
+minor	rtfDarkDiagHatchBgPat	bgdkdcross
+minor	rtfBgPatLineColor	cfpat
+minor	rtfBgPatColor		cbpat
+
+/*
+ * Positioning attributes
+ */
+
+major	rtfPosAttr
+
+minor	rtfAbsWid		absw
+minor	rtfAbsHt		absh
+
+minor	rtfRPosMargH		phmrg
+minor	rtfRPosPageH		phpg
+minor	rtfRPosColH		phcol
+minor	rtfPosX			posx
+minor	rtfPosNegX		posnegx
+minor	rtfPosXCenter		posxc
+minor	rtfPosXInside		posxi
+minor	rtfPosXOutSide		posxo
+minor	rtfPosXRight		posxr
+minor	rtfPosXLeft		posxl
+
+minor	rtfRPosMargV		pvmrg
+minor	rtfRPosPageV		pvpg
+minor	rtfRPosParaV		pvpara
+minor	rtfPosY			posy
+minor	rtfPosNegY		posnegy
+minor	rtfPosYInline		posyil
+minor	rtfPosYTop		posyt
+minor	rtfPosYCenter		posyc
+minor	rtfPosYBottom		posyb
+
+minor	rtfNoWrap		nowrap
+minor	rtfDistFromTextAll	dxfrtext
+minor	rtfDistFromTextX	dfrmtxtx
+minor	rtfDistFromTextY	dfrmtxty
+/*
+ * \dyfrtext no longer exists as of spec 1.2, apparently
+ * having been replaced by \dfrmtextx and \dfrmtexty.
+ */
+minor	rtfTextDistY		dyfrtext
+
+minor	rtfDropCapLines		dropcapli
+minor	rtfDropCapType		dropcapt
+
+/*
+ * Table attributes
+ */
+
+major	rtfTblAttr
+
+minor	rtfRowDef		trowd
+minor	rtfRowGapH		trgaph
+minor	rtfCellPos		cellx
+minor	rtfMergeRngFirst	clmgf
+minor	rtfMergePrevious	clmrg
+
+minor	rtfRowLeft		trql
+minor	rtfRowRight		trqr
+minor	rtfRowCenter		trqc
+minor	rtfRowLeftEdge		trleft
+minor	rtfRowHt		trrh
+minor	rtfRowHeader		trhdr
+minor	rtfRowKeep		trkeep
+
+minor	rtfRTLRow		rtlrow
+minor	rtfLTRRow		ltrrow
+
+minor	rtfRowBordTop		trbrdrt
+minor	rtfRowBordLeft		trbrdrl
+minor	rtfRowBordBottom	trbrdrb
+minor	rtfRowBordRight		trbrdrr
+minor	rtfRowBordHoriz		trbrdrh
+minor	rtfRowBordVert		trbrdrv
+
+minor	rtfCellBordBottom	clbrdrb
+minor	rtfCellBordTop		clbrdrt
+minor	rtfCellBordLeft		clbrdrl
+minor	rtfCellBordRight	clbrdrr
+
+minor	rtfCellShading		clshdng
+minor	rtfCellBgPatH		clbghoriz
+minor	rtfCellBgPatV		clbgvert
+minor	rtfCellFwdDiagBgPat	clbgfdiag
+minor	rtfCellBwdDiagBgPat	clbgbdiag
+minor	rtfCellHatchBgPat	clbgcross
+minor	rtfCellDiagHatchBgPat	clbgdcross
+/*
+ * The spec lists \clbgdkhor, but the corresponding non-cell
+ * control is \bgdkhoriz.  At any rate, Macintosh Word seems
+ * to accept both \clbgdkhor and \clbgdkhoriz.
+ */
+minor	rtfCellDarkBgPatH	clbgdkhoriz clbgdkhor
+minor	rtfCellDarkBgPatV	clbgdkvert
+minor	rtfCellFwdDarkBgPat	clbgdkfdiag
+minor	rtfCellBwdDarkBgPat	clbgdkbdiag
+minor	rtfCellDarkHatchBgPat	clbgdkcross
+minor	rtfCellDarkDiagHatchBgPat clbgdkdcross
+minor	rtfCellBgPatLineColor 	clcfpat
+minor	rtfCellBgPatColor	clcbpat
+
+/*
+ * Character formatting attributes
+ */
+
+major	rtfCharAttr
+
+minor	rtfPlain		plain
+minor	rtfBold			b
+minor	rtfAllCaps		caps
+minor	rtfDeleted		deleted
+minor	rtfSubScript		dn
+minor	rtfSubScrShrink		sub
+minor	rtfNoSuperSub		nosupersub
+minor	rtfExpand		expnd
+minor	rtfExpandTwips		expndtw
+minor	rtfKerning		kerning
+minor	rtfFontNum		f
+minor	rtfFontSize		fs
+minor	rtfItalic		i
+minor	rtfOutline		outl
+minor	rtfRevised		revised
+minor	rtfRevAuthor		revauth
+minor	rtfRevDTTM		revdttm
+minor	rtfSmallCaps		scaps
+minor	rtfShadow		shad
+minor	rtfStrikeThru		strike
+minor	rtfUnderline		ul
+minor	rtfDotUnderline		uld
+minor	rtfDbUnderline		uldb
+minor	rtfNoUnderline		ulnone
+minor	rtfWordUnderline	ulw
+minor	rtfSuperScript		up
+minor	rtfSuperScrShrink	super
+minor	rtfInvisible		v
+minor	rtfForeColor		cf
+minor	rtfBackColor		cb
+minor	rtfRTLChar		rtlch
+minor	rtfLTRChar		ltrch
+minor	rtfCharStyleNum		cs
+minor	rtfCharCharSet		cchs
+minor	rtfLanguage		lang
+/* this has disappeared from the spec as of 1.2 */
+minor	rtfGray			gray
+
+/*
+ * Associated character formatting attributes
+ */
+
+major	rtfACharAttr
+
+minor	rtfACBold		ab
+minor	rtfACAllCaps		acaps
+minor	rtfACForeColor		acf
+minor	rtfACSubScript		adn
+minor	rtfACExpand		aexpnd
+minor	rtfACFontNum		af
+minor	rtfACFontSize		afs
+minor	rtfACItalic		ai
+minor	rtfACLanguage		alang
+minor	rtfACOutline		aoutl
+minor	rtfACSmallCaps		ascaps
+minor	rtfACShadow		ashad
+minor	rtfACStrikeThru		astrike
+minor	rtfACUnderline		aul
+minor	rtfACDotUnderline	auld
+minor	rtfACDbUnderline	auldb
+minor	rtfACNoUnderline	aulnone
+minor	rtfACWordUnderline	aulw
+minor	rtfACSuperScript	aup
+
+/*
+ * Special characters
+ */
+
+major	rtfSpecialChar
+
+/* special characters seen in \info destination */
+
+minor	rtfIIntVersion		vern
+minor	rtfIVersion		version
+minor	rtfIEditTime		edmins
+minor	rtfIYear		yr
+minor	rtfIMonth		mo
+minor	rtfIDay			dy
+minor	rtfIHour		hr
+minor	rtfIMinute		min
+minor	rtfISecond		sec
+minor	rtfINPages		nofpages
+minor	rtfINWords		nofwords
+minor	rtfINChars		nofchars
+minor	rtfIIntID		id
+
+/* other special characters */
+
+minor	rtfCurHeadDate		chdate
+minor	rtfCurHeadDateLong	chdpl
+minor	rtfCurHeadDateAbbrev	chdpa
+minor	rtfCurHeadTime		chtime
+minor	rtfCurHeadPage		chpgn
+minor	rtfSectNum		sectnum
+minor	rtfCurFNote		chftn
+minor	rtfCurAnnotRef		chatn
+minor	rtfFNoteSep		chftnsep
+minor	rtfFNoteCont		chftnsepc
+minor	rtfCell			cell
+minor	rtfRow			row
+/*
+ * newline and carriage return are synonyms for
+ * \par when they are preceded by a \ character
+ */
+minor	rtfPar			par \n \r
+minor	rtfSect			sect
+minor	rtfPage			page
+minor	rtfColumn		column
+minor	rtfLine			line
+minor	rtfSoftPage		softpage
+minor	rtfSoftColumn		softcol
+minor	rtfSoftLine		softline
+minor	rtfSoftLineHt		softlheight
+minor	rtfTab			tab
+minor	rtfEmDash		emdash
+minor	rtfEnDash		endash
+minor	rtfEmSpace		emspace
+minor	rtfEnSpace		enspace
+minor	rtfBullet		bullet
+minor	rtfLQuote		lquote
+minor	rtfRQuote		rquote
+minor	rtfLDblQuote		ldblquote
+minor	rtfRDblQuote		rdblquote
+minor	rtfFormula		|
+minor	rtfNoBrkSpace		~
+minor	rtfNoReqHyphen		-
+minor	rtfNoBrkHyphen		_
+minor	rtfOptDest		*
+minor	rtfLTRMark		ltrmark
+minor	rtfRTLMark		rtlmark
+minor	rtfNoWidthJoiner	zwj
+minor	rtfNoWidthNonJoiner	zwnj
+/* is this a valid token? */
+minor	rtfCurHeadPict		chpict
+
+/*
+ * Bookmark attributes
+ */
+
+major	rtfBookmarkAttr
+
+minor	rtfBookmarkFirstCol	bkmkcolf
+minor	rtfBookmarkLastCol	bkmkcoll
+
+/*
+ * Picture attributes
+ */
+
+major	rtfPictAttr
+
+minor	rtfMacQD		macpict
+minor	rtfPMMetafile		pmmetafile
+minor	rtfWinMetafile		wmetafile
+minor	rtfDevIndBitmap		dibitmap
+minor	rtfWinBitmap		wbitmap
+minor	rtfPixelBits		wbmbitspixel
+minor	rtfBitmapPlanes		wbmplanes
+minor	rtfBitmapWid		wbmwidthbytes
+
+minor	rtfPicWid		picw
+minor	rtfPicHt		pich
+/*
+ * \picwGoal and \pichGoal aren't in the spec,
+ * but some writers emit them, so we recognize them.
+ */
+minor	rtfPicGoalWid		picwgoal picwGoal
+minor	rtfPicGoalHt		pichgoal pichGoal
+minor	rtfPicScaleX		picscalex
+minor	rtfPicScaleY		picscaley
+minor	rtfPicScaled		picscaled
+minor	rtfPicCropTop		piccropt
+minor	rtfPicCropBottom	piccropb
+minor	rtfPicCropLeft		piccropl
+minor	rtfPicCropRight		piccropr
+
+minor	rtfPicMFHasBitmap	picbmp
+minor	rtfPicMFBitsPerPixel	picbpp
+
+minor	rtfPicBinary		bin
+
+/*
+ * Object controls
+ */
+
+major	rtfObjAttr
+
+minor	rtfObjEmb		objemb
+minor	rtfObjLink		objlink
+minor	rtfObjAutoLink		objautlink
+minor	rtfObjSubscriber	objsub
+minor	rtfObjPublisher		objpub
+minor	rtfObjICEmb		objicemb
+
+minor	rtfObjLinkSelf		linkself
+minor	rtfObjLock		objupdate
+minor	rtfObjUpdate		objlock
+
+minor	rtfObjHt		objh
+minor	rtfObjWid		objw
+minor	rtfObjSetSize		objsetsize
+minor	rtfObjAlign		objalign
+minor	rtfObjTransposeY	objtransy
+minor	rtfObjCropTop		objcropt
+minor	rtfObjCropBottom	objcropb
+minor	rtfObjCropLeft		objcropl
+minor	rtfObjCropRight		objcropr
+minor	rtfObjScaleX		objscalex
+minor	rtfObjScaleY		objscaley
+
+minor	rtfObjResRTF		rsltrtf
+minor	rtfObjResPict		rsltpict
+minor	rtfObjResBitmap		rsltbmp
+minor	rtfObjResText		rslttxt
+minor	rtfObjResMerge		rsltmerge
+
+minor	rtfObjBookmarkPubObj	bkmkpub
+minor	rtfObjPubAutoUpdate	pubauto
+
+/*
+ * Drawing object attributes
+ */
+
+major	rtfDrawAttr
+
+minor	rtfDrawLock		dolock
+minor	rtfDrawPageRelX		dobxpage
+minor	rtfDrawColumnRelX	dobxcolumn
+minor	rtfDrawMarginRelX	dobxmargin
+minor	rtfDrawPageRelY		dobypage
+minor	rtfDrawParaRelY		dobypara
+minor	rtfDrawMarginRelY	dobymargin
+minor	rtfDrawHeight		dodhgt
+
+minor	rtfDrawBeginGroup	dpgroup
+minor	rtfDrawGroupCount	dpcount
+minor	rtfDrawEndGroup		dpendgroup
+minor	rtfDrawArc		dparc
+minor	rtfDrawCallout		dpcallout
+minor	rtfDrawEllipse		dpellipse
+minor	rtfDrawLine		dpline
+minor	rtfDrawPolygon		dppolygon
+minor	rtfDrawPolyLine		dppolyline
+minor	rtfDrawRect		dprect
+minor	rtfDrawTextBox		dptxbx
+
+minor	rtfDrawOffsetX		dpx
+minor	rtfDrawSizeX		dpxsize
+minor	rtfDrawOffsetY		dpy
+minor	rtfDrawSizeY		dpysize
+
+minor	rtfCOAngle		dpcoa
+minor	rtfCOAccentBar		dpcoaccent
+minor	rtfCOBestFit		dpcobestfit
+minor	rtfCOBorder		dpcoborder
+minor	rtfCOAttachAbsDist	dpcodabs
+minor	rtfCOAttachBottom	dpcodbottom
+minor	rtfCOAttachCenter	dpcodcenter
+minor	rtfCOAttachTop		dpcodtop
+minor	rtfCOLength		dpcolength
+minor	rtfCONegXQuadrant	dpcominusx
+minor	rtfCONegYQuadrant	dpcominusy
+minor	rtfCOOffset		dpcooffset
+minor	rtfCOAttachSmart	dpcosmarta
+minor	rtfCODoubleLine		dpcotdouble
+minor	rtfCORightAngle		dpcotright
+minor	rtfCOSingleLine		dpcotsingle
+minor	rtfCOTripleLine		dpcottriple
+
+minor	rtfDrawTextBoxMargin	dptxbxmar
+minor	rtfDrawRoundRect	dproundr
+
+minor	rtfDrawPointX		dpptx
+minor	rtfDrawPointY		dppty
+minor	rtfDrawPolyCount	dppolycount
+
+minor	rtfDrawArcFlipX		dparcflipx
+minor	rtfDrawArcFlipY		dparcflipy
+
+minor	rtfDrawLineBlue		dplinecob
+minor	rtfDrawLineGreen	dplinecog
+minor	rtfDrawLineRed		dplinecor
+minor	rtfDrawLinePalette	dplinepal
+minor	rtfDrawLineDashDot	dplinedado
+minor	rtfDrawLineDashDotDot	dplinedadodo
+minor	rtfDrawLineDash		dplinedash
+minor	rtfDrawLineDot		dplinedot
+minor	rtfDrawLineGray		dplinegray
+minor	rtfDrawLineHollow	dplinehollow
+minor	rtfDrawLineSolid	dplinesolid
+minor	rtfDrawLineWidth	dplinew
+
+minor	rtfDrawHollowEndArrow	dpaendhol
+minor	rtfDrawEndArrowLength	dpaendl
+minor	rtfDrawSolidEndArrow	dpaendsol
+minor	rtfDrawEndArrowWidth	dpaendw
+minor	rtfDrawHollowStartArrow	dpastarthol
+minor	rtfDrawStartArrowLength	dpastartl
+minor	rtfDrawSolidStartArrow	dpastartsol
+minor	rtfDrawStartArrowWidth	dpastartw
+
+minor	rtfDrawBgFillBlue	dpfillbgcb
+minor	rtfDrawBgFillGreen	dpfillbgcg
+minor	rtfDrawBgFillRed	dpfillbgcr
+minor	rtfDrawBgFillPalette	dpfillbgpal
+minor	rtfDrawBgFillGray	dpfillbggray
+minor	rtfDrawFgFillBlue	dpfillfgcb
+minor	rtfDrawFgFillGreen	dpfillfgcg
+minor	rtfDrawFgFillRed	dpfillfgcr
+minor	rtfDrawFgFillPalette	dpfillfgpal
+minor	rtfDrawFgFillGray	dpfillfggray
+minor	rtfDrawFillPatIndex	dpfillpat
+
+minor	rtfDrawShadow		dpshadow
+minor	rtfDrawShadowXOffset	dpshadx
+minor	rtfDrawShadowYOffset	dpshady
+
+/*
+ * Footnote attributes
+ */
+
+major	rtfFNoteAttr
+
+minor	rtfFNAlt		ftnalt
+
+/*
+ * Field attributes
+ */
+
+major	rtfFieldAttr
+
+minor	rtfFieldDirty		flddirty
+minor	rtfFieldEdited		fldedit
+minor	rtfFieldLocked		fldlock
+minor	rtfFieldPrivate		fldpriv
+minor	rtfFieldAlt		fldalt
+
+/*
+ * Index entry attributes
+ */
+
+major	rtfIndexAttr
+
+minor	rtfIndexNumber		xef
+minor	rtfIndexBold		bxe
+minor	rtfIndexItalic		ixe
+
+/*
+ * Table of contents attributes
+ */
+
+major	rtfTOCAttr
+
+minor	rtfTOCType		tcf
+minor	rtfTOCLevel		tcl
+
+/*
+ * NeXT graphic attributes -- non-standard
+ */
+
+major	rtfNeXTGrAttr
+
+minor	rtfNeXTGWidth		width
+minor	rtfNeXTGHeight		height
+
+/*
+ * Stuff added by Ujwal Sathyam for rtf2LaTeX2e
+ * New paragraph attributes found in MS Word for Mac.
+ * For some unknown reason, I couldn't add it to the list of the other
+ * paragraph attributes. I have modified rtfprep.c to ignore multiply
+ * defined majors. New destinations have to be added to the destination
+ * list above.
+ */
+
+/*
+ * More paragraph attributes
+ */
+major	rtfParAttr
+
+minor	rtfWidowCtlPar	widctlpar
+minor	rtfOutLineLevel	outlinelevel
+
+/*
+ * More character attributes
+ */
+major	rtfCharAttr
+
+minor	rtfCGrid	cgrid
+
+/*
+ * More section attributes
+ */
+major	rtfSectAttr
+
+minor	rtfAdjustRight	adjustright
+
+/*
+ * More style attributes
+ */
+major	rtfStyleAttr
+
+minor rtfStyleAutoUpdate	sautoupd
+
+/*
+ * List attributes. List should actually be defined as a destination.
+ */
+ 
+major rtfListAttr
+ 
+minor	rtfList		list
+minor	rtfListTable	listtable
+minor	rtfListOverrideTable	listoverridetable	
+ 
+ /*
+  * Word 97 Object Attributes
+  */
+
+major rtfWord97ObjAttr
+
+minor	rtfWord97ObjResult	shprslt
+minor	rtfWord97ObjInst	shpinst
+minor	rtfWord97ObjText	shptxt
+minor	rtfShapeName		sn
+minor	rtfShapeValue		sv
+
+ /*
+  * More table attributes
+  */
+
+major rtfTblAttr
+
+minor	rtfVertTopAlign	clvertalt
+minor	rtfVertCenterAlign	clvertalc
+minor	rtfVertBottomAlign	clvertalb
+minor	rtfVertLeftAlign	cltxlrtb
+minor	rtfVertRightAlign	cltxtbrl
+minor	rtfVertMergeRngFirst	clvmgf
+minor	rtfVertMergeRngPrevious	clvmrg
+
+ /*
+  * More picture attributes
+  */
+
+major rtfPictAttr
+
+minor	rtfPng		pngblip
+minor	rtfJpeg		jpegblip
+
+
+/* some special ANSI encoding commands */
+
+major rtfAnsiCharAttr
+
+minor	rtfLowChar	loch
+minor	rtfHighChar	hich
+minor	rtfDblByteChar	dbch
+
