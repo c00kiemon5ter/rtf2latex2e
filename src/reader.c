@@ -243,6 +243,7 @@ static short savedCSStack[maxCSStack];
 static short savedCSTop;
 static long savedGroupLevel;
 
+static void ReadUnicode();
 
 /*
  * Initialize the reader.  This may be called multiple times,
@@ -294,6 +295,7 @@ void RTFInit()
     RTFSetDestinationCallback(rtfInfo, ReadInfoGroup);
     RTFSetDestinationCallback(rtfPict, ReadPictGroup);
     RTFSetDestinationCallback(rtfObject, ReadObjGroup);
+/*    RTFSetDestinationCallback(rtfUnicode, ReadUnicode);*/
 
 
     RTFSetReadHook((RTFFuncPtr) NULL);
@@ -710,17 +712,18 @@ static void _RTFGetToken2()
         return;
     }
 
-
     if (c == '{') {
         rtfClass = rtfGroup;
         rtfMajor = rtfBeginGroup;
         return;
     }
+    
     if (c == '}') {
         rtfClass = rtfGroup;
         rtfMajor = rtfEndGroup;
         return;
     }
+    
     if (c != '\\') {
         /*
          * Two possibilities here:
@@ -737,10 +740,12 @@ static void _RTFGetToken2()
         }
         return;
     }
+    
     if ((c = GetChar()) == EOF) {
         /* early eof, whoops (class is rtfUnknown) */
         return;
     }
+    
     if (!isalpha(c)) {
         /*
          * Three possibilities here:
@@ -773,6 +778,7 @@ static void _RTFGetToken2()
         Lookup(rtfTextBuf);     /* sets class, major, minor */
         return;
     }
+    
     /* control word */
     while (isalpha(c)) {
         if ((c = GetChar()) == EOF)
@@ -804,6 +810,7 @@ static void _RTFGetToken2()
         sign = -1;
         c = GetChar();
     }
+    
     if (c != EOF && isdigit(c)) {
         rtfParam = 0;
         while (isdigit(c)) {    /* gobble parameter */
@@ -1357,8 +1364,9 @@ static void ReadFontTbl()
                 /* at bottom of loop */
                 continue;
             } else {
-                /* ignore token but announce it */
+                /* ignore token but and don't announce it 
                 RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf);
+                */
             }
             (void) RTFGetToken();
         }
@@ -1509,6 +1517,11 @@ static void ReadStyleSheet()
                     sp->rtfSNextPar = rtfParam;
                     continue;
                 }
+                if (RTFCheckMM(rtfStyleAttr, rtfTableStyleNum)) {
+                    sp->rtfSNum = rtfParam;
+                    sp->rtfSType = rtfTableStyle;
+                    continue;
+                }
                 if ((sep = New(RTFStyleElt)) == (RTFStyleElt *) NULL)
                     RTFPanic("%s: cannot allocate style element", fn);
                 sep->rtfSEClass = rtfClass;
@@ -1547,12 +1560,10 @@ static void ReadStyleSheet()
                     RTFPanic("%s: cannot allocate style name", fn);
             } else {            /* unrecognized */
 
-                /* ignore token but announce it */
-                /* commented out by Ujwal Sathyam */
-/*                              
-                                RTFMsg ("%s: unknown token \"%s\"\n",
-                                                        fn, rtfTextBuf);
-*/
+                /* ignore token and do not announce it
+                RTFMsg ("%s: unknown token \"%s\"\n", fn, rtfTextBuf);
+                */
+
             }
         }
         (void) RTFGetToken();
@@ -1582,9 +1593,11 @@ static void ReadStyleSheet()
         if (sp->rtfSName == (char *) NULL)
             RTFPanic("%s: missing style name", fn);
         if (sp->rtfSNum < 0) {
-            if (strncmp(buf, "Normal", 6) != 0
-                && strncmp(buf, "Standard", 8) != 0)
+            if (strncmp(buf, "Normal", 6) != 0 && strncmp(buf, "Standard", 8) != 0) {
+                RTFMsg("%s: style is '%s'\n",fn, buf);
+                RTFMsg("%s: number is %d\n",fn, sp->rtfSNum);
                 RTFPanic("%s: missing style number", fn);
+            }
             sp->rtfSNum = rtfNormalStyleNum;
         }
         if (sp->rtfSNextPar == -1)      /* if \snext not given, */
@@ -1614,6 +1627,10 @@ static void ReadObjGroup()
     RTFRouteToken();            /* feed "}" back to router */
 }
 
+static void ReadUnicode()
+{
+	fprintf(stderr,"unicode %ld\n",rtfParam);
+}
 
 /* ---------------------------------------------------------------------- */
 

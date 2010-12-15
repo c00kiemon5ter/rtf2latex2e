@@ -86,6 +86,7 @@ src/main.o: Makefile src/main.c
 
 src/rtfprep/rtf-ctrldef.h  src/rtfprep/rtf-namedef.h  src/rtfprep/stdcharnames.h src/rtfprep/tokenscan.o:
 	cd src/rtfprep && make
+	cp src/rtfprep/rtf-ctrl pref/rtf-ctrl
 
 check test: rtf2latex
 	cd test && $(MAKE)
@@ -176,3 +177,4 @@ src/main.o:          src/main.c src/rtf.h src/rtf2LaTeX2e.h src/mygetopt.h
 src/reader.o:        src/reader.c src/rtfprep/tokenscan.h src/rtf.h src/rtf2LaTeX2e.h src/rtfprep/stdcharnames.h
 src/rtf.h:           src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h
 src/writer.o:        src/writer.c src/rtf.h src/rtfprep/tokenscan.h src/cole.h src/rtf2LaTeX2e.h src/eqn.h
+src/rtfprep/rtf-ctrldef.h: src/rtfprep/rtf-controls

@@ -1,0 +1,1200 @@
+{\rtf1\mac\deff1
+{\fonttbl
+{\f6\fnil Bookman;}
+{\f5\fnil Palatino;}
+{\f4\fnil Symbol;}
+{\f3\fnil Courier;}
+{\f2\fnil Helvetica;}
+{\f1\fnil Times;}
+}
+\paperh15840 \paperw12240
+\margl1440 \margr2160 \pard \f1\i0\b0
+\fs20 \fs16 \fs20 \fs24 \f1\i0\b0
+\b \fs28 \pard \qc \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+RTF Tools
+\par
+{\sl-84\sa0\sb0\par}
+Translator Architecture
+\par
+\f1\i0\b0
+\i {\sl-280\sa0\sb0\par}
+\fs20 Paul DuBois
+\par
+dubois@primate.wisc.edu
+\par
+\f1\i0\b0
+{\sl-140\sa0\sb0\par}
+Wisconsin Regional Primate Research Center
+\par
+Revision date:  5 April 1994
+\par
+{\sl-280\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Introduction\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The RTF translators included in the RTF Tools distribution 
+were revised for release 1.10 to provide a more flexible 
+architecture that makes it easier to port the writer 
+end of a translator to different systems. This document 
+describes some of the problems the architecture is 
+intended to solve and how it tries to solve them. A 
+companion document, \f1\i0\b0
+
+\i RTF Tools Macintosh Driver Architecture\f1\i0\b0
+, contains notes 
+specific to the Macintosh translator drivers.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The Original Translator Architecture\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The translators in the RTF Tools distribution have 
+always used a design that factors the reader and writer 
+code into separate entities. The reader and writer 
+are linked together by a driver which sets up the input 
+and output files, installs writer functions into the 
+reader to be called when tokens of particular classes 
+occur, and then calls the reader to process the input 
+stream and pass tokens to the appropriate writer routines 
+automatically.
+\par
+{\sl-120\sa0\sb0\par}
+Here is a simple example of a driver for a translator 
+that can read an input file from the standard input 
+or from a named file on a UNIX system:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+int
+\par
+main (argc, argv)
+\par
+int\tab \tab argc;
+\par
+char\tab *argv[];
+\par
+\{
+\par
+\tab if (argc > 1)\tab /* if a file was named, open 
+it */
+\par
+\tab \{
+\par
+\tab \tab if (freopen (argv[1], "r", stdin) == (FILE 
+*) NULL)
+\par
+\tab \tab \{
+\par
+\tab \tab \tab fprintf (stderr, "cannot open %s\\n", 
+argv[1]);
+\par
+\tab \tab \tab exit (1);\tab /* terminate abnormally 
+*/
+\par
+\tab \tab \}
+\par
+\tab \tab fprintf (stderr, "processing %s...\\n", argv[1]);
+\par
+\tab \}
+\par
+{\sl-200\sa0\sb0\par}
+\tab /*
+\par
+\tab  * Initialize the reader, install a callback to 
+catch text
+\par
+\tab  * tokens, and read the input stream.
+\par
+\tab  */
+\par
+{\sl-200\sa0\sb0\par}
+\tab RTFInit ();
+\par
+\tab RTFSetClassCallback (rtfText, TextClass);
+\par
+\tab RTFRead ();
+\par
+{\sl-200\sa0\sb0\par}
+\tab exit (0);\tab /* terminate normally */
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+This driver installs a callback \f1\i0\b0
+
+\i TextClass()\f1\i0\b0
+ into the reader to be called when text 
+tokens occur in the input stream. \f1\i0\b0
+
+\i TextClass()\f1\i0\b0
+ could be written like this to make the 
+translator a simple program for extracting text from 
+RTF files:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+void
+\par
+TextClass ()
+\par
+\{
+\par
+\tab putchar (rtfMajor);\tab /* character is in token 
+major number */
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+Note that \f1\i0\b0
+
+\i TextClass()\f1\i0\b0
+ is the entire text of the writer code for 
+the translator. Tokens other than text tokens will 
+be ignored. Most translators ramify the writer code 
+considerably beyond this minimal effort.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Limitations of the Original Architecture\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The translator just described reflects one of the primary 
+characteristics exhibited by most of the translators 
+included in the RTF Tools distribution as they were 
+originally written. That is, they were built as single-file 
+converters conceived for command-line use in a UNIX 
+environment. They read a file and wrote the translated 
+output to the standard output.
+\par
+{\sl-120\sa0\sb0\par}
+Such a translation model has limited applicability 
+to other environments. For instance, under System 7 
+on a Macintosh it\'d5s desirable to take advantage 
+of the drag-and-drop facility to allow the user to 
+drop an arbitrary number of documents onto the translator 
+with the expectation that each of them will be translated 
+in sequence. For that to work, it must be possible 
+to \'d2restart\'d3 the translator for each file to 
+be processed, without carrying over from file to file 
+any file-specific state. Unfortunately, although the 
+RTF reader has always been written to be restartable, 
+the writer code for many of the translators has not 
+been.
+\par
+{\sl-120\sa0\sb0\par}
+The example also demonstrates other system dependencies 
+that have characterized the RTF Tools translators:
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \fi-300 \sl240 
+\tx600 \tx300 \tqr 
+\'a5\tab Diagnostic messages are written to \f1\i0\b0
+
+\i stderr\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab When a fatal error occurs, the process is 
+terminated by calling \f1\i0\b0
+
+\i exit()\f1\i0\b0
+ after writing a message to \f1\i0\b0
+
+\i stderr\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+These actions are appropriate for UNIX, but may not 
+be for other environments. For instance, under System 
+7 it may be preferable to write diagnostic messages 
+to a window rather than to \f1\i0\b0
+
+\i stderr\f1\i0\b0
+. But if you exit immediately after writing a 
+message to a window when a fatal error occurs, the 
+message disappears. This is not helpful to the user. 
+It might be preferable to present the message in an 
+alert that persists until the user dismisses it.
+\par
+{\sl-120\sa0\sb0\par}
+Another OS-dependent operation that\'d5s not shown 
+in the example translator is the mechanism for locating 
+library files such as the charset maps. Under UNIX 
+these files are assumed to be located in a well-known 
+directory such as \f1\i0\b0
+
+\i /usr/local/lib/rtf-tools\f1\i0\b0
+. Under System 7 they might 
+be best located inside the \f1\i0\b0
+
+\i Preferences\f1\i0\b0
+ folder, or perhaps in the same folder as 
+that in which the application itself is located.
+\par
+{\sl-120\sa0\sb0\par}
+The translators included with the RTF Tools distribution 
+were revised for release 1.10 to alleviate these problems. 
+Specifically:
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \fi-300 \sl240 
+\tx600 \tx300 \tqr 
+\'a5\tab Reader and writer code is more system-independent.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab Writers are restartable so they can process 
+multiple files.
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Handling Operating System Dependencies\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+In order to accommodate system dependencies, a given 
+translator is compiled on different systems with the 
+same reader and writer code, but a separate driver 
+is used for each system on which the translator is 
+built. When it starts up, the driver provides callback 
+functions for the OS-specific operations and plugs 
+them into the RTF library:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+RTFSetMsgProc (Msg);
+\par
+RTFSetPanicProc (Panic);
+\par
+RTFSetOpenLibFileProc (OpenLibFile);
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+Thereafter, the translator calls generic routines that 
+map onto the OS-specific functions. For example:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+/* display message */
+\par
+RTFMsg ("processing input file %s\\n", inputName);
+\par
+{\sl-200\sa0\sb0\par}
+/* abort */
+\par
+RTFPanic ("cannot open %s", outputName);
+\par
+{\sl-200\sa0\sb0\par}
+/* open library file */
+\par
+f = RTFOpenLibFile ("ansi-gen", "r);
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+This mechanism localizes the system dependencies into 
+the driver, allowing the reader and writer to refer 
+to standard function names without regard to the type 
+of system on which the program is running.
+\par
+{\sl-240\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Diagnostic Output\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+To handle diagnostic output, the driver should provide 
+a function that takes a single null-terminated string 
+argument and displays it to the user:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+void
+\par
+Msg (s)
+\par
+char\tab *s;
+\par
+\{
+\par
+\tab /* print s */
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+When the translator starts up, install the routine 
+like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+RTFSetMsgProc (Msg);
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+To write a diagnostic message from your translator, 
+call \f1\i0\b0
+
+\i RTFMsg()\f1\i0\b0
+. \f1\i0\b0
+
+\i RTFMsg()\f1\i0\b0
+ takes \f1\i0\b0
+
+\i printf()\f1\i0\b0
+-like arguments, but it formats the message 
+into a single string before passing it to your message 
+function so your function doesn\'d5t have to understand 
+a variable number of arguments. Newlines in the string 
+indicate linebreaks; your callback may need to convert 
+them to something else if newlines are inappropriate 
+linebreak characters for your system.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The default message function writes the message to 
+\f1\i0\b0
+\i stderr\f1\i0\b0
+. If this is suitable, your translator doesn\'d5t 
+need to provide a message function.
+\par
+{\sl-240\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Process Termination\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+To terminate the translator when a fatal error occurs, 
+the driver should provide a function that takes a single 
+null-terminated string argument, displays it to the 
+user, and exits:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+void
+\par
+Panic (s)
+\par
+char\tab *s;
+\par
+\{
+\par
+\tab /* print s */
+\par
+\tab /* terminate process */
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+Your panic function \f1\i0\b0
+
+\i must\f1\i0\b0
+ terminate the process, in whatever way is appropriate 
+for your system. (e.g., by calling \f1\i0\b0
+
+\i exit()\f1\i0\b0
+ under UNIX or by calling \f1\i0\b0
+
+\i ExitToShell()\f1\i0\b0
+ on a Macintosh).
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+When the translator starts up, install the routine 
+like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+RTFSetPanicProc (Panic);
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+To terminate your translator, call \f1\i0\b0
+
+\i RTFPanic()\f1\i0\b0
+. Like \f1\i0\b0
+
+\i RTFMsg()\f1\i0\b0
+, \f1\i0\b0
+
+\i RTFPanic()\f1\i0\b0
+ takes \f1\i0\b0
+
+\i printf()\f1\i0\b0
+-like arguments and formats them into a single 
+string which it passes to the OS-specific routine. 
+Unlike \f1\i0\b0
+
+\i RTFMsg()\f1\i0\b0
+, \f1\i0\b0
+
+\i RTFPanic()\f1\i0\b0
+ adds a newline to the end of the message 
+and indicates what token was last read from the input 
+stream. Newlines in the string indicate linebreaks; 
+your callback may need to convert them to something 
+else.
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\i \pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+RTFPanic()\f1\i0\b0
+ doesn\'d5t pass your panic function any 
+exit status; your function can supply one if that\'d5s 
+desired.
+\par
+{\sl-120\sa0\sb0\par}
+The default panic function writes the message to \f1\i0\b0
+
+\i stderr\f1\i0\b0
+ and calls \f1\i0\b0
+
+\i exit()\f1\i0\b0
+ with a status of 1. If this is suitable, your 
+translator doesn\'d5t need to provide a panic function.
+\par
+{\sl-240\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Library File Access\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+For opening library files, the driver should provide 
+an OS-specific routine that takes a basename and access 
+mode, locates the file and opens it, and returns a 
+\f3\i0\b0
+FILE\f1\i0\b0
+ pointer:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+FILE *
+\par
+OpenLibFile (name, mode)
+\par
+char\tab *name;
+\par
+char\tab *mode;
+\par
+\{
+\par
+\tab /* find and open the file */
+\par
+\tab /* return FILE pointer, or NULL if the file cannot 
+be opened */
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+When the translator starts up, install the routine 
+like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+RTFSetOpenLibFileProc (OpenLibFile);
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+The translator opens library files by calling \f1\i0\b0
+
+\i RTFOpenLibFile().\f1\i0\b0
+ Library files should be specified 
+by basename rather than by full pathname because pathnames 
+vary in form among systems.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+There is no default library file opening function. 
+If your translator doesn\'d5t provide one, \f1\i0\b0
+
+\i RTFOpenLibFile()\f1\i0\b0
+ always returns \f3\i0\b0
+NULL\f1\i0\b0
+.
+\par
+{\sl-240\sa0\sb0\par}
+\fs28 \f1\i0\b0
+\b \pard \qj \sl320 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+The Driver/Writer Interface\f1\i0\b0
+
+\par
+{\sl-320\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+In addition to providing OS-specific callbacks so the 
+reader and writer can perform OS-dependent tasks in 
+an OS-independent way, the driver must also translate 
+information from its operating environment into a form 
+the reader and writer can use:
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \fi-300 \sl240 
+\tx600 \tx300 \tqr 
+\'a5\tab The driver handles the details of the file-delivery 
+mechanism provided by the OS to determine which files 
+are to be translated. For UNIX, these are named on 
+the command line and are available in \f1\i0\b0
+
+\i argv[]\f1\i0\b0
+. For System 7, they\'d5re delivered through 
+Apple Events.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab For each input file, the driver takes care 
+of opening it, initializing the reader, and telling 
+the writer when to begin and end output file processing.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab The driver transmits user preference information 
+to the writer. For UNIX, these are named on the command 
+line and are available in \f1\i0\b0
+
+\i argv[]\f1\i0\b0
+. For System 7, they can be specified in preferences 
+files or via dialogs.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+All of these are issues involving the interface between 
+the driver and the writer. The next few sections describe 
+the interface used by the translators in the RTF Tools 
+distribution. Note that it\'d5s one I find convenient; 
+it\'d5s not the only interface that\'d5s possible.
+\par
+{\sl-240\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Structuring the Writer\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+This section describes how the writer code for a translator 
+can be structured to allow for multiple file processing. 
+As described below, there are four primary writer interface 
+calls, although they need not all be applicable to 
+any given translator. When present, the functions are 
+written as shown below. None of them take any arguments 
+and none except \f1\i0\b0
+
+\i WriterBeginFile()\f1\i0\b0
+ return a value.
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+void
+\par
+WriterInit ()
+\par
+\{
+\par
+\tab /* perform any once-only initializations */
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+void
+\par
+WriterEnd ()
+\par
+\{
+\par
+\tab /* perform any once-only cleanup */
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+int
+\par
+WriterBeginFile ()
+\par
+\{
+\par
+\tab /* prepare to generate new output file */
+\par
+\tab /* return value indicating success or failure 
+of setup */
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+void
+\par
+WriterEndFile()
+\par
+\{
+\par
+\tab /* write any final per-file output */
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\pard \qj \sl240 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+In general, a driver uses the writer functions in a 
+sequence something like this:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li400 \sl200 
+\tx720 \tx1040 \tx1360 \tx1680 \tx2000 \tx2320 \tx2640 \tx2960 \tx3280 \tx3600 \tx3920 \tx4240 \tx4560 \tx4880 \tx5200 \tx5520 \tx5840 \tx6160 \tx6480 \tx6800 
+WriterInit ();\tab /* do once-only writer initialization 
+*/
+\par
+{\sl-200\sa0\sb0\par}
+for (/* each file to be translated */)
+\par
+\{
+\par
+\tab freopen (..., stdin);\tab /* open input and output 
+files */
+\par
+\tab freopen (..., stdout);
+\par
+\tab RTFInit();\tab \tab \tab \tab /* initialize reader 
+*/
+\par
+\tab if (WriterBeginFile ())\tab /* do per-file writer 
+initialization */
+\par
+\tab \{
+\par
+\tab \tab RTFRead ();\tab \tab \tab /* read the input 
+file */
+\par
+\tab \tab WriterEndFile ();\tab /* do per-file writer 
+cleanup */
+\par
+\tab \}
+\par
+\}
+\par
+{\sl-200\sa0\sb0\par}
+WriterEnd ();\tab /* do once-only writer cleanup */
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+{\sl-240\sa0\sb0\par}
+\f1\i0\b0
+\b \pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Writer Initialization and Termination\f1\i0\b0
+
+\par
+{\sl-240\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+If your writer must perform one-time initialization 
+before any input files are processed, or one-time cleanup 
+after all files have been processed, provide the functions 
+\f1\i0\b0
+\i WriterInit()\f1\i0\b0
+ and \f1\i0\b0
+
+\i WriterEnd()\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\i WriterInit()\f1\i0\b0
+ is called once before any files are to 
+be translated, after the OS-specific callbacks have 
+been installed. This allows the writer to perform any 
+one-time initializations. One thing it might do is 
+read the output map if there is one, since this generally 
+need be done only once. (\f1\i0\b0
+
+\i rtf2troff\f1\i0\b0
+ reads output maps on a per-input file basis, 
+but that is the exception that proves the rule).
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\i WriterEnd()\f1\i0\b0
+ is called after all the input files have 
+been processed.
+\par
+{\sl-240\sa0\sb0\par}
+\f1\i0\b0
+\b Processing the Input Files\f1\i0\b0
+
+\par
+{\sl-240\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+Between the calls to \f1\i0\b0
+
+\i WriterInit()\f1\i0\b0
+ and \f1\i0\b0
+
+\i WriterEnd()\f1\i0\b0
+, the translator processes the input files. 
+For each one the driver should do the following:
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \fi-300 \sl240 
+\tx600 \tx300 \tqr 
+\'a5\tab Open the input file on \f1\i0\b0
+
+\i stdin\f1\i0\b0
+ and call \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab Open the output file if the writer doesn\'d5t 
+do so. (Either the driver or the writer may open/close 
+the output file, but of course they must agree between 
+themselves which of them will do it.)
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab If the writer needs to be called to begin 
+each output file, call \f1\i0\b0
+
+\i WriterBeginFile()\f1\i0\b0
+. The responsibilities of this function 
+will be described shortly.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab After calling \f1\i0\b0
+
+\i WriterBeginFile()\f1\i0\b0
+, call the RTF library to read the 
+input file. This can be done two ways. You can call 
+\f1\i0\b0
+\i RTFRead()\f1\i0\b0
+ to read and process all the tokens in the 
+input stream in one fell swoop. Alternatively, you 
+can read and process them individually with a loop:
+\par
+{\sl-120\sa0\sb0\par}
+\fs16 \f3\i0\b0
+\pard \ql \li700 \sl200 
+\tx1020 \tx1340 \tx1660 \tx1980 \tx2300 \tx2620 \tx2940 \tx3260 \tx3580 \tx3900 \tx4220 \tx4540 \tx4860 \tx5180 \tx5500 \tx5820 \tx6140 \tx6460 \tx6780 \tx7100 
+while (RTFGetToken () != rtfEOF)\tab /* read and process 
+one */
+\par
+\{\tab \tab \tab \tab \tab \tab \tab \tab \tab /* token 
+at a time */
+\par
+\tab RTFRouteToken ();
+\par
+\}
+\par
+{\sl-120\sa0\sb0\par}
+\fs20 \f1\i0\b0
+\f1\i0\b0
+\i \pard \qj \li300 \sl240 
+\tx1020 \tx1340 \tx1660 \tx1980 \tx2300 \tx2620 \tx2940 \tx3260 \tx3580 \tx3900 \tx4220 \tx4540 \tx4860 \tx5180 \tx5500 \tx5820 \tx6140 \tx6460 \tx6780 \tx7100 
+RTFRead()\f1\i0\b0
+ is in fact a function consisting of the loop 
+just shown. The reason you might want to use an explicit 
+loop in the driver instead of calling \f1\i0\b0
+
+\i RTFRead()\f1\i0\b0
+ is that you get control back each time through 
+the loop. This allows you to take other actions in 
+addition to calling \f1\i0\b0
+
+\i RTFRouteToken()\f1\i0\b0
+, which may be important on some systems.
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\i RTFRead()\f1\i0\b0
+ is sufficient for a system like UNIX where 
+you can forcibly terminate a running process by typing 
+the interrupt character. It\'d5s a considerably different 
+undertaking to do the translation in a Macintosh event-loop 
+user-driven environment where no external means is 
+provided for terminating processes. The process itself 
+must detect when the user wants an early quit, so it\'d5s 
+desirable to make a translator responsive to the user 
+during file processing, rather than just between files.
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\i RTFRead()\f1\i0\b0
+ doesn\'d5t work well under such circumstances. 
+If it were to be called to process the input stream, 
+control would disappear into the reader and writer 
+code (which, being system independent, knows nothing 
+of the Macintosh user interface code), until the file 
+was entirely processed. This is bad because it locks 
+out the user during the translation. To get around 
+this, a normal event loop is run, and individual tokens 
+are read from the input stream and processed when null 
+events occur. This allows the user to select menu items 
+(e.g., to request a quit, or to add new documents to 
+the translation queue) while a translation is in progress. 
+It also allows a progress bar and spinning cursor to 
+be displayed.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \fi-300 \sl240 
+\tx600 \tx300 \tqr 
+\'a5\tab If the writer requires any per-file cleanup 
+(e.g., to write any final output to the output stream) 
+after the input stream has been exhausted, call \f1\i0\b0
+
+\i WriterEndFile()\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab Close the input file.
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\b \pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Duties of WriterBeginFile()\f1\i0\b0
+
+\par
+{\sl-120\sa0\sb0\par}
+In brief, \f1\i0\b0
+
+\i WriterBeginFile()\f1\i0\b0
+ sets up the writer to begin producing 
+a new output file and returns a status value to the 
+driver.
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\i WriterBeginFile()\f1\i0\b0
+ can assume that the driver has already 
+opened the input file and called \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\f1\i0\b0
+\i WriterBeginFile()\f1\i0\b0
+ sets the writer\'d5s state to what 
+it should be at the beginning of each file. No state 
+specific to the previous file should be retained. Typically 
+this initialization involves the following:
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \fi-300 \sl240 
+\tx600 \tx300 \tqr 
+\'a5\tab If the driver opens the file, it does so on 
+\f1\i0\b0
+\i stdout\f1\i0\b0
+. If the driver doesn\'d5t open the output file, 
+the writer should do so.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \sl240 
+\tx600 \tx300 \tqr 
+If \f1\i0\b0
+
+\i WriterBeginFile()\f1\i0\b0
+ needs to know the names of the input 
+or output files, they may be obtained by calling \f1\i0\b0
+
+\i RTFGetInputName()\f1\i0\b0
+ and \f1\i0\b0
+
+\i RTFGetOutputName()\f1\i0\b0
+. If this is to be done, the driver 
+is responsible for calling \f1\i0\b0
+
+\i RTFSetInputName()\f1\i0\b0
+ and \f1\i0\b0
+
+\i RTFSetOutputName()\f1\i0\b0
+ beforehand. (The driver must do 
+this after calling \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+ but before calling \f1\i0\b0
+
+\i WriterBeginFile()\f1\i0\b0
+.)
+\par
+{\sl-120\sa0\sb0\par}
+The driver must ensure that file pathnames are C strings 
+in a form that can be \f1\i0\b0
+
+\i fopen()\f1\i0\b0
+-ed as is. Other than that, the writer cannot 
+assume much about the contents of pathnames. For instance, 
+pathname components are separated by \'d2/\'d3 under 
+UNIX, but by \'d2:\'d3 on a Macintosh.
+\par
+{\sl-120\sa0\sb0\par}
+The input and/or output names may be \f3\i0\b0
+NULL\f1\i0\b0
+, which indicates 
+that no file name is associated with the given stream. 
+(This may happen, for example, if the translator is 
+reading from or writing to a pipe under UNIX). One 
+reason for wanting to know the name of the input file 
+is if the writer wants to compute statistics on the 
+input and report them in reference to the input name 
+(for example, as \f1\i0\b0
+
+\i rtfwc\f1\i0\b0
+ does to show the user which input file the output 
+statistics are for). One reason the writer might want 
+to know the output file name is when the writer writes 
+multiple output files. In this case, it is convenient 
+to use the primary output file name as a basis for 
+deriving related file names.
+\par
+{\sl-120\sa0\sb0\par}
+The writer is free to abort if an output file name 
+is required.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \fi-300 \sl240 
+\tx600 \tx300 \tqr 
+\'a5\tab \f1\i0\b0
+
+\i WriterBeginFile()\f1\i0\b0
+ installs token class callbacks into 
+the reader for writer functions that should be invoked 
+when instances of particular token classes occur. \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+ resets all the callbacks, so they must be 
+installed for each file processed. This is one reason 
+\f1\i0\b0
+\i WriterBeginFile()\f1\i0\b0
+ must be called after \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+ and not before. Another reason is that the 
+writer might also read a few tokens from the input 
+stream to make sure the input file looks like a valid 
+RTF file (e.g., beginning with \'d2\{\'d3 and \'d2\\rtf\'d3). 
+This can only be done after \f1\i0\b0
+
+\i RTFInit()\f1\i0\b0
+ has been called.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab \f1\i0\b0
+
+\i WriterBeginFile()\f1\i0\b0
+ determines the status value to return 
+to the driver. The value should be non-zero if \f1\i0\b0
+
+\i WriterBeginFile()\f1\i0\b0
+ is able to set up for translating 
+a new file, or zero if some error occurs that prevents 
+translation of the input file.
+\par
+{\sl-120\sa0\sb0\par}
+\pard \qj \li300 \sl240 
+\tx600 \tx300 \tqr 
+If \f1\i0\b0
+
+\i WriterBeginFile()\f1\i0\b0
+ fails, it should generate its own 
+error message, not leave that for the driver. If a 
+failure occurs, the driver decides whether to abort 
+or to continue with any further files that may be queued 
+for translation.
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-240\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Interface Guidelines Summary\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \li300 \fi-300 \sl240 
+\tx600 \tx300 \tqr 
+\'a5\tab Install OS-specific callbacks when the translator 
+starts up.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab To generate diagnostic message that aren\'d5t 
+written to the primary output file, call \f1\i0\b0
+
+\i RTFMsg()\f1\i0\b0
+. Don\'d5t write to \f1\i0\b0
+
+\i stderr\f1\i0\b0
+, since there might not be any open file associated 
+with it.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab To generate an error message and terminate 
+the process in error, call \f1\i0\b0
+
+\i RTFPanic()\f1\i0\b0
+. Don\'d5t write to \f1\i0\b0
+
+\i stderr\f1\i0\b0
+, and don\'d5t call \f1\i0\b0
+
+\i exit()\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab To open a library file, pass the file\'d5s 
+basename and open mode to \f1\i0\b0
+
+\i RTFOpenLibFile()\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab The driver is responsible for opening the 
+input file on \f1\i0\b0
+
+\i stdin\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab Either the driver or the writer may open the 
+output file. If the driver opens it, it should do so 
+on \f1\i0\b0
+
+\i stdout\f1\i0\b0
+.
+\par
+{\sl-120\sa0\sb0\par}
+\'a5\tab If the writer needs to know the input or output 
+file names, the driver is responsible to set them with 
+\f1\i0\b0
+\i RTFSetInputName()\f1\i0\b0
+ and This must be done after calling 
+\f1\i0\b0
+\i RTFInit()\f1\i0\b0
+ and before calling the writer\'d5s begin-file 
+function. The writer may then obtain the names with 
+\f1\i0\b0
+\i RTFGetInputName()\f1\i0\b0
+ and If the writer wants to modify 
+the strings returned by these functions, it should 
+make copies of them.
+\par
+{\sl-120\sa0\sb0\par}
+{\sl-240\sa0\sb0\par}
+\fs24 \f1\i0\b0
+\b \pard \qj \sl280 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+Handling User Preferences\f1\i0\b0
+
+\par
+{\sl-280\sa0\sb0\par}
+\fs20 {\sl-120\sa0\sb0\par}
+\pard \qj \sl240 
+\tx500 \tx1000 \tx1500 \tx2000 \tx2500 \tx3000 \tx3500 \tx4000 \tx4500 \tx5000 \tx5500 \tx6000 \tx6500 \tx7000 \tx7500 
+This section is, uh, not very good yet.
+\par
+}

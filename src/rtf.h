@@ -247,6 +247,7 @@ extern short	rtfLinePos;		/* input line position */
 # define	rtfParStyle	0	/* the default */
 # define	rtfCharStyle	1
 # define	rtfSectStyle	2
+# define	rtfTableStyle	3
 
 /*
  * RTF font, color and style structures.  Used for font table,

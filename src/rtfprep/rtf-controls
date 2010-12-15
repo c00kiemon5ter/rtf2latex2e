@@ -127,6 +127,8 @@ minor	rtfLchars		lchars
 minor	rtfPgdsctbl		pgdsctbl			
 minor	rtfTOCN			tcn
 
+comment	minor	rtfUnicode		u
+
 comment rtfMaxDestination should be set equal to
 comment the final destination symbol.
 comment
@@ -1022,7 +1024,8 @@ minor	rtfAdjustRight	adjustright
  */
 major	rtfStyleAttr
 
-minor rtfStyleAutoUpdate	sautoupd
+minor 	rtfStyleAutoUpdate	sautoupd
+minor	rtfTableStyleNum	ts
 
 /*
  * List attributes. List should actually be defined as a destination.
