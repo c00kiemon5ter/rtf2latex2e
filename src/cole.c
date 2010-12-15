@@ -34,64 +34,64 @@
  * @colerrno, preceding it with the string @s, a semicolon and a space.
  * It handles COLE_EERRNO value too, calling perror(3).
  */
-void
-cole_perror (const char *s, COLERRNO colerrno)
+void cole_perror(const char *s, COLERRNO colerrno)
 {
-	if (s != NULL) fprintf (stderr, "%s: ", s);
-	switch (colerrno) {
-	case COLE_EMEMORY:
-	case COLE_EOPENFILE:
-	case COLE_ECLOSEFILE:
-	case COLE_EREAD:
-	case COLE_EWRITE:
-	case COLE_EREMOVE:
-	case COLE_ETMPNAM:
-	case COLE_ESEEK:
-	case COLE_EERRNO:
-		perror ("");
-		break;
-	case COLE_ENOFILESYSTEM:
-		fprintf (stderr, "The file is not a filesystem\n");
-		break;
-	case COLE_EINVALIDFILESYSTEM:
-		fprintf (stderr, "The file is not a valid filesystem\n");
-		break;
-	case COLE_EISNOTDIR:
-		fprintf (stderr, "The directory entry is not a directory\n");
-		break;
-	case COLE_EISNOTFILE:
-		fprintf (stderr, "The directory entry is not a file\n");
-		break;
-	case COLE_EFILENOTFOUND:
-		fprintf (stderr, "File not found\n");
-		break;
-	case COLE_EOF:
-		fprintf (stderr, "End of file has been reached\n");
-		break;
-	case COLE_EMEMBERISNOTDIR:
-		fprintf (stderr, "A member of the filename is not "
-			 "a directory\n");
-		break;
-	case COLE_EBROKENFILENAME:
-		fprintf (stderr, "The filename is not right written\n");
-		break;
-	case COLE_EFILENAMEISNOTFILE:
-		fprintf (stderr, "The filename is not a file\n");
-		break;
-	case COLE_EFSEEKDELTA:
-		fprintf (stderr, "Delta argument is not valid\n");
-		break;
-	case COLE_EFSEEKFLAG:
-		fprintf (stderr, "Flag argument is not valid\n");
-		break;
-	case COLE_EUNKNOWN:
-		fprintf (stderr, "An unknown error ocurred (can be a bug)\n");
-		break;
-	default:
-		fprintf (stderr, "An unknown error %d ocurred (can be a bug)\n",
-			 colerrno);
-		break;
-	}
+    if (s != NULL)
+        fprintf(stderr, "%s: ", s);
+    switch (colerrno) {
+    case COLE_EMEMORY:
+    case COLE_EOPENFILE:
+    case COLE_ECLOSEFILE:
+    case COLE_EREAD:
+    case COLE_EWRITE:
+    case COLE_EREMOVE:
+    case COLE_ETMPNAM:
+    case COLE_ESEEK:
+    case COLE_EERRNO:
+        perror("");
+        break;
+    case COLE_ENOFILESYSTEM:
+        fprintf(stderr, "The file is not a filesystem\n");
+        break;
+    case COLE_EINVALIDFILESYSTEM:
+        fprintf(stderr, "The file is not a valid filesystem\n");
+        break;
+    case COLE_EISNOTDIR:
+        fprintf(stderr, "The directory entry is not a directory\n");
+        break;
+    case COLE_EISNOTFILE:
+        fprintf(stderr, "The directory entry is not a file\n");
+        break;
+    case COLE_EFILENOTFOUND:
+        fprintf(stderr, "File not found\n");
+        break;
+    case COLE_EOF:
+        fprintf(stderr, "End of file has been reached\n");
+        break;
+    case COLE_EMEMBERISNOTDIR:
+        fprintf(stderr, "A member of the filename is not "
+                "a directory\n");
+        break;
+    case COLE_EBROKENFILENAME:
+        fprintf(stderr, "The filename is not right written\n");
+        break;
+    case COLE_EFILENAMEISNOTFILE:
+        fprintf(stderr, "The filename is not a file\n");
+        break;
+    case COLE_EFSEEKDELTA:
+        fprintf(stderr, "Delta argument is not valid\n");
+        break;
+    case COLE_EFSEEKFLAG:
+        fprintf(stderr, "Flag argument is not valid\n");
+        break;
+    case COLE_EUNKNOWN:
+        fprintf(stderr, "An unknown error ocurred (can be a bug)\n");
+        break;
+    default:
+        fprintf(stderr, "An unknown error %d ocurred (can be a bug)\n",
+                colerrno);
+        break;
+    }
 }
 
 
@@ -100,54 +100,59 @@ cole_perror (const char *s, COLERRNO colerrno)
  * cole_mount:
  * @filename: name of the file with the filesystem.
  * @colerrno: error value (COLE_EMEMORY, COLE_EOPENFILE, COLE_ENOFILESYSTEM, 
- * 			   COLE_EINVALIDFILESYSTEM, COLE_EUNKNOWN).
+ *                         COLE_EINVALIDFILESYSTEM, COLE_EUNKNOWN).
  *
  * Mounts the filesystem which is in @filename.
  *
  * Returns: a filesystem in success, or NULL in other case.
  */
-COLEFS *
-cole_mount (char *filename, COLERRNO *colerrno)
+COLEFS *cole_mount(char *filename, COLERRNO * colerrno)
 {
-	COLEFS * ret;
+    COLEFS *ret;
 
-	ret = malloc (sizeof (COLEFS));
-	if (ret == NULL) {
-		if (colerrno != NULL) *colerrno = COLE_EMEMORY;
-		return NULL;
-	}
+    ret = malloc(sizeof(COLEFS));
+    if (ret == NULL) {
+        if (colerrno != NULL)
+            *colerrno = COLE_EMEMORY;
+        return NULL;
+    }
 
-	switch (__OLEdecode (filename, &ret->tree, &ret->root, &ret->BDepot,
-			     &ret->SDepot, &ret->sbfile, &ret->sbfilename,
-			     &ret->file, 0)) {
-	case 0:	
-		/* success */
-		break;
-	case 10:
-		if (colerrno != NULL) *colerrno = COLE_EMEMORY;
-		free (ret);
-		return NULL;
-	case 7:
-	case 4:
-		if (colerrno != NULL) *colerrno = COLE_EOPENFILE;
-		free (ret);
-		return NULL;
-	case 8:
-	case 9:
-		if (colerrno != NULL) *colerrno = COLE_ENOFILESYSTEM;
-		free (ret);
-		return NULL;
-	case 5:
-		if (colerrno != NULL) *colerrno = COLE_EINVALIDFILESYSTEM;
-		free (ret);
-		return NULL;
-	default:
-		if (colerrno != NULL) *colerrno = COLE_EUNKNOWN;
-		free (ret);
-		return NULL;
-	}
+    switch (__OLEdecode(filename, &ret->tree, &ret->root, &ret->BDepot,
+                        &ret->SDepot, &ret->sbfile, &ret->sbfilename,
+                        &ret->file, 0)) {
+    case 0:
+        /* success */
+        break;
+    case 10:
+        if (colerrno != NULL)
+            *colerrno = COLE_EMEMORY;
+        free(ret);
+        return NULL;
+    case 7:
+    case 4:
+        if (colerrno != NULL)
+            *colerrno = COLE_EOPENFILE;
+        free(ret);
+        return NULL;
+    case 8:
+    case 9:
+        if (colerrno != NULL)
+            *colerrno = COLE_ENOFILESYSTEM;
+        free(ret);
+        return NULL;
+    case 5:
+        if (colerrno != NULL)
+            *colerrno = COLE_EINVALIDFILESYSTEM;
+        free(ret);
+        return NULL;
+    default:
+        if (colerrno != NULL)
+            *colerrno = COLE_EUNKNOWN;
+        free(ret);
+        return NULL;
+    }
 
-	return ret;
+    return ret;
 }
 
 
@@ -160,36 +165,38 @@ cole_mount (char *filename, COLERRNO *colerrno)
  *
  * Returns: zero in success, no zero in other case.
  */
-int
-cole_umount (COLEFS *colefilesystem, COLERRNO *colerrno)
+int cole_umount(COLEFS * colefilesystem, COLERRNO * colerrno)
 {
-	int ret;
+    int ret;
 
-	ret = 0;
-	free (colefilesystem->BDepot);
-	free (colefilesystem->tree);
-	if (fclose (colefilesystem->file) && !ret) {
-		if (colerrno != NULL) *colerrno = COLE_ECLOSEFILE;
-		ret = 1;
-	}
-	if (colefilesystem->SDepot != NULL) {
-		free (colefilesystem->SDepot);
-		/* may no exist SDepot because there are not small files */
-		/* assert (colefilesystem->sbfile != NULL); */
-		/* assert (colefilesystem->sbfilename != NULL); */
-		if (fclose (colefilesystem->sbfile) && !ret) {
-			if (colerrno != NULL) *colerrno = COLE_ECLOSEFILE;
-			ret = 1;
-		}
-		if (remove (colefilesystem->sbfilename) && !ret) {
-			if (colerrno != NULL) *colerrno = COLE_EREMOVE;
-			ret = 1;
-		}
-		free (colefilesystem->sbfilename);
-	}
-	free (colefilesystem);
+    ret = 0;
+    free(colefilesystem->BDepot);
+    free(colefilesystem->tree);
+    if (fclose(colefilesystem->file) && !ret) {
+        if (colerrno != NULL)
+            *colerrno = COLE_ECLOSEFILE;
+        ret = 1;
+    }
+    if (colefilesystem->SDepot != NULL) {
+        free(colefilesystem->SDepot);
+        /* may no exist SDepot because there are not small files */
+        /* assert (colefilesystem->sbfile != NULL); */
+        /* assert (colefilesystem->sbfilename != NULL); */
+        if (fclose(colefilesystem->sbfile) && !ret) {
+            if (colerrno != NULL)
+                *colerrno = COLE_ECLOSEFILE;
+            ret = 1;
+        }
+        if (remove(colefilesystem->sbfilename) && !ret) {
+            if (colerrno != NULL)
+                *colerrno = COLE_EREMOVE;
+            ret = 1;
+        }
+        free(colefilesystem->sbfilename);
+    }
+    free(colefilesystem);
 
-	return ret;
+    return ret;
 }
 
 
@@ -208,108 +215,107 @@ static COLE_RECURSE_DIR_FUNC __cole_print_tree_indir;
 static COLE_RECURSE_DIR_FUNC __cole_print_tree_outdir;
 static COLE_RECURSE_DIR_FUNC __cole_print_tree_inroot;
 static COLE_RECURSE_DIRENT_FUNC __cole_print_tree_indirentry;
-int
-cole_print_tree (COLEFS *colefilesystem, COLERRNO *colerrno)
+int cole_print_tree(COLEFS * colefilesystem, COLERRNO * colerrno)
 {
-	long level;
+    long level;
 
-	level = 1;
-	if (cole_recurse_tree (colefilesystem, &level,
-			       __cole_print_tree_inroot,
-			       __cole_print_tree_indirentry,
-			       __cole_print_tree_indir,
-			       __cole_print_tree_outdir, NULL, colerrno)) {
-		return 1;
-	}
+    level = 1;
+    if (cole_recurse_tree(colefilesystem, &level,
+                          __cole_print_tree_inroot,
+                          __cole_print_tree_indirentry,
+                          __cole_print_tree_indir,
+                          __cole_print_tree_outdir, NULL, colerrno)) {
+        return 1;
+    }
 
-	return 0;
+    return 0;
 }
-int
-__cole_print_tree_indir(COLEDIR *cd, void *info, COLERRNO *colerrno)
+
+int __cole_print_tree_indir(COLEDIR * cd, void *info, COLERRNO * colerrno)
 {
 /*
  * ATTENTION: if you modify this function so it modifies colerrno:
- * 	Modify colerrno comment in the functions that call it,
- *	ie. cole_print_tree().
+ *      Modify colerrno comment in the functions that call it,
+ *      ie. cole_print_tree().
  */
-	(*((long*)info))++;
-	return 0;
+    (*((long *) info))++;
+    return 0;
 }
-int
-__cole_print_tree_outdir(COLEDIR *cd, void *info, COLERRNO *colerrno)
+
+int __cole_print_tree_outdir(COLEDIR * cd, void *info, COLERRNO * colerrno)
 {
 /*
  * ATTENTION: if you modify this function so it modifies colerrno:
- * 	Modify colerrno comment in the functions that call it,
- *	ie. cole_print_tree().
+ *      Modify colerrno comment in the functions that call it,
+ *      ie. cole_print_tree().
  */
-	(*((long*)info))--;
-	return 0;
+    (*((long *) info))--;
+    return 0;
 }
-int
-__cole_print_tree_inroot(COLEDIR *cd, void *info, COLERRNO *colerrno)
+
+int __cole_print_tree_inroot(COLEDIR * cd, void *info, COLERRNO * colerrno)
 {
 /*
  * ATTENTION: if you modify this function so it modifies colerrno:
- * 	Modify colerrno comment in the functions that call it,
- *	ie. cole_print_tree().
+ *      Modify colerrno comment in the functions that call it,
+ *      ie. cole_print_tree().
  */
-	char *entry_name;
+    char *entry_name;
 
-	printf ("DIR ");
-	printf (" %7lu", cole_dir_getsize (cd));
-	printf (" %08lx-%08lx %08lx-%08lx",
-		cole_dir_getdays1 (cd),
-		cole_dir_getsec1 (cd),
-		cole_dir_getdays2 (cd),
-		cole_dir_getsec2 (cd));
-	entry_name = cole_dir_getname (cd);
-	if (!isprint (entry_name[0]))
-		printf (" '\\x%02x%s'\n", entry_name[0], entry_name+1);
-	else
-		printf (" '%s'\n", entry_name);
+    printf("DIR ");
+    printf(" %7lu", cole_dir_getsize(cd));
+    printf(" %08lx-%08lx %08lx-%08lx",
+           cole_dir_getdays1(cd),
+           cole_dir_getsec1(cd),
+           cole_dir_getdays2(cd), cole_dir_getsec2(cd));
+    entry_name = cole_dir_getname(cd);
+    if (!isprint(entry_name[0]))
+        printf(" '\\x%02x%s'\n", entry_name[0], entry_name + 1);
+    else
+        printf(" '%s'\n", entry_name);
 
-	return 0;
+    return 0;
 }
+
 int
-__cole_print_tree_indirentry(COLEDIRENT *cde, void *info, COLERRNO *colerrno)
+__cole_print_tree_indirentry(COLEDIRENT * cde, void *info,
+                             COLERRNO * colerrno)
 {
 /*
  * ATTENTION: if you modify this function so it modifies colerrno:
- * 	Modify colerrno comment in the functions that call it,
- *	ie. cole_print_tree().
+ *      Modify colerrno comment in the functions that call it,
+ *      ie. cole_print_tree().
  */
-	char *entry_name;
-	long level;
-	long i;
+    char *entry_name;
+    long level;
+    long i;
 
-	level = *((long*)info);
-	for (i = 0; i < level; i++) {
-		if (i == level - 1)
-			printf ("\\--");
-		else
-			printf ("|  ");
-	}
+    level = *((long *) info);
+    for (i = 0; i < level; i++) {
+        if (i == level - 1)
+            printf("\\--");
+        else
+            printf("|  ");
+    }
 
-	if (cole_direntry_isdir (cde))
-		printf ("DIR ");
-	else if (cole_direntry_isfile (cde))
-		printf ("FILE");
-	else
-		printf ("????");
-	printf (" %7lu", cole_direntry_getsize (cde));
-	printf (" %08lx-%08lx %08lx-%08lx",
-		cole_direntry_getdays1 (cde),
-		cole_direntry_getsec1 (cde),
-		cole_direntry_getdays2 (cde),
-		cole_direntry_getsec2 (cde));
-	entry_name = cole_direntry_getname (cde);
-	if (!isprint (entry_name[0]))
-		printf (" '\\x%02x%s'\n", entry_name[0], entry_name+1);
-	else
-		printf (" '%s'\n", entry_name);
+    if (cole_direntry_isdir(cde))
+        printf("DIR ");
+    else if (cole_direntry_isfile(cde))
+        printf("FILE");
+    else
+        printf("????");
+    printf(" %7lu", cole_direntry_getsize(cde));
+    printf(" %08lx-%08lx %08lx-%08lx",
+           cole_direntry_getdays1(cde),
+           cole_direntry_getsec1(cde),
+           cole_direntry_getdays2(cde), cole_direntry_getsec2(cde));
+    entry_name = cole_direntry_getname(cde);
+    if (!isprint(entry_name[0]))
+        printf(" '\\x%02x%s'\n", entry_name[0], entry_name + 1);
+    else
+        printf(" '%s'\n", entry_name);
 
-	return 0;
+    return 0;
 }
 
 
@@ -322,22 +328,22 @@ __cole_print_tree_indirentry(COLEDIRENT *cde, void *info, COLERRNO *colerrno)
  *
  * Returns: a directory in success, or NULL in other case.
  */
-COLEDIR *
-cole_opendir_rootdir (COLEFS *colefilesystem, COLERRNO *colerrno)
+COLEDIR *cole_opendir_rootdir(COLEFS * colefilesystem, COLERRNO * colerrno)
 {
-	COLEDIR *ret;
+    COLEDIR *ret;
 
-	ret = malloc (sizeof (COLEDIR));
-	if (ret == NULL) {
-		if (colerrno != NULL) *colerrno = COLE_EMEMORY;
-		return NULL;
-	}
-	ret->fs = colefilesystem;
-	ret->entry = ret->fs->root;
-	ret->visited_entry.dir = ret;
-	ret->visited_entry.entry = ret->fs->tree[ ret->entry ].dir;
+    ret = malloc(sizeof(COLEDIR));
+    if (ret == NULL) {
+        if (colerrno != NULL)
+            *colerrno = COLE_EMEMORY;
+        return NULL;
+    }
+    ret->fs = colefilesystem;
+    ret->entry = ret->fs->root;
+    ret->visited_entry.dir = ret;
+    ret->visited_entry.entry = ret->fs->tree[ret->entry].dir;
 
-	return ret;
+    return ret;
 }
 
 
@@ -350,27 +356,29 @@ cole_opendir_rootdir (COLEFS *colefilesystem, COLERRNO *colerrno)
  *
  * Returns: a directory in success, or NULL in other case.
  */
-COLEDIR *
-cole_opendir_direntry (COLEDIRENT *coledirentry, COLERRNO *colerrno)
+COLEDIR *cole_opendir_direntry(COLEDIRENT * coledirentry,
+                               COLERRNO * colerrno)
 {
-	COLEDIR *ret;
+    COLEDIR *ret;
 
-	if (!cole_direntry_isdir (coledirentry)) {
-		if (colerrno != NULL) *colerrno = COLE_EISNOTDIR;
-		return NULL;
-	}
+    if (!cole_direntry_isdir(coledirentry)) {
+        if (colerrno != NULL)
+            *colerrno = COLE_EISNOTDIR;
+        return NULL;
+    }
 
-	ret = malloc (sizeof (COLEDIR));
-	if (ret == NULL) {
-		if (colerrno != NULL) *colerrno = COLE_EMEMORY;
-		return NULL;
-	}
-	ret->fs = coledirentry->dir->fs;
-	ret->entry = coledirentry->entry;
-	ret->visited_entry.dir = ret;
-	ret->visited_entry.entry = ret->fs->tree[ ret->entry ].dir;
+    ret = malloc(sizeof(COLEDIR));
+    if (ret == NULL) {
+        if (colerrno != NULL)
+            *colerrno = COLE_EMEMORY;
+        return NULL;
+    }
+    ret->fs = coledirentry->dir->fs;
+    ret->entry = coledirentry->entry;
+    ret->visited_entry.dir = ret;
+    ret->visited_entry.entry = ret->fs->tree[ret->entry].dir;
 
-	return ret;
+    return ret;
 }
 
 
@@ -384,38 +392,35 @@ cole_opendir_direntry (COLEDIRENT *coledirentry, COLERRNO *colerrno)
  *
  * Returns: zero in success, no zero in other case.
  */
-int
-cole_closedir (COLEDIR *coledir, COLERRNO *colerrno)
+int cole_closedir(COLEDIR * coledir, COLERRNO * colerrno)
 {
-	free (coledir);
+    free(coledir);
 
-	return 0;
+    return 0;
 }
 
 
-COLEDIRENT *
-cole_visiteddirentry (COLEDIR *coledir)
+COLEDIRENT *cole_visiteddirentry(COLEDIR * coledir)
 {
-	if (coledir->visited_entry.entry == 0xffffffffUL)
-		return NULL;
+    if (coledir->visited_entry.entry == 0xffffffffUL)
+        return NULL;
 
-	return &coledir->visited_entry;
+    return &coledir->visited_entry;
 }
 
 
-COLEDIRENT *
-cole_nextdirentry (COLEDIR *coledir)
+COLEDIRENT *cole_nextdirentry(COLEDIR * coledir)
 {
-	if (coledir->visited_entry.entry == 0xffffffffUL)
-		return NULL;
+    if (coledir->visited_entry.entry == 0xffffffffUL)
+        return NULL;
 
-	coledir->visited_entry.entry =
-		coledir->fs->tree [ coledir->visited_entry.entry ].next;
+    coledir->visited_entry.entry =
+        coledir->fs->tree[coledir->visited_entry.entry].next;
 
-	if (coledir->visited_entry.entry == 0xffffffffUL)
-		return NULL;
+    if (coledir->visited_entry.entry == 0xffffffffUL)
+        return NULL;
 
-	return &coledir->visited_entry;
+    return &coledir->visited_entry;
 }
 
 
@@ -427,11 +432,10 @@ cole_nextdirentry (COLEDIR *coledir)
  *
  * Returns: no zero if it is a directory, zero in other case.
  */
-int
-cole_direntry_isdir (COLEDIRENT *coledirentry)
+int cole_direntry_isdir(COLEDIRENT * coledirentry)
 {
-	return coledirentry->dir->fs->tree[ coledirentry->entry ].type ==
-	       _COLE_TYPE_DIR;
+    return coledirentry->dir->fs->tree[coledirentry->entry].type ==
+        _COLE_TYPE_DIR;
 }
 
 
@@ -443,105 +447,92 @@ cole_direntry_isdir (COLEDIRENT *coledirentry)
  *
  * Returns: no zero if it is a directory, zero in other case.
  */
-int
-cole_direntry_isfile (COLEDIRENT *coledirentry)
+int cole_direntry_isfile(COLEDIRENT * coledirentry)
 {
-	return coledirentry->dir->fs->tree[ coledirentry->entry ].type ==
-	       _COLE_TYPE_FILE;
+    return coledirentry->dir->fs->tree[coledirentry->entry].type ==
+        _COLE_TYPE_FILE;
 }
 
 
-char *
-cole_direntry_getname (COLEDIRENT *coledirentry)
+char *cole_direntry_getname(COLEDIRENT * coledirentry)
 {
-	return coledirentry->dir->fs->tree[ coledirentry->entry ].name;
+    return coledirentry->dir->fs->tree[coledirentry->entry].name;
 }
 
 
-size_t
-cole_direntry_getsize (COLEDIRENT *coledirentry)
+size_t cole_direntry_getsize(COLEDIRENT * coledirentry)
 {
-	/* FIXME is it cast needed? */
-	return coledirentry->dir->fs->tree[ coledirentry->entry ].size;
+    /* FIXME is it cast needed? */
+    return coledirentry->dir->fs->tree[coledirentry->entry].size;
 }
 
 
-long
-cole_direntry_getsec1 (COLEDIRENT *coledirentry)
+long cole_direntry_getsec1(COLEDIRENT * coledirentry)
 {
-	/* seconds1 is U32, long is at least U32 in all plattforms, isn't it? */
-	return coledirentry->dir->fs->tree[ coledirentry->entry ].seconds1;
+    /* seconds1 is U32, long is at least U32 in all plattforms, isn't it? */
+    return coledirentry->dir->fs->tree[coledirentry->entry].seconds1;
 }
 
 
-long
-cole_direntry_getsec2 (COLEDIRENT *coledirentry)
+long cole_direntry_getsec2(COLEDIRENT * coledirentry)
 {
-	/* seconds2 is U32, long is at least U32 in all plattforms, isn't it? */
-	return coledirentry->dir->fs->tree[ coledirentry->entry ].seconds2;
+    /* seconds2 is U32, long is at least U32 in all plattforms, isn't it? */
+    return coledirentry->dir->fs->tree[coledirentry->entry].seconds2;
 }
 
 
-long
-cole_direntry_getdays1 (COLEDIRENT *coledirentry)
+long cole_direntry_getdays1(COLEDIRENT * coledirentry)
 {
-	/* days1 is U32, long is at least U32 in all plattforms, isn't it? */
-	return coledirentry->dir->fs->tree[ coledirentry->entry ].days1;
+    /* days1 is U32, long is at least U32 in all plattforms, isn't it? */
+    return coledirentry->dir->fs->tree[coledirentry->entry].days1;
 }
 
 
-long
-cole_direntry_getdays2 (COLEDIRENT *coledirentry)
+long cole_direntry_getdays2(COLEDIRENT * coledirentry)
 {
-	/* days2 is U32, long is at least U32 in all plattforms, isn't it? */
-	return coledirentry->dir->fs->tree[ coledirentry->entry ].days2;
+    /* days2 is U32, long is at least U32 in all plattforms, isn't it? */
+    return coledirentry->dir->fs->tree[coledirentry->entry].days2;
 }
 
 
-char *
-cole_dir_getname (COLEDIR *coledir)
+char *cole_dir_getname(COLEDIR * coledir)
 {
-	return coledir->fs->tree[ coledir->entry ].name;
+    return coledir->fs->tree[coledir->entry].name;
 }
 
 
-size_t
-cole_dir_getsize (COLEDIR *coledir)
+size_t cole_dir_getsize(COLEDIR * coledir)
 {
-	/* FIXME is it cast needed? */
-	return coledir->fs->tree[ coledir->entry ].size;
+    /* FIXME is it cast needed? */
+    return coledir->fs->tree[coledir->entry].size;
 }
 
 
-long
-cole_dir_getsec1 (COLEDIR *coledir)
+long cole_dir_getsec1(COLEDIR * coledir)
 {
-	/* seconds1 is U32, long is at least U32 in all plattforms, isn't it? */
-	return coledir->fs->tree[ coledir->entry ].seconds1;
+    /* seconds1 is U32, long is at least U32 in all plattforms, isn't it? */
+    return coledir->fs->tree[coledir->entry].seconds1;
 }
 
 
-long
-cole_dir_getsec2 (COLEDIR *coledir)
+long cole_dir_getsec2(COLEDIR * coledir)
 {
-	/* seconds2 is U32, long is at least U32 in all plattforms, isn't it? */
-	return coledir->fs->tree[ coledir->entry ].seconds2;
+    /* seconds2 is U32, long is at least U32 in all plattforms, isn't it? */
+    return coledir->fs->tree[coledir->entry].seconds2;
 }
 
 
-long
-cole_dir_getdays1 (COLEDIR *coledir)
+long cole_dir_getdays1(COLEDIR * coledir)
 {
-	/* days1 is U32, long is at least U32 in all plattforms, isn't it? */
-	return coledir->fs->tree[ coledir->entry ].days1;
+    /* days1 is U32, long is at least U32 in all plattforms, isn't it? */
+    return coledir->fs->tree[coledir->entry].days1;
 }
 
 
-long
-cole_dir_getdays2 (COLEDIR *coledir)
+long cole_dir_getdays2(COLEDIR * coledir)
 {
-	/* days2 is U32, long is at least U32 in all plattforms, isn't it? */
-	return coledir->fs->tree[ coledir->entry ].days2;
+    /* days2 is U32, long is at least U32 in all plattforms, isn't it? */
+    return coledir->fs->tree[coledir->entry].days2;
 }
 
 
@@ -550,8 +541,8 @@ cole_dir_getdays2 (COLEDIR *coledir)
  * @colefilesystem: filesystem in which @filename is in.
  * @filename: name of the file to open.
  * @colerrno: error value (COLE_EFILENOTFOUND, errors from calls
- * 			   cole_opendir_rootdir(), cole_fopen_direntry() and
- *			   cole_locate_filename()).
+ *                         cole_opendir_rootdir(), cole_fopen_direntry() and
+ *                         cole_locate_filename()).
  *
  * Opens the file with the name @filename in the filesystem @colefilesystem.
  * Currently, @filename must begin with a '/' character, it means @filename is
@@ -560,50 +551,51 @@ cole_dir_getdays2 (COLEDIR *coledir)
  * Returns: a file in success, or NULL in other case.
  */
 struct _cole_fopen_info {
-	COLEFILE *file;
-	int succ;
-	COLERRNO colerrno;
+    COLEFILE *file;
+    int succ;
+    COLERRNO colerrno;
 };
 static COLE_LOCATE_ACTION_FUNC _cole_fopen_action;
-COLEFILE *
-cole_fopen (COLEFS *colefilesystem, char *filename, COLERRNO *colerrno)
+COLEFILE *cole_fopen(COLEFS * colefilesystem, char *filename,
+                     COLERRNO * colerrno)
 {
-	struct _cole_fopen_info info;
+    struct _cole_fopen_info info;
 
-	if (cole_locate_filename (colefilesystem, filename, &info,
-				  _cole_fopen_action, colerrno)) {
-		/* couldn't locate the filename */
-		/* colerrno is set */
-		return NULL;
-	}
+    if (cole_locate_filename(colefilesystem, filename, &info,
+                             _cole_fopen_action, colerrno)) {
+        /* couldn't locate the filename */
+        /* colerrno is set */
+        return NULL;
+    }
 
-	if (info.succ)
-		return info.file;
+    if (info.succ)
+        return info.file;
 
-	if (colerrno != NULL) *colerrno = info.colerrno;
-	return NULL;
+    if (colerrno != NULL)
+        *colerrno = info.colerrno;
+    return NULL;
 }
-void
-_cole_fopen_action (COLEDIRENT *cde, void *_info)
+
+void _cole_fopen_action(COLEDIRENT * cde, void *_info)
 {
-	struct _cole_fopen_info *info;
+    struct _cole_fopen_info *info;
 
-	info = (struct _cole_fopen_info *)_info;
+    info = (struct _cole_fopen_info *) _info;
 
-	if (!cole_direntry_isfile(cde)) {
-		info->colerrno = COLE_EFILENAMEISNOTFILE;
-		info->succ = 0;
-		return;
-	}
+    if (!cole_direntry_isfile(cde)) {
+        info->colerrno = COLE_EFILENAMEISNOTFILE;
+        info->succ = 0;
+        return;
+    }
 
-	info->file = cole_fopen_direntry (cde, &info->colerrno);
-	if (info->file == NULL) {
-		/* colerrno is set */
-		info->succ = 0;
-		return;
-	}
+    info->file = cole_fopen_direntry(cde, &info->colerrno);
+    if (info->file == NULL) {
+        /* colerrno is set */
+        info->succ = 0;
+        return;
+    }
 
-	info->succ = 1;
+    info->succ = 1;
 }
 
 
@@ -611,74 +603,83 @@ _cole_fopen_action (COLEDIRENT *cde, void *_info)
  * cole_fopen_direntry:
  * @coledirentry: directory entry to be opened as file.
  * @colerrno: error value (COLE_EISNOTFILE, COLE_EMEMORY, COLE_ETMPNAM,
- * 			   COLE_EOPENFILE, COLE_EINVALIDFILESYSTEM, COLE_EREAD,
- * 			   COLE_EWRITE, COLE_EUNKNOWN).
+ *                         COLE_EOPENFILE, COLE_EINVALIDFILESYSTEM, COLE_EREAD,
+ *                         COLE_EWRITE, COLE_EUNKNOWN).
  *
  * Opens a directory entry as file.
  *
  * Returns: a file in success, or NULL in other case.
  */
-COLEFILE *
-cole_fopen_direntry (COLEDIRENT *coledirentry, COLERRNO *colerrno)
+COLEFILE *cole_fopen_direntry(COLEDIRENT * coledirentry,
+                              COLERRNO * colerrno)
 {
-	COLEFILE *ret;
+    COLEFILE *ret;
 
-	if (!cole_direntry_isfile (coledirentry)) {
-		if (colerrno != NULL) *colerrno = COLE_EISNOTFILE;
-		return NULL;
-	}
+    if (!cole_direntry_isfile(coledirentry)) {
+        if (colerrno != NULL)
+            *colerrno = COLE_EISNOTFILE;
+        return NULL;
+    }
 
-	ret = malloc (sizeof (COLEFILE));
-	if (ret == NULL) {
-		if (colerrno != NULL) *colerrno = COLE_EMEMORY;
-		return NULL;
-	}
-	ret->fs = coledirentry->dir->fs;
-	ret->entry = coledirentry->entry;
-	switch (__cole_extract_file (&ret->file, &ret->filename,
-				ret->fs->tree[ ret->entry ].size,
-				ret->fs->tree[ ret->entry ].start,
-				ret->fs->BDepot, ret->fs->SDepot,
-				ret->fs->sbfile, ret->fs->file)) {
-	case 0:
-		/* success */
-		break;
-	case 1:
-		if (colerrno != NULL) *colerrno = COLE_EMEMORY;
-		free (ret);
-		return NULL;
-	case 2:
-		if (colerrno != NULL) *colerrno = COLE_ETMPNAM;
-		free (ret);
-		return NULL;
-	case 3:
-		if (colerrno != NULL) *colerrno = COLE_EOPENFILE;
-		free (ret);
-		return NULL;
-	case 4:
-		if (colerrno != NULL) *colerrno = COLE_EINVALIDFILESYSTEM;
-		free (ret);
-		return NULL;
-	case 5:
-		if (colerrno != NULL) *colerrno = COLE_EREAD;
-		free (ret);
-		return NULL;
-	case 6:
-		if (colerrno != NULL) *colerrno = COLE_EWRITE;
-		free (ret);
-		return NULL;
-	default:
-		if (colerrno != NULL) *colerrno = COLE_EUNKNOWN;
-		free (ret);
-		return NULL;
-	}
-	/* because the original fopen(3) leaves the file pointer
-	   in the beginning */
-	rewind (ret->file);
-	ret->pos = 0;
-	ret->filesize = ret->fs->tree[ ret->entry ].size;
+    ret = malloc(sizeof(COLEFILE));
+    if (ret == NULL) {
+        if (colerrno != NULL)
+            *colerrno = COLE_EMEMORY;
+        return NULL;
+    }
+    ret->fs = coledirentry->dir->fs;
+    ret->entry = coledirentry->entry;
+    switch (__cole_extract_file(&ret->file, &ret->filename,
+                                ret->fs->tree[ret->entry].size,
+                                ret->fs->tree[ret->entry].start,
+                                ret->fs->BDepot, ret->fs->SDepot,
+                                ret->fs->sbfile, ret->fs->file)) {
+    case 0:
+        /* success */
+        break;
+    case 1:
+        if (colerrno != NULL)
+            *colerrno = COLE_EMEMORY;
+        free(ret);
+        return NULL;
+    case 2:
+        if (colerrno != NULL)
+            *colerrno = COLE_ETMPNAM;
+        free(ret);
+        return NULL;
+    case 3:
+        if (colerrno != NULL)
+            *colerrno = COLE_EOPENFILE;
+        free(ret);
+        return NULL;
+    case 4:
+        if (colerrno != NULL)
+            *colerrno = COLE_EINVALIDFILESYSTEM;
+        free(ret);
+        return NULL;
+    case 5:
+        if (colerrno != NULL)
+            *colerrno = COLE_EREAD;
+        free(ret);
+        return NULL;
+    case 6:
+        if (colerrno != NULL)
+            *colerrno = COLE_EWRITE;
+        free(ret);
+        return NULL;
+    default:
+        if (colerrno != NULL)
+            *colerrno = COLE_EUNKNOWN;
+        free(ret);
+        return NULL;
+    }
+    /* because the original fopen(3) leaves the file pointer
+       in the beginning */
+    rewind(ret->file);
+    ret->pos = 0;
+    ret->filesize = ret->fs->tree[ret->entry].size;
 
-	return ret;
+    return ret;
 }
 
 
@@ -691,24 +692,25 @@ cole_fopen_direntry (COLEDIRENT *coledirentry, COLERRNO *colerrno)
  *
  * Returns: zero in sucess, no zero in other case.
  */
-int
-cole_fclose (COLEFILE *colefile, COLERRNO *colerrno)
+int cole_fclose(COLEFILE * colefile, COLERRNO * colerrno)
 {
-	int ret;
+    int ret;
 
-	ret = 0;
-	if (fclose (colefile->file) && !ret) {
-		if (colerrno != NULL) *colerrno = COLE_ECLOSEFILE;
-		ret = 1;
-	}
-	if (remove (colefile->filename) && !ret) {
-		if (colerrno != NULL) *colerrno = COLE_EREMOVE;
-		ret = 1;
-	}
-	free (colefile->filename);
-	free (colefile);
+    ret = 0;
+    if (fclose(colefile->file) && !ret) {
+        if (colerrno != NULL)
+            *colerrno = COLE_ECLOSEFILE;
+        ret = 1;
+    }
+    if (remove(colefile->filename) && !ret) {
+        if (colerrno != NULL)
+            *colerrno = COLE_EREMOVE;
+        ret = 1;
+    }
+    free(colefile->filename);
+    free(colefile);
 
-	return ret;
+    return ret;
 }
 
 
@@ -723,39 +725,43 @@ cole_fclose (COLEFILE *colefile, COLERRNO *colerrno)
  * by @ptr. If not success, the file position indicator is not changed.
  *
  * Returns: in sucess the number of bytes actually readed (maximum @size)
- * 	    or zero in other case.
+ *          or zero in other case.
  */
 size_t
-cole_fread (COLEFILE *colefile, void *ptr, size_t size, COLERRNO *colerrno)
+cole_fread(COLEFILE * colefile, void *ptr, size_t size,
+           COLERRNO * colerrno)
 {
-	size_t bytes_read;
+    size_t bytes_read;
 
-	if (fseek (colefile->file, colefile->pos, SEEK_SET)) {
-		if (colerrno != NULL) *colerrno = COLE_ESEEK;
-		return 0;
-	}
-	bytes_read = fread (ptr, 1, size, colefile->file);
-	if (bytes_read == 0) {
-		/* Linux man page says that fread returns a `short item count
-		   (or zero)' when an error of end of file ocurrs. A short count
-		   OR zero? We are hopping that fread always returns zero. */
-		if (feof (colefile->file)) {
-			if (colerrno != NULL) *colerrno = COLE_EOF;
-			return 0;
-		} else if (ferror (colefile->file)) {
-			if (colerrno != NULL) *colerrno = COLE_EREAD;
-			return 0;
-		}
-	}
-	/* assert (size != 0 && bytes_read != 0); */
-	/* assert (bytes_read <= size); */
+    if (fseek(colefile->file, colefile->pos, SEEK_SET)) {
+        if (colerrno != NULL)
+            *colerrno = COLE_ESEEK;
+        return 0;
+    }
+    bytes_read = fread(ptr, 1, size, colefile->file);
+    if (bytes_read == 0) {
+        /* Linux man page says that fread returns a `short item count
+           (or zero)' when an error of end of file ocurrs. A short count
+           OR zero? We are hopping that fread always returns zero. */
+        if (feof(colefile->file)) {
+            if (colerrno != NULL)
+                *colerrno = COLE_EOF;
+            return 0;
+        } else if (ferror(colefile->file)) {
+            if (colerrno != NULL)
+                *colerrno = COLE_EREAD;
+            return 0;
+        }
+    }
+    /* assert (size != 0 && bytes_read != 0); */
+    /* assert (bytes_read <= size); */
 
-	/* assert (size && (colefile->pos + bytes_read > colefile->pos)); */
-	colefile->pos += bytes_read;
-	/* assert (!feof (colefile->file)
-		   && ftell (colefile->file) == colefile->pos); */
+    /* assert (size && (colefile->pos + bytes_read > colefile->pos)); */
+    colefile->pos += bytes_read;
+    /* assert (!feof (colefile->file)
+       && ftell (colefile->file) == colefile->pos); */
 
-	return bytes_read;
+    return bytes_read;
 }
 
 
@@ -768,10 +774,9 @@ cole_fread (COLEFILE *colefile, void *ptr, size_t size, COLERRNO *colerrno)
  *
  * Returns: The file position.
  */
-size_t
-cole_ftell (COLEFILE *colefile)
+size_t cole_ftell(COLEFILE * colefile)
 {
-	return colefile->pos;
+    return colefile->pos;
 }
 
 
@@ -794,51 +799,57 @@ cole_ftell (COLEFILE *colefile)
  * Returns: zero in success, no zero in other case.
  */
 int
-cole_fseek (COLEFILE *colefile, size_t delta, COLE_SEEK_FLAG direction,
-	    COLERRNO *colerrno)
+cole_fseek(COLEFILE * colefile, size_t delta, COLE_SEEK_FLAG direction,
+           COLERRNO * colerrno)
 {
-	if (delta < 0) {
-		if (colerrno != NULL) *colerrno = COLE_EFSEEKDELTA;
-		return 1;
-	}
+    if (delta < 0) {
+        if (colerrno != NULL)
+            *colerrno = COLE_EFSEEKDELTA;
+        return 1;
+    }
 
-	switch (direction) {
-	case COLE_SEEK_SET:
-		if (delta <= colefile->filesize) {
-			colefile->pos = delta;
-			return 0;
-		} else {
-			if (colerrno != NULL) *colerrno = COLE_EFSEEKDELTA;
-			return 1;
-		}
-	case COLE_SEEK_END:
-		if (delta <= colefile->filesize) {
-			colefile->pos = colefile->filesize - delta;
-			return 0;
-		} else {
-			if (colerrno != NULL) *colerrno = COLE_EFSEEKDELTA;
-			return 1;
-		}
-	case COLE_SEEK_BACKWARD:
-		if (delta <= colefile->pos) {
-			colefile->pos = colefile->pos - delta;
-			return 0;
-		} else {
-			if (colerrno != NULL) *colerrno = COLE_EFSEEKDELTA;
-			return 1;
-		}
-	case COLE_SEEK_FORWARD:
-		if (delta <= colefile->filesize - colefile->pos) {
-			colefile->pos = colefile->pos + delta;
-			return 0;
-		} else {
-			if (colerrno != NULL) *colerrno = COLE_EFSEEKDELTA;
-			return 1;
-		}
-	default:
-		if (colerrno != NULL) *colerrno = COLE_EFSEEKFLAG;
-		return 1;
-	}
+    switch (direction) {
+    case COLE_SEEK_SET:
+        if (delta <= colefile->filesize) {
+            colefile->pos = delta;
+            return 0;
+        } else {
+            if (colerrno != NULL)
+                *colerrno = COLE_EFSEEKDELTA;
+            return 1;
+        }
+    case COLE_SEEK_END:
+        if (delta <= colefile->filesize) {
+            colefile->pos = colefile->filesize - delta;
+            return 0;
+        } else {
+            if (colerrno != NULL)
+                *colerrno = COLE_EFSEEKDELTA;
+            return 1;
+        }
+    case COLE_SEEK_BACKWARD:
+        if (delta <= colefile->pos) {
+            colefile->pos = colefile->pos - delta;
+            return 0;
+        } else {
+            if (colerrno != NULL)
+                *colerrno = COLE_EFSEEKDELTA;
+            return 1;
+        }
+    case COLE_SEEK_FORWARD:
+        if (delta <= colefile->filesize - colefile->pos) {
+            colefile->pos = colefile->pos + delta;
+            return 0;
+        } else {
+            if (colerrno != NULL)
+                *colerrno = COLE_EFSEEKDELTA;
+            return 1;
+        }
+    default:
+        if (colerrno != NULL)
+            *colerrno = COLE_EFSEEKFLAG;
+        return 1;
+    }
 }
 
 
@@ -852,13 +863,12 @@ cole_fseek (COLEFILE *colefile, size_t delta, COLE_SEEK_FLAG direction,
  *
  * Returns: zero in success, no zero in other case.
  */
-int
-cole_frewind (COLEFILE *colefile, COLERRNO *colerrno)
+int cole_frewind(COLEFILE * colefile, COLERRNO * colerrno)
 {
-	if (cole_fseek (colefile, 0, COLE_SEEK_SET, colerrno))
-		return 1;
+    if (cole_fseek(colefile, 0, COLE_SEEK_SET, colerrno))
+        return 1;
 
-	return 0;
+    return 0;
 }
 
 
@@ -868,10 +878,9 @@ cole_frewind (COLEFILE *colefile, COLERRNO *colerrno)
  * 
  * Returns the size in bytes of the file @colefile.
  */
-size_t
-cole_fsize (COLEFILE *colefile)
+size_t cole_fsize(COLEFILE * colefile)
 {
-	return colefile->filesize;
+    return colefile->filesize;
 }
 
 
@@ -883,12 +892,11 @@ cole_fsize (COLEFILE *colefile)
  *
  * Returns: no zero if the end of file has been reached, zero in other case.
  */
-int
-cole_feof (COLEFILE *colefile)
+int cole_feof(COLEFILE * colefile)
 {
-	/* assert ((colefile->pos == colefile->fs->tree[ colefile->entry ].size)
-	        && feof (colefile->file)); */
-	return (colefile->pos == colefile->filesize);
+    /* assert ((colefile->pos == colefile->fs->tree[ colefile->entry ].size)
+       && feof (colefile->file)); */
+    return (colefile->pos == colefile->filesize);
 }
 
 
@@ -899,16 +907,16 @@ cole_feof (COLEFILE *colefile)
  * @inroot: pointer to the function that is called when start visiting root
  *          directory. It can be NULL.
  * @indirentry: pointer to the function that is called when start visiting any
- * 		directory entry (file or directory). It can be NULL.
+ *              directory entry (file or directory). It can be NULL.
  * @indir: pointer to the function that is called when start visiting a
- * 	   directory. It can be NULL.
+ *         directory. It can be NULL.
  * @outdir: pointer to the function that is called when end visiting a
- * 	    directory. It can be NULL.
+ *          directory. It can be NULL.
  * @visitdir: pointer to the function that is called to know if visit a
- * 	      directory. It can be NULL.
+ *            directory. It can be NULL.
  * @colerrno: error value (errors from calls cole_opendir_rootdir(),
- * 			   cole_opendir_direntry(), cole_closedir() and
- *			   inroot, indirentry, indir, and outdir functions).
+ *                         cole_opendir_direntry(), cole_closedir() and
+ *                         inroot, indirentry, indir, and outdir functions).
  *
  * Recurse the filesystem @colefilesystem, calling the functions pointed by
  * @inroot, @indirentry, @indir and @outdirectory when start visiting
@@ -923,127 +931,127 @@ cole_feof (COLEFILE *colefile)
  * Returns: zero if recursed all the tree, no zero in other case.
  */
 static int
-__cole_recurse_tree (COLEDIR *_cd, long level, void *info,
-		     COLE_RECURSE_DIR_FUNC *inroot,
-		     COLE_RECURSE_DIRENT_FUNC *indirentry,
-		     COLE_RECURSE_DIR_FUNC *indir,
-		     COLE_RECURSE_DIR_FUNC *outdir,
-		     COLE_RECURSE_VISIT_DIR_FUNC *visitdir,
-		     COLERRNO *colerrno);
+__cole_recurse_tree(COLEDIR * _cd, long level, void *info,
+                    COLE_RECURSE_DIR_FUNC * inroot,
+                    COLE_RECURSE_DIRENT_FUNC * indirentry,
+                    COLE_RECURSE_DIR_FUNC * indir,
+                    COLE_RECURSE_DIR_FUNC * outdir,
+                    COLE_RECURSE_VISIT_DIR_FUNC * visitdir,
+                    COLERRNO * colerrno);
 int
-cole_recurse_tree (COLEFS *colefilesystem, void *info,
-		     COLE_RECURSE_DIR_FUNC *inroot,
-		     COLE_RECURSE_DIRENT_FUNC *indirentry,
-		     COLE_RECURSE_DIR_FUNC *indir,
-		     COLE_RECURSE_DIR_FUNC *outdir,
-		     COLE_RECURSE_VISIT_DIR_FUNC *visitdir,
-		     COLERRNO *colerrno)
+cole_recurse_tree(COLEFS * colefilesystem, void *info,
+                  COLE_RECURSE_DIR_FUNC * inroot,
+                  COLE_RECURSE_DIRENT_FUNC * indirentry,
+                  COLE_RECURSE_DIR_FUNC * indir,
+                  COLE_RECURSE_DIR_FUNC * outdir,
+                  COLE_RECURSE_VISIT_DIR_FUNC * visitdir,
+                  COLERRNO * colerrno)
 {
-	COLEDIR * cd;
+    COLEDIR *cd;
 
-	cd = cole_opendir_rootdir (colefilesystem, colerrno);
-	if (cd == NULL)
-		return 1;
+    cd = cole_opendir_rootdir(colefilesystem, colerrno);
+    if (cd == NULL)
+        return 1;
 
-	if (__cole_recurse_tree (cd, 1, info, inroot, indirentry, indir,
-				 outdir, visitdir, colerrno)) {
-		cole_closedir (cd, NULL);
-		/* colerrno is set */
-		return 1;
-	}
+    if (__cole_recurse_tree(cd, 1, info, inroot, indirentry, indir,
+                            outdir, visitdir, colerrno)) {
+        cole_closedir(cd, NULL);
+        /* colerrno is set */
+        return 1;
+    }
 
-	if (cole_closedir (cd, colerrno)) {
-		/* colerrno is set */
-		return 1;
-	}
+    if (cole_closedir(cd, colerrno)) {
+        /* colerrno is set */
+        return 1;
+    }
 
-	return 0;
+    return 0;
 }
+
 int
-__cole_recurse_tree (COLEDIR *_cd, long level, void *info,
-		     COLE_RECURSE_DIR_FUNC *inroot,
-		     COLE_RECURSE_DIRENT_FUNC *indirentry,
-		     COLE_RECURSE_DIR_FUNC *indir,
-		     COLE_RECURSE_DIR_FUNC *outdir,
-		     COLE_RECURSE_VISIT_DIR_FUNC *visitdir,
-		     COLERRNO *colerrno)
+__cole_recurse_tree(COLEDIR * _cd, long level, void *info,
+                    COLE_RECURSE_DIR_FUNC * inroot,
+                    COLE_RECURSE_DIRENT_FUNC * indirentry,
+                    COLE_RECURSE_DIR_FUNC * indir,
+                    COLE_RECURSE_DIR_FUNC * outdir,
+                    COLE_RECURSE_VISIT_DIR_FUNC * visitdir,
+                    COLERRNO * colerrno)
 {
 /*
  * ATTENTION: if you modify __cole_recurse_tree() so it modifies colerrno
  * besides in calling inroot, indirentry, indir, outdir, cole_opendir_direntry
  * or cole_closedir:
- * 	Modify colerrno comment in the functions that call it,
- *	ie. cole_recurse_tree().
+ *      Modify colerrno comment in the functions that call it,
+ *      ie. cole_recurse_tree().
  */
 
-	/* ATTENTION: This is a recursive function */
-	COLEDIRENT * cde;
-	COLEDIR * cd;
+    /* ATTENTION: This is a recursive function */
+    COLEDIRENT *cde;
+    COLEDIR *cd;
 
-	if (level == 1) {
-		/* The following lines are only executed on Root Entry */
-		if (inroot != NULL) {
-			if ( (*inroot) (_cd, info, colerrno) ) {
-				/* colerrno is set */
-				return 1;
-			}
-		}
-	}
+    if (level == 1) {
+        /* The following lines are only executed on Root Entry */
+        if (inroot != NULL) {
+            if ((*inroot) (_cd, info, colerrno)) {
+                /* colerrno is set */
+                return 1;
+            }
+        }
+    }
 
-	/* Iterate through childrens */
-	for (cde = cole_visiteddirentry (_cd); cde != NULL;
-	     cde = cole_nextdirentry (_cd)) {
-		if (indirentry != NULL) {
-			if ( (*indirentry) (cde, info, colerrno) ) {
-				/* colerrno is set */
-				return 1;
-			}
-		}
+    /* Iterate through childrens */
+    for (cde = cole_visiteddirentry(_cd); cde != NULL;
+         cde = cole_nextdirentry(_cd)) {
+        if (indirentry != NULL) {
+            if ((*indirentry) (cde, info, colerrno)) {
+                /* colerrno is set */
+                return 1;
+            }
+        }
 
-		/* RECURSIVE CALL */
-		if (cole_direntry_isdir (cde)) {
-			cd = cole_opendir_direntry (cde, colerrno);
-			if (cd == NULL) {
-				/* colerrno is set */
-				return 1;
-			}
+        /* RECURSIVE CALL */
+        if (cole_direntry_isdir(cde)) {
+            cd = cole_opendir_direntry(cde, colerrno);
+            if (cd == NULL) {
+                /* colerrno is set */
+                return 1;
+            }
 
-			if (indir != NULL) {
-				if ( (*indir) (cd, info, colerrno) ) {
-					/* colerrno is set */
-					cole_closedir (cd, NULL);
-					return 1;
-				}
-			}
+            if (indir != NULL) {
+                if ((*indir) (cd, info, colerrno)) {
+                    /* colerrno is set */
+                    cole_closedir(cd, NULL);
+                    return 1;
+                }
+            }
 
-			if ( (visitdir == NULL) || 
-			     ((*visitdir)(cd, info)) ) {
-				if (__cole_recurse_tree (cd, level + 1, info,
-							 inroot, indirentry,
-							 indir, outdir,
-							 visitdir, colerrno)) {
-					/* colerrno is set */
-					cole_closedir (cd, NULL);
-					return 1;
-				}
-			}
+            if ((visitdir == NULL) || ((*visitdir) (cd, info))) {
+                if (__cole_recurse_tree(cd, level + 1, info,
+                                        inroot, indirentry,
+                                        indir, outdir,
+                                        visitdir, colerrno)) {
+                    /* colerrno is set */
+                    cole_closedir(cd, NULL);
+                    return 1;
+                }
+            }
 
-			if (outdir != NULL) {
-				if ( (*outdir) (cd, info, colerrno) ) {
-					/* colerrno is set */
-					cole_closedir (cd, NULL);
-					return 1;
-				}
-			}
+            if (outdir != NULL) {
+                if ((*outdir) (cd, info, colerrno)) {
+                    /* colerrno is set */
+                    cole_closedir(cd, NULL);
+                    return 1;
+                }
+            }
 
-			if (cole_closedir (cd, colerrno)) {
-				/* colerrno is set */
-				return 1;
-			}
-		}
-	}
+            if (cole_closedir(cd, colerrno)) {
+                /* colerrno is set */
+                return 1;
+            }
+        }
+    }
 
-	return 0;
+    return 0;
 }
 
 
@@ -1054,8 +1062,8 @@ __cole_recurse_tree (COLEDIR *_cd, long level, void *info,
  * @info: arbitrary pointer passed to @action.
  * @action: pointer to the function that is called when founding @filename.
  * @colerrno: error value (COLE_EUNKNOWN, COLE_EMEMBERISNOTDIR,
- * 			   COLE_EFILENOTFOUND, COLE_EBROKENFILENAME, errors
- * 			   from call cole_recurse_tree()).
+ *                         COLE_EFILENOTFOUND, COLE_EBROKENFILENAME, errors
+ *                         from call cole_recurse_tree()).
  *
  * Locate the @filename in the filesystem @colefilesystem, calling @action when
  * it's found. @info is arbitrary pointer passed to @action.
@@ -1065,122 +1073,126 @@ __cole_recurse_tree (COLEDIR *_cd, long level, void *info,
  * Returns: zero in success, 1  in other case.
  */
 struct __cole_locate_filenameinfo {
-	COLE_LOCATE_ACTION_FUNC *action;
-	void *info;
-	char *filename;
-	char *current;
-	int visitdir;
+    COLE_LOCATE_ACTION_FUNC *action;
+    void *info;
+    char *filename;
+    char *current;
+    int visitdir;
 };
 static COLE_RECURSE_DIRENT_FUNC __cole_locate_filename_indirentry;
 static COLE_RECURSE_VISIT_DIR_FUNC __cole_locate_filename_visitdir;
 int
-cole_locate_filename (COLEFS *colefilesystem, char *filename,
-		      void *info,
-		      COLE_LOCATE_ACTION_FUNC *action,
-		      COLERRNO *colerrno)
+cole_locate_filename(COLEFS * colefilesystem, char *filename,
+                     void *info,
+                     COLE_LOCATE_ACTION_FUNC * action, COLERRNO * colerrno)
 {
-	struct __cole_locate_filenameinfo _info;
-	COLERRNO _colerrno;
+    struct __cole_locate_filenameinfo _info;
+    COLERRNO _colerrno;
 
-	/* FIXME allow no absolute paths */
-	if (filename[0] != '/') {
-		if (colerrno != NULL) *colerrno = COLE_EBROKENFILENAME;
-		return 1;
-	}
+    /* FIXME allow no absolute paths */
+    if (filename[0] != '/') {
+        if (colerrno != NULL)
+            *colerrno = COLE_EBROKENFILENAME;
+        return 1;
+    }
 
-	_info.action = action;
-	_info.info = info;
-	_info.filename = filename;
-	_info.current = filename + 1;
+    _info.action = action;
+    _info.info = info;
+    _info.filename = filename;
+    _info.current = filename + 1;
 
-	if (cole_recurse_tree (colefilesystem, &_info, NULL,
-			   __cole_locate_filename_indirentry, NULL, NULL,
-			   __cole_locate_filename_visitdir,
-			   &_colerrno)) {
-		if (_colerrno == COLE_ELAST+1) {
-			/* file was found */
-			return 0;
-		}
-		if (colerrno != NULL) *colerrno = _colerrno;
-		return 1;
-	}
+    if (cole_recurse_tree(colefilesystem, &_info, NULL,
+                          __cole_locate_filename_indirentry, NULL, NULL,
+                          __cole_locate_filename_visitdir, &_colerrno)) {
+        if (_colerrno == COLE_ELAST + 1) {
+            /* file was found */
+            return 0;
+        }
+        if (colerrno != NULL)
+            *colerrno = _colerrno;
+        return 1;
+    }
 
-	if (colerrno != NULL) *colerrno = COLE_EFILENOTFOUND;
-	return 1;
+    if (colerrno != NULL)
+        *colerrno = COLE_EFILENOTFOUND;
+    return 1;
 }
+
+int __cole_locate_filename_visitdir(COLEDIR * cd, void *info)
+{
+    return ((struct __cole_locate_filenameinfo *) info)->visitdir;
+}
+
 int
-__cole_locate_filename_visitdir (COLEDIR *cd, void *info)
+__cole_locate_filename_indirentry(COLEDIRENT * cde, void *_info,
+                                  COLERRNO * colerrno)
 {
-	return ((struct __cole_locate_filenameinfo *)info)->visitdir;
-}
-int
-__cole_locate_filename_indirentry (COLEDIRENT *cde, void *_info,
-				COLERRNO *colerrno)
-{
-	char *entry_name;
-	struct __cole_locate_filenameinfo *info;
-	char *pcurrent;
-	char *pentry_name;
+    char *entry_name;
+    struct __cole_locate_filenameinfo *info;
+    char *pcurrent;
+    char *pentry_name;
 
-	info = (struct __cole_locate_filenameinfo *)_info;
-	entry_name = cole_direntry_getname (cde);
-	for (pcurrent = info->current, pentry_name = entry_name;
-	     *pcurrent && *pentry_name && *pcurrent != '/';
-	     pcurrent++, pentry_name++) {
-		if (*pcurrent != *pentry_name) {
-			info->visitdir = 0;	/* don't visit this directory */
-			return 0;		/* don't break recurse */
-		}
-	}
-	switch (*pentry_name) {
-	case 0:
-		switch (*pcurrent) {
-		case '/':
-			if (!cole_direntry_isdir (cde)) {
-				if (colerrno != NULL)
-					*colerrno = COLE_EMEMBERISNOTDIR;
-				return 1;	/* break recurse */
-			}
-			pcurrent++;		/* jump the '/' character */
-			info->current = pcurrent;
+    info = (struct __cole_locate_filenameinfo *) _info;
+    entry_name = cole_direntry_getname(cde);
+    for (pcurrent = info->current, pentry_name = entry_name;
+         *pcurrent && *pentry_name && *pcurrent != '/';
+         pcurrent++, pentry_name++) {
+        if (*pcurrent != *pentry_name) {
+            info->visitdir = 0; /* don't visit this directory */
+            return 0;           /* don't break recurse */
+        }
+    }
+    switch (*pentry_name) {
+    case 0:
+        switch (*pcurrent) {
+        case '/':
+            if (!cole_direntry_isdir(cde)) {
+                if (colerrno != NULL)
+                    *colerrno = COLE_EMEMBERISNOTDIR;
+                return 1;       /* break recurse */
+            }
+            pcurrent++;         /* jump the '/' character */
+            info->current = pcurrent;
 
-			/* check if it's the last component of filename */
-			if (!(*info->current)) {
-				/* last component of filename reached */
-				if (info->action != NULL) {
-					(*(info->action)) (cde, info->info);
-				}
+            /* check if it's the last component of filename */
+            if (!(*info->current)) {
+                /* last component of filename reached */
+                if (info->action != NULL) {
+                    (*(info->action)) (cde, info->info);
+                }
 
-				if (colerrno != NULL) *colerrno = COLE_ELAST+1;
-				return 1;               /* break recurse */
-			}
-			info->visitdir = 1;	/* visit this directory */
-			return 0;		/* don't break recurse */
-		case 0:
-			/* last component of filename reached */
-                        if (info->action != NULL) {
-				(*(info->action)) (cde, info->info);
-                        }
+                if (colerrno != NULL)
+                    *colerrno = COLE_ELAST + 1;
+                return 1;       /* break recurse */
+            }
+            info->visitdir = 1; /* visit this directory */
+            return 0;           /* don't break recurse */
+        case 0:
+            /* last component of filename reached */
+            if (info->action != NULL) {
+                (*(info->action)) (cde, info->info);
+            }
 
-			if (colerrno != NULL) *colerrno = COLE_ELAST+1;
-			return 1;		/* break recurse */
-		default:
-			info->visitdir = 0;	/* don't visit this directory */
-			return 0;		/* don't break recurse */
-		}
-	default:
-		switch (*pcurrent) {
-		case 0:
-			info->visitdir = 0;	/* don't visit this directory */
-			return 0;		/* don't break recurse */
-		case '/':
-			info->visitdir = 0;	/* don't visit this directory */
-			return 0;		/* don't break recurse */
-		default:
-			if (colerrno != NULL) *colerrno = COLE_EUNKNOWN;
-			return 1;		/* break recurse */
-		}
-	}
+            if (colerrno != NULL)
+                *colerrno = COLE_ELAST + 1;
+            return 1;           /* break recurse */
+        default:
+            info->visitdir = 0; /* don't visit this directory */
+            return 0;           /* don't break recurse */
+        }
+    default:
+        switch (*pcurrent) {
+        case 0:
+            info->visitdir = 0; /* don't visit this directory */
+            return 0;           /* don't break recurse */
+        case '/':
+            info->visitdir = 0; /* don't visit this directory */
+            return 0;           /* don't break recurse */
+        default:
+            if (colerrno != NULL)
+                *colerrno = COLE_EUNKNOWN;
+            return 1;           /* break recurse */
+        }
+    }
 
 }
-

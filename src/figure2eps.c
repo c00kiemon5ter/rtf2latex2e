@@ -18,63 +18,21 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-# include	<stdio.h>
-# include	<stdlib.h>
+# include       <stdio.h>
+# include       <stdlib.h>
+# include <sys/wait.h>
+# include <unistd.h>
+static char *convertArgv[2];
 
-#if defined(__MWERKS__) || defined(_VISUALC_)
-	#include "magick/magick.h"
-	#include "magick/defines.h"
-#else
-    #include <sys/wait.h>
-    #include <unistd.h>
-    static char *convertArgv[2];
-#endif	
-
-int Figure2eps (char *inputPicture, char *outputPicture);
-
-
-int Figure2eps (char *inputPicture, char *outputPicture)
+int Figure2eps(char *inputPicture, char *outputPicture)
 {
-int res = 0;
-
-/* Use statically linked IMagick library for Mac and Windows */	
-#if defined(__MWERKS__) || defined(_VISUALC_)
-
-      Image
-        *image;
-
-      ImageInfo
-        image_info;
-
-      /*
-        Initialize the image info structure and read an image.
-      */
-      GetImageInfo(&image_info);
-      (void) strcpy(image_info.filename,inputPicture);
-      image=ReadImage(&image_info);
-      if (image == (Image *) NULL)
-        return(1);
-
-      /*
-        Write the image as EPS and destroy it.
-      */
-      (void) strcpy(image->filename,outputPicture);
-      WriteImage(&image_info,image);
-      DestroyImage(image);
-      
-      
-/* 
- * On Unix/Linux, use the external IMagick convert utility, 
- * if available 
- */	
-#elif __GNUC__
+    int res = 0;
     pid_t pid;
     int err = 0;
 
     pid = fork();
 
-    switch(pid)
-    {
+    switch (pid) {
     case -1:
         printf("figure2eps: fork failed!\n");
         return (1);
@@ -82,7 +40,9 @@ int res = 0;
         printf("Calling ImageMagick to convert figure to EPS...\n");
         convertArgv[0] = inputPicture;
         convertArgv[1] = outputPicture;
-        err = execlp("convert", "convert", convertArgv[0], convertArgv[1], (char *)0);
+        err =
+            execlp("convert", "convert", convertArgv[0], convertArgv[1],
+                   (char *) 0);
         /* if we reach here, the convert utility could not be found */
         exit(1);
         break;
@@ -90,23 +50,17 @@ int res = 0;
         break;
     }
 
-    if(pid != 0)
-    {
+    if (pid != 0) {
         int stat_val;
         pid_t child_pid;
 
         /* wait for the conversion process to finish */
         child_pid = wait(&stat_val);
-        if(WIFEXITED(stat_val) && !WEXITSTATUS(stat_val))
+        if (WIFEXITED(stat_val) && !WEXITSTATUS(stat_val))
             res = 0;
         else
             res = 1;
     }
 
-/* we can't convert, get out */
-#else
-	res = 1;
-#endif		
-
-return (res);
+    return (res);
 }

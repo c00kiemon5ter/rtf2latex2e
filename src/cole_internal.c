@@ -30,82 +30,82 @@
 
 
 int
-__cole_extract_file (FILE **file, char **filename, U32 size, U32 pps_start,
-		    U8 *BDepot, U8 *SDepot, FILE *sbfile, FILE *inputfile)
+__cole_extract_file(FILE ** file, char **filename, U32 size, U32 pps_start,
+                    U8 * BDepot, U8 * SDepot, FILE * sbfile,
+                    FILE * inputfile)
 {
-	/* FIXME rewrite this cleanner */
+    /* FIXME rewrite this cleanner */
 
-	FILE *ret;
-	U16 BlockSize, Offset;
-	U8 *Depot;
-	FILE *infile;
-	long FilePos;
-	size_t bytes_to_copy;
-	U8 Block[0x0200];
+    FILE *ret;
+    U16 BlockSize, Offset;
+    U8 *Depot;
+    FILE *infile;
+    long FilePos;
+    size_t bytes_to_copy;
+    U8 Block[0x0200];
 
-	*filename = malloc (L_tmpnam);		/* It must be L_tmpnam + 1? */
-	if (*filename == NULL)
-		return 1;
+    *filename = malloc(L_tmpnam);       /* It must be L_tmpnam + 1? */
+    if (*filename == NULL)
+        return 1;
 
-	if (tmpnam (*filename) == NULL) {
-		free (*filename);
-		return 2;
-	}
-	ret = fopen (*filename, "w+b");
-	*file = ret;
-	if (ret == NULL) {
-		free (*filename);
-		return 3;
-	}
-	if (size >= 0x1000) {
-		/* read from big block depot */
-		Offset = 1;
-		BlockSize = 0x0200;
-		infile = inputfile;
-		Depot = BDepot;
-	} else {
-		/* read from small block file */
-		Offset = 0;
-		BlockSize = 0x40;
-		infile = sbfile;
-		Depot = SDepot;
-	}
-	while (pps_start != 0xfffffffeUL /*&& pps_start != 0xffffffffUL &&
-		pps_start != 0xfffffffdUL*/) {
-		FilePos = (long)((pps_start + Offset) * BlockSize);
-		if (FilePos < 0) {
-			fclose (ret);
-			remove (*filename);
-			free (*filename);
-			return 4;
-		}
-		bytes_to_copy = MIN (BlockSize, size);
-		if (fseek (infile, FilePos, SEEK_SET)) {
-			fclose (ret);
-			remove (*filename);
-			free (*filename);
-			return 4;
-		}
-		fread (Block, bytes_to_copy, 1, infile);
-		if (ferror (infile)) {
-			fclose (ret);
-			remove (*filename);
-			free (*filename);
-			return 5;
-		}
-		fwrite (Block, bytes_to_copy, 1, ret);
-		if (ferror (ret)) {
-			fclose (ret);
-			remove (*filename);
-			free (*filename);
-			return 6;
-		}
-		pps_start = fil_sreadU32 (Depot + (pps_start * 4));
-		size -= MIN (BlockSize, size);
-		if (size == 0)
-			break;
-	}
+    if (tmpnam(*filename) == NULL) {
+        free(*filename);
+        return 2;
+    }
+    ret = fopen(*filename, "w+b");
+    *file = ret;
+    if (ret == NULL) {
+        free(*filename);
+        return 3;
+    }
+    if (size >= 0x1000) {
+        /* read from big block depot */
+        Offset = 1;
+        BlockSize = 0x0200;
+        infile = inputfile;
+        Depot = BDepot;
+    } else {
+        /* read from small block file */
+        Offset = 0;
+        BlockSize = 0x40;
+        infile = sbfile;
+        Depot = SDepot;
+    }
+    while (pps_start != 0xfffffffeUL    /*&& pps_start != 0xffffffffUL &&
+                                           pps_start != 0xfffffffdUL */ ) {
+        FilePos = (long) ((pps_start + Offset) * BlockSize);
+        if (FilePos < 0) {
+            fclose(ret);
+            remove(*filename);
+            free(*filename);
+            return 4;
+        }
+        bytes_to_copy = MIN(BlockSize, size);
+        if (fseek(infile, FilePos, SEEK_SET)) {
+            fclose(ret);
+            remove(*filename);
+            free(*filename);
+            return 4;
+        }
+        fread(Block, bytes_to_copy, 1, infile);
+        if (ferror(infile)) {
+            fclose(ret);
+            remove(*filename);
+            free(*filename);
+            return 5;
+        }
+        fwrite(Block, bytes_to_copy, 1, ret);
+        if (ferror(ret)) {
+            fclose(ret);
+            remove(*filename);
+            free(*filename);
+            return 6;
+        }
+        pps_start = fil_sreadU32(Depot + (pps_start * 4));
+        size -= MIN(BlockSize, size);
+        if (size == 0)
+            break;
+    }
 
-	return 0;
+    return 0;
 }
-
