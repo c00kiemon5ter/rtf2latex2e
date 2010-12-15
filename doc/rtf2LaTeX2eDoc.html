@@ -1,0 +1,379 @@
+  <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+           "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<META NAME="GENERATOR" CONTENT="TtH 2.25">
+                                                                     
+<title> rtf2latex2e Documentation\\
+version 1.0 beta</title>
+ 
+<H1 align=center><b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> Documentation<br>
+version 1.0 beta </H1> 
+
+<H3 align=center>Ujwal S. Sathyam<br>
+<a href="mailto:setlur@bigfoot.com"><tt>setlur@bigfoot.com</a></tt> </H3> 
+
+<p>
+         <H2><A NAME="tth_sEc1">
+1</A>&nbsp;&nbsp;Introduction 
+<A NAME="intro">
+</A></H2> <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> is an RTF<font face=symbol>Æ</font
+>L<sup>A</sup>T<sub>E</sub>X
+converter that takes as its input RTF files produced by Microsoft Word
+and comparable word processors such as Star Office and generates a
+T<sub>E</sub>X-able ``<b>.tex</b>'' file.  It has the capability to handle fairly
+complex RTF files containing figures, tables, and starting from
+version 1.0 equations (courtesy Steve Swanson, Mackichan Software).  <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> is written using standard C and
+should compile on any platform supporting a C compiler.  I have
+tested it on the Macintosh, Linux (Intel), Linux (PowerPC), Windows
+95/NT, and Solaris.
+
+<p>
+<b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> uses the generic
+<a href="http://www.primate.wisc.edu/software/RTF/"><tt>RTF reader</a></tt>
+framework by Paul DuBois.  The framework is a general purpose tool for
+processing RTF files and may be configured in a well-defined manner to
+allow it to be used with a variety of writers generating different
+output formats.  This provides a method for generating RTF-to-XXX
+translators.  Essentially, <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> provides the L<sup>A</sup>T<sub>E</sub>X2e writer
+code to the RTF reader.  Paul seems to have stopped developing the
+reader code, therefore I had to adapt it quite a bit to handle the
+latest version of RTF.
+
+<p>
+
+<H2>What you will get</H2>
+If you expect a WYSIWYG reproduction of your RTF file, you may be
+disappointed.  My main concerns have been translating the essential
+features of the RTF file such as characters, figures, tables, and
+equations.  I have largely ignored visual formatting
+such as ruler positions, tabs (until I figure out a good way of doing
+this), paragraph indentations, and other fluff.  I have always
+expected the output L<sup>A</sup>T<sub>E</sub>X2e file to require manual editing to put the
+finishing touches.  I just want to make that task a little easier.  In
+my opinion, expecting a WYSIWYG reproduction is not practical and
+misses the point entirely.
+
+<p>
+        <H2><A NAME="tth_sEc2">
+2</A>&nbsp;&nbsp;Installation</H2>
+Compiled binaries are available for Macintosh and Windows systems. 
+Users of Unix/Linux systems will have to compile the source code,
+which is a fairly straightforward process.
+
+<p>
+      <H3><A NAME="tth_sEc2.1">
+2.1</A>&nbsp;&nbsp;Macintosh</H3>
+The Macintosh distribution includes a FAT drag-and-drop application on
+which you can drop multiple RTF files.  The output L<sup>A</sup>T<sub>E</sub>X files will
+be created in the same directory as the input RTF files.  If Mac users
+want to build their own binaries, I have included the CodeWarrior 5.3
+project file.  The project uses the DropUnix application framework
+(<a href="http:/www.zenspider.com"><tt>http:/www.zenspider.com</a></tt>) that is included in the distribution.
+ If you have CodeWarrior 5.3, you should be able to open the project
+file and issue a ``Make'' command. For drag and drop operation, the
+input RTF files need to be of type `TEXT' or `RTF ' (note the space).
+
+<p>
+      <H3><A NAME="tth_sEc2.2">
+2.2</A>&nbsp;&nbsp;Unix/Linux <A NAME="Unix_install">
+</A></H3>
+There is a <i>Unix</i> directory that contains scripts for
+configuring, building, and installing <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b>. Change to the
+<i>Unix</i> directory and type:<br>
+
+<TaBle>
+<tr><td></td><td><b>./configure</b></td>
+<tr><td></td><td><b>make</b>
+</td></TaBle>
+
+<p>
+This will compile the sources and create a binary called
+<b>rtf2latex2e.bin</b> in the parent distribution directory. You can
+optionally issue a ``make clean'' command to remove the object files.
+
+<p>
+You can choose to install the binary in a convenient location.
+If you want to install into the default directory
+/usr/local/rtf2latex2e, you will need to become super-user at this point.
+Installation is done by:<br>
+
+<TaBle>
+<tr><td></td><td><b>make install (as root)</b>
+</td></TaBle>
+
+<p>
+The default installation directory is /usr/local/rtf2latex2e.  A
+symbolic link /usr/bin/rtf2latex2e is created pointing to
+$(INSTALL_DIR)/rtf2latex2e.bin. If there is already an existing
+<b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> installation, it will rename that directory to
+``rtf2latex2e.old''. If you do not have super-user privileges, you can
+edit the Makefile and change the INSTALL_DIR to somewhere in your home
+directory, say $(HOME)/rtf2latex2e. <b>Make sure that the INSTALL_DIR path ends with ``rtf2latex2e''.</b>
+
+<p>
+Finally, the environment variable RTF2LATEX2E_DIR will need to be set
+from within your shell.  The variable has to point to the directory into
+which rtf2latex2e was installed.  You can set the variable using<br>
+export RTF2LATEX2E_DIR=directory (bash) or<br>
+setenv RTF2LATEX2E_DIR
+directory (csh)<br>
+in your .bashrc or .login file, whichever is read by
+your shell.
+
+<p>
+You can also optionally install the ImageMagick image manipulation package available at <a href="http://www.wizards.dupont.com/cristy"><tt>http://www.wizards.dupont.com/cristy</a></tt>. If this is installed, <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> will use the ImageMagick utility ``convert'' to attempt to convert embedded PNG, JPEG, and PICT images to EPS. This support is statically built into the Mac and Windows binaries.
+
+<p>
+      <H3><A NAME="tth_sEc2.3">
+2.3</A>&nbsp;&nbsp;Windows</H3>
+Windows users get a pre-compiled binary of <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> to be run from
+the MS-DOS prompt. Just run it with the RTF file to be converted as the argument.
+<p>
+        <H2><A NAME="tth_sEc3">
+3</A>&nbsp;&nbsp;Use</H2>
+On the Macintosh, drop your RTF file onto the application. The output L<sup>A</sup>T<sub>E</sub>X2e file will be generated in the same folder as the input RTF file.
+On Linux/Unix and DOS, you have to run the program in a shell:<br>
+<b>rtf2latex2e</b>  &lt; rtfFileName &gt; <br>
+If the file name contains spaces, enclose the path in double quotes. 
+
+<p>
+      <H3><A NAME="tth_sEc3.1">
+3.1</A>&nbsp;&nbsp;Command-line options</H3>
+No very useful command line options are supported yet.  There are the obvious ``-h'' for help and ``-v'' for version number.  The only other supported option is ``-t  &lt; output-map-file &gt; '' where you can specify an output map file other than the default ``TeX-map''. 
+
+<p>
+      <H3><A NAME="tth_sEc3.2">
+3.2</A>&nbsp;&nbsp;The r2l-pref preference file</H3>
+<b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> reads a preference file ``<i>r2l-pref</i>'' where you can
+specify various options such <b>ignoreRulerSettings</b>,
+<b>ignoreColor</b>, etc.  The options are self-explanatory.  There are
+also some Macintosh-specific options at the end for converting embedded
+PICT images to EPS.  The PICT<font face=symbol>Æ</font
+>EPS conversion routine
+requires the Apple Laserwriter driver to be installed. All the options
+in the ``<i>r2l-pref</i>'' file are available as a
+``Preferences'' menu item in the Macintosh application.  In the
+Unix/Linux and Windows versions, the default ``<i>r2l-pref</i>'' file
+in the installation directory can be overridden by a file with the same
+name in the current working directory.
+
+<p>
+      <H3><A NAME="tth_sEc3.3">
+3.3</A>&nbsp;&nbsp;The output map file</H3>
+The default output map file is ``TeX-map''. The output map file determines the L<sup>A</sup>T<sub>E</sub>X2e representation of characters. You could use a different output map file, e.g. ``TeX-map.applemac'' that generates characters in accordance to the Macintosh character set. Obviously, such a LaTeX file might need to use an appropriate ``input'' encoding package. Packages required by an output map file can be specified in the file itself, so that the packages are always loaded when the output map file is used. For example, the ``TeX-map.applemac'' file specifies ``%usepackage[applemac]{inputenc}''. The percent sign is not a comment, but tells <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> to treat the following string as a output map qualifier. You can add other qualifiers such as ``%usepackage[T1]{fontenc}''.
+
+<p>
+      <H3><A NAME="tth_sEc3.4">
+3.4</A>&nbsp;&nbsp;The r2l-head file</H3>
+<b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> also reads a file (if present) called
+``<i>r2l-head</i>''.  In this file, you can specify any additional
+packages that you want to use in your L<sup>A</sup>T<sub>E</sub>X2e file, e.g. a babel
+hyphenation package or a font encoding.  The contents of this file are just copied into the preamble of the L<sup>A</sup>T<sub>E</sub>X2e file.  In the Unix/Linux and Windows
+versions, the default ``<i>r2l-head</i>'' file in the installation
+directory can be overridden by a file with the same name in the
+current working directory.
+
+<p>
+      <H3><A NAME="tth_sEc3.5">
+3.5</A>&nbsp;&nbsp;The r2l-map file</H3>
+<b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> also reads a file (if present) called
+``<i>r2l-map</i>''.  In this file, you can customize options for the
+document class in the L<sup>A</sup>T<sub>E</sub>X2e file and mappings for section headings. 
+You can also specify how text style is to be handled in the L<sup>A</sup>T<sub>E</sub>X2e
+file, e.g.``textbf'' vs.{bf ...}.  In the Unix/Linux and Windows versions,
+the default ``<i>r2l-map</i>'' file in the installation directory
+can be overridden by a file with the same name in the current working
+directory.
+
+<p>
+        <H2><A NAME="tth_sEc4">
+4</A>&nbsp;&nbsp;Features</H2> 
+<b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> is designed to convert journal articles, reports, and
+letters written in Microsoft Word.  That means I would like it to
+handle the following:
+
+<p>
+
+<UL>
+<li> <b> <u>Text Style:</u></b> Some amount of stylized text like
+<font color="#color6"> c</font><font color="#color2"> o</font><font color="#color4"> l</font><font color="#color10">
+o</font>r, <b>bold</b>, <em>italic</em>,  <u>underlined</u>, and relative
+size like <font size="-1">small</font>, normal, <font size="+3">big</font>, <font size="+4">very big</font>,
+<font size="+4">and large</font>.  This is a little weak in older RTF files as the
+older RTF spec is a little crappier than the newer one.  All other
+font information is disregarded, as TeX can do better anyway.
+
+<p>
+
+<li> <b> <u>Figures:</u></b> <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> can read figures
+of format PICT, WMF, PNG, and JPEG embedded into RTF files.  These are
+the most common formats encountered in RTF files.  When <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> encounters an embedded figure, it reads out the figure into a separate
+file.  The output format of the figure is the same as the format it is
+embedded in. <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> will then attempt to convert the image to EPS using both internal and external conversion routines. For PNG and JPEG images, the ImageMagick (<a href="http://www.wizards.dupont.com/cristy"><tt>http://www.wizards.dupont.com/cristy</a></tt>) package is used to generate EPS files. PICT images on non-Mac systems are also converted to EPS using ImageMagick, but the performance can be quite poor. On Macs, you have the option of using either the Laserwriter driver for EPS generation or ImageMagick. Generally, using the Laserwriter yields better results.
+
+<p>
+The ImageMagick support is statically built into the binaries for the Mac and Windows platforms. <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> for Unix and Linux will attempt to externally call the ImageMagick routine ``convert'' if available. You will need to install ImageMagick separately for EPS conversion on these platforms.
+
+<p>
+<b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> for the Macintosh also converts embedded
+WMF files to PICT format.  All major implementations of T<sub>E</sub>X on the
+Macintosh can handle PICT images.   Most of the image
+conversion code was written by <a href="mailto:prahl@ece.ogi.edu"><tt>Scott
+Prahl</a></tt>.
+
+<p>
+
+<li> <b> <u>Equations:</u></b> The most common source of the RTF file
+is Microsoft Word.  Equations in Word are created in Equation Editor (MathType), and when saved into an RTF file, the equation is embedded as an OLE
+object.   <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> uses the free
+<a href="http://arturo.directmail.org/filtersweb"><tt>cole</a></tt> library to
+extract the embedded equations from the OLE structured format. The equation is then converted into L<sup>A</sup>T<sub>E</sub>X format. Only equations created by Equation Editor 3.0 (supplied along with MS Word) have been tested. MS Word also embeds the equation as a picture for older RTF readers.  If the native equation conversion fails, or if the option to convert equations is disabled, <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> reads that picture and outputs the equation as a picture file. The equation converter capability was provided by Steve Swanson from Mackichan Software (<a href="http://www.mackichan.com"><tt>http://www.mackichan.com</a></tt>), makers of Scientific Word and Workplace.
+
+<p>
+
+<li> <b> <u>Tables:</u></b> Yeah, it does tables!!  However, this is
+the weakest link in the chain and the messiest part of the code.  This
+is largely due to the fact that RTF does not have a separate `Table'
+group.  It is also due to the fact that TeX likes to know in advance
+the number of columns in the table, and RTF does not tell us that.  I
+spent a lot of time to support tables to this extent.  A lot of the
+test files have tables in them.  To get an idea of the type of tables
+that <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> can handle, take a look at <b>table1.rtf</b>, <b>
+Script.rtf</b>, and <b>RTF-Spec.rtf</b>.  I use longtable.sty package for
+generic table handling to take care of tables that span several pages.
+
+<p>
+
+<li><b> <u>Paragraph Style:</u></b> I care for alignment issues like
+centering, left, and right justification.  Useful in letters.  All
+other visual formatting like indentation is currently ignored until I
+figure out how to translate RTF's paragraph syntax into appropriate
+LateX commands/environments.
+
+<p>
+
+<li> <b> <u>Character mapping:</u></b> Character mapping is largely
+complete for the most common latin scripts.  Characters are translated
+by referencing character set maps and the output map file
+``T<sub>E</sub>X-map''.  The platform and locale dependent character set, eg. 
+latin-2 (Eastern European), is converted to an internal
+platform-independent representation by reading the appropriate
+character map file, in this case cp1250.map.  For example, character
+192 (hex 0xc1) represents ``<i>&#193;</i>'' in the latin-2 character set.  <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> maps this character to
+``<i>Aacute</i>''.  This mapping is then finally translated into the
+L<sup>A</sup>T<sub>E</sub>X representation ``<font face=symbol>¢</font
+>{A}'' using the output
+map file <i>Tex-map</i>.  This two-step character mapping allows for
+easy addition of support for additional character sets such as latin-5
+(Turkish).  Also, some users prefer to use the <i>inputenc</i>
+package to represent characters above ASCII value 127, ie.  type
+``<i>&#193;</i>'' instead of ``<font face=symbol>¢</font
+>{A}''. 
+<b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> can do this automatically by using the appropriate
+mapping in the Tex-map file.  Sample Tex-map files for cp1252 (ANSI),
+cp1250 (latin-2), and applemac (Macintosh) are provided to illustrate
+this approach.  To use any of these files, rename the file to
+``Tex-map''.  The appropriate ``
+usepackage[...]{inputenc}'' entry in the r2l-head file will cause
+the inputenc package to be loaded.
+
+<p>
+
+<li><b> <u>Footnotes:</u></b> It was quite simple to add footnote
+support.  I initially had trouble converting footnotes within tables,
+but it works now.
+
+<p>
+
+<li><b> <u>Hyperlinks:</u></b> I have added support for translating
+hyperlinks using the hyperref package.  This is still somewhat
+experimental.  There is an option in the r2l-pref file to turning off
+this option.
+
+<p>
+</UL>Features I would like to support in future versions are:
+
+<UL>
+<p>
+
+<li>Unicode: This should really get rid of the need for different
+character set maps.  Word 98 on the Mac already puts out Unicode.
+
+<li>
+<p>
+Lists
+</UL>
+<p>
+        <H2><A NAME="tth_sEc5">
+5</A>&nbsp;&nbsp;Test files <A NAME="test">
+</A></H2>
+There are four test files in the <i>examples</i> directory of the rtf2latex2e distribution that demonstrate the capabilities of the converter. You can also download a larger set of test files to see how the program behaves.  These test files are in a tarred gzipped archive in the same place where you downloaded the rtf2latex2e distribution.  ``<em>RTF-test-files</em>'' contains several
+RTF files that have been successfully tested on <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b>.  By
+success, I mean that <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> processes the RTF file without any
+problems (except maybe giving a few warnings) and produces a ``.tex''
+file that is L<sup>A</sup>T<sub>E</sub>X2e-able!!  It does not mean that the L<sup>A</sup>T<sub>E</sub>X2e output
+file will look exactly the same as the RTF input file.  In fact, most
+of the time, it will not.  Some features like I do not care to
+convert, others like Unicode support will be implemented in future
+versions.
+
+<p>
+        <H2><A NAME="tth_sEc6">
+6</A>&nbsp;&nbsp;Acknowledgements</H2>
+I would not even have attempted this thing had it not been for Paul
+DuBois' very nicely designed RTF tool.  I did not have to bother with
+parsing the RTF tokens and understanding it.  All I had to do was
+write code to act upon the token.  Thanks, Paul, for simplifying it. 
+Another great help has been the DropUnix application framework by Ryan
+Davis that makes porting between command-line Unix and drag-and-drop
+Macintosh a matter of changing one line of code.  DropUnix itself is
+based on the drag-and-drop DropShell framework by Leonard Rosenthol,
+Marshall Clow, and Stephan Somogyi.
+
+<p>
+Steve Swanson of Mackichan Software, makers of Scientific Word and Workplace (<a href="http://www.mackichan.com"><tt>http://www.mackichan.com</a></tt>), contributed the equation converter code. With this ability, <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b> has advanced to version 1.0. Hopefully, this essential feature addition along with <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b>'s other capabilities will make this program the <i>de facto</i> tool for converting word processor documents to L<sup>A</sup>T<sub>E</sub>X2e.
+
+<p>
+Finally, I have to thank Scott Prahl for providing constant feedback
+and encouragement to keep this going.  Scott also joined me in the
+development effort and contributed the image conversion code.
+
+<p>
+        <H2><A NAME="tth_sEc7">
+7</A>&nbsp;&nbsp;Legalese</H2>
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation.
+
+<p>
+The ImageMagick library and its assciated libraries carry their respective copyrights.
+
+<p>
+The JPEG<font face=symbol>Æ</font
+>EPS conversion routine was adapted from Thomas
+Merz's jpeg2ps program with his permission. Any copyright notices
+regarding jpeg2ps still apply to the adapted code within <b>rtf2L<sup>A</sup>T<sub>E</sub>X2e</b>. Thomas Merz's homepage is <a href="http://www.pdflib.com/"><tt>http://www.pdflib.com/</a></tt>
+
+<p>
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.  If you format your hard
+disk, or do anything else inconvenient, it’s not my fault.
+
+<p>
+The reader part of this code is copyright Paul DuBois.  The Macintosh
+DropUnix framework is by Ryan Davis, and the DropShell part of the
+code by its authors.
+
+<p>
+If you make any modifications that you think makes this program
+better, please send me the modifications so that I can incorporate
+them in later versions.  Please do not distribute modified versions. 
+I plan to keep working on this project, and anybody is welcome to
+help.
+
+<p>
+    
+<p><hr><small>File translated from T<sub><font size="-1">E</font></sub>X by <a href="http://hutchinson.belmont.ma.us/tth/">T<sub><font size="-1">T</font></sub>H</a>, version 2.25.<br>On  6 Aug 2000, 01:20.</small>
+</HTML>

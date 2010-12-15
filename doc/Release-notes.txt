@@ -1,0 +1,396 @@
+Release 1.0 final candidate 1 (26. Nov 2000)
+============================================
+- bug fixes
+- run-time compatibility support for Scientific Workplace
+
+Release 1.0 beta 3 (21. Aug 2000)
+==================================
+- bug fixes
+- resolved compatibility issues with Scientific Workplace
+- added TeX-map.german and TeX-map.latin1 files (Thanks, Hermann Lauer)
+
+Release 1.0 beta 3 (11. June 2000)
+==================================
+- hyperlink translation bug fixed
+- Some new RTF destinations were added, so that they can be recognized and
+  ignored.
+- added a new preference to specify output map file other than TeX-map file.
+  This can be done in the r2l-pref file.
+  A different output map file can also be specified by the "-t" command
+  line option.
+  Packages specific to the output mapfile, eg. \usepackage[applemac]{inputenc}
+  can be specified in the output mapfile itself so that they are always loaded
+  when that map is used. See the TeX-map.applemac file as an example.
+
+Release 1.0 beta 2 (20. May 2000)
+=================================
+- first wave of bugs fixed
+- jpeg2eps put back in since it was more reliable than ImageMagick on JPEGs
+
+Release 1.0 beta (1. May 2000)
+==============================
+- equation support added by Steve Swanson, Mackichan Software
+- ImageMagick support added bu Ujwal S. Sathyam
+- bug fixes
+
+
+Release 0.3 beta (18. March 2000)
+====================================
+- Added cole support: cole is a free C library for reading OLE objects. It will
+  be used to read and translate equations (hopefully soon).
+- Added wmf2pict conversion for the Mac version.
+- Updated the documentation
+- Fixed bugs in footnote and hyperlink conversion code that may have 
+  caused some StarOffice RTF documents to crash rtf2latex2e.
+- Footnotes now work in tables too.
+- Unix/Linux and DOS command-line versions have support for two
+  very useful command line options:
+  -h for help
+  -v version  
+
+Release 0.263 beta (26. Sept. 1999)
+===================================
+- added support for hyperlinks using the hyperref package. Translation of
+  hyperlinks can be turned off in the r2l-pref file or from the Preferences 
+  menu in the Mac application.
+- fixed bugs in the translation of subscripts and superscripts.
+
+Release 0.262 beta (2. Sept. 1999)
+==================================
+- Corrections to character map files cp1252.map, cp437.map, and cp850.map.
+- Improved translation of text styles such as bold, italic, etc.
+- Added characters to ansi-sym symbol map file.
+- Added recognition of more rtf control codes.
+- Minor code corrections to LaTeX2e-writer.c
+	- added code to ControlClass () to ignore sn and sv.
+	- added code to ignore first character in a footnote if it is a space.
+	- added CheckForCharAttr () before InitializeTextStyle () for rtfPlain.
+- Minor code correction to reader.c
+	- commented out RTFMsg about unknown token in ReadStyleSheet ()
+- Added smallcaps and documentclass customization to r2l-map.
+- All TeX-maps
+	- changed '"' to {\textquotedbl}
+	- added Thorn to map to {\TH}
+	- changed th to thorn mapping {\th}
+	- enclosed \AE and \AA in {}.
+- standard-names
+	- added "powern" character.
+
+Release 0.261 beta (3. July 1999)
+=================================
+- Fixed a problem that erroneously caused the Mac character set to become
+  active under certain circumstances. European users particularly may have 
+  wondered about the sometimes weird and totally incorrect character 
+  translation. I had inadvertently followed some outdated documentation on 
+  character set IDs.
+  
+- Added a feature to read a file called r2l-map where you can customize 
+  how certain features such as bold, italic, heading1,  are mapped into LaTeX.
+  For example, the default mapping for bold is \textbf{}. Instead, you could 
+  override this in the r2l-map file by specifying:
+  
+  bold		"{\it "
+  
+  Similarly, default mapping for heading1 is \section*{}. Instead, you could 
+  say:
+  
+  heading1		\chapter{	# provide only opening braces!
+  
+  The r2l-map file will be used only if present. Otherwise default mappings 
+  are used.
+
+Release 0.26 beta (28. June 1999)
+=================================
+- Fixed a problem that generated unreadable WMF files on Windows systems. 
+  I was not specifying the bounding box correctly, and I had not accounted for
+  byte-swapping issues between big-endian and little-endian systems.
+
+- Added a feature to read a file called "r2l-head". In it, you can specify 
+  any additional packages you want rtf2latex2e to insert into the header of the 
+  output ".tex" file before \begin{document}. 
+  For example, Italian users may want to use the Italian babel package. 
+  You would then insert "\usepackage[italian]{babel}" in the r2l-head 
+  file. If the r2l-head file is not found, nothing happens. Thanks to Riccardo 
+  Lucchetti for the suggestion.
+  
+- Many European users wanted the inputenc feature back that I had dropped to 
+  implement auto-switching of character sets. Using standard LaTeX notation makes 
+  editing of files that have lots of \`{a}'s and \`{e}'s difficult, not to 
+  mention spell-checking. There is a much more elegant method of using the 
+  inputenc package than the one previously implemented. Earlier, I had 
+  hard-coded the input encoding stuff into the program. This approach was 
+  inflexible and made it difficult to add support for more encodings. The much 
+  easier method is to appropriately edit the TeX-map file. This file determines 
+  how a character is mapped in the output ".tex" file. For example, the character 
+  Agrave is mapped to 
+  
+  Agrave	\`{A} 
+  
+  using the standard LaTeX notation. People wishing to use inputenc can change 
+  the mapping to 
+  
+  Agrave	Ë 	# this is \'{A} on the Mac character set.
+  
+  in the TeX-map file. The appropriate command 
+  "\usepackage[<enc>]{inputenc}" can then be inserted into the r2l-head file, 
+  so that rtf2latex2e produces a ".tex" file that uses the inputenc package.
+  
+  In this distribution, I have provided sample TeX-map files for applemac,  
+  cp1252 (ansi, latin1), and cp1250 (Eastern European, latin2) encodings 
+  called TeX-map.applemac, TeX-map.cp1252 and TeX-map.cp1250 respectively. 
+  To use any of them, rename the file to "TeX-map". For example, on a Macintosh, 
+  you rename the file "TeX-map.applemac" to "TeX-map" and insert the line 
+  "\usepackage[applemac]{inputenc}" in your "r2l-head" file. I did this on my 
+  Mac, so please check the TeX-map.cp1252 and TeX-map.cp1250 for accuracy.
+  
+  Thanks again to Riccardo Lucchetti for the suggestion.
+  
+- rtf2latex2e has been successfully compiled on a DEC Alpha, thanks to Chris 
+  Rennie. Some issues involved make barfing on the supplied Makefile:
+  - there was an extra line containing just a tab character, and this resulted 
+    in make aborting with the message 'null command'.  
+  - Also the macro $^ is not available on DEC Alphas, nor is it mentioned in 
+    'Unix in a Nutshell'. It should be replaced with $(OBJ).
+    
+- In the Unix and DOS versions, rtf2latex2e now first searches for its 
+  associated files in the current working directory and then in the 
+  directory specified by the RTF2LATEX2E_DIR variable. Useful for overriding 
+  files.
+    
+- more miscellaneous stuff tweaked.
+    
+
+Release 0.252 beta (22. June 1999)
+==================================
+- I found that Macintosh PowerPC systems running MacOS < 8.5 need to have the 
+  "Navigation" shared library in the Extensions folder. Otherwise, rtf2latex2e 
+  will not launch complaining about "NavigationLib" not found. In this update, 
+  I have included the file "Navigation" in the folder called "-> put into 
+  Extensions folder". PowerPC systems running MacOS 8.5 or later should not need 
+  this. 68k systems are not affected either (unless I hear otherwise).
+
+Release 0.251 beta (21. June 1999)
+==================================
+- I had added a feature to ignore stuff marked invisible by RTF. Didn't quite work 
+  out the way I wanted it to. So I disabled it again. I will look into it further 
+  if I find the time.
+  
+- another minor bug in function CheckForParagraph () fixed.
+
+Release 0.25 beta (18. June 1999)
+=================================
+- Scott Prahl (prahl@ece.ogi.edu) has joined the development effort. He will be 
+  working on routines to convert various image formats to eps, and hopefully the 
+  two of us can figure out how the hell to read embedded equations in RTF. However, 
+  I will still be the main point of contact for rtf2latex2e, and all bug reports 
+  and feature requests should be sent to me.
+
+- RTF allows use of multiple character sets, say latin1 and latin2. For example,
+  the default character set may be latin1, but to produce a Hungarian letter, RTF
+  might switch to latin2. rtf2latex2e now supports automatic switching of character
+  sets. However, this feature is not compatible with the inputenc feature, so I had
+  to drop support of the inputenc package. All characters wiil be represented by 
+  standard LaTeX commands. rtf2latex2e now supports two additional character sets:
+  code page 1250 (Eastern European/latin2) and code page 1254 (Turkish/latin5). 
+  Other character sets can be easily added.
+  
+- I have added an option to specify the use of the fontenc package in the preference
+  file. All acceptable values for the fontenc package, eg. T1, LY1, etc. can be 
+  specified. Basically I got tired of LaTeX bitching about things just because it 
+  was using the default encoding.
+  
+- In the Mac version, Scott has added support for converting PICT files to EPS
+  format. It requires that you have the Laserwriter 8 driver installed on your
+  system, and that your current printer uses that Laserwriter driver. The conversion 
+  process looks a little weird. Printer dialog windows pop up and buttons get 
+  automatically pressed. Some user interaction is required for choosing directory 
+  where the EPS file will get saved. You can also choose the type of preview 
+  and fonts to be written into the EPS file. The pict2eps conversion option is turned 
+  off by default. The conversion code is still in alpha stage and may not be stable; 
+  you can choose to enable that option in preferences dialog.
+
+- In the Mac version, Scott has also added support to use Apple's new File Navigation 
+  Services. Navigation Services will be used only when available, otherwise standard 
+  File dialogs will be used.
+  
+- Also in the Mac version, you can now specify the creator for your output LaTeX file. 
+  For example, you can specify OTEX to get QzTeX files, or you could specify *TEX 
+  to get Textures files. Other values include R*ch for BBEdit and ALFA for Alpha. I 
+  use OzTeX with Alpha and Scott uses Textures with BBEdit. Had to keep both of us 
+  happy.
+  
+- And yet again in the Mac version, I fixed a bug in the DropUnix framework that 
+  provides the Mac user interface. Under certain circumstances, that bug would cause 
+  menu bar to disappear and the application becomes unresponsive requiring a force 
+  quit to exit the application. That bug has been fixed. Can you tell that both 
+  Scott and I are Mac users?
+  
+- Internal table routines have been revamped. Table processing should be a lot more 
+  robust and cleaner.
+  
+- More miscellaneous bugs have been fixed.
+
+Release 0.232 beta (17. May 1999)
+=================================
+- rtf2latex2e didn't compile on Redhat Linux 6.0. New version of gcc?
+  I had to make minor changes to Paul Du Bois' reader code reader.c
+- Adding preferences dialog for the Mac version screwed up reading the
+  preference file reading routine on the other platforms. Stupid, stupid,...
+  I have fixed it. Just shows how much testing I do on Unix and Windows :-)
+  Sorry...
+
+Release 0.231 beta (15. May 1999)
+=================================
+- The Mac application now has a preferences dialog that can be accessed from the
+  file menu. It is basically a graphical interface to edit the r2l-pref file.
+- Fixed a stupid bug that prevented converting multiple files.
+- Fixed another bug related to processing text style (bold, italic,...)
+
+
+Release 0.23 beta (1. May 1999)
+===============================
+- Got a fairly serious bug report that warranted an immediate fix. Following 
+  up on it, I found an inexcusible bug in the code that caused an infinite 
+  while loop while trying to read an object under certain conditions. I am
+  amazed that this problem didn't surface before now. While reading an object, 
+  rtf2latex2e looks for specfication of the object class. I had made the foolish
+  assumption that RTF always specifies the object class. It turns out that it 
+  doesn't, and under those circumstances, rtf2latex2e keeps looking for an 
+  object class for ever causing the infinite while loop. I have put in an escape
+  mechanism. I should have done so in the first place. I hang my head in shame.
+  
+- I also found that RTF sometimes encodes tables in a very nonsensical manner 
+  that defies logic. I came across a table where two adjacent cells in a table 
+  had been specified to have the same right border position. In its defence, RTF
+  also specifies the two cell to be merged, but it still does not conform to the
+  standard manner of encoding tables. As a result, rtf2latex2e translated the table,
+  but produced slightly incorrect LaTeX in the longtable environment. I have 
+  provided a hack to fix it, so that the tex file runs through latex without
+  errors, but the result will not look very pretty. The table will definitely 
+  require some manual editing.
+  
+- I have also provided another preference in the r2l-pref file to ignore spacing.
+  In combination with other preferences, you can get a tex file almost completely 
+  free of visual formatting.
+
+
+Release 0.221 beta (30. April 1999):
+====================================
+- When an unknown Word97 object was encountered, rtf2latex2e would complain
+  and exit the program entirely. This is unnecessary. I changed the complaint to
+  a simple warning so that rtf2latex2e continues on its merry way.
+  
+Release 0.22 beta (26. April 1999):
+===================================
+- added support for use of the inputenc package. You can now specify various
+  encodings such as ansinew, latin1, latin2, etc in the r2l-pref preference file.
+  If a valid encoding is specified, rtf2latex2e will insert characters between 
+  128-255 directly into the LaTeX file and specify \usepackage[<encoding>]{inputenc} 
+  into the preamble of the LaTeX file. However, not all characters between 128-255 
+  are defined in some of the corresponding <encoding>.def file that LaTeX reads. 
+  I had to dig through all the <encoding>.def files and figure out the 
+  characters that are defined. The ones that are not defined are translated in the
+  standard way using the TeX-map file. Also, the <encoding>.def files do not
+  ensure mathmode for certain characters, so I had to fix rtf2latex2e to care 
+  of that.
+
+- Embedded JPEG images in the RTF file are internally converted to EPS format.
+  I adapted the jpeg2ps code (with the author's permission) for this. The jpeg->eps 
+  conversion is equivalent to running "jpeg2ps -h", ie. the conversion uses hex 
+  encoding. If I ever learn how to convert other graphic file formats found in 
+  RTF to EPS, I will add those too.
+  
+- Some minor internal bugs were fixed.
+
+- Changed default preferences in the r2l-pref file:
+  ignoreRulerSettings is set to true; causes indentation to be ignored.
+  ignoreColor is set to true; color information is ignored.
+  
+  
+Release 0.211 beta
+==================
+- as usual, when I fixed something, I lost something: this time objects of type
+Equation.3; I put it back in.
+
+Release 0.21 beta:
+==================
+- added a feature to read  a preference file r2l-pref where you can specify 
+options to ignore ruler settings, color, and to give values of paper size and margins.
+- fixed a minor bug in a Word97 object reading routine.
+- added feature to read fields under certain circumstances: Sometimes, Word and maybe 
+other word processors decide to insert symbols as fields rather that switching fonts. 
+Version 0.21 reads those fields only if they contain symbols.
+- \tab characters in RTF are translated into \tab commands in LaTeX. I initially 
+define \tab as \newcommand{\tab}{\makebox[4em]{}}. The definition of a tab command 
+is convenient when translating a table built with tabs, eg:
+
+	A	B
+	e1	e2
+	e3	e4
+	e5	e6
+	
+will get translated into
+
+\tab A\tab B\\
+\tab e1\tab e2\\
+\tab e3\tab e4\\
+\tab e5\tab e6\\
+
+Manual insertion of \begin{tabular}{lll} and \end{tabular} nd redefinition of \tab 
+to & will result in a proper tabular environment.
+- All packages except color are loaded only when needed. Use of color package is 
+specified in the preference file.
+
+Release 0.20 beta:
+==================
+- corrected some path separator stuff.
+- In Unix and DOS versions, added capability to run rtf2latex2e from directories 
+that do not contain the auxiliary files. This required setting an environment 
+variable RTF2LATEX2E_DIR that points to the directory that contains the auxiliary 
+files.
+
+Release 0.19 alpha:
+===================
+- In the Mac version, added type and creator for output files. Output tex file has 
+OzTeX creator (OTEX). PICT files are of type 'PICT' and 'ttxt' (Simpletext), PNG 
+files have type 'PNGf' and creator 'ogle' (Quicktime Picture Viewer), WMF files have 
+type 'WMF ' and creator 'GKON' (Graphic converter), and JPEG files have type 'JPEG' 
+and creator 'JVWR' (JPEGView).
+- Added support for
+	- line spacing
+	- multicolumn
+	- minipage
+	- small caps
+- Fixed minor bugs with closing environments properly
+- Fixed minor bug in a table routine
+- used proper path separator for specific operating systems. It is inexcusible that 
+C does not provide this. Or does it?
+- Comand-line versions of rtf2latex2e can actually spaces in file names if the 
+command line argument is enclosed in double quotes. I did not do anything special 
+to incorporate this, but it was pointed out to me, and I thought it was useful to 
+pass it along.
+- However, some TeX systems do not like spaces in file names, eg. OzTeX on Mac. 
+rtf2latex2e now scans the file name and internally converts any spaces into non-breaking 
+space characters (ASCII 202). Original input RTF file name is not affected; only output t
+ex and image files will have spaces substituted. Of course, the path information is left 
+untouched, otherwise it might result in an invalid (non-existing) directory.
+
+Release 0.18 alpha:
+===================
+Fixed a bug in a table routine. 
+Made table and graphicx packages dynamically loadable into the output tex file. 
+Created two sets of ansi-gen and ansi-sym character map files. RTF seems to have 
+changed its ansi encoding somewhere between Word 5.1 and Word 97/98. Even the new 
+versions of Word themselves (Word 97/98) do not correctly interpret some characters 
+(beyond ASCII range 127) from RTF files produced by older versions (say Word 5.1). 
+I have therefore included in the directory "for-older-rtf-files" the files ansi-gen 
+and ansi-sym for older verions of RTF files. Experiment with your RTF file to determine 
+whether you need the new set or the old set. Be sure to safely back up the versions 
+you are not using for later use. At some point, I will write code to make the reader 
+dynamically read the appropriate character map files. RTF files with Mac character 
+encoding do not seem to suffer from this malaise.
+
+Release 0.1 alpha:
+==================
+Initial test release.
+

@@ -1,0 +1,106 @@
+REQUIREMENTS:
+=============
+No external dependencies. Unix and Linux users need to install the
+ImageMagick package for rtf2latex2e to convert embedded images to EPS. 
+If not installed, images will not be converted. ImageMagick can be obtained 
+from http://www.wizards.dupont.com/cristy.
+
+WHAT YOU WILL GET:
+==================
+If you expect a WYSIWYG reproduction of your RTF file, you may be 
+disappointed. My main concerns have been translating the essential 
+features of the RTF file such as characters, figures, tables, and 
+equations (as pictures).  I have largely ignored visual formatting 
+such as ruler positions, tabs (until I figure out a good way of doing 
+this), paragraph indentations, and other fluff.  I have always expected 
+the output LaTeX file to require manual editing to put the finishing 
+touches.  I just want to make that task a little easier.  In my opinion, 
+expecting a WYSIWYG reproduction is not practical and misses the point 
+entirely.
+
+Typeset the rtf2LaTeX2eDoc.tex for more information, or print out the 
+rtf2LaTeX2eDoc.pdf file. They are in the documentation directory.
+
+The file Release-notes.txt usually has more up-to-date info.
+
+
+INSTALLATION AND USE:
+=====================
+rtf2latex2e was developed on the Macintosh using DropUNIX for maximum 
+portability to Unix. I have tested it on the Macintosh PowerPC, Linux 
+(Intel), Linux (PowerPC), Solaris 2.6, and Windows 95/NT. Basically, 
+rtf2latex2e should compile on any platform that supports a C compiler.
+
+MACINTOSH:
+----------
+Macintosh users get a pre-compiled fat binary. Drop your RTF files on it. 
+If you want to build your own binary, CodeWarrior project files are provided. 
+You will need to get the DropUnix libraries to compile. Read the 
+documentation and release notes for more details. The preferences can be 
+accessed from the File menu.
+
+The "pref" folder has to be in the same folder as the rtf2latex2e application.
+
+If you are running MacOS < 8.5 on a PowerPC, put the files "Navigation" 
+and "Appearance Extension" (in the folder "-> put into Systems Folder") 
+in your Extensions folder in your System folder. Put the file 
+"Appearance" into your Control Panels folder.
+
+
+UNIX:
+-----
+Unix users need to build the binary using make. Super-user mode may be 
+necessary for install.To start building rtf2latex2e, 
+change to the Unix directory directory, type:
+
+./configure
+make
+make install (optional, as root)
+
+The default install directory is /usr/local/rtf2latex2e.
+The binary is called rtf2latex2e.bin.
+A symbolic link /usr/bin/rtf2latex2e pointing to the binary is created.
+You can change the directory into which rtf2latex2e is installed by editing the 
+variable INSTALL_DIR at the top of the Makefile. You may need to become 
+super-user to install into that directory. If you do not have super-user 
+privileges, you can change the INSTALL_DIR to somewhere in your home directory, 
+say $(HOME)/rtf2latex2e. 
+
+*****************************************************
+*********************IMPORTANT***********************
+MAKE SURE THE INSTALL_DIR PATH ENDS in rtf2latex2e!!!
+*****************************************************
+
+If you already have an existing rtf2latex2e installation, "make install"
+rename the old rtf2latex2e directory to rtf2latex2e.old.
+
+Finally, you will need to set the environment variable RTF2LATEX2E_DIR 
+from within your shell. The variable has to point to the directory into 
+which rtf2latex2e was installed. You can set the variable using 
+
+export RTF2LATEX2E_DIR=directory (bash) or
+setenv RTF2LATEX2E_DIR directory (csh)
+
+in your .bashrc or .login file, whichever is read by your shell.
+
+To run rtf2latex2e, type:
+
+rtf2latex2e <rtfFileName>
+
+WINDOWS:
+--------
+Windows users get a pre-compiled binary of rtf2latex2e to be run 
+from the MS-DOS prompt. I have included a VisualC++ 6.0 project under the 
+Windows directory that can be used to re-compile the project.
+
+The "pref" folder has to be in the same folder as the rtf2latex2e application.
+
+It is also convenient to add the rtf2latex2e directory to your search PATH in 
+the AUTOEXEC.BAT file.
+
+On my WinNT box, I found that I had to restart the computer for any changes in
+AUTOEXEC.BAT to take effect. Silly...
+
+To run rtf2latex2e, type:
+
+rtf2latex2e <rtfFileName>
