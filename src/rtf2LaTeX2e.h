@@ -18,7 +18,7 @@
  */
 
 
-# define	rtf2latex2e_version "1.1"
+# define	rtf2latex2e_version "1.2"
 
 # define	WRAP_LIMIT	120
 # define	PACKAGES	9
@@ -34,8 +34,10 @@ typedef unsigned char boolean;
 
 #if defined(UNIX)
 	# define	PATH_SEP	'/'
+    # define    ENV_SEP     ':'
 #else 
 	# define	PATH_SEP	'\\'
+    # define    ENV_SEP     ';'
 #endif
 
 #ifndef false

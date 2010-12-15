@@ -56,11 +56,6 @@
  * this is illegal, but it happens.
  */
 
-# ifndef STRING_H
-# define STRING_H <string.h>
-# endif
-
-
 # include       <stdio.h>
 # include       <ctype.h>
 # include       <string.h>

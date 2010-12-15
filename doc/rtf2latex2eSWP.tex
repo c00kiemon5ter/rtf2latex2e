@@ -35,7 +35,13 @@
 \newtheorem{solution}[theorem]{Solution}
 \newtheorem{summary}[theorem]{Summary}
 \newenvironment{proof}[1][Proof]{\textbf{#1.} }{\ \rule{0.5em}{0.5em}}
-\input{tcilatex}
+
+%avoid tcilatex.tex because it is not universal
+%just define what is needed by this file
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{textcomp}
+\newcommand{\TEXTsymbol}[1]{$#1$}
 
 \begin{document}
 

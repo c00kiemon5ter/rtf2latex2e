@@ -40,10 +40,11 @@ LIBS=
 SRCS=src/LaTeX2e-writer.c      src/cole_decode.c         src/figure2eps.c \
      src/cole.c                src/cole_support.c        src/jpeg2eps.c   \
      src/cole_internal.c       src/cole_version.c        src/reader.c     \
-     src/cole_encode.c         src/eqn.c                 src/main.c 
+     src/cole_encode.c         src/eqn.c                 src/main.c       \
+     src/mygetopt.c
 
-HDRS=src/cole.h        src/cole_internal.h   src/rtf.h       src/eqn.h   \
-     src/jpeg2eps.h    src/rtf2LaTeX2e.h     src/cole_support.h
+HDRS=src/cole.h        src/cole_internal.h   src/rtf.h           src/eqn.h   \
+     src/jpeg2eps.h    src/rtf2LaTeX2e.h     src/cole_support.h  src/mygetopt.h
 
 RTFPREP_SRCS = src/rtfprep/Makefile     src/rtfprep/rtf-controls  src/rtfprep/rtfprep.c  src/rtfprep/standard-names \
                src/rtfprep/tokenscan.c  src/rtfprep/tokenscan.h  
@@ -73,7 +74,7 @@ OBJS=src/LaTeX2e-writer.o      src/cole_decode.o         src/figure2eps.o \
      src/cole.o                src/cole_support.o        src/jpeg2eps.o   \
      src/cole_internal.o       src/cole_version.o        src/reader.o     \
      src/cole_encode.o         src/eqn.o                 src/main.o \
-     src/rtfprep/tokenscan.o
+     src/rtfprep/tokenscan.o   src/mygetopt.o
 
 all : checkdir rtf2latex
 
@@ -87,9 +88,7 @@ src/rtfprep/rtf-ctrldef.h  src/rtfprep/rtf-namedef.h  src/rtfprep/stdcharnames.h
 	cd src/rtfprep && make
 
 check test: rtf2latex
-	cd test && $(MAKE) clean
 	cd test && $(MAKE)
-	cd test && $(MAKE) check
 
 checkdir: $(README) $(SRCS) $(HDRS) $(PREFS) $(TEST) Makefile
 
@@ -175,5 +174,5 @@ src/figure2eps.o:    src/figure2eps.c
 src/jpeg2eps.o:      src/jpeg2eps.c src/rtf.h src/rtf2LaTeX2e.h src/rtfprep/tokenscan.h src/jpeg2eps.h
 src/reader.o:        src/reader.c src/rtfprep/tokenscan.h src/rtf.h src/rtf2LaTeX2e.h src/rtfprep/stdcharnames.h
 src/eqn.o:           src/eqn.c src/rtf.h src/rtf2LaTeX2e.h src/eqn.h
-src/main.o:          src/main.c src/rtf.h src/rtf2LaTeX2e.h
+src/main.o:          src/main.c src/rtf.h src/rtf2LaTeX2e.h src/mygetopt.h
 src/rtf.h:           src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h

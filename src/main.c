@@ -11,283 +11,328 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include	<stdio.h>
+#include	<string.h>
+#include	<stdlib.h>
+#include   <ctype.h>
+#include	<stdarg.h>
 
-# include       <stdio.h>
-# include       <string.h>
-# include       <stdlib.h>
-# include       "rtf.h"
-# include       "rtf2LaTeX2e.h"
+#include	"rtf.h"
+#include   "mygetopt.h"
+#include	"rtf2LaTeX2e.h"
 
-extern long groupLevel;
-extern char outputMapName[];
+char           *g_library_path;
+extern long     groupLevel;
+extern char     outputMapName[];
+FILE           *OpenLibFile(char *name, char *mode);
 
-FILE *OpenLibFile(char *name, char *mode);
+FILE           *ifp, *ofp;
+extern char     fileCreator[];
+extern long     groupLevel;
 
-FILE *ifp, *ofp;
-extern char fileCreator[];
-extern long groupLevel;
-static char rtf2latex2eDir[rtfBufSiz];
-
-static void usage(void)
-{
-    printf("* rtf2latex2e usage: rtf2latex2e [-t <TeX-map>] <rtf file>\n");
-    printf("* output file will be *.tex.\n");
-}
-
-int main(int argc, char **argv)
-{
-    char buf[rtfBufSiz], *buf1, buf2[rtfBufSiz];
-    int i, bufLength, fileCounter;
-    long cursorPos;
-    int optind;
-
-    /* install function to open library files needed by the RTF reader */
-    RTFSetOpenLibFileProc(OpenLibFile);
-
-    optind = 1;
-
-
-    if (!getenv("RTF2LATEX2E_DIR")) {
-        FILE *tfp;
-
-#if defined(UNIX)
-        strcpy(rtf2latex2eDir, PREFDIR);        /* PREF DIRECTORY fed from Makefile */
-        bufLength = strlen(rtf2latex2eDir);
-        if (rtf2latex2eDir[bufLength - 1] != PATH_SEP) {
-            rtf2latex2eDir[bufLength] = PATH_SEP;
-            rtf2latex2eDir[bufLength + 1] = '\0';
-        }
-#else
-        /* use Win32 call to find location of rtf2latex2e */
-        /* wish that Unix/Linux had a similar call */
-        GetModuleFileName(NULL, rtf2latex2eDir, rtfBufSiz);
-        /* strip out program name from path */
-        cPtr = strrchr(rtf2latex2eDir, PATH_SEP);
-        if (cPtr != NULL)
-            *(cPtr + 1) = '\0';
+#if RTF2LATEX2E_DOS
+#include <Windows.h>
 #endif
 
-        /* try to find the preferences file */
-        tfp = OpenLibFile("r2l-pref", "r");
-        if (tfp == NULL) {
+int             g_little_endian = 0;
 
-            RTFMsg
-                ("* The environment variable RTF2LATEX2E_DIR has not been set.\n");
-            RTFMsg
-                ("* This variable needs to point to the directory containing\n");
-            RTFMsg
-                ("* the rtf2latex2e binary, the character set map files, and\n");
-            RTFMsg("* the output map TeX-map file.\n");
-            RTFMsg
-                ("* Depending on your shell, you can set this variable using\n");
-            RTFMsg("* export RTF2LATEX2E_DIR=directory (bash) or \n");
-            RTFMsg("* setenv RTF2LATEX2E_DIR directory (csh) or \n");
-            RTFMsg("* SET RTF2LATEX2E_DIR=directory (DOS) or \n");
-            RTFMsg
-                ("* You should also add this directory to your search path.\n");
-            RTFMsg
-                ("* You can set these variables in your .bashrc, .login, or autoexec.bat file.\n\n");
-            RTFMsg("* This program will now exit.\n");
-            return (0);
-        } else {
-            fclose(tfp);        /* OK, we found the preference files somewhere */
-        }
-    } else {
-        strcpy(rtf2latex2eDir, "");
-        strcpy(rtf2latex2eDir, getenv("RTF2LATEX2E_DIR"));
-        bufLength = strlen(rtf2latex2eDir);
-        if (rtf2latex2eDir[bufLength - 1] != PATH_SEP) {
-            rtf2latex2eDir[bufLength] = PATH_SEP;
-            rtf2latex2eDir[bufLength + 1] = '\0';
-        }
-    }
-
-    /* This is my cheesy command-line arguments parser. */
-    /* I wanted to use getopt, but it varied too much   */
-    /* among Unix/Linux platforms.                      */
-    if (argc == 1) {
-        usage();
-        return 0;
-    }
-
-    /* initialize the outputMapName */
-    strcpy(outputMapName, "");
-
-    for (i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "-version")) {
-            printf("* This is rtf2latex2e version %s\n",
-                   rtf2latex2e_version);
-            return (0);
-        } else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "-help")) {
-            usage();
-            return (0);
-        }
-        /* this is for selecting a different TeX-map file */
-        else if (!strcmp(argv[i], "-t")) {
-            /* go to the next argument */
-            i++;
-            if (i >= argc - 1) {
-                usage();
-                return (0);
-            }
-            strcpy(outputMapName, argv[i]);
-        } else
-            break;              /* end of command-line options */
-    }
-    optind = i;
-
-    /* one time writer initialization */
-    WriterInit();
-
-
-    for (fileCounter = optind; fileCounter < argc; fileCounter++) {
-        RTFInit();
-
-        /* open first file, set it as the input file, and enable global 
-         * access to input file name */
-        /* strip .rtf from file name if found */
-        if ((ifp = fopen(argv[fileCounter], "r")) == NULL) {
-            RTFPanic("* Cannot open input file %s\n", argv[fileCounter]);
-            exit(1);
-        }
-        RTFSetStream(ifp);
-
-        /* look at second token to check if input file is of type rtf */
-        cursorPos = ftell(ifp);
-        RTFGetToken();
-        RTFGetToken();
-        if (rtfMajor != rtfVersion) {
-            RTFMsg("* Oops! %s is not an rtf file!\n", argv[fileCounter]);
-            if (fclose(ifp) != 0)
-                printf("* error closing input file %s\n",
-                       argv[fileCounter]);
-            continue;
-        }
-        fseek(ifp, cursorPos, 0);
-        RTFInit();
-
-
-        strcpy(buf2, argv[fileCounter]);
-        buf1 = buf2;
-        bufLength = strlen(buf1);
-        if (bufLength > 3) {
-            buf1 += (bufLength - 4);
-            /* strip .rtf by terminating string */
-            if (strcmp(buf1, ".rtf") == 0 || strcmp(buf1, ".RTF") == 0)
-                buf2[bufLength - 4] = '\0';
-
-        }
-
-        /* replace any spaces in input file name by a dash - */
-        buf1 = strrchr(buf2, PATH_SEP); /* strip away path info */
-        if (buf1 == (char *) NULL)
-            buf1 = buf2;
-        bufLength = strlen(buf1);
-        for (i = 0; i < bufLength; i++) {
-            if (buf1[i] == ' ' || buf1[i] == '_' || buf1[i] == '.')
-                buf1[i] = '-';
-        }
-
-        /* set input name to modified name of input file */
-        RTFSetInputName(buf2);
-
-        /* open output file, set it as the output file, and enable 
-         * global access to output file name */
-        strcpy(buf, buf2);
-        strcat(buf, ".tex");
-
-        if ((ofp = fopen(buf, "w+")) == NULL)
-            RTFPanic("Cannot open output file %s\n", buf);
-
-        RTFSetOutputStream(ofp);
-        RTFSetOutputName(buf);
-
-        if (BeginLaTeXFile()) {
-            RTFRead();
-            EndLaTeXFile();
-        }
-
-        if (fclose(ifp) != 0)
-            printf("* error closing input file %s\n", argv[fileCounter]);
-        if (fclose(ofp) != 0)
-            printf("* error closing output file %s\n", buf);
-    }
-
-/*      printf ("* groupLevel is %d\n", groupLevel); */
-
-    return (0);
+/* Figure out endianness of machine.  Needed for OLE & graphics support */
+static void 
+SetEndianness(void)
+{
+	unsigned int    endian_test = (unsigned int) 0xaabbccdd;
+	unsigned char   endian_test_char = *(unsigned char *) &endian_test;
+	if (endian_test_char == 0xdd)
+		g_little_endian = 1;
 }
 
 
-/* function to open library files */
-FILE *OpenLibFile(char *name, char *mode)
+/****************************************************************************
+ * purpose:  append path to .cfg file name and open
+             return NULL upon failure,
+             return filepointer otherwise
+ ****************************************************************************/
+static FILE    *
+try_path(char *path, char *file, char *mode)
 {
-    FILE *ifp;
-    char buf[rtfBufSiz];
-    char buf2[rtfBufSiz];
-    char *fileName;
-    char *relFileName;
-    int bufLength;
+	char           *both;
+	FILE           *fp = NULL;
+	size_t          lastchar;
 
-    strcpy(buf, name);
-    strcpy(buf2, name);
+	if (path == NULL || file == NULL)
+		return NULL;
 
-#if     (defined(UNIX))         /* attach path to rtf2latex2e */
-    strcpy(buf, rtf2latex2eDir);
-    strcat(buf, "pref");
-    bufLength = strlen(buf);
-    if (buf[bufLength - 1] != PATH_SEP) {
-        buf[bufLength] = PATH_SEP;
-        buf[bufLength + 1] = '\0';
-    }
-    strcat(buf, name);
+	/* fprintf(stderr, "trying path=<%s> file=<%s>\n", path, file); */
 
-    strcpy(buf2, "pref");
-    bufLength = strlen(buf2);
-    if (buf2[bufLength - 1] != PATH_SEP) {
-        buf2[bufLength] = PATH_SEP;
-        buf2[bufLength + 1] = '\0';
-    }
-    strcat(buf2, name);
-#else
-    sprintf(buf, "pref%c%s", PATH_SEP, name);   // probably silly
-    sprintf(buf2, "%cpref%c%s", PATH_SEP, PATH_SEP, name);
-#endif
+	lastchar = strlen(path);
 
-    fileName = buf;
-    relFileName = buf2;
+	both = malloc(strlen(path) + strlen(file) + 2);
+	if (both == NULL) {
+		fprintf(stderr, "Could not allocate memory for both strings.");
+		return NULL;
+	}
+	strcpy(both, path);
 
-    if ((ifp = fopen(name, mode)) == NULL) {    /* try to locate file in 
-                                                   current working directory first */
-        if ((ifp = fopen(relFileName, mode)) == NULL) { /* try in relative path to cwd */
-            if ((ifp = fopen(fileName, mode)) == NULL) {
-                /* silently return if r2l-head is not found */
-                if (strcmp(name, "r2l-head") != 0
-                    && strcmp(name, "r2l-map") != 0) {
-                    RTFMsg("* Unable to open library file %s\n", fileName);
-#if     (defined(UNIX))
-                    RTFMsg("* Make sure the environment variable\n");
-                    RTFMsg("* RTF2LATEX2E_DIR is set and points\n");
-                    RTFMsg
-                        ("* to the directory containing the rtf2latex2e\n");
-                    RTFMsg
-                        ("* binary and the associated library files\n\n");
-                    RTFMsg("* current value of RTF2LATEX2E_DIR is %s\n\n",
-                           getenv("RTF2LATEX2E_DIR"));
-#endif
-                }
-                return (NULL);
-            } else
-                return (ifp);
-        } else
-            return (ifp);
-    } else
-        return (ifp);
+	/* fix path ending if needed */
+	if (both[lastchar] != PATH_SEP) {
+		both[lastchar] = PATH_SEP;
+		both[lastchar + 1] = '\0';
+	}
+	strcat(both, file);
+	/* fprintf(stderr, "trying filename=<%s>\n\n", both); */
+	fp = fopen(both, mode);
+	free(both);
+	return fp;
+}
 
+/****************************************************************************
+purpose: open library files by trying multiple paths
+ ****************************************************************************/
+FILE           *
+OpenLibFile(char *name, char *mode)
+{
+	char           *env_path, *p, *p1;
+	char           *lib_path;
+	FILE           *fp;
+
+	/* try path specified on the line */
+	fp = try_path(g_library_path, name, mode);
+	if (fp)
+		return fp;
+
+	/* try the environment variable RTFPATH */
+	p = getenv("RTFPATH");
+	if (p) {
+		env_path = strdup(p);	/* create a copy to work with */
+		p = env_path;
+		while (p) {
+			p1 = strchr(p, ENV_SEP);
+			if (p1)
+				*p1 = '\0';
+
+			fp = try_path(p, name, mode);
+			if (fp) {
+				free(env_path);
+				return fp;
+			}
+			p = (p1) ? p1 + 1 : NULL;
+		}
+		free(env_path);
+	}
+	/* last resort.  try LIBDIR from compile time */
+	lib_path = strdup(LIBDIR);
+	if (lib_path) {
+		p = lib_path;
+		while (p) {
+			p1 = strchr(p, ENV_SEP);
+			if (p1)
+				*p1 = '\0';
+
+			fp = try_path(p, name, mode);
+			if (fp) {
+				free(lib_path);
+				return fp;
+			}
+			p = (p1) ? p1 + 1 : NULL;
+		}
+		free(lib_path);
+	}
+	/* failed ... give some feedback */
+	{
+		char           *s;
+		fprintf(stderr, "Cannot open the rtf2latex library files\n");
+		fprintf(stderr, "Locate the directory containing the rtf2latex binary, \n");
+		fprintf(stderr, "the character set map files, and the output map TeX-map file\n\n");
+		fprintf(stderr, "Then you can\n");
+		fprintf(stderr, "   (1) define the environment variable RTFPATH, *or*\n");
+		fprintf(stderr, "   (2) use command line path option \"-P /path/to/cfg/file\", *or*\n");
+		fprintf(stderr, "   (3) recompile rtf2latex with LIBDIR defined properly\n");
+		s = getenv("RTFPATH");
+		fprintf(stderr, "Current RTFPATH: %s", (s) ? s : "not defined\n");
+		s = LIBDIR;
+		fprintf(stderr, "Compiledin support directory: %s", (s) ? s : "not defined\n\n");
+		fprintf(stderr, " Depending on your shell, you can set the environment variable RTFPATH using\n");
+		fprintf(stderr, "     export RTFPATH=directory (bash) or \n");
+		fprintf(stderr, "     setenv RTFPATH directory (csh) or \n");
+		fprintf(stderr, "     SET RTFPATH=directory (DOS) or \n");
+		fprintf(stderr, "You should also add this directory to your search path.\n");
+		fprintf(stderr, "You can set these variables in your .bash_profile, .login, or autoexec.bat file.\n\n");
+		fprintf(stderr, "Giving up.  Please don't hate me.\n");
+	}
+	return NULL;
+}
+
+static void 
+print_version(void)
+{
+	fprintf(stdout, "rtf2latex %s\n\n", rtf2latex2e_version);
+	fprintf(stdout, "Copyright (C) 2010 Free Software Foundation, Inc.\n");
+	fprintf(stdout, "This is free software; see the source for copying conditions.  There is NO\n");
+	fprintf(stdout, "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
+}
+
+static void 
+print_usage(void)
+{
+	char           *s;
+
+	fprintf(stdout, "`rtf2latex' converts text files in RTF format to the LaTeX text format.\n\n");
+	fprintf(stdout, "Usage:  rtf2latex [-t <TeX-map>] <rtf file>\n\n");
+	fprintf(stdout, "Options:\n");
+	fprintf(stdout, "  -h               display help\n");
+	fprintf(stdout, "  -o outputfile    file for RTF output\n");
+	fprintf(stdout, "  -P path          paths to *.cfg & latex2png\n");
+	fprintf(stdout, "  -t /path/to/tmp  temporary directory\n");
+	fprintf(stdout, "  -v               version information\n");
+	fprintf(stdout, "  -V               version information\n");
+	fprintf(stdout, "Examples:\n");
+	fprintf(stdout, "  rtf2latex foo                     convert foo.rtf to foo.tex\n");
+	fprintf(stdout, "  rtf2latex <foo >foo.TEX             convert foo to foo.TEX\n");
+	fprintf(stdout, "  rtf2latex -P ./cfg/:./scripts/ foo  look for library files in ./cfg\n\n");
+	fprintf(stdout, "Report bugs to <rtf2latex2e-developers@lists.sourceforge.net>\n\n");
+	fprintf(stdout, "$RTFPATH designates the directory for the library files \n");
+	s = getenv("RTFPATH");
+	fprintf(stdout, "$RTFPATH = '%s'\n\n", (s) ? s : "not defined");
+	s = LIBDIR;
+	fprintf(stdout, "LIBDIR compiled-in directory for configuration files (*.cfg)\n");
+	fprintf(stdout, "LIBDIR  = '%s'\n\n", (s) ? s : "not defined");
+	fprintf(stdout, "rtf2latex %s\n", rtf2latex2e_version);
+	exit(1);
+}
+
+int 
+main(int argc, char **argv)
+{
+	char            c, buf[rtfBufSiz], *buf1, buf2[rtfBufSiz];
+	int             i, bufLength, fileCounter;
+	long            cursorPos;
+	extern char    *optarg;
+	extern int      optind;
+
+
+	while ((c = my_getopt(argc, argv, "hvVt:P:")) != EOF) {
+		switch (c) {
+
+		case 'v':
+		case 'V':
+			print_version();
+			return (0);
+
+		case 't':
+			strcpy(outputMapName, optarg);
+			break;
+
+		case 'P':	/* -P path/to/cfg:path/to/script or -P
+				 * path/to/cfg or -P :path/to/script */
+			g_library_path = strdup(optarg);
+			break;
+
+		case 'h':
+		case '?':
+		default:
+			print_usage();
+		}
+	}
+
+	argc -= optind;
+	argv += optind;
+
+	/* Initialize stuff */
+	if (argc > 0) {
+		SetEndianness();/* needed for cole routines */
+		strcpy(outputMapName, "");	/* assume that special
+						 * TeX-Map is not used */
+		RTFSetOpenLibFileProc(OpenLibFile);	/* install new routine
+							 * for opening library
+							 * files */
+		WriterInit();	/* one time writer initialization */
+	} else {
+		print_usage();
+	}
+
+	for (fileCounter = 0; fileCounter < argc; fileCounter++) {
+		fprintf(stderr, "Processing %s\n", argv[fileCounter]);
+
+		RTFInit();
+
+		/*
+		 * open first file, set it as the input file, and enable
+		 * global access to input file name
+		 */
+		/* strip .rtf from file name if found */
+		if ((ifp = fopen(argv[fileCounter], "r")) == NULL) {
+			RTFPanic("* Cannot open input file %s\n", argv[fileCounter]);
+			exit(1);
+		}
+		RTFSetStream(ifp);
+
+		/* look at second token to check if input file is of type rtf */
+		cursorPos = ftell(ifp);
+		RTFGetToken();
+		RTFGetToken();
+		if (rtfMajor != rtfVersion) {
+			RTFMsg("* Oops! %s is not an rtf file!\n", argv[fileCounter]);
+			if (fclose(ifp) != 0)
+				printf("* error closing input file %s\n",
+				       argv[fileCounter]);
+			continue;
+		}
+		fseek(ifp, cursorPos, 0);
+		RTFInit();
+
+		strcpy(buf2, argv[fileCounter]);
+		buf1 = buf2;
+		bufLength = strlen(buf1);
+		if (bufLength > 3) {
+			buf1 += (bufLength - 4);
+			/* strip .rtf by terminating string */
+			if (strcmp(buf1, ".rtf") == 0 || strcmp(buf1, ".RTF") == 0)
+				buf2[bufLength - 4] = '\0';
+
+		}
+		/* replace any spaces in input file name by a dash - */
+		buf1 = strrchr(buf2, PATH_SEP);	/* strip away path info */
+		if (buf1 == (char *) NULL)
+			buf1 = buf2;
+		bufLength = strlen(buf1);
+		for (i = 0; i < bufLength; i++) {
+			if (buf1[i] == ' ' || buf1[i] == '_' || buf1[i] == '.')
+				buf1[i] = '-';
+		}
+
+		/* set input name to modified name of input file */
+		RTFSetInputName(buf2);
+
+		/*
+		 * open output file, set it as the output file, and enable
+		 * global access to output file name
+		 */
+		strcpy(buf, buf2);
+		strcat(buf, ".tex");
+
+		if ((ofp = fopen(buf, "w+")) == NULL)
+			RTFPanic("Cannot open output file %s\n", buf);
+
+		RTFSetOutputStream(ofp);
+		RTFSetOutputName(buf);
+
+		if (BeginLaTeXFile()) {
+			RTFRead();
+			EndLaTeXFile();
+		}
+		if (fclose(ifp) != 0)
+			printf("* error closing input file %s\n", argv[fileCounter]);
+		if (fclose(ofp) != 0)
+			printf("* error closing output file %s\n", buf);
+	}
+
+	/* printf ("* groupLevel is %d\n", groupLevel); */
+
+	return (0);
 }

@@ -1,8 +1,10 @@
 RTF2LATEX= ../rtf2latex
 OPTIONS  = -P ../pref
 
-TEX= arch-mac.tex arch.tex equation.tex fig-jpeg.tex mapping.tex \
-     multiline.tex rtf-misc.tex rtf.tex table.tex test.tex
+TEX= arch-mac.tex arch.tex Equation.tex fig-jpeg.tex mapping.tex \
+     rtf-misc.tex rtf.tex table.tex test.tex
+
+HARDTEX = multiline.tex 
 
 all: $(TEX)
 
@@ -13,6 +15,6 @@ clean:
 	rm -rf *.tex *.eps
 	
 realclean: clean
-	rm -rf *.log *.aux *.pdf *.dvi *.pict *.eps *.ps
+	rm -rf *.log *.aux *.pdf *.dvi *.pict *.eps *.ps *.eqn
 
 .PHONY: clean all realclean
