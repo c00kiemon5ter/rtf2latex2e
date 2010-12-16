@@ -324,20 +324,20 @@ typedef	void (*RTFFuncPtr) ();		/* generic function pointer */
 void		RTFSimpleInit ();
 void 		RTFSetDefaultFont (long fontNumber);
 void		RTFInit ();
-void		RTFSetStream ();
-void		RTFSetInputName ();
-char		*RTFGetInputName ();
-void		RTFSetOutputName ();
+void 		RTFSetStream(FILE *stream);
+char *RTFGetInputName();
+void 		RTFSetInputName(char *name);
+void 		RTFSetOutputName(char *name);
 char		*RTFGetOutputName ();
-void		RTFSetClassCallback ();
-RTFFuncPtr	RTFGetClassCallback ();
-void		RTFSetDestinationCallback ();
-RTFFuncPtr	RTFGetDestinationCallback ();
+void 		RTFSetClassCallback(short class, RTFFuncPtr callback);
+RTFFuncPtr 	RTFGetClassCallback(short class);
+void 		RTFSetDestinationCallback(short dest, RTFFuncPtr callback);
+RTFFuncPtr 	RTFGetDestinationCallback(short dest);
 void		RTFRead ();
 short		RTFGetToken ();	/* writer should rarely need this */
 void		RTFUngetToken ();
 short		RTFPeekToken ();
-void		RTFSetToken ();
+void RTFSetToken(short class, short major, short minor, long param, char *text);
 void		RTFSetReadHook ();
 RTFFuncPtr	RTFGetReadHook ();
 void		RTFRouteToken ();
@@ -368,34 +368,24 @@ void		ReadColorTbl (); /* made public and brought over from reader.c by Ujwal Sa
  * stdarg.h.
  */
 
-# ifndef rtfInternal
-void		RTFMsg ();
-void		RTFPanic ();
-# else
-# ifdef STDARG
 void		RTFMsg (char *fmt, ...);
 void		RTFPanic (char *fmt, ...);
-# else
-void		RTFMsg ();
-void		RTFPanic ();
-# endif	/* STDARG */
-# endif /* rtfInternal */
 
-short		RTFReadCharSetMap ();
-void		RTFSetCharSetMap ();
-short		RTFStdCharCode ();
-char		*RTFStdCharName ();
-short		RTFMapChar ();
+short RTFReadCharSetMap(char *file, short csId);
+void RTFSetCharSetMap(char *name, short csId);
+short RTFStdCharCode(char *name);
+char		*RTFStdCharName (short code);
+short		RTFMapChar (short c);
 short		RTFGetCharSet();
-void		RTFSetCharSet();
-short		RTFReadOutputMap (); /* added by Ujwal Sathyam. Forgotten by Paul du Bois? */
-void 		RTFPushStack (void); /* added by Ujwal Sathyam */
-void 		RTFPopStack (void);  /* added by Ujwal Sathyam */
-void		RTFStoreStack (void); /* added by Ujwal Sathyam */
-void		RTFRestoreStack (void); /* added by Ujwal Sathyam */
+void		RTFSetCharSet(short csId);
+short RTFReadOutputMap(char *file, char *outMap[], short reinit); 
+void 		RTFPushStack (void);
+void 		RTFPopStack (void); 
+void		RTFStoreStack (void);
+void		RTFRestoreStack (void);
 
 /*char		*RTFGetLibPrefix();*/
-void	RTFSetOpenLibFileProc ();
-FILE	*RTFOpenLibFile ();
+void RTFSetOpenLibFileProc(FILE *(*proc) ());
+FILE *RTFOpenLibFile(char *file, char *mode);
 
 #endif /* _RTF_H */

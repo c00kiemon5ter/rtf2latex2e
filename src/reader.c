@@ -337,8 +337,7 @@ void RTFInit()
  * be used to redirect to other than the default (stdin).
  */
 
-void RTFSetStream(stream)
-FILE *stream;
+void RTFSetStream(FILE *stream)
 {
     rtffp = stream;
 }
@@ -349,8 +348,7 @@ FILE *stream;
  * to be accurate, only insofar as the calling program makes them so.
  */
 
-void RTFSetInputName(name)
-char *name;
+void RTFSetInputName(char *name)
 {
     if ((inputName = RTFStrSave(name)) == (char *) NULL)
         RTFPanic("RTFSetInputName: out of memory");
@@ -363,8 +361,7 @@ char *RTFGetInputName()
 }
 
 
-void RTFSetOutputName(name)
-char *name;
+void RTFSetOutputName(char *name)
 {
     if ((outputName = RTFStrSave(name)) == (char *) NULL)
         RTFPanic("RTFSetOutputName: out of memory");
@@ -393,17 +390,14 @@ char *RTFGetOutputName()
 static RTFFuncPtr ccb[rtfMaxClass];     /* class callbacks */
 
 
-void RTFSetClassCallback(class, callback)
-short class;
-RTFFuncPtr callback;
+void RTFSetClassCallback(short class, RTFFuncPtr callback)
 {
     if (class >= 0 && class < rtfMaxClass)
         ccb[class] = callback;
 }
 
 
-RTFFuncPtr RTFGetClassCallback(class)
-short class;
+RTFFuncPtr RTFGetClassCallback(short class)
 {
     if (class >= 0 && class < rtfMaxClass)
         return (ccb[class]);
@@ -418,17 +412,14 @@ short class;
 static RTFFuncPtr dcb[rtfNumDestinations];      /* destination callbacks */
 
 
-void RTFSetDestinationCallback(dest, callback)
-short dest;
-RTFFuncPtr callback;
+void RTFSetDestinationCallback(short dest, RTFFuncPtr callback)
 {
     if (dest >= rtfMinDestination && dest <= rtfMaxDestination)
         dcb[dest - rtfMinDestination] = callback;
 }
 
 
-RTFFuncPtr RTFGetDestinationCallback(dest)
-short dest;
+RTFFuncPtr RTFGetDestinationCallback(short dest)
 {
     if (dest >= rtfMinDestination && dest <= rtfMaxDestination)
         return (dcb[dest - rtfMinDestination]);
@@ -883,10 +874,7 @@ static short GetChar()
  * part of the token text.
  */
 
-void RTFSetToken(class, major, minor, param, text)
-short class, major, minor;
-long param;
-char *text;
+void RTFSetToken(short class, short major, short minor, long param, char *text)
 {
     rtfClass = class;
     rtfMajor = major;
@@ -941,9 +929,7 @@ static void CharSetInit()
  * done.
  */
 
-void RTFSetCharSetMap(name, csId)
-char *name;
-short csId;
+void RTFSetCharSetMap(char *name, short csId)
 {
     if ((name = RTFStrSave(name)) == (char *) NULL)     /* make copy */
         RTFPanic("RTFSetCharSetMap: out of memory");
@@ -1012,9 +998,7 @@ static void ReadCharSetMaps()
  * only.  Otherwise try to find the file in the current directory or library.
  */
 
-short RTFReadCharSetMap(file, csId)
-char *file;
-short csId;
+short RTFReadCharSetMap(char *file, short csId)
 {
     FILE *f;
     char buf[rtfBufSiz];
@@ -1138,8 +1122,7 @@ short csId;
  * Return -1 if name is unknown.
  */
 
-short RTFStdCharCode(name)
-char *name;
+short RTFStdCharCode(char *name)
 {
     short i;
 
@@ -1156,8 +1139,7 @@ char *name;
  * Return NULL if code is unknown.
  */
 
-char *RTFStdCharName(code)
-short code;
+char *RTFStdCharName(short code)
 {
     if (code < 0 || code >= rtfSC_MaxChar)
         return ((char *) NULL);
@@ -1174,8 +1156,7 @@ short code;
  * and reads the map as necessary.
  */
 
-short RTFMapChar(c)
-short c;
+short RTFMapChar(short c)
 {
     switch (curCharSet) {
     case rtfCSGeneral:
@@ -1201,8 +1182,7 @@ short c;
  * Set the current character set.  If csId is illegal, uses general charset.
  */
 
-void RTFSetCharSet(csId)
-short csId;
+void RTFSetCharSet(short csId)
 {
 
 
@@ -2049,10 +2029,7 @@ short i;
  * library directory.
  */
 
-short RTFReadOutputMap(file, outMap, reinit)
-char *file;
-char *outMap[];
-short reinit;
+short RTFReadOutputMap(char *file, char *outMap[], short reinit)
 {
     FILE *f;
     char buf[rtfBufSiz];
@@ -2131,16 +2108,13 @@ static FILE *(*libFileOpen) () = NULL;
 
 
 
-void RTFSetOpenLibFileProc(proc)
-FILE *(*proc) ();
+void RTFSetOpenLibFileProc(FILE *(*proc) ())
 {
     libFileOpen = proc;
 }
 
 
-FILE *RTFOpenLibFile(file, mode)
-char *file;
-char *mode;
+FILE *RTFOpenLibFile(char *file, char *mode)
 {
     if (libFileOpen == NULL)
         return ((FILE *) NULL);
@@ -2171,18 +2145,11 @@ char *s;
 static RTFFuncPtr msgProc = DefaultMsgProc;
 
 
-void RTFSetMsgProc(proc)
-RTFFuncPtr proc;
+void RTFSetMsgProc(RTFFuncPtr proc)
 {
     msgProc = proc;
 }
 
-
-# ifdef STDARG
-
-/*
- * This version is for systems with stdarg
- */
 
 void RTFMsg(char *fmt, ...)
 {
@@ -2195,51 +2162,7 @@ void RTFMsg(char *fmt, ...)
     (*msgProc) (buf);
 }
 
-# else                          /* !STDARG */
-
-# ifdef VARARGS
-
-
-/*
- * This version is for systems that have varargs.
- */
-
-void RTFMsg(va_alist)
-va_dcl
-{
-    va_list args;
-    char *fmt;
-    char buf[rtfBufSiz];
-
-    va_start(args);
-    fmt = va_arg(args, char *);
-    vsprintf(buf, fmt, args);
-    va_end(args);
-    (*msgProc) (buf);
-}
-
-# else                          /* !VARARGS */
-
-/*
- * This version is for systems that don't have varargs.
- */
-
-void RTFMsg(fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9)
-char *fmt;
-char *a1, *a2, *a3, *a4, *a5, *a6, *a7, *a8, *a9;
-{
-    char buf[rtfBufSiz];
-
-    sprintf(buf, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-    (*msgProc) (buf);
-}
-
-# endif                         /* !VARARGS */
-# endif                         /* !STDARG */
-
-
 /* ---------------------------------------------------------------------- */
-
 
 /*
  * Process termination.  Print error message and exit.  Also prints
@@ -2248,8 +2171,7 @@ char *a1, *a2, *a3, *a4, *a5, *a6, *a7, *a8, *a9;
  * has been read if prevChar is EOF).
  */
 
-static void DefaultPanicProc(s)
-char *s;
+static void DefaultPanicProc(char *s)
 {
     fprintf(stderr, "%s", s);
     exit(1);
@@ -2259,18 +2181,11 @@ char *s;
 static RTFFuncPtr panicProc = DefaultPanicProc;
 
 
-void RTFSetPanicProc(proc)
-RTFFuncPtr proc;
+void RTFSetPanicProc(RTFFuncPtr proc)
 {
     panicProc = proc;
 }
 
-
-# ifdef STDARG
-
-/*
- * This version is for systems with stdarg
- */
 
 void RTFPanic(char *fmt, ...)
 {
@@ -2288,62 +2203,6 @@ void RTFPanic(char *fmt, ...)
     }
     (*panicProc) (buf);
 }
-
-# else                          /* !STDARG */
-
-# ifdef VARARGS
-
-
-/*
- * This version is for systems that have varargs.
- */
-
-void RTFPanic(va_alist)
-va_dcl
-{
-    va_list args;
-    char *fmt;
-    char buf[rtfBufSiz];
-
-    va_start(args);
-    fmt = va_arg(args, char *);
-    vsprintf(buf, fmt, args);
-    va_end(args);
-    (void) strcat(buf, "\n");
-    if (prevChar != EOF && rtfTextBuf != (char *) NULL) {
-        sprintf(buf + strlen(buf),
-                "Last token read was \"%s\" near line %ld, position %hd.\n",
-                rtfTextBuf, rtfLineNum, rtfLinePos);
-    }
-    (*panicProc) (buf);
-}
-
-# else                          /* !VARARGS */
-
-/*
- * This version is for systems that don't have varargs.
- */
-
-void RTFPanic(fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9)
-char *fmt;
-char *a1, *a2, *a3, *a4, *a5, *a6, *a7, *a8, *a9;
-{
-    char buf[rtfBufSiz];
-
-    sprintf(buf, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-    (void) strcat(buf, "\n");
-    if (prevChar != EOF && rtfTextBuf != (char *) NULL) {
-        sprintf(buf + strlen(buf),
-                "Last token read was \"%s\" near line %ld, position %hd.\n",
-                rtfTextBuf, rtfLineNum, rtfLinePos);
-    }
-    (*panicProc) (buf);
-}
-
-# endif                         /* !VARARGS */
-# endif                         /* !STDARG */
-
-/* ---------------------------------------------------------------------- */
 
 /*
  Useful functions added by Ujwal Sathyam.
