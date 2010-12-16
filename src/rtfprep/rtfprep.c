@@ -91,7 +91,7 @@ static short	nCtrls = 0;
 
 static short	nNames = 0;
 
-static char	*usage = "Usage: rtfprep";
+/* static char	*usage = "Usage: rtfprep"; */
 
 
 static void	Tokenize ();

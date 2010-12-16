@@ -1,11 +1,21 @@
-Incorporate all the SafeBuf stuff
-Produce native format graphics files
-Fix how equations handle symbols
-Add \func definition to latex file
-Revise README
-Revise INSTALL
-Revert default directory name
-figure out which files in PREF folder can be removed
-eliminate SetDollar from eqns.c
-fix usage() in rtfPrep
-work on graphics support
+Security
+   Incorporate all the SafeBuf stuff
+
+Graphics
+   Produce native format graphics files
+   Eliminate SetDollar from eqns.c
+   Improve how equations handle symbols
+
+OLE 
+   Add OLE test cases
+   Fix broken OLE code
+   Fix handling of OLE equations
+
+Misc
+   Fix cross-referencing 
+   
+Packaging
+   Revise README
+   Revise INSTALL
+   Revert default directory name
+   figure out which files in PREF folder can be removed
