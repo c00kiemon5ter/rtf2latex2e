@@ -1695,7 +1695,11 @@ static void TextClass(void)
         if (insideHyperlink) {
             switch (rtfMinor) {
             case rtfSC_underscore:
-                PutLitChar('_');
+                PutLitChar('H');
+                return;
+            case rtfSC_backslash:
+            	RTFGetToken();  /* ignore backslah */
+            	RTFGetToken();  /* and next character */
                 return;
             }
         }
@@ -4021,7 +4025,6 @@ static void ReadHyperlink(void)
 {
     int localGL;
 
-
     PutLitStr("\\R2Lurl{");
     wrapCount += 5;
 
@@ -4029,13 +4032,13 @@ static void ReadHyperlink(void)
 
     insideHyperlink = true;
 
-
     while (groupLevel >= localGL) {
         RTFGetToken();
-        if (rtfClass == rtfText && rtfTextBuf[0] != '"'
+        if (rtfClass == rtfText 
+            && rtfTextBuf[0] != '"'
             && !RTFCheckMM(rtfSpecialChar, rtfLDblQuote)
             && !RTFCheckMM(rtfSpecialChar, rtfRDblQuote))
-            RTFRouteToken();
+                RTFRouteToken();
     }
 
     PutLitStr("}{");
@@ -4090,7 +4093,7 @@ static void ReadFieldInst(void)
         }
     }
 
-    /* figure out wht the field is */
+    /* figure out what the field is */
     /* HYPERLINK and SYMBOL are supported */
     strcat(buf, rtfTextBuf);
     while (strcmp(rtfTextBuf, " ") != 0 && rtfClass != rtfGroup) {
