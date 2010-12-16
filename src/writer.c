@@ -1349,7 +1349,6 @@ static void WriteLaTeXHeader(void)
         PutLitChar('\n');
     }
 
-
     PutLitStr("\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
     blankLineCount++;
 
@@ -1409,7 +1408,6 @@ static void DoParagraphCleanUp(void)
         insideFootnote = false;
         suppressLineBreak = true;
     }
-
 
     if (paragraph.lineSpacing != singleSpace && paragraph.wroteSpacing) {
         PutLitStr("\n\\end{spacing}");
@@ -1940,7 +1938,7 @@ static void CheckForParagraph(void)
             InsertNewLine();
             blankLineCount += 2;
         } else if (!suppressLineBreak && !(textStyle.open) && !lineIsBlank) {
-            PutLitStr("\\\\");
+            PutLitStr("\\\\{}");  /* braces because next line may start with [ */
             InsertNewLine();
         }
         wrapCount = 0;
@@ -1956,7 +1954,7 @@ static void CheckForParagraph(void)
 
     else {
         if (rtfClass != rtfEOF && !(textStyle.open) && !lineIsBlank) {
-            PutLitStr("\\\\");
+            PutLitStr("\\\\{}");
             InsertNewLine();
         }
         wrapCount = 0;
@@ -2870,7 +2868,7 @@ static void DoTable(void)
         ProcessTableRow(rowNum);
 
         fseek(ofp, -4, 2);      /* erase the "& \n" at the end of the last cell of the row */
-        PutLitStr("\\\\");
+        PutLitStr("\\\\");    
         InsertNewLine();
         if (i < (table.rows - 1))
             DrawTableRowLine(rowNum);
@@ -3090,8 +3088,8 @@ static int HexData(void)
          * there are some groups within the header that contain text data that should not
          * be confused with hex data
          */
-        if (RTFCheckMM(rtfDestination, rtfSp) != 0
-            || strcmp(rtfTextBuf, "\\*") == 0) {
+        if (RTFCheckMM(rtfDestination, rtfSp) != 0 || strcmp(rtfTextBuf, "\\*") == 0) 
+        {
             RTFSkipGroup();
             return (0);
         }
@@ -3407,6 +3405,7 @@ static void IncludeGraphics(char *pictureType)
 /* This function reads in a picture */
 static void ReadPicture(void)
 {
+    char *fn = "ReadPicture";
     requireGraphicxPackage = true;
     picture.type = unknownPict;
     picture.width = 0;
@@ -3416,6 +3415,7 @@ static void ReadPicture(void)
     picture.scaleX = 100;
     picture.scaleY = 100;
 
+	RTFMsg("%s: Starting ...\n",fn);
     /* skip everything until we reach hex data */
     while (!HexData());
 
@@ -3642,8 +3642,8 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     char objByte;
     short hexNumber;
     short hexEvenOdd = 0;       /* check if we read in even number of hex characters */
-
-/*      RTFMsg ("* Reading object data...\n"); */
+    char *fn = "ReadObjectData";
+    RTFMsg("%s: * starting ...\n", fn);
 
     if (type == equation) {
         (oleEquation.count)++;
@@ -3715,6 +3715,9 @@ static boolean ReadEquation(int *groupCount)
     char objectFileName[rtfBufSiz];
     unsigned char *nativeEquationStream = NULL;
     int err;
+    char *fn = "ReadEquation";
+    RTFMsg("%s: * starting ...\n", fn);
+
     size_t equationSize;
     MTEquation *theEquation = NULL;
     boolean res;
@@ -3810,18 +3813,22 @@ static void ReadObject(void)
     int groupCounter = 1;       /* one opening brace has been counted */
     int temp;
     boolean res;
-
+    char *fn = "ReadObject";
+    RTFMsg("%s: * starting ...\n", fn);
+        
     GetObjectClass(&groupCounter);
 
     switch (object.class) {
     case unknownObj:
     default:
-        printf("* unsupported object \"%s\" encountered, skipping...\n",
+        RTFMsg("%s: * unsupported object \"%s\" encountered, skipping...\n", fn,
                object.className);
         RTFSkipGroup();
         break;
     case Equation:
     case equation:
+        RTFMsg("%s: * equation object \"%s\" encountered, processing...\n", fn,
+               object.className);
         if ((int) preferenceValue[GetPreferenceNum("convertEquations")])
             res = ReadEquation(&groupCounter);
         else
@@ -3873,7 +3880,9 @@ static void ReadWord97Result(void)
 {
     int i;
     int groupCount = 1;         /* one opening brace has been counted */
-
+    char *fn = "ReadWord97Result";
+    RTFMsg("%s: starting ...\n",fn);
+    
     /* scan until object or picture is reached */
     while (groupCount != 0) {
         RTFGetToken();
@@ -3913,6 +3922,8 @@ static void ReadWord97Object(void)
     int groupCount = 1;         /* one opening brace has been counted */
     int word97ObjTextGL = 1;
     short prevChar;
+    char *fn = "ReadWord97Object";
+    RTFMsg("%s: starting ...\n",fn);
 
     word97ObjectType = unknownWord97Object;
 
@@ -4024,8 +4035,9 @@ static void ReadWord97Object(void)
 static void ReadHyperlink(void)
 {
     int localGL;
+    char *fn = "ReadHyperlink";
 
-    PutLitStr("\\R2Lurl{");
+    PutLitStr("\\href{");
     wrapCount += 5;
 
     localGL = groupLevel;
@@ -4034,11 +4046,13 @@ static void ReadHyperlink(void)
 
     while (groupLevel >= localGL) {
         RTFGetToken();
-        if (rtfClass == rtfText 
-            && rtfTextBuf[0] != '"'
-            && !RTFCheckMM(rtfSpecialChar, rtfLDblQuote)
-            && !RTFCheckMM(rtfSpecialChar, rtfRDblQuote))
-                RTFRouteToken();
+        if (rtfClass == rtfText) {
+        	if (rtfTextBuf[0] != '"'
+                && !RTFCheckMM(rtfSpecialChar, rtfLDblQuote)
+                && !RTFCheckMM(rtfSpecialChar, rtfRDblQuote))
+                    RTFRouteToken();
+         } else 
+             RTFRouteToken();
     }
 
     PutLitStr("}{");
@@ -4058,15 +4072,13 @@ static void ReadHyperlink(void)
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfOptDest))
             RTFSkipGroup();
         textStyle.newStyle = false;
-        if (rtfClass == rtfText)
+        /*if (rtfClass == rtfText)*/
             RTFRouteToken();
     }
 
     PutLitStr("}");
     wrapCount++;
     requireHyperrefPackage = true;
-
-
 }
 
 

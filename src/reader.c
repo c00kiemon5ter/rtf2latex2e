@@ -114,6 +114,7 @@ static void Lookup();
 
 static void CharSetInit();
 static void ReadCharSetMaps();
+void DebugMessage();
 
 /* these functions added by Ujwal Sathyam */
 static void RTFSwitchCharSet(long enc);
@@ -137,6 +138,7 @@ short rtfTextLen;
 
 long rtfLineNum;
 short rtfLinePos;
+short rtfTokenIndex;
 
 
 /*
@@ -510,6 +512,7 @@ short RTFGetToken()
 
     for (;;) {
         _RTFGetToken();
+        DebugMessage();
         if ((p = RTFGetReadHook()) != (RTFFuncPtr) NULL)
             (*p) ();            /* give read hook a look at token */
 
@@ -1733,6 +1736,7 @@ typedef struct RTFCtrl RTFCtrl;
 struct RTFCtrl {
     short major;                /* major number */
     short minor;                /* minor number */
+    short index;                /* index of token */
     char *str;                  /* symbol name */
 };
 
@@ -1818,6 +1822,7 @@ static void LookupInit()
             rp->major = atoi(p1);
             rp->minor = atoi(p2);
             rp->str = tokBufEnd;
+            rp->index = line - 2;
             /* process string to remove embedded escapes */
             p1 = p3;
             while ((c = *p1++) != '\0') {
@@ -1889,6 +1894,7 @@ char *s;
             rtfClass = rtfControl;
             rtfMajor = rp->major;
             rtfMinor = rp->minor;
+            rtfTokenIndex = rp->index;
             return;
         }
         if (lower >= upper)     /* can't subdivide range further, */
@@ -1901,7 +1907,11 @@ char *s;
     rtfClass = rtfUnknown;
 }
 
-
+void DebugMessage() 
+{
+    if (g_debug_level > 0)
+    	fprintf(stderr, "%s (%d,%d,%d)\n",rtfCtrl[rtfTokenIndex]->str,rtfClass,rtfMajor,rtfMinor);
+}
 /* ---------------------------------------------------------------------- */
 
 /*
@@ -2105,8 +2115,6 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
 
 
 static FILE *(*libFileOpen) () = NULL;
-
-
 
 void RTFSetOpenLibFileProc(FILE *(*proc) ())
 {

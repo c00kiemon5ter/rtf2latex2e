@@ -61,6 +61,7 @@ extern short	rtfTextLen;		/* length of token in rtfTextBuf */
 extern short	rtfClass;		/* token class */
 extern short	rtfMajor;		/* token major number */
 extern short	rtfMinor;		/* token minor number */
+extern short	rtfTokenIndex;		/* token index number */
 extern long	rtfParam;		/* control symbol parameter */
 
 # define	rtfNoParam	(-1000000)
@@ -325,7 +326,7 @@ void		RTFSimpleInit ();
 void 		RTFSetDefaultFont (long fontNumber);
 void		RTFInit ();
 void 		RTFSetStream(FILE *stream);
-char *RTFGetInputName();
+char 		*RTFGetInputName();
 void 		RTFSetInputName(char *name);
 void 		RTFSetOutputName(char *name);
 char		*RTFGetOutputName ();
@@ -337,7 +338,7 @@ void		RTFRead ();
 short		RTFGetToken ();	/* writer should rarely need this */
 void		RTFUngetToken ();
 short		RTFPeekToken ();
-void RTFSetToken(short class, short major, short minor, long param, char *text);
+void 		RTFSetToken(short class, short major, short minor, long param, char *text);
 void		RTFSetReadHook ();
 RTFFuncPtr	RTFGetReadHook ();
 void		RTFRouteToken ();
@@ -361,31 +362,26 @@ short		RTFPushedChar ();
 void		RTFSetPushedChar (short lastChar);
 void		ReadColorTbl (); /* made public and brought over from reader.c by Ujwal Sathyam */
 
-/*
- * The following messing around is used to allow RTFMsg() and RTFPanic()
- * to be variable-argument functions that are declared publicly but
- * without generating prototype-mismatch errors on systems that have
- * stdarg.h.
- */
-
 void		RTFMsg (char *fmt, ...);
 void		RTFPanic (char *fmt, ...);
 
-short RTFReadCharSetMap(char *file, short csId);
-void RTFSetCharSetMap(char *name, short csId);
-short RTFStdCharCode(char *name);
+short 		RTFReadCharSetMap(char *file, short csId);
+void 		RTFSetCharSetMap(char *name, short csId);
+short 		RTFStdCharCode(char *name);
 char		*RTFStdCharName (short code);
 short		RTFMapChar (short c);
 short		RTFGetCharSet();
 void		RTFSetCharSet(short csId);
-short RTFReadOutputMap(char *file, char *outMap[], short reinit); 
+short 		RTFReadOutputMap(char *file, char *outMap[], short reinit); 
 void 		RTFPushStack (void);
 void 		RTFPopStack (void); 
 void		RTFStoreStack (void);
 void		RTFRestoreStack (void);
 
 /*char		*RTFGetLibPrefix();*/
-void RTFSetOpenLibFileProc(FILE *(*proc) ());
-FILE *RTFOpenLibFile(char *file, char *mode);
+void 		RTFSetOpenLibFileProc(FILE *(*proc) ());
+FILE 		*RTFOpenLibFile(char *file, char *mode);
+
+extern int g_debug_level;
 
 #endif /* _RTF_H */

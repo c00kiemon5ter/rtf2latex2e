@@ -41,6 +41,7 @@ extern long     groupLevel;
 #endif
 
 int             g_little_endian = 0;
+int             g_debug_level = 0;
 
 /* Figure out endianness of machine.  Needed for OLE & graphics support */
 static void 
