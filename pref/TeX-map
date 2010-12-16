@@ -21,7 +21,7 @@
 
 space		" "
 exclam		!
-quotedbl	{\textquotedbl}
+quotedbl	{\textquotedblright}
 numbersign	\#
 dollar		\$
 percent		\%
