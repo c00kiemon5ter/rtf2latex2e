@@ -1731,6 +1731,8 @@ static void Destination(void)
     case rtfIComment:
     case rtfIVersion:
     case rtfIDoccomm:
+    case rtfUserPropsGroup:
+    case rtfWGRFmtFilter:
         RTFSkipGroup();
         break;
     }
@@ -4035,7 +4037,6 @@ static void ReadWord97Object(void)
 static void ReadHyperlink(void)
 {
     int localGL;
-    char *fn = "ReadHyperlink";
 
     PutLitStr("\\href{");
     wrapCount += 5;
@@ -4081,56 +4082,15 @@ static void ReadHyperlink(void)
     requireHyperrefPackage = true;
 }
 
-
-static void ReadFieldInst(void)
+static void ReadSymbolField(void)
 {
-    char buf[100];
-    int i = 0;
     short tokenClass;
-    short currentCharSet = RTFGetCharSet();
+    char buf[100];
     short major, minor;
-    int groupCount = 1;
+    short currentCharSet = RTFGetCharSet();
 
-    strcpy(buf, "");
-
-    while (rtfClass != rtfText || rtfMinor == rtfSC_space) {
-        RTFGetToken();
-        if (RTFCheckCM(rtfGroup, rtfBeginGroup))
-            groupCount++;
-        if (RTFCheckCM(rtfGroup, rtfEndGroup))
-            groupCount--;
-        if (groupCount == 0) {
-            RTFRouteToken();
-            return;
-        }
-    }
-
-    /* figure out what the field is */
-    /* HYPERLINK and SYMBOL are supported */
-    strcat(buf, rtfTextBuf);
-    while (strcmp(rtfTextBuf, " ") != 0 && rtfClass != rtfGroup) {
-        RTFGetToken();
-        if (strcmp(rtfTextBuf, " ") != 0 && rtfClass != rtfGroup)
-            strcat(buf, rtfTextBuf);
-    }
-
-    /* if this is a hyperlink, call the ReadHyperlink() function */
-    if (strcmp(buf, "HYPERLINK") == 0
-        && !(int) preferenceValue[GetPreferenceNum("ignoreHypertext")]) {
-        ReadHyperlink();
-        return;
-    }
-
-    /* We have a symbol; switch our character set */
-    if (strcmp(buf, "SYMBOL") == 0)
-        RTFSetCharSet(rtfCSSymbol);
-    else {
-        for (i = 0; i < groupCount; i++)
-            RTFSkipGroup();
-        RTFRouteToken();
-        return;
-    }
-
+    RTFSetCharSet(rtfCSSymbol);
+    
     /* go to the start of the symbol representation */
     strcpy(buf, "");
     if ((tokenClass = RTFGetToken()) != rtfText) {
@@ -4167,6 +4127,54 @@ static void ReadFieldInst(void)
     RTFSetCharSet(currentCharSet);
     RTFSkipGroup();
     RTFRouteToken();
+}
+
+static void ReadFieldInst(void)
+{
+    char buf[100];
+    int i;
+    int groupCount = 1;
+    char *fn = "ReadFieldInst";
+
+    strcpy(buf, "");
+
+	/* skip to text identifying the type of FIELD  */
+    while (rtfClass != rtfText || rtfMinor == rtfSC_space) {
+        RTFGetToken();
+        if (RTFCheckCM(rtfGroup, rtfBeginGroup))
+            groupCount++;
+        if (RTFCheckCM(rtfGroup, rtfEndGroup))
+            groupCount--;
+        if (groupCount == 0) {
+            RTFRouteToken();
+            return;
+        }
+    }
+
+    /* extract text identifying the FIELD into buf */
+    strcat(buf, rtfTextBuf);
+    while (strcmp(rtfTextBuf, " ") != 0 && rtfClass != rtfGroup) {
+        RTFGetToken();
+        if (strcmp(rtfTextBuf, " ") != 0 && rtfClass != rtfGroup)
+            strcat(buf, rtfTextBuf);
+    }
+    RTFMsg("%s: FIELD type is %s\n",fn,buf);
+
+    if (strcmp(buf, "HYPERLINK") == 0 )
+    	if (!(int) preferenceValue[GetPreferenceNum("ignoreHypertext")]) {
+        	ReadHyperlink();
+        	return;
+    	}
+
+    if (strcmp(buf, "SYMBOL") == 0) {
+        ReadSymbolField();
+        return;
+    }
+
+    /* Unsupported FIELD type ... the best we can do is bail from rtfFieldInst
+       and hope rtfFieldResult can be processed  */
+    for (i = 0; i < groupCount; i++)
+        RTFSkipGroup();
 }
 
 /*

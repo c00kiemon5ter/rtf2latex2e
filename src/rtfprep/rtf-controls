@@ -126,6 +126,8 @@ minor	rtfFchars		fchars
 minor	rtfLchars		lchars
 minor	rtfPgdsctbl		pgdsctbl			
 minor	rtfTOCN			tcn
+minor	rtfUserPropsGroup	userprops
+minor	rtfWGRFmtFilter	wgrffmtfilter
 
 comment	minor	rtfUnicode		u
 
