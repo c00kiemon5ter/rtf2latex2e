@@ -4034,6 +4034,43 @@ static void ReadWord97Object(void)
 
 }
 
+
+/* all these should streams should just emit ... HToc268803753
+ *    PAGEREF _Toc268803753 \\h 
+ *    HYPERLINK \\l "_Toc268803753"
+ *     _Toc268803753
+ */
+static void emitBookmark(void)
+{
+	int started = 0;
+	
+	RTFGetToken();
+	while (rtfClass == rtfText) {
+		switch (rtfTextBuf[0]) {
+		case ' ':
+			if (started) {     /* assume that bookmarks optionally start and end with spaces */
+				RTFSkipGroup();
+				return;
+			}
+			break;
+		case '"':
+			break;
+		case '\\':
+			RTFGetToken(); /* drop backslash and the next letter */
+			break;
+		case '_':
+			started = 1;
+			PutLitStr("H");
+			break;
+		default:
+			started = 1;
+			PutLitStr(rtfTextBuf);
+			break;
+		}
+		RTFGetToken();
+	}
+}
+
 static void ReadHyperlink(void)
 {
     int localGL;
@@ -4130,6 +4167,29 @@ static void ReadSymbolField(void)
 }
 
 /*
+ *  Just emit \pageref{HToc268612944} for {\*\fldinst {...  PAGEREF _Toc268612944 \\h } ..}
+*/
+static void ReadPageRefField(void)
+{
+    char *fn = "ReadPageRefField";
+    RTFMsg("%s: starting ...\n",fn);
+    
+    PutLitStr("\\pageref{");
+    wrapCount += 8;
+	emitBookmark();
+	PutLitStr("}");
+	wrapCount += 1;
+	RTFRouteToken();
+
+    /* skip over to the result group */
+    while (!RTFCheckCMM(rtfControl, rtfDestination, rtfFieldResult))
+        RTFGetToken();
+        
+    RTFSkipGroup();
+    RTFRouteToken();
+}
+
+/*
  *  Three possible types of fields
  *     (1) supported ... translate and ignore FieldResult
  *     (2) tolerated ... ignore FieldInst and translate FieldResult
@@ -4141,6 +4201,7 @@ static void ReadFieldInst(void)
     int i;
     int groupCount = 1;
     char *fn = "ReadFieldInst";
+    RTFMsg("%s: starting ... \n",fn);
 
     strcpy(buf, "");
 
@@ -4166,7 +4227,7 @@ static void ReadFieldInst(void)
     }
     RTFMsg("%s: FIELD type is %s\n",fn,buf);
 
-    if (strcmp(buf, "HYPERLINK") == 0 )
+    if (0 && strcmp(buf, "HYPERLINK") == 0 )
     	if (!(int) preferenceValue[GetPreferenceNum("ignoreHypertext")]) {
         	ReadHyperlink();
         	return;
@@ -4174,6 +4235,11 @@ static void ReadFieldInst(void)
 
     if (strcmp(buf, "SYMBOL") == 0) {
         ReadSymbolField();
+        return;
+    }
+
+    if (strcmp(buf, "PAGEREF") == 0) {
+        ReadPageRefField();
         return;
     }
 
@@ -4188,27 +4254,14 @@ static void ReadFieldInst(void)
  */
 static void ReadBookmarkStart(void)
 {
-    char *fn = "ReadBookmarkStart";
-    RTFMsg("%s: starting ...\n",fn);
-    
     PutLitStr("\\label{");
     wrapCount += 7;
-
-    insideHyperlink = true;
-	RTFGetToken();
-	while (rtfClass == rtfText) {
-		if (rtfTextBuf[0]=='_')
-			PutLitStr("H");
-		else
-			PutLitStr(rtfTextBuf);
-		RTFGetToken();
-	}
-
-	insideHyperlink = false;
+	emitBookmark();
 	PutLitStr("}");
 	wrapCount += 1;
 	RTFRouteToken();
 }
+
 
 /*
  * Prepares output TeX file for each input RTF file. 
