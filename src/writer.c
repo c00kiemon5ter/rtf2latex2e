@@ -2907,7 +2907,7 @@ static void ParAttr(void)
     int i;
     RTFStyle *stylePtr = NULL;
 
-    if (insideFootnote)
+    if (insideFootnote || insideHyperlink)
         return;
 
     if (!(table.inside)) {
@@ -4129,6 +4129,12 @@ static void ReadSymbolField(void)
     RTFRouteToken();
 }
 
+/*
+ *  Three possible types of fields
+ *     (1) supported ... translate and ignore FieldResult
+ *     (2) tolerated ... ignore FieldInst and translate FieldResult
+ *     (3) unknown   ... ignore both FieldInst and FieldResult
+ */
 static void ReadFieldInst(void)
 {
     char buf[100];
@@ -4175,6 +4181,33 @@ static void ReadFieldInst(void)
        and hope rtfFieldResult can be processed  */
     for (i = 0; i < groupCount; i++)
         RTFSkipGroup();
+}
+
+/*
+ *  Just emit \label{HToc268612944} for {\*\bkmkstart _Toc268612944}
+ */
+static void ReadBookmarkStart(void)
+{
+    char *fn = "ReadBookmarkStart";
+    RTFMsg("%s: starting ...\n",fn);
+    
+    PutLitStr("\\label{");
+    wrapCount += 7;
+
+    insideHyperlink = true;
+	RTFGetToken();
+	while (rtfClass == rtfText) {
+		if (rtfTextBuf[0]=='_')
+			PutLitStr("H");
+		else
+			PutLitStr(rtfTextBuf);
+		RTFGetToken();
+	}
+
+	insideHyperlink = false;
+	PutLitStr("}");
+	wrapCount += 1;
+	RTFRouteToken();
 }
 
 /*
@@ -4259,7 +4292,7 @@ int BeginLaTeXFile(void)
     RTFSetDestinationCallback(rtfRevisionTbl, SkipGroup);
     RTFSetDestinationCallback(rtfPict, ReadPicture);
     RTFSetDestinationCallback(rtfFootnote, ReadFootnote);
-    RTFSetDestinationCallback(rtfBookmarkStart, SkipGroup);
+    RTFSetDestinationCallback(rtfBookmarkStart, ReadBookmarkStart);
     RTFSetDestinationCallback(rtfBookmarkEnd, SkipGroup);
     RTFSetDestinationCallback(rtfDataField, SkipGroup);
     RTFSetDestinationCallback(rtfTemplate, SkipGroup);
