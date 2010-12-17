@@ -1,0 +1,37 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+my $depth = -1;
+my $line_indented = 1;
+my $line_has_open_brace = 0;
+my $ignore_space = 0;
+
+while (<>) {
+	my @chars = split //, $_;
+	for (@chars) {
+		my $c =$_;
+		if ($c eq '{') {
+			$depth++;
+			if (!$line_indented or $line_has_open_brace) {
+				print "\n", " " x $depth;
+				$line_indented = 1;
+			}
+			print "{";
+			$line_has_open_brace = 1;
+			$ignore_space = 0;
+		} elsif ($c eq '}') {
+			print "}\n" , " " x $depth;
+			$depth--;
+			$line_has_open_brace = 0;
+			$line_indented = 1;
+			$ignore_space = 1;
+		} elsif ($c eq "\r" or $c eq "\n" or $c eq " " or $c eq "\t") {
+			print " " unless $ignore_space;
+		} else {
+			print $c;
+			$ignore_space = 0;
+		}
+	}
+}
