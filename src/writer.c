@@ -126,6 +126,7 @@ static struct {
     boolean newStyle;
     int alignment;
     boolean wroteAlignment;
+    int oldSpacing;
     int lineSpacing;
     boolean wroteSpacing;
     long firstIndent;
@@ -1409,10 +1410,10 @@ static void DoParagraphCleanUp(void)
         suppressLineBreak = true;
     }
 
-    if (paragraph.lineSpacing != singleSpace && paragraph.wroteSpacing) {
-        PutLitStr("\n\\end{spacing}");
+    if (paragraph.lineSpacing != paragraph.oldSpacing && paragraph.wroteSpacing) {
+        PutLitStr("\\end{spacing}");
         InsertNewLine();
-        paragraph.lineSpacing = singleSpace;
+       /* paragraph.lineSpacing = singleSpace;*/
         paragraph.wroteSpacing = false;
         suppressLineBreak = true;
     }
@@ -1530,7 +1531,9 @@ static void WriteParagraphStyle(void)
     paragraph.leftIndent = temp2;
     paragraph.rightIndent = temp3;
 
-    if (paragraph.lineSpacing == oneAndAHalfSpace)
+    if (paragraph.lineSpacing == singleSpace)
+        spacing = 1.0;
+    else if (paragraph.lineSpacing == oneAndAHalfSpace)
         spacing = 1.5;
     else if (paragraph.lineSpacing == doubleSpace)
         spacing = 2;
@@ -1563,9 +1566,9 @@ static void WriteParagraphStyle(void)
         paragraph.wroteAlignment = true;
     }
 
-    if (paragraph.lineSpacing != singleSpace &&
+    if (paragraph.lineSpacing != paragraph.oldSpacing &&
         !preferenceValue[GetPreferenceNum("ignoreSpacing")]) {
-        sprintf(buf, "\n\\begin{spacing}{%1.1f}", spacing);
+        sprintf(buf, "\\begin{spacing}{%1.1f}", spacing);
         PutLitStr(buf);
         InsertNewLine();
         paragraph.wroteSpacing = true;
@@ -2915,7 +2918,10 @@ static void ParAttr(void)
 
         switch (rtfMinor) {
         case rtfSpaceBetween:
-            if (rtfParam == 360)
+            paragraph.oldSpacing = paragraph.lineSpacing;
+            if (rtfParam == 240)
+                paragraph.lineSpacing = singleSpace;
+            else if (rtfParam == 360)
                 paragraph.lineSpacing = oneAndAHalfSpace;
             else if (rtfParam == 480)
                 paragraph.lineSpacing = doubleSpace;
@@ -4171,8 +4177,8 @@ static void ReadSymbolField(void)
 */
 static void ReadPageRefField(void)
 {
-    char *fn = "ReadPageRefField";
-    RTFMsg("%s: starting ...\n",fn);
+/*    char *fn = "ReadPageRefField";
+    RTFMsg("%s: starting ...\n",fn); */
     
     PutLitStr("\\pageref{");
     wrapCount += 8;
@@ -4200,8 +4206,8 @@ static void ReadFieldInst(void)
     char buf[100];
     int i;
     int groupCount = 1;
-    char *fn = "ReadFieldInst";
-    RTFMsg("%s: starting ... \n",fn);
+/*    char *fn = "ReadFieldInst";
+    RTFMsg("%s: starting ... \n",fn);*/
 
     strcpy(buf, "");
 
@@ -4225,7 +4231,7 @@ static void ReadFieldInst(void)
         if (strcmp(rtfTextBuf, " ") != 0 && rtfClass != rtfGroup)
             strcat(buf, rtfTextBuf);
     }
-    RTFMsg("%s: FIELD type is %s\n",fn,buf);
+/*    RTFMsg("%s: FIELD type is %s\n",fn,buf);*/
 
     if (0 && strcmp(buf, "HYPERLINK") == 0 )
     	if (!(int) preferenceValue[GetPreferenceNum("ignoreHypertext")]) {
