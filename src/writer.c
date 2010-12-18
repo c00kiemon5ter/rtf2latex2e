@@ -3716,8 +3716,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 
 }
 
-/* This function reads a MathType Equation embedded as a an OLE
-   object */
+/* This function reads a MathType Equation embedded as an OLE object */
 static boolean ReadEquation(int *groupCount)
 {
     char objectFileName[rtfBufSiz];

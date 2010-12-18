@@ -97,7 +97,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
     U32 num_bbd_blocks;
     U32 num_xbbd_blocks;
     U32 bl;
-    U32 i, j, len;
+    U32 i, j, len,offset;
     U8 *s, *p, *t;
     long FilePos;
     /* FilePos is long, not U32, because second argument of fseek is long */
@@ -115,6 +115,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
 
     /* open input file */
     verbose("open input file");
+    verboseS(OLEfilename);
     input = fopen(OLEfilename, "rb");
     test_exitf(input != NULL, 4, ends());
     *_input = input;
@@ -125,7 +126,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
     test_exitf(ungetc(c, input) != EOF, 5, ends());
 /* commented out by Ujwal Sathyam, show-stopper on Mac */
 /*  test_exitf (!isprint (c), 8, ends ()); */
-    test_exitf(c == 0xd0, 9, ends());
+/*  test_exitf(c == 0xd0, 9, ends()); */
 
     /* read header block */
     verbose("read header block");
@@ -137,26 +138,37 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
     /* really check type of file */
     rewind(input);
     verbose("testing type of file");
-    test_exitf(fil_sreadU32(Block) != 0xd0cf11e0UL, 9, ends());
-    test_exitf(fil_sreadU32(Block + 0x04) != 0xa1b11ae1UL, 9, ends());
+    
+    /* hack to allow a few bytes offset in file */
+    for (offset=0; offset<10; offset++) {
+    verboseU32(fil_sreadU32(Block + offset));
+    	if (fil_sreadU32(Block+offset) == 0xe011cfd0)
+    		break;
+    }
+    
+    verboseU32(fil_sreadU32(Block + offset));
+    test_exitf(fil_sreadU32(Block + offset) != 0xd0cf11e0, 9, ends());
+    verboseU32(fil_sreadU32(Block + offset + 0x04));
+    test_exitf(fil_sreadU32(Block + offset + 0x04) != 0xa1b11ae1, 9, ends());
 
 
     /* read big block depot */
     verbose("read big block depot (bbd)");
-    num_bbd_blocks = fil_sreadU32(Block + 0x2c);
-    num_xbbd_blocks = fil_sreadU32(Block + 0x48);
+    num_bbd_blocks = fil_sreadU32(Block + offset + 0x2c);
+    num_xbbd_blocks = fil_sreadU32(Block + offset + 0x48);
     verboseU32(num_bbd_blocks);
     verboseU32(num_xbbd_blocks);
     BDepot = malloc(0x0200 * (num_bbd_blocks + num_xbbd_blocks));
     test_exitf(BDepot != NULL, 10, ends());
     *_BDepot = BDepot;
     s = BDepot;
-    assert(num_bbd_blocks <= (0x0200 / 4 - 1) * num_xbbd_blocks +
-           (0x0200 / 4) - 19);
+    
+    assert(num_bbd_blocks <= (0x0200 / 4 - 1) * num_xbbd_blocks + (0x0200 / 4) - 19);
+    
     /* the first 19 U32 in header does not belong to bbd_list */
     for (i = 0; i < MIN(num_bbd_blocks, 0x0200 / 4 - 19); i++) {
         /* note: next line may be needed to be cast to long in right side */
-        FilePos = 0x0200 * (1 + fil_sreadU32(Block + 0x4c + (i * 4)));
+        FilePos = 0x0200 * (1 + fil_sreadU32(Block + offset + 0x4c + (i * 4))) + offset;
         assert(FilePos >= 0);
         test_exitf(!fseek(input, FilePos, SEEK_SET), 5, ends());
         fread(s, 0x0200, 1, input);
@@ -166,9 +178,9 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
 
     Blockx = (U8 *) malloc(0x0200);
     test_exitf(Blockx != NULL, 10, ends());
-    bl = fil_sreadU32(Block + 0x44);
+    bl = fil_sreadU32(Block + offset + 0x44);
     for (i = 0; i < num_xbbd_blocks; i++) {
-        FilePos = 0x0200 * (1 + bl);
+        FilePos = 0x0200 * (1 + bl)+offset;
         assert(FilePos >= 0);
         test_exitf(!fseek(input, FilePos, SEEK_SET), 5, ends());
         fread(Blockx, 0x0200, 1, input);
@@ -177,9 +189,9 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
         for (j = 0; j < 0x0200 / 4 - 1; j++)
             /* last U32 is for the next bl */
         {
-            if (fil_sreadU32(Blockx + (j * 4)) == 0xfffffffeUL ||
-                fil_sreadU32(Blockx + (j * 4)) == 0xfffffffdUL ||
-                fil_sreadU32(Blockx + (j * 4)) == 0xffffffffUL)
+            if (fil_sreadU32(Blockx + (j * 4)) == 0xfffffffe ||
+                fil_sreadU32(Blockx + (j * 4)) == 0xfffffffd ||
+                fil_sreadU32(Blockx + (j * 4)) == 0xffffffff)
                 break;
             /* note: next line may be needed to be cast to long in right side */
             FilePos = 0x0200 * (1 + fil_sreadU32(Blockx + (j * 4)));
@@ -199,9 +211,9 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
     verbose("extract small block depot (sbd) block list");
     sbd_list = malloc(ENTRYCHUNK * 4);
     test_exitf(sbd_list != NULL, 10, ends());
-    sbd_list[0] = fil_sreadU32(Block + 0x3c);
-    /* -2 signed long int == 0xfffffffe unsinged long int */
-    for (len = 1; sbd_list[len - 1] != 0xfffffffeUL; len++) {
+    sbd_list[0] = fil_sreadU32(Block + offset + 0x3c);
+    /* -2 signed long int == 0xfffffffe unsigned long int */
+    for (len = 1; sbd_list[len - 1] != 0xfffffffe; len++) {
         test_exitf(len != 0, 5, ends());        /* means file is too big */
         /* if memory allocated in sbd_list is all used, allocate more memory */
         if (!(len % ENTRYCHUNK)) {
@@ -212,14 +224,14 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
             sbd_list = newspace;
         }
         sbd_list[len] = fil_sreadU32(BDepot + (sbd_list[len - 1] * 4));
-        /*verboseU32 (len); */
-        /*verboseU32 (sbd_list[0]); */
-        /*verboseU32 (sbd_list[1]); */
-        if (sbd_list[len] != 0xfffffffeUL)
+        verboseU32 (len); 
+        verboseU32 (sbd_list[0]); 
+        verboseU32 (sbd_list[1]); 
+        if (sbd_list[len] != 0xfffffffe)
             test_exitf(sbd_list[len] <= num_bbd_blocks * 0x0200 - 4, 5,
                        ends());
-        test_exitf(sbd_list[len] != 0xfffffffdUL
-                   && sbd_list[len] != 0xffffffffUL, 5, ends());
+        test_exitf(sbd_list[len] != 0xfffffffd
+                   && sbd_list[len] != 0xffffffff, 5, ends());
     }
     len--;
     verboseU32Array(sbd_list, len + 1);
@@ -234,7 +246,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
         test_exitf(SDepot != NULL, 10, ends());
         s = SDepot;
         for (i = 0; i < len; i++) {
-            FilePos = 0x0200 * (1 + sbd_list[i]);
+            FilePos = 0x0200 * (1 + sbd_list[i]) + offset;
             assert(FilePos >= 0);
             test_exitf(!fseek(input, FilePos, SEEK_SET), 5, ends());
             fread(s, 0x0200, 1, input);
@@ -250,20 +262,19 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
     verbose("extract root block depot (root) block list");
     root_list = malloc(ENTRYCHUNK * 4);
     test_exitf(root_list != NULL, 10, ends());
-    root_list[0] = fil_sreadU32(Block + 0x30);
-    for (len = 1; root_list[len - 1] != 0xfffffffeUL; len++) {
+    root_list[0] = fil_sreadU32(Block + offset + 0x30);
+    for (len = 1; root_list[len - 1] != 0xfffffffe; len++) {
         test_exitf(len != 0, 5, ends());        /* means file is too long */
         /* if memory allocated in root_list is all used, allocate more memory */
         if (!(len % ENTRYCHUNK)) {
             U32 *newspace;
-            newspace = realloc(root_list,
-                               (1 + len / ENTRYCHUNK) * ENTRYCHUNK * 4);
+            newspace = realloc(root_list, (1 + len / ENTRYCHUNK) * ENTRYCHUNK * 4);
             test_exitf(newspace != NULL, 10, ends());
             root_list = newspace;
         }
         root_list[len] = fil_sreadU32(BDepot + (root_list[len - 1] * 4));
-        test_exitf(root_list[len] != 0xfffffffdUL && root_list[len] !=
-                   0xffffffffUL, 5, ends());
+        verboseU32(root_list[len]);
+        test_exitf(root_list[len] != 0xfffffffd && root_list[len] != 0xffffffff, 5, ends());
     }
     len--;
     verboseU32Array(root_list, len + 1);
@@ -273,7 +284,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
     test_exitf(Root != NULL, 10, ends());
     s = Root;
     for (i = 0; i < len; i++) {
-        FilePos = 0x0200 * (root_list[i] + 1);
+        FilePos = 0x0200 * (root_list[i] + 1) + offset;
         assert(FilePos >= 0);
         test_exitf(!fseek(input, FilePos, SEEK_SET), 5, ends());
         fread(s, 0x0200, 1, input);
@@ -339,14 +350,14 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
                 printf(" -\n");
                 continue;
             }
-            printf("%08lx ", pps_list[i].ppsnumber);
+            printf("%08x ", pps_list[i].ppsnumber);
             printf("%d ", pps_list[i].type);
-            printf("%08lx ", pps_list[i].previous);
-            printf("%08lx ", pps_list[i].next);
-            printf("%08lx ", pps_list[i].dir);
-            printf("%08lx ", pps_list[i].start);
+            printf("%08x ", pps_list[i].previous);
+            printf("%08x ", pps_list[i].next);
+            printf("%08x ", pps_list[i].dir);
+            printf("%08x ", pps_list[i].start);
             printf("%04x ", pps_list[i].level);
-            printf("%08lx ", pps_list[i].size);
+            printf("%08x ", pps_list[i].size);
             printf("'%c",
                    !isprint(pps_list[i].name[0]) ? ' ' : pps_list[i].
                    name[0]);
@@ -371,14 +382,14 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
                 printf(" -\n");
                 continue;
             }
-            printf("%08lx ", pps_list[i].ppsnumber);
+            printf("%08x ", pps_list[i].ppsnumber);
             printf("%d ", pps_list[i].type);
-            printf("%08lx ", pps_list[i].previous);
-            printf("%08lx ", pps_list[i].next);
-            printf("%08lx ", pps_list[i].dir);
-            printf("%08lx ", pps_list[i].start);
+            printf("%08x ", pps_list[i].previous);
+            printf("%08x ", pps_list[i].next);
+            printf("%08x ", pps_list[i].dir);
+            printf("%08x ", pps_list[i].start);
             printf("%04x ", pps_list[i].level);
-            printf("%08lx ", pps_list[i].size);
+            printf("%08x ", pps_list[i].size);
             printf("'%c",
                    !isprint(pps_list[i].name[0]) ? ' ' : pps_list[i].
                    name[0]);
@@ -464,11 +475,13 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
                 /* this branch is never executed now */
                 tmpnam(pps_list[i].filename);
                 test_exitf(pps_list[i].filename[0], 7, ends());
+                verboseS(pps_list[i].name);
+                /* the old code is bizarre and is below 
                 verbose(pps_list[i].name +
-                        (!isprint(pps_list[i].name[0]) ? 1 : 0));
+                        (!isprint(pps_list[i].name[0]) ? 1 : 0)); */
                 OLEfile = fopen(pps_list[i].filename, "wb");
                 test_exitf(OLEfile != NULL, 7, ends());
-                verbose(pps_list[i].filename);
+                verboseS(pps_list[i].filename);
             }
 
             if (pps_size >= 0x1000 /*is in bbd */  ||
@@ -491,9 +504,9 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
             }
 
             /* -2 signed long int == 0xfffffffe unsinged long int */
-            while (pps_start != 0xfffffffeUL) {
+            while (pps_start != 0xfffffffe) {
 #ifdef COLE_VERBOSE
-                printf("reading pps %08lx block %08lx from %s\n",
+                printf("reading pps %08x block %08x from %s\n",
                        pps_list[i].ppsnumber, pps_start,
                        Depot ==
                        BDepot ? "big block depot" : "small block depot");
@@ -509,7 +522,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
                 pps_start = fil_sreadU32(Depot + (pps_start * 4));
                 pps_size -= MIN(BlockSize, pps_size);
                 if (pps_size == 0)
-                    pps_start = 0xfffffffeUL;
+                    pps_start = 0xfffffffe;
             }
             if (OLEfile == sbfile)
                 /* if small block file generated */
@@ -546,7 +559,7 @@ int reorder_pps_tree(pps_entry * node, U16 level)
     node->level = level;
 
     /* reorder subtrees, if there's any */
-    if (node->dir != 0xffffffffUL) {
+    if (node->dir != 0xffffffff) {
         if (node->dir > num_of_pps || !pps_list[node->dir].name[0])
             return 0;
         if (!reorder_pps_tree(&pps_list[node->dir], level + 1))
@@ -554,7 +567,7 @@ int reorder_pps_tree(pps_entry * node, U16 level)
     }
 
     /* reorder next-link subtree, saving the most next link visited */
-    if (node->next != 0xffffffffUL) {
+    if (node->next != 0xffffffff) {
         if (node->next > num_of_pps || !pps_list[node->next].name[0])
             return 0;
         else if (!reorder_pps_tree(&pps_list[node->next], level))
@@ -563,13 +576,13 @@ int reorder_pps_tree(pps_entry * node, U16 level)
         last_next_link_visited = &node->next;
 
     /* move the prev child to the next link and reorder it, if there's any */
-    if (node->previous != 0xffffffffUL) {
+    if (node->previous != 0xffffffff) {
         if (node->previous > num_of_pps
             || !pps_list[node->previous].name[0])
             return 0;
 
         *last_next_link_visited = node->previous;
-        node->previous = 0xffffffffUL;
+        node->previous = 0xffffffff;
         if (!reorder_pps_tree(&pps_list[*last_next_link_visited], level))
             return 0;
 
@@ -584,7 +597,7 @@ void verbosePPSTree(pps_entry * pps_list, U32 start_entry, int level)
     U32 entry;
     int i;
 
-    for (entry = start_entry; entry != 0xffffffffUL;
+    for (entry = start_entry; entry != 0xffffffff;
          entry = pps_list[entry].next) {
         if (pps_list[entry].type == 2) {
             for (i = 0; i < level * 3; i++)

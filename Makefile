@@ -34,6 +34,7 @@ SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex
 # Nothing to change below this line
 
 CFLAGS:=$(CFLAGS) $(PLATFORM) 
+#CFLAGS:=$(CFLAGS) $(PLATFORM) -DCOLE_VERBOSE
 
 LIBS= 
 

@@ -144,7 +144,7 @@ void __cole_dump (void *_m, void *_start, int length, char *msg);
   {                                                             \
     U32 temp;                                                   \
     for (temp = 0; temp < len; temp++)                          \
-      printf (#array "[%lu] = 0x%08lx\n", temp, array [temp]);  \
+      printf (#array "[%u] = 0x%08x\n", temp, array [temp]);  \
   }
 #else
 #define verboseU32Array(array,len)
