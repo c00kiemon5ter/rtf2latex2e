@@ -17,16 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-# include       <stdio.h>
-# include       <string.h>
-# include       <stdlib.h>
-# include       <ctype.h>
+# include <stdio.h>
+# include <string.h>
+# include <stdlib.h>
+# include <ctype.h>
 
-# include       "rtf.h"
-# include       "rtfprep/tokenscan.h"
-# include       "cole.h"
-# include       "rtf2LaTeX2e.h"
-# include   "eqn.h"
+# include "rtf.h"
+# include "rtfprep/tokenscan.h"
+# include "cole.h"
+# include "cole_support.h"
+# include "rtf2LaTeX2e.h"
+# include "eqn.h"
 
 char outputMapName[255];
 # define        prefFileName    "r2l-pref"
@@ -182,6 +183,16 @@ static int colorChange = 0;
 static boolean requireFontEncPackage;
 */
 
+struct EQN_OLE_FILE_HDR {
+    uint16_t   cbHdr;     /* length of header, sizeof(EQNOLEFILEHDR) = 28 bytes */
+    uint32_t   version;   /* hiword = 2, loword = 0 */
+    uint16_t   cf;        /* clipboard format ("MathType EF") */
+    uint32_t   cbObject;  /* length of MTEF data following this header in bytes */
+    uint32_t   reserved1; 
+    uint32_t   reserved2; 
+    uint32_t   reserved3; 
+    uint32_t   reserved4; 
+};
 
 static long codePage;
 char fileCreator[10];
@@ -3586,13 +3597,14 @@ DecodeOLE(char *objectFileName, char *streamType,
         cole_perror("DecodeOLE cole_mount", colerrno);
         return (1);
     }
-/*
+
+	/* this prints the directory structure for the OLE object */
         if (cole_print_tree (cfs, &colerrno)) {
                 cole_perror ("DecodeOLE cole_print_tree", colerrno);
                 cole_umount (cfs, NULL);
                 return (1);
         }
-*/
+
     if ((coleFile = cole_fopen(cfs, streamType, &colerrno)) == NULL) {
         cole_perror("DecodeOLE cole_fopen", colerrno);
         cole_umount(cfs, NULL);
@@ -3601,14 +3613,10 @@ DecodeOLE(char *objectFileName, char *streamType,
 
     *size = cole_fsize(coleFile);
 
-
     *nativeStream = (unsigned char *) malloc(*size);
 
-
-
     if (*nativeStream == (unsigned char *) NULL) {
-        RTFMsg
-            ("* DecodeOLE: memory allocation failed for native stream!\n");
+        RTFMsg("* DecodeOLE: memory allocation failed for native stream!\n");
         cole_fclose(coleFile, &colerrno);
         cole_umount(cfs, NULL);
         return 1;
@@ -3633,7 +3641,6 @@ DecodeOLE(char *objectFileName, char *streamType,
     }
 
     return 0;
-
 }
 
 
@@ -3721,7 +3728,11 @@ static boolean ReadEquation(int *groupCount)
 {
     char objectFileName[rtfBufSiz];
     unsigned char *nativeEquationStream = NULL;
+    unsigned char *equationStream = NULL;
     int err;
+    uint16_t MTEF_Header_Size;
+    uint32_t test;
+    
     char *fn = "ReadEquation";
     RTFMsg("%s: * starting ...\n", fn);
 
@@ -3734,7 +3745,7 @@ static boolean ReadEquation(int *groupCount)
 
     /* look for start of \objdata  group */
     while (!RTFCheckMM(rtfDestination, rtfObjData)) {
-        /* get the next token */
+
         RTFGetToken();
 
         if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0)
@@ -3746,37 +3757,32 @@ static boolean ReadEquation(int *groupCount)
                 RTFMsg("* ReadEquation: objdata group not found!\n");
                 return (false);
             }
-        }
 
-        else if (rtfClass == rtfEOF) {
+        } else if (rtfClass == rtfEOF) {
             RTFPanic("* ReadEquation: EOF reached!\n");
             exit(1);
         }
     }
 
-    /* convert hex-encoded object data group to binary and read the OLE object
-       into file objectFileName */
+    /* convert hex-encoded object data group to binary and 
+       read the OLE object into file objectFileName */
     ReadObjectData(objectFileName, equation, EQUATION_OFFSET);
     (*groupCount)--;
 
-
-
-    /* Decode the OLE and extract the "Equation Native" stream into buffer 
-       nativeEquationStream */
-    err =
-        DecodeOLE(objectFileName, "/Equation Native",
-                  &nativeEquationStream, &equationSize);
+    /* Decode the OLE and 
+       extract "Equation Native" stream into buffer nativeEquationStream */
+    
+    err = DecodeOLE(objectFileName, "/Equation Native", &nativeEquationStream, &equationSize);
     if (err != 0) {
         RTFMsg("* error decoding OLE equation object!\n");
         if (nativeEquationStream != NULL)
             free(nativeEquationStream);
         return (false);
-    } else {
-        remove(objectFileName);
     }
-/*      
-        printf ("* pointer is %d, size is %d\n", nativeEquationStream, equationSize);
-*/
+    
+    /* remove(objectFileName); */
+    RTFMsg("MTEF Equation has %ld bytes\n", equationSize);
+
     theEquation = (MTEquation *) malloc(sizeof(MTEquation));
     if (theEquation == NULL) {
         RTFMsg("* error allocating memory for equation!\n");
@@ -3786,21 +3792,37 @@ static boolean ReadEquation(int *groupCount)
     } else
         memset(theEquation, 0, sizeof(MTEquation));
 
-    res =
-        Eqn_Create(theEquation,
-                   nativeEquationStream + UNKNOWN_EQUATION_OFFSET,
-                   equationSize - UNKNOWN_EQUATION_OFFSET);
-    if (!res) {
-        RTFMsg("* could not create equation structure!\n");
-        if (nativeEquationStream != NULL)
-            free(nativeEquationStream);
-        if (theEquation != NULL)
-            free(theEquation);
-        return (false);
-    }
-    Eqn_TranslateObjectList(theEquation, ostream, 0);
-    Eqn_Destroy(theEquation);
+	equationStream = nativeEquationStream;
+	
+	test = fil_sreadU32(equationStream);
+	if (test == 0) {
+		equationStream += 4;
+		equationSize -= 4;
+	}
+	
+	MTEF_Header_Size = fil_sreadU16(equationStream);
+	RTFMsg("header size = %d\n", MTEF_Header_Size);
 
+	if (MTEF_Header_Size == 28) {
+		equationStream += MTEF_Header_Size;
+		equationSize   -= MTEF_Header_Size;
+
+		__cole_dump(equationStream, equationStream, equationSize, "native equation stream");
+		
+		res = Eqn_Create(theEquation, equationStream, equationSize);
+					   
+		if (!res) {
+			RTFMsg("* could not create equation structure!\n");
+			if (nativeEquationStream != NULL)
+				free(nativeEquationStream);
+			if (theEquation != NULL)
+				free(theEquation);
+			return (false);
+		}
+		Eqn_TranslateObjectList(theEquation, ostream, 0);
+		Eqn_Destroy(theEquation);
+	}
+	
     if (theEquation != NULL)
         free(theEquation);
 

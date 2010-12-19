@@ -122,7 +122,7 @@ void __cole_dump(void *_m, void *_start, int length, char *msg)
 
     m = (unsigned char *) _m;
     start = (unsigned char *) _start;
-    buff[8] = '-';
+    buff[8] = ' ';
     buff[17] = 0;
     if (msg != NULL)
         printf("VERBOSE: %s (from 0x%08lx length 0x%08x (%d)):\n",
@@ -139,7 +139,7 @@ void __cole_dump(void *_m, void *_start, int length, char *msg)
             /* print right column */
             printf("%02x  %s\n", *pm, buff);
         else if (!((pm - m + 1) % 8))
-            printf("%02x-", *pm);
+            printf("%02x  ", *pm);
         else
             printf("%02x ", *pm);
     }
