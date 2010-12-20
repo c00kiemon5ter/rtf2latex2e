@@ -383,5 +383,6 @@ void 		RTFSetOpenLibFileProc(FILE *(*proc) ());
 FILE 		*RTFOpenLibFile(char *file, char *mode);
 
 extern int g_debug_level;
+extern int g_include_both;
 
 #endif /* _RTF_H */

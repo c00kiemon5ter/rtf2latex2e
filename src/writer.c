@@ -3230,9 +3230,6 @@ static void ConvertHexPicture(char *pictureType)
 
     strcpy(picture.name, "");
 
-
-
-
     /* increment the picture counter and clear dummy buffer */
     (picture.count)++;
     strcpy(dummyBuf, "");
@@ -3240,6 +3237,7 @@ static void ConvertHexPicture(char *pictureType)
     /* get input file name and create corresponding picture file name */
     if (pictureType == (char *) NULL)
         strcpy(pictureType, "unknown");
+        
     strcpy(picture.name, RTFGetInputName());
     sprintf(dummyBuf, "Fig%d.%s", picture.count, pictureType);
     strcat(picture.name, dummyBuf);
@@ -3297,8 +3295,6 @@ static void ConvertHexPicture(char *pictureType)
 }
 
 
-
-
 /* This function writes the appropriate LaTeX2e commands to include the picture 
    into the LaTeX file */
 static void IncludeGraphics(char *pictureType)
@@ -3313,6 +3309,8 @@ static void IncludeGraphics(char *pictureType)
     suffix = strrchr(picture.name, '.');
     if (suffix != (char *) NULL && strcmp(pictureType, "eps") == 0)
         strcpy(suffix, ".eps");
+    else if (strcmp(pictureType, "pict") == 0)
+        strcpy(suffix, ".pdf");
 
     if (picture.scaleX == 0)
         scaleX = 1;
@@ -3348,15 +3346,13 @@ static void IncludeGraphics(char *pictureType)
             urx = picture.urx;
             ury = picture.ury;
             scale = (double) ((double) (height) / ((double) (ury - lly)));
-            sprintf(dummyBuf,
-                    "\\includegraphics[bb = %d %d %d %d, scale=%2.2f]{%s}",
+            sprintf(dummyBuf, "\\includegraphics[bb = %d %d %d %d, scale=%2.2f]{%s}",
                     llx, lly, urx, ury, scale, figPtr);
 
         } else
             sprintf(dummyBuf,
                     "\\includegraphics[width=%2.3fin, height=%2.3fin]{%s}",
                     width / 72, height / 72, figPtr);
-
 
         if (!(table.inside) && !insideFootnote) {
             if (height > 50) {
@@ -3862,8 +3858,9 @@ static void ReadObject(void)
             res = ReadEquation(&groupCounter);
         else
             res = false;
+            
         /* if unsuccessful, read the equation as a picture */
-        if (!res) {
+        if (!res || g_include_both) {
             temp = groupCounter;
             while (!RTFCheckMM(rtfDestination, rtfPict)) {
                 RTFGetToken();
