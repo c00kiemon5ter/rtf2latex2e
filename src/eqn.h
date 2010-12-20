@@ -93,7 +93,7 @@ typedef struct {
 #define xfLMOVE     0x08
 #define xfAUTO      0x10
 #define xfEMBELL    0x20
-#define xfNULL      0x10
+#define xfNULL      0x01
 #define xfLSPACE    0x40
 #define xfRULER     0x20
 
