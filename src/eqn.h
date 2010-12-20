@@ -91,11 +91,13 @@ typedef struct {
 #define ENCODING_DEF 19
 
 #define xfLMOVE     0x08
-#define xfAUTO      0x10
-#define xfEMBELL    0x20
+
+#define xfAUTO      0x01
+#define xfEMBELL    0x02
+
 #define xfNULL      0x01
-#define xfLSPACE    0x40
-#define xfRULER     0x20
+#define xfRULER     0x02
+#define xfLSPACE    0x04
 
 
 // ruler object
@@ -121,7 +123,7 @@ typedef struct {
     int nudge_y;
     int atts;
     int typeface;
-    long character;
+    uint32_t character;
     MT_EMBELL *embellishment_list;
 } MT_CHAR;
 

@@ -211,10 +211,7 @@ boolean Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream,
     }
 
     // We expect a SIZE then a LINE or PILE
-    if (eqn->m_mtef_ver == 5)
-        eqn->o_list = Eqn_GetObjectList(eqn, eqn_stream, &src_index, 12);
-    else
-        eqn->o_list = Eqn_GetObjectList(eqn, eqn_stream, &src_index, 2);
+	eqn->o_list = Eqn_GetObjectList(eqn, eqn_stream, &src_index, 2);
 
     return (true);
 }
@@ -323,71 +320,71 @@ void BreakTeX(char *ztex, FILE * outfile)
         fputs(start, outfile);
 }
 
-void print_tag(unsigned char tag)
+void print_tag(unsigned char tag, int src_index)
 {
     switch (tag) {
     case 0:
-        RTFMsg("Tag =  END\n");
+        RTFMsg("Tag @ %03d =  END\n", src_index);
         break;
     case 1:
-        RTFMsg("Tag =  LINE\n");
+        RTFMsg("Tag @ %03d =  LINE\n", src_index);
         break;
     case 2:
-        RTFMsg("Tag =  CHAR\n");
+        RTFMsg("Tag @ %03d =  CHAR\n", src_index);
         break;
     case 3:
-        RTFMsg("Tag =  TMPL\n");
+        RTFMsg("Tag @ %03d =  TMPL\n", src_index);
         break;
     case 4:
-        RTFMsg("Tag =  PILE\n");
+        RTFMsg("Tag @ %03d =  PILE\n", src_index);
         break;
     case 5:
-        RTFMsg("Tag =  MATRIX\n");
+        RTFMsg("Tag @ %03d =  MATRIX\n", src_index);
         break;
     case 6:
-        RTFMsg("Tag =  EMBELL\n");
+        RTFMsg("Tag @ %03d =  EMBELL\n", src_index);
         break;
     case 7:
-        RTFMsg("Tag =  RULER\n");
+        RTFMsg("Tag @ %03d =  RULER\n", src_index);
         break;
     case 8:
-        RTFMsg("Tag =  FONT_STYLE_DEF\n");
+        RTFMsg("Tag @ %03d =  FONT_STYLE_DEF\n", src_index);
         break;
     case 9:
-        RTFMsg("Tag =  SIZE\n");
+        RTFMsg("Tag @ %03d =  SIZE\n", src_index);
         break;
     case 10:
-        RTFMsg("Tag =  FULL\n");
+        RTFMsg("Tag @ %03d =  FULL\n", src_index);
         break;
     case 11:
-        RTFMsg("Tag =  SUB\n");
+        RTFMsg("Tag @ %03d =  SUB\n", src_index);
         break;
     case 12:
-        RTFMsg("Tag =  SUB2\n");
+        RTFMsg("Tag @ %03d =  SUB2\n", src_index);
         break;
     case 13:
-        RTFMsg("Tag =  SYM\n");
+        RTFMsg("Tag @ %03d =  SYM\n", src_index);
         break;
     case 14:
-        RTFMsg("Tag =  SUBSYM\n");
+        RTFMsg("Tag @ %03d =  SUBSYM\n", src_index);
         break;
     case 15:
-        RTFMsg("Tag =  COLOR\n");
+        RTFMsg("Tag @ %03d =  COLOR\n", src_index);
         break;
     case 16:
-        RTFMsg("Tag =  COLOR_DEF\n");
+        RTFMsg("Tag @ %03d =  COLOR_DEF\n", src_index);
         break;
     case 17:
-        RTFMsg("Tag =  FONT_DEF\n");
+        RTFMsg("Tag @ %03d =  FONT_DEF\n", src_index);
         break;
     case 18:
-        RTFMsg("Tag =  EQN_PREFS\n");
+        RTFMsg("Tag @ %03d =  EQN_PREFS\n", src_index);
         break;
     case 19:
-        RTFMsg("Tag =  ENCODING_DEF\n");
+        RTFMsg("Tag @ %03d =  ENCODING_DEF\n", src_index);
         break;
     default:
-        RTFPanic("Tag =  FUTURE\n");
+        RTFMsg("Tag @ %03d =  FUTURE\n", src_index);
         break;
     }
 }
@@ -482,8 +479,11 @@ int skip_nibbles(unsigned char *p, int num)
     return nbytes;
 }
 
-
-// scanning routines.  Convert MT equation into internal form
+/*
+ * Convert MT equation into internal form
+ * at each Eqn_inputXXX call, the src_index is set to the XXX tag
+ * so that the hi nibble can be used to obtain the options
+*/
 MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_index, int num_objs)
 {
     unsigned char c, size, curr_tag;
@@ -498,15 +498,19 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
     else
 		curr_tag = lo_nibble(*(src + *src_index));
 		
-    while (curr_tag != END && curr_tag != 0xFF) {
+    while (curr_tag != 0xFF) {
 
         new_obj = (void *) NULL;
 
-        print_tag(curr_tag);
+        print_tag(curr_tag, *src_index);
 	__cole_dump(src+*src_index, src+*src_index, 16, "equation stream");
 
         switch (curr_tag) {
-
+        case END:
+            (*src_index)++;
+            return head;
+            break;
+            
         case LINE:
 			new_obj = (void *) Eqn_inputLINE(eqn, src, src_index);
             break;
@@ -556,6 +560,7 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
             }
             /* fprintf(stderr,"\n"); */
             (*src_index)++;     /* skip NULL */
+            tally--;
             break;
 
         case EQN_PREFS:
@@ -582,6 +587,7 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
                     (*src_index)++;
                 }
             }
+            tally--;
             break;
 
         case ENCODING_DEF:
@@ -592,9 +598,17 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
             }
             fprintf(stderr, "\n");
             (*src_index)++;     /* skip NULL */
+            tally--;
             break;
 
         default:
+            (*src_index)++;     /* skip tag */
+            size = *(src + *src_index); 
+            (*src_index)++;
+            size |= *(src + *src_index) << 8;
+            (*src_index) += size + 1;
+
+            fprintf(stderr, "Future tag = 0x%02x with size %d\n",curr_tag,size);
             break;
         }
 
@@ -693,7 +707,8 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     MT_CHAR *new_char = (MT_CHAR *) malloc(sizeof(MT_CHAR));
     new_char->nudge_x = 0;
     new_char->nudge_y = 0;
-
+	new_char->embellishment_list = (MT_EMBELL *) NULL;
+	
     if (eqn->m_mtef_ver == 5) {
     	(*src_index)++;
     	new_char->atts = *(src + *src_index);
@@ -710,7 +725,7 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     fprintf(stderr, "options  = 0x%02x\n", new_char->atts);
     fprintf(stderr, "typeface = %d-128=%d\n", new_char->typeface, new_char->typeface - 128);
     if (new_char->typeface <128)
-    	RTFPanic("typeface less than 128 is impossible!");
+    	RTFMsg("typeface less than 128 is impossible!\n");
     
     switch (eqn->m_mtef_ver) {
     case 1:
@@ -752,13 +767,15 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
 
     }
 
-    if (new_char->atts & xfEMBELL) {
-        new_char->embellishment_list =
-            Eqn_inputEMBELL(eqn, src, src_index);
-        if (eqn->m_mtef_ver == 3)
-            (src_index)++;
-    } else
-        new_char->embellishment_list = (MT_EMBELL *) NULL;
+    if (eqn->m_mtef_ver == 5) {
+    	if (new_char->atts & CHAR_EMBELL)
+        	new_char->embellishment_list = Eqn_inputEMBELL(eqn, src, src_index);
+    } else {
+    	if (new_char->atts & xfEMBELL)
+        	new_char->embellishment_list = Eqn_inputEMBELL(eqn, src, src_index);
+	}
+	
+    fprintf(stderr, "char     = 0x%04x -- %c\n", new_char->character, new_char->character);
 
     return new_char;
 }
@@ -769,6 +786,8 @@ MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src,
 {
 	unsigned char attrs;
     MT_TMPL *new_tmpl = (MT_TMPL *) malloc(sizeof(MT_TMPL));
+    new_tmpl->nudge_x = 0;
+    new_tmpl->nudge_y = 0;
 
     if (eqn->m_mtef_ver == 5) {
     	(*src_index)++;
@@ -779,15 +798,20 @@ MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src,
     
     if (attrs & xfLMOVE)
         *src_index += GetNudge(src + *src_index, &new_tmpl->nudge_x, &new_tmpl->nudge_y);
-    else {
-        new_tmpl->nudge_x = 0;
-        new_tmpl->nudge_y = 0;
-    }
 
     new_tmpl->selector = *(src + *src_index);
     (*src_index)++;
+    
     new_tmpl->variation = *(src + *src_index);
     (*src_index)++;
+ 
+    if (eqn->m_mtef_ver == 5 && (new_tmpl->variation & 0x80) ) {
+    	new_tmpl->variation &= 0x7F;
+    	new_tmpl->variation |=  *(src + *src_index) << 8;
+    	(*src_index)++;
+    	RTFMsg("Two byte variation!\n");
+    }
+    
     new_tmpl->options = *(src + *src_index);
     (*src_index)++;
 
@@ -804,6 +828,7 @@ MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
     MT_PILE *new_pile = (MT_PILE *) malloc(sizeof(MT_PILE));
 	new_pile->nudge_x = 0;
 	new_pile->nudge_y = 0;
+    new_pile->ruler = (MT_RULER *) NULL;
 
     if (eqn->m_mtef_ver == 5) {
     	(*src_index)++;
@@ -823,8 +848,6 @@ MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
 
     if (attrs & xfRULER)
         new_pile->ruler = Eqn_inputRULER(eqn, src, src_index);
-    else
-        new_pile->ruler = (MT_RULER *) NULL;
 
     new_pile->line_list = Eqn_GetObjectList(eqn, src, src_index, 0);
 
@@ -1382,7 +1405,7 @@ char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar)
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sCHAR : atts=%d,typeface=%d,char=%c,%ld\n",
+        sprintf(buf, "\n%sCHAR : atts=%d,typeface=%d,char=%c,%d\n",
                 eqn->indent, thechar->atts, thechar->typeface,
                 (char) thechar->character, thechar->character);
         SetComment(strs, 2, buf);
