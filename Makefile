@@ -40,7 +40,7 @@ SRCS         = src/cole.c                 src/cole_decode.c         src/cole_enc
                src/writer.c
 
 HDRS         = src/cole.h                 src/cole_internal.h       src/rtf.h               \
-               src/eqn.h                  src/jpeg2eps.h            src/rtf2LaTeX2e.h       \
+               src/eqn.h                  src/jpeg2eps.h            src/rtf2latex2e.h       \
                src/cole_support.h         src/mygetopt.h
 
 RTFPREP_SRCS = src/rtfprep/Makefile       src/rtfprep/rtf-controls  src/rtfprep/rtfprep.c   \
@@ -70,17 +70,17 @@ OBJS         = src/cole.o                 src/cole_decode.o         src/cole_enc
                src/main.o                 src/mygetopt.o            src/reader.o            \
                src/rtfprep/tokenscan.o    src/writer.o
 
-all : checkdir rtf2latex2e
+all : checkdir rtfprep rtf2latex2e
+
+rtfprep:
+	cd src/rtfprep && $(MAKE)
+	cp src/rtfprep/rtf-ctrl pref/rtf-ctrl
 
 rtf2latex2e: $(OBJS) $(HDRS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS)	$(LIBS) -o $(BINARY_NAME)
 
 src/main.o: Makefile src/main.c
 	$(CC) $(CFLAGS) -DLIBDIR=\"$(SUPPORT_INSTALL)\" -c src/main.c -o src/main.o
-
-src/rtfprep/rtf-ctrldef.h  src/rtfprep/rtf-namedef.h  src/rtfprep/stdcharnames.h src/rtfprep/tokenscan.o:
-	cd src/rtfprep && make
-	cp src/rtfprep/rtf-ctrl pref/rtf-ctrl
 
 doc : doc/rtf2latex2eSWP.tex doc/rtfReader.tex doc/rtf2latex2eDoc.tex
 	cd doc && $(MAKE)
@@ -115,12 +115,14 @@ dist: checkdir doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $(D
 	zip -r rtf2latex2e-$(VERSION) rtf2latex2e-$(VERSION)
 	rm -rf rtf2latex2e-$(VERSION)
 	
-install: rtf2latex2e $(PREFS) doc/rtf2LaTeX2eDoc.pdf
+install:
+	$(MAKE) rtfprep
+	$(MAKE)
 	$(MKDIR)                   $(BIN_INSTALL)
 	$(MKDIR)                   $(SUPPORT_INSTALL)
 	cp $(BINARY_NAME)          $(BIN_INSTALL)
 	cp $(PREFS)                $(SUPPORT_INSTALL)
-	cp doc/rtf2LaTeX2eDoc.pdf  $(SUPPORT_INSTALL)
+	cp doc/rtf2latex2eDoc.pdf  $(SUPPORT_INSTALL)
 	@echo "******************************************************************"
 	@echo "*** rtf2latex2e successfully installed as \"$(BINARY_NAME)\""
 	@echo "*** in directory \"$(BIN_INSTALL)\""
@@ -154,20 +156,23 @@ appleclean:
 splint: 
 	splint -weak $(SRCS) $(HDRS)
 	
-.PHONY: all check checkdir clean depend dist doc install realclean test
+.PHONY: all check checkdir clean depend dist doc install realclean rtfprep test
 
 # created using "make depend"
-src/cole.o:          src/cole.c
-src/cole_decode.o:   src/cole_decode.c src/cole.h src/cole_support.h src/cole_internal.h
-src/cole_encode.o:   src/cole_encode.c src/cole.h src/cole_support.h src/cole_internal.h
-src/cole_internal.o: src/cole_internal.c src/cole_internal.h src/cole_support.h
-src/cole_support.o:  src/cole_support.c
-src/cole_version.o:  src/cole_version.c
-src/eqn.o:           src/eqn.c src/rtf.h src/rtf2LaTeX2e.h src/eqn.h
-src/figure2eps.o:    src/figure2eps.c
-src/jpeg2eps.o:      src/jpeg2eps.c src/rtf.h src/rtf2LaTeX2e.h src/rtfprep/tokenscan.h src/jpeg2eps.h
-src/main.o:          src/main.c src/rtf.h src/rtf2LaTeX2e.h src/mygetopt.h
-src/reader.o:        src/reader.c src/rtfprep/tokenscan.h src/rtf.h src/rtf2LaTeX2e.h src/rtfprep/stdcharnames.h
-src/rtf.h:           src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h
-src/writer.o:        src/writer.c src/rtf.h src/rtfprep/tokenscan.h src/cole.h src/rtf2LaTeX2e.h src/eqn.h
-src/rtfprep/rtf-ctrldef.h: src/rtfprep/rtf-controls
+cole.o: src/cole.c src/cole.h src/cole_internal.h src/cole_support.h
+cole_decode.o: src/cole_decode.c src/cole.h src/cole_support.h src/cole_internal.h
+cole_encode.o: src/cole_encode.c src/cole.h src/cole_support.h src/cole_internal.h
+cole_internal.o: src/cole_internal.c src/cole_internal.h src/cole_support.h
+cole_support.o: src/cole_support.c src/cole_support.h
+cole_version.o: src/cole_version.c
+eqn.o: src/eqn.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
+       src/rtf2latex2e.h src/cole_support.h src/eqn.h src/eqn_support.h
+figure2eps.o: src/figure2eps.c
+jpeg2eps.o: src/jpeg2eps.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
+            src/rtfprep/tokenscan.h src/rtf2latex2e.h src/jpeg2eps.h
+main.o: src/main.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h src/mygetopt.h src/rtf2latex2e.h
+mygetopt.o: src/mygetopt.c src/mygetopt.h
+reader.o: src/reader.c src/rtfprep/tokenscan.h src/rtf.h src/rtfprep/rtf-ctrldef.h \
+          src/rtfprep/rtf-namedef.h src/rtf2latex2e.h src/rtfprep/stdcharnames.h
+writer.o: src/writer.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
+          src/rtfprep/tokenscan.h src/cole.h src/cole_support.h src/rtf2latex2e.h src/eqn.h

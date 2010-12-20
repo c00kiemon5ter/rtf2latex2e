@@ -68,8 +68,8 @@
 # include       "rtf.h"
 # undef         rtfInternal
 
-# include       "rtf2LaTeX2e.h"
-extern char texMapQualifier[];
+# include       "rtf2latex2e.h"
+extern char     texMapQualifier[];
 
 /*
  * Return pointer to new element of type t, or NULL
@@ -122,8 +122,6 @@ void CheckForCharAttr(void);
 void RTFPushTextStyle(void);
 void RTFPopTextStyle(void);
 /* end addition */
-
-
 
 /*
  * Public variables (listed in rtf.h)

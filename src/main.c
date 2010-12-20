@@ -23,26 +23,26 @@
 #include   <ctype.h>
 #include    <stdarg.h>
 
-#include    "rtf.h"
-#include   "mygetopt.h"
-#include    "rtf2LaTeX2e.h"
+#include     "rtf.h"
+#include     "mygetopt.h"
+#include     "rtf2latex2e.h"
 
-char           *g_library_path;
-extern long     groupLevel;
-extern char     outputMapName[];
-FILE           *OpenLibFile(char *name, char *mode);
+extern long  groupLevel;
+extern char  outputMapName[];
+FILE         *OpenLibFile(char *name, char *mode);
 
-FILE           *ifp, *ofp;
-extern char     fileCreator[];
-extern long     groupLevel;
+FILE         *ifp, *ofp;
+extern char  fileCreator[];
+extern long  groupLevel;
 
 #if RTF2LATEX2E_DOS
 #include <Windows.h>
 #endif
 
-int             g_little_endian = 0;
-int             g_debug_level = 0;
-int             g_include_both = 0;
+char         *g_library_path = NULL;
+int          g_little_endian = 0;
+int          g_debug_level   = 0;
+int          g_include_both  = 0;
 
 /* Figure out endianness of machine.  Needed for OLE & graphics support */
 static void 

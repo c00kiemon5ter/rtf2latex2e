@@ -26,7 +26,7 @@
 # include "rtfprep/tokenscan.h"
 # include "cole.h"
 # include "cole_support.h"
-# include "rtf2LaTeX2e.h"
+# include "rtf2latex2e.h"
 # include "eqn.h"
 
 char outputMapName[255];

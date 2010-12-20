@@ -1,4 +1,4 @@
-RTF2LATEX= ../rtf2latex
+RTF2LATEX= ../rtf2latex2e
 OPTIONS  = -P ../pref
 
 TEX= arch-mac.tex arch.tex Equation.tex fig-jpeg.tex mapping.tex \
