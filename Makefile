@@ -5,16 +5,12 @@ TAR?=gnutar
 RM?=rm -f
 MKDIR?=mkdir -p
 RMDIR?=rm -rf
-PKGMANDIR?=man
 
 #reasonable default set of compiler flags
 CFLAGS=-g -Wall -Wno-write-strings
 
 PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
 #PLATFORM?=-DMSDOS # Windows/DOS
-
-#Uncomment for some windows machines (neither needed for djgpp nor for MinGW)
-#EXE_SUFFIX=.exe
 
 #Base directory - adapt as needed
 # Unix:
@@ -24,11 +20,10 @@ PREFIX?=/opt/local
 #PREFIX?=$(PREFIX_DRIVE)/PROGRA~1/latex2rtf
 
 #Name of executable binary --- beware of 8.3 restriction under DOS
-BINARY_NAME=rtf2latex$(EXE_SUFFIX)
+BINARY_NAME=rtf2latex2e
 
 # Location of binary, man, info, and support files - adapt as needed
-BIN_INSTALL=$(PREFIX)/bin
-MAN_INSTALL=$(PREFIX)/$(PKGMANDIR)/man1
+BIN_INSTALL    =$(PREFIX)/bin
 SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex
 
 # Nothing to change below this line
@@ -57,7 +52,7 @@ PREFS=pref/TeX-map           pref/TeX-map.latin1    pref/cp437.map         pref/
       pref/TeX-map.default   pref/cp1252.map        pref/pca-sym \
       pref/TeX-map.german    pref/cp1254.map        pref/r2l-head
 
-DOCS= doc/GPL_license          doc/rtf2LaTeX2eDoc.html  doc/rtf2latex2eSWP.tex   \
+DOCS= doc/GPL_license          doc/rtf2latex2eSWP.tex   \
      doc/rtfReader.tex         doc/Release-notes.txt    doc/rtf2LaTeX2eDoc.pdf   \
      doc/rtfReader.dvi         doc/rtf2LaTeX2eDoc.dvi   doc/rtf2LaTeX2eDoc.tex   \
      doc/rtfReader.pdf
@@ -66,7 +61,7 @@ TEST = test/Makefile      test/arch.rtf      test/fig-jpeg.rtf  test/multiline.r
        test/arch-mac.rtf  test/equation.rtf  test/mapping.rtf   test/rtf-misc.rtf  test/table.rtf \
        test/test.rtf
 
-README= README INSTALL
+README= README
 
 TEST = test/Makefile      test/arch.rtf      test/fig-jpeg.rtf  test/multiline.rtf test/rtf.rtf \
        test/arch-mac.rtf  test/equation.rtf  test/mapping.rtf   test/rtf-misc.rtf  test/table.rtf
@@ -77,9 +72,9 @@ OBJS=src/writer.o              src/cole_decode.o         src/figure2eps.o \
      src/cole_encode.o         src/eqn.o                 src/main.o \
      src/rtfprep/tokenscan.o   src/mygetopt.o
 
-all : checkdir rtf2latex
+all : checkdir rtf2latex2e
 
-rtf2latex: $(OBJS) $(HDRS)
+rtf2latex2e: $(OBJS) $(HDRS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS)	$(LIBS) -o $(BINARY_NAME)
 
 src/main.o: Makefile src/main.c
@@ -89,7 +84,7 @@ src/rtfprep/rtf-ctrldef.h  src/rtfprep/rtf-namedef.h  src/rtfprep/stdcharnames.h
 	cd src/rtfprep && make
 	cp src/rtfprep/rtf-ctrl pref/rtf-ctrl
 
-check test: rtf2latex
+check test: rtf2latex2e
 	cd test && $(MAKE)
 
 checkdir: $(README) $(SRCS) $(HDRS) $(PREFS) $(TEST) Makefile
@@ -116,18 +111,16 @@ dist: checkdir doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREF) $(DOCS) $(TE
 	tar cvf - rtf2latex2e-$(VERSION) | gzip > rtf2latex2e-$(VERSION).tar.gz
 	rm -rf rtf2latex2e-$(VERSION)
 	
-doc/rtf2LaTeX2eDoc.html: doc
 doc/rtf2LaTeX2eDoc.pdf : doc
 
 doc: doc/rtf2LaTeX2eDoc.tex doc/Makefile
 	cd doc && $(MAKE) -k
 
-install: rtf2latex2e $(PREF) doc/rtf2LaTeX2eDoc.html doc/rtf2LaTeX2eDoc.pdf
+install: rtf2latex2e $(PREFS) doc/rtf2LaTeX2eDoc.pdf
 	$(MKDIR)                   $(BIN_INSTALL)
 	$(MKDIR)                   $(SUPPORT_INSTALL)
 	cp $(BINARY_NAME)          $(BIN_INSTALL)
-	cp $(PREF)                 $(SUPPORT_INSTALL)
-	cp doc/rtf2LaTeX2eDoc.html $(SUPPORT_INSTALL)
+	cp $(PREFS)                $(SUPPORT_INSTALL)
 	cp doc/rtf2LaTeX2eDoc.pdf  $(SUPPORT_INSTALL)
 	@echo "******************************************************************"
 	@echo "*** rtf2latex2e successfully installed as \"$(BINARY_NAME)\""

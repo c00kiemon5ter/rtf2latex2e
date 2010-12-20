@@ -1,11 +1,9 @@
-This is rtf2latex2e 1.0 fc1 (final candidate) by Ujwal Sathyam and Scott Prahl. It uses 
-the RTF reader by Paul DuBois and converts RTF files into the LaTeX2e 
-format. Its main features are:
+This is rtf2latex2e version 1.2 which features
 
 1. detects text style: bold, italic, color, big, small,...
 2. reads embedded figures: PICT, WMF, PNG, JPEG, converts to EPS
 3. reads tables: simple to semi-complex
-4. equations: converts embedded MathType < 3.0 equations (courtesy Mackichan Software)
+4. equations: converts embedded MathType <= 5.0 equations
 5. symbols: converts most greek and math symbols
 6. reads footnotes (not in tables yet)
 7. support for use of the fontenc package
@@ -13,10 +11,10 @@ format. Its main features are:
 
 REQUIREMENTS:
 =============
-No external dependencies. Unix and Linux users need to install the
-ImageMagick package for rtf2latex2e to convert embedded images to EPS. 
-If not installed, images will not be converted. ImageMagick can be obtained 
-from http://www.wizards.dupont.com/cristy.
+No external dependencies although LaTeX does not support some 
+image types and you'll need to use something like ImageMagick
+or pict2pdf to convert the images to something that can be 
+typeset.
 
 WHAT YOU WILL GET:
 ==================
@@ -24,9 +22,8 @@ If you expect a WYSIWYG reproduction of your RTF file, you may be
 disappointed. My main concerns have been translating the essential 
 features of the RTF file such as characters, figures, tables, and 
 equations (as pictures).  I have largely ignored visual formatting 
-such as ruler positions, tabs (until I figure out a good way of doing 
-this), paragraph indentations, and other fluff.  I have always expected 
-the output LaTeX file to require manual editing to put the finishing 
+such as ruler positions, tabs, paragraph indentations, and other fluff.  
+Expect the output LaTeX file to require manual editing to put the finishing 
 touches.  I just want to make that task a little easier.  In my opinion, 
 expecting a WYSIWYG reproduction is not practical and misses the point 
 entirely.
@@ -36,42 +33,20 @@ rtf2LaTeX2eDoc.pdf file. They are in the documentation directory.
 
 The file Release-notes.txt usually has more up-to-date info.
 
-
 INSTALLATION AND USE:
 =====================
-rtf2latex2e was developed on the Macintosh using DropUNIX for maximum 
-portability to Unix. I have tested it on the Macintosh PowerPC, Linux 
-(Intel), Linux (PowerPC), Solaris 2.6, and Windows 95/NT. Basically, 
-rtf2latex2e should compile on any platform that supports a C compiler.
+rtf2latex2e was developed on under Mac OS X but should be compilable
+under any Unix variant.  Windows users should compile under something
+like MinGW.
 
-MACINTOSH:
-----------
-Macintosh users get a pre-compiled fat binary. Drop your RTF files on it. 
-If you want to build your own binary, CodeWarrior project files are provided. 
-You will need to get the DropUnix libraries to compile. Read the 
-documentation and release notes for more details. The preferences can be 
-accessed from the File menu.
-
-The "pref" folder has to be in the same folder as the rtf2latex2e application.
-
-If you are running MacOS < 8.5 on a PowerPC, put the files "Navigation" 
-and "Appearance Extension" (in the folder "-> put into Systems Folder") 
-in your Extensions folder in your System folder. Put the file 
-"Appearance" into your Control Panels folder.
-
-
-UNIX:
------
-Unix users need to build the binary using make. Super-user mode may be 
-necessary for install.To start building rtf2latex2e, 
+To build rtf2latex2e, 
 change to the Unix directory directory, type:
 
-./configure
 make
 make install (optional, as root)
 
 The default install directory is /usr/local/rtf2latex2e.
-The binary is called rtf2latex2e.bin.
+
 A symbolic link /usr/bin/rtf2latex2e pointing to the binary is created.
 You can change the directory into which rtf2latex2e is installed by editing the 
 variable INSTALL_DIR at the top of the Makefile. You may need to become 
@@ -103,26 +78,12 @@ rtf2latex2e <rtfFileName>
 WINDOWS:
 --------
 Windows users get a pre-compiled binary of rtf2latex2e to be run 
-from the MS-DOS prompt. I have included a VisualC++ 6.0 project under the 
-Windows directory that can be used to re-compile the project.
-
-The "pref" folder has to be in the same folder as the rtf2latex2e application.
-
-It is also convenient to add the rtf2latex2e directory to your search PATH in 
-the AUTOEXEC.BAT file.
-
-On my WinNT box, I found that I had to restart the computer for any changes in
-AUTOEXEC.BAT to take effect. Silly...
-
-To run rtf2latex2e, type:
-
-rtf2latex2e <rtfFileName>
+from the MS-DOS prompt. 
 
 
 THE r2l-pref PREFERENCE FILE:
 =============================
-As of version 0.21, rtf2latex2e reads a preference file r2l-pref where 
-you can specify various options such as:
+rtf2latex2e reads a preference file r2l-pref that allows one to specify 
 
 1. ignoreRulerSettings: default=true; if set, all indenting information is
    ignored.
@@ -134,13 +95,10 @@ you can specify various options such as:
 There are other options to set paper size and margins. However, they 
 will be ignored if ignoreRulerSettings is set to true.
 
-The preferences in the Mac application can be accessed from the File menu.
-
 THE r2l-head file:
 ==================
 Here you can specify additional packages to be inserted into the ".tex" file. 
 If this file exists, rtf2latex2e will read it once for every input file.
-
 
 LEGAL STUFF:
 ============
@@ -159,23 +117,6 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You are encouraged to submit code corrections/enhancements to me. 
-
 The writer and driver parts of the code are copyright Ujwal Sathyam.
-The pict2eps conversion routines are copyright Scott A. Prahl.
 The reader part of the code was written by Paul DuBois of the Univ. of 
-Wisconsin Primate Center. The DropUnix framework was written by Ryan Davis 
-of ZenSpider Software. The DropUnix framework is based on the DropShell 
-application framework written by Leonard Rosenthol, Marshall Clow, and 
-Stephan Somogyi. The ImageMagick library was written by John Cristy 
-(http://www.wizards.dupont.com/cristy).
-
-
-AUTHOR CONTACT:
-Ujwal S. Sathyam
-setlur@bigfoot.com
-
-Scott A. Prahl
-prahl@ece.ogi.edu
-
-
+Wisconsin Primate Center. 

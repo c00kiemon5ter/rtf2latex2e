@@ -44,7 +44,7 @@ long groupLevel = 0;            /* a counter for keeping track of opening and cl
 extern FILE *ifp, *ofp;
 
 # define EQUATION_OFFSET 35
-# define UNKNOWN_EQUATION_OFFSET 28
+# define MTEF_HEADER_SIZE 28
 # define RESTORE_LEVELS 1
 # define SAVE_LEVELS    0
 # define        NumberOfPreferences 16
@@ -304,7 +304,6 @@ static short ReadR2LMap(void)
 /*
  * Initialize the writer. Basically reads the output map.
  */
-
 void WriterInit(void)
 {
     /* read character map files */
@@ -357,8 +356,7 @@ static boolean IsValidPref(char *name, char *pref)
         return true;
 
     for (i = 0; i < strlen(pref); i++)
-        if (!(isdigit(pref[i]) || pref[i] == '.'))
-            return false;
+        if (!(isdigit(pref[i]) || pref[i] == '.')) return false;
 
     return true;
 }
@@ -367,13 +365,12 @@ static int GetPreferenceNum(char *name)
 {
     short i;
 
-    for (i = 0; i < NumberOfPreferences; i++) {
-        if (strcmp(name, preferenceList[i]) == 0)
-            return (i);
-    }
-    printf("GetPreferenceNum: invalid preference %s!\n", name);
-    return (-1);
+    for (i = 0; i < NumberOfPreferences; i++)
+        if (strcmp(name, preferenceList[i]) == 0) return (i);
 
+    printf("GetPreferenceNum: invalid preference %s!\n", name);
+
+    return (-1);
 }
 
 short ReadPrefFile(char *file)
@@ -577,7 +574,7 @@ static void WriteColor (void)
 {
 char buf[rtfBufSiz];
 
-        
+
         sprintf(buf, "{\\color{color%ld} ", (long)rtfParam);
         PutLitStr (buf);        
         wrapCount += 17;
@@ -1710,8 +1707,8 @@ static void TextClass(void)
                 PutLitChar('H');
                 return;
             case rtfSC_backslash:
-            	RTFGetToken();  /* ignore backslah */
-            	RTFGetToken();  /* and next character */
+                RTFGetToken();  /* ignore backslah */
+                RTFGetToken();  /* and next character */
                 return;
             }
         }
@@ -3237,7 +3234,7 @@ static void ConvertHexPicture(char *pictureType)
     /* get input file name and create corresponding picture file name */
     if (pictureType == (char *) NULL)
         strcpy(pictureType, "unknown");
-        
+
     strcpy(picture.name, RTFGetInputName());
     sprintf(dummyBuf, "Fig%d.%s", picture.count, pictureType);
     strcat(picture.name, dummyBuf);
@@ -3321,7 +3318,6 @@ static void IncludeGraphics(char *pictureType)
     else
         scaleY = (double) (picture.scaleY) / 100;
 
-
     if (picture.goalHeight == 0) {
         width = (double) ((double) picture.width * scaleX);
         height = (double) ((double) picture.height * scaleY);
@@ -3350,8 +3346,7 @@ static void IncludeGraphics(char *pictureType)
                     llx, lly, urx, ury, scale, figPtr);
 
         } else
-            sprintf(dummyBuf,
-                    "\\includegraphics[width=%2.3fin, height=%2.3fin]{%s}",
+            sprintf(dummyBuf, "\\includegraphics[width=%2.3fin, height=%2.3fin]{%s}",
                     width / 72, height / 72, figPtr);
 
         if (!(table.inside) && !insideFootnote) {
@@ -3430,7 +3425,8 @@ static void ReadPicture(void)
     picture.scaleX = 100;
     picture.scaleY = 100;
 
-	RTFMsg("%s: Starting ...\n",fn);
+    RTFMsg("%s: Starting ...\n",fn);
+
     /* skip everything until we reach hex data */
     while (!HexData());
 
@@ -3473,7 +3469,6 @@ static void ReadPicture(void)
     /* feed "}" back to router */
     RTFRouteToken();
 
-
     /* reset picture type */
     picture.type = unknownPict;
     picture.width = 0;
@@ -3485,9 +3480,9 @@ static void ReadPicture(void)
     strcpy(picture.name, "");
 }
 
+
 /* 
- * gets object class. right now it recognizes only
- * equations. everything else is unknown.
+ * parses \objectclass and adds the class type to the global variable 'object'
  */
 static void GetObjectClass(int *groupCounter)
 {
@@ -3532,13 +3527,12 @@ static void GetObjectClass(int *groupCounter)
         }
         object.class = 0;
     }
-
 }
 
 
-/* We want to look at the result section of the object because 
- * that's what tells us what the object looks like. This usually
- * contains a picture */
+/* 
+ * The result section of an \object usually contains a picture of the object
+ */
 static int ReachedResult(int *groupCount)
 {
     RTFGetToken();
@@ -3578,8 +3572,10 @@ static int ReachedResult(int *groupCount)
     return (0);
 }
 
-/* Decodes the OLE and extract the specified stream type into a buffer.
-   This function uses the cole library */
+/* 
+ * Decodes the OLE and extract the specified stream type into a buffer.
+ * This function uses the cole library 
+ */
 static int
 DecodeOLE(char *objectFileName, char *streamType,
           unsigned char **nativeStream, size_t * size)
@@ -3594,12 +3590,14 @@ DecodeOLE(char *objectFileName, char *streamType,
         return (1);
     }
 
-	/* this prints the directory structure for the OLE object */
-        if (cole_print_tree (cfs, &colerrno)) {
-                cole_perror ("DecodeOLE cole_print_tree", colerrno);
-                cole_umount (cfs, NULL);
-                return (1);
-        }
+    /* this prints the directory structure for the OLE object */
+    /*
+    if (cole_print_tree (cfs, &colerrno)) {
+            cole_perror ("DecodeOLE cole_print_tree", colerrno);
+            cole_umount (cfs, NULL);
+            return (1);
+    }
+    */
 
     if ((coleFile = cole_fopen(cfs, streamType, &colerrno)) == NULL) {
         cole_perror("DecodeOLE cole_fopen", colerrno);
@@ -3622,27 +3620,29 @@ DecodeOLE(char *objectFileName, char *streamType,
         cole_perror("DecodeOLE cole_fread", colerrno);
         cole_fclose(coleFile, &colerrno);
         cole_umount(cfs, NULL);
+        free(nativeStream);
         return 1;
     }
 
     if (cole_fclose(coleFile, &colerrno) != 0) {
         cole_perror("DecodeOLE cole_fclose", colerrno);
         cole_umount(cfs, NULL);
+        free(nativeStream);
         return 1;
     }
 
     if (cole_umount(cfs, &colerrno)) {
         cole_perror("DecodeOLE cole_umount", colerrno);
+        free(nativeStream);
         return (1);
     }
-
     return 0;
 }
 
 
-
-/* This function reads in the hex-encoded object data 
-   group in the file objectFileName */
+/* 
+ * Save the hex-encoded object data and as binary bytes in objectFileName 
+ */
 static void ReadObjectData(char *objectFileName, int type, int offset)
 {
     char dummyBuf[20];
@@ -3650,9 +3650,8 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     int i;
     int hexOffset;
     int groupEnd = false;
-    char objByte;
-    short hexNumber;
-    short hexEvenOdd = 0;       /* check if we read in even number of hex characters */
+    uint8_t hexNumber;
+    uint8_t hexEvenOdd = 0;       /* should be even at the end */
     char *fn = "ReadObjectData";
     RTFMsg("%s: * starting ...\n", fn);
 
@@ -3661,7 +3660,6 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
         sprintf(dummyBuf, "Eq%d.eqn", oleEquation.count);
     } else
         sprintf(dummyBuf, ".obj");
-
 
     /* construct full path of file name */
     strcpy(objectFileName, RTFGetInputName());
@@ -3676,18 +3674,19 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     for (i = 0; i < hexOffset; i++)
         RTFGetToken();
 
-    /* now we have to read the hex code in pairs of two 
-     * (1 byte total) such as ff, a1, 4c, etc...*/
+    /* each byte is encoded as two hex chars ... ff, a1, 4c, ...*/
     while (!groupEnd) {
         RTFGetToken();
-        /* the next line is just to make sure that any 
-         * CR or LF in the hex code are skipped */
+
+        /* CR or LF in the hex stream should be skipped */
         if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
             RTFGetToken();
+
         if (rtfClass == rtfGroup) {
             groupEnd = true;
             break;
         }
+
         if (!groupEnd) {
             hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
             hexEvenOdd++;
@@ -3695,49 +3694,40 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 
         RTFGetToken();
         if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
-            RTFGetToken();
+            RTFGetToken();  /* should not happen */
+
         if (rtfClass == rtfGroup) {
             groupEnd = true;
             break;
         }
+
         if (!groupEnd) {
             hexNumber += RTFCharToHex(rtfTextBuf[0]);   /* this is the the number */
             hexEvenOdd--;
-            /* shove that number into a character of 1 byte */
-            objByte = hexNumber;
-            fputc(objByte, objFile);
-
+            fputc(hexNumber, objFile);
         }
-
     }
 
     if (fclose(objFile) != 0)
         printf("* error closing object file %s\n", objectFileName);
-    if (hexEvenOdd)
-        printf
-            ("* Warning! Odd number of hex characters read for object!\n");
 
+    if (hexEvenOdd)
+        printf ("* Warning! Odd number of hex characters read for object!\n");
 }
 
-/* This function reads a MathType Equation embedded as an OLE object */
+
+/* 
+ * Translate an object containing a MathType equation
+ */
 static boolean ReadEquation(int *groupCount)
 {
     char objectFileName[rtfBufSiz];
-    unsigned char *nativeEquationStream = NULL;
-    unsigned char *equationStream = NULL;
-    int err;
-    uint16_t MTEF_Header_Size;
-    uint32_t test;
-    
-    char *fn = "ReadEquation";
-    RTFMsg("%s: * starting ...\n", fn);
+    unsigned char *nativeEquationStream, *equationStream;
+    MTEquation *theEquation;
+    size_t equationSize;    
 
-    size_t equationSize;
-    MTEquation *theEquation = NULL;
-    boolean res;
-
-    DoParagraphCleanUp();
-    DoSectionCleanUp();
+    nativeEquationStream = NULL;
+    theEquation = NULL;
 
     /* look for start of \objdata  group */
     while (!RTFCheckMM(rtfDestination, rtfObjData)) {
@@ -3760,68 +3750,57 @@ static boolean ReadEquation(int *groupCount)
         }
     }
 
-    /* convert hex-encoded object data group to binary and 
-       read the OLE object into file objectFileName */
+    /* save hex-encoded object data a binary objectFileName */
     ReadObjectData(objectFileName, equation, EQUATION_OFFSET);
     (*groupCount)--;
 
-    /* Decode the OLE and 
-       extract "Equation Native" stream into buffer nativeEquationStream */
-    
-    err = DecodeOLE(objectFileName, "/Equation Native", &nativeEquationStream, &equationSize);
-    if (err != 0) {
+    /* Decode the OLE and extract the equation stream into buffer nativeEquationStream */
+    if (DecodeOLE(objectFileName, "/Equation Native", &nativeEquationStream, &equationSize)) {
         RTFMsg("* error decoding OLE equation object!\n");
-        if (nativeEquationStream != NULL)
-            free(nativeEquationStream);
         return (false);
     }
-    
+
     /* remove(objectFileName); */
     RTFMsg("MTEF Equation has %ld bytes\n", equationSize);
 
     theEquation = (MTEquation *) malloc(sizeof(MTEquation));
     if (theEquation == NULL) {
         RTFMsg("* error allocating memory for equation!\n");
-        if (nativeEquationStream != NULL)
-            free(nativeEquationStream);
+        free(nativeEquationStream);
         return (false);
-    } else
-        memset(theEquation, 0, sizeof(MTEquation));
+    }
 
-	equationStream = nativeEquationStream;
-	
-	test = fil_sreadU32(equationStream);
-	if (test == 0) {
-		equationStream += 4;
-		equationSize -= 4;
-	}
-	
-	MTEF_Header_Size = fil_sreadU16(equationStream);
-	RTFMsg("header size = %d\n", MTEF_Header_Size);
+    equationStream = nativeEquationStream;
 
-	if (MTEF_Header_Size == 28) {
-		equationStream += MTEF_Header_Size;
-		equationSize   -= MTEF_Header_Size;
+    /* hack ... newer OLE streams seem to start with an extra 4 bytes of zeros */
+    if (fil_sreadU32(equationStream) == 0) {
+        equationStream += 4;
+        equationSize -= 4;
+    }
 
-		__cole_dump(equationStream, equationStream, equationSize, "native equation stream");
-		
-		res = Eqn_Create(theEquation, equationStream, equationSize);
-					   
-		if (!res) {
-			RTFMsg("* could not create equation structure!\n");
-			if (nativeEquationStream != NULL)
-				free(nativeEquationStream);
-			if (theEquation != NULL)
-				free(theEquation);
-			return (false);
-		}
-		Eqn_TranslateObjectList(theEquation, ostream, 0);
-		Eqn_Destroy(theEquation);
-	}
-	
+    /* the first two bytes should contain 0x1c 0x00 */
+    if (fil_sreadU16(equationStream) == MTEF_HEADER_SIZE) {
+        equationStream += MTEF_HEADER_SIZE;
+        equationSize   -= MTEF_HEADER_SIZE;
+
+        __cole_dump(equationStream, equationStream, equationSize, "original native equation");
+
+        if (!Eqn_Create(theEquation, equationStream, equationSize)) {
+            RTFMsg("* could not create equation structure!\n");
+            free(nativeEquationStream);
+            free(theEquation);
+            return (false);
+        }
+
+        DoParagraphCleanUp();
+        DoSectionCleanUp();
+
+        Eqn_TranslateObjectList(theEquation, ostream, 0);
+        Eqn_Destroy(theEquation);
+    }
+
     if (theEquation != NULL)
         free(theEquation);
-
 
     if (nativeEquationStream != NULL)
         free(nativeEquationStream);
@@ -3831,7 +3810,9 @@ static boolean ReadEquation(int *groupCount)
 }
 
 
-/* This function reads objects that may contain pictures or equations */
+/* 
+ * Read and process \object token 
+ */
 static void ReadObject(void)
 {
     int i;
@@ -3840,28 +3821,29 @@ static void ReadObject(void)
     boolean res;
     char *fn = "ReadObject";
     RTFMsg("%s: * starting ...\n", fn);
-        
+
     GetObjectClass(&groupCounter);
 
     switch (object.class) {
     case unknownObj:
     default:
-        RTFMsg("%s: * unsupported object \"%s\" encountered, skipping...\n", fn,
-               object.className);
+        RTFMsg("%s: * unsupported object '%s', skipping...\n", fn, object.className);
         RTFSkipGroup();
         break;
+
     case Equation:
     case equation:
-        RTFMsg("%s: * equation object \"%s\" encountered, processing...\n", fn,
-               object.className);
+        RTFMsg("%s: * equation object '%s', processing...\n", fn, object.className);
+
         if ((int) preferenceValue[GetPreferenceNum("convertEquations")])
             res = ReadEquation(&groupCounter);
         else
             res = false;
-            
-        /* if unsuccessful, read the equation as a picture */
+
+        /* if unsuccessful, include the equation as a picture */
         if (!res || g_include_both) {
             temp = groupCounter;
+
             while (!RTFCheckMM(rtfDestination, rtfPict)) {
                 RTFGetToken();
                 if (RTFCheckCM(rtfGroup, rtfBeginGroup))
@@ -3871,6 +3853,7 @@ static void ReadObject(void)
                 if (groupCounter < temp)
                     break;
             }
+
             if (groupCounter > temp) {
                 ReadPicture();
                 if (groupCounter - 1 - temp > 0) {
@@ -3881,12 +3864,14 @@ static void ReadObject(void)
             groupCounter = temp;
         }
         break;
+
     case WordPicture:
     case MSGraphChart:
         while (!ReachedResult(&groupCounter));
         ReadPicture();
         break;
     }
+
     object.class = 0;
     strcpy(object.className, "");
 
@@ -3898,8 +3883,8 @@ static void ReadObject(void)
 
     /* send the last closing brace back into the router */
     RTFRouteToken();
-
 }
+
 
 /* This is the result field of the Word97 object */
 static void ReadWord97Result(void)
@@ -3908,7 +3893,7 @@ static void ReadWord97Result(void)
     int groupCount = 1;         /* one opening brace has been counted */
     char *fn = "ReadWord97Result";
     RTFMsg("%s: starting ...\n",fn);
-    
+
     /* scan until object or picture is reached */
     while (groupCount != 0) {
         RTFGetToken();
@@ -3939,6 +3924,7 @@ static void ReadWord97Result(void)
     RTFRouteToken();
 
 }
+
 
 /* Of course, Word97 has to do everything differently. */
 static void ReadWord97Object(void)
@@ -4045,7 +4031,6 @@ static void ReadWord97Object(void)
     if (groupCount == 0)
         return;
 
-
     /* if there are open groups left, close them */
     if (groupCount != 0)
         for (i = 0; i < groupCount; i++)
@@ -4066,33 +4051,33 @@ static void ReadWord97Object(void)
  */
 static void emitBookmark(void)
 {
-	int started = 0;
-	
-	RTFGetToken();
-	while (rtfClass == rtfText) {
-		switch (rtfTextBuf[0]) {
-		case ' ':
-			if (started) {     /* assume that bookmarks optionally start and end with spaces */
-				RTFSkipGroup();
-				return;
-			}
-			break;
-		case '"':
-			break;
-		case '\\':
-			RTFGetToken(); /* drop backslash and the next letter */
-			break;
-		case '_':
-			started = 1;
-			PutLitStr("H");
-			break;
-		default:
-			started = 1;
-			PutLitStr(rtfTextBuf);
-			break;
-		}
-		RTFGetToken();
-	}
+    int started = 0;
+
+    RTFGetToken();
+    while (rtfClass == rtfText) {
+        switch (rtfTextBuf[0]) {
+        case ' ':
+            if (started) {     /* assume that bookmarks optionally start and end with spaces */
+                RTFSkipGroup();
+                return;
+            }
+            break;
+        case '"':
+            break;
+        case '\\':
+            RTFGetToken(); /* drop backslash and the next letter */
+            break;
+        case '_':
+            started = 1;
+            PutLitStr("H");
+            break;
+        default:
+            started = 1;
+            PutLitStr(rtfTextBuf);
+            break;
+        }
+        RTFGetToken();
+    }
 }
 
 static void ReadHyperlink(void)
@@ -4109,7 +4094,7 @@ static void ReadHyperlink(void)
     while (groupLevel >= localGL) {
         RTFGetToken();
         if (rtfClass == rtfText) {
-        	if (rtfTextBuf[0] != '"'
+            if (rtfTextBuf[0] != '"'
                 && !RTFCheckMM(rtfSpecialChar, rtfLDblQuote)
                 && !RTFCheckMM(rtfSpecialChar, rtfRDblQuote))
                     RTFRouteToken();
@@ -4151,7 +4136,7 @@ static void ReadSymbolField(void)
     short currentCharSet = RTFGetCharSet();
 
     RTFSetCharSet(rtfCSSymbol);
-    
+
     /* go to the start of the symbol representation */
     strcpy(buf, "");
     if ((tokenClass = RTFGetToken()) != rtfText) {
@@ -4197,18 +4182,18 @@ static void ReadPageRefField(void)
 {
 /*    char *fn = "ReadPageRefField";
     RTFMsg("%s: starting ...\n",fn); */
-    
+
     PutLitStr("\\pageref{");
     wrapCount += 8;
-	emitBookmark();
-	PutLitStr("}");
-	wrapCount += 1;
-	RTFRouteToken();
+    emitBookmark();
+    PutLitStr("}");
+    wrapCount += 1;
+    RTFRouteToken();
 
     /* skip over to the result group */
     while (!RTFCheckCMM(rtfControl, rtfDestination, rtfFieldResult))
         RTFGetToken();
-        
+
     RTFSkipGroup();
     RTFRouteToken();
 }
@@ -4229,7 +4214,7 @@ static void ReadFieldInst(void)
 
     strcpy(buf, "");
 
-	/* skip to text identifying the type of FIELD  */
+    /* skip to text identifying the type of FIELD  */
     while (rtfClass != rtfText || rtfMinor == rtfSC_space) {
         RTFGetToken();
         if (RTFCheckCM(rtfGroup, rtfBeginGroup))
@@ -4252,10 +4237,10 @@ static void ReadFieldInst(void)
 /*    RTFMsg("%s: FIELD type is %s\n",fn,buf);*/
 
     if (0 && strcmp(buf, "HYPERLINK") == 0 )
-    	if (!(int) preferenceValue[GetPreferenceNum("ignoreHypertext")]) {
-        	ReadHyperlink();
-        	return;
-    	}
+        if (!(int) preferenceValue[GetPreferenceNum("ignoreHypertext")]) {
+            ReadHyperlink();
+            return;
+        }
 
     if (strcmp(buf, "SYMBOL") == 0) {
         ReadSymbolField();
@@ -4280,10 +4265,10 @@ static void ReadBookmarkStart(void)
 {
     PutLitStr("\\label{");
     wrapCount += 7;
-	emitBookmark();
-	PutLitStr("}");
-	wrapCount += 1;
-	RTFRouteToken();
+    emitBookmark();
+    PutLitStr("}");
+    wrapCount += 1;
+    RTFRouteToken();
 }
 
 
@@ -4491,7 +4476,7 @@ char    buf[50];
             return (0);
                 }
         }
-        
+
         if (fclose(fp) != 0) 
     {
         printf("* error closing eps file %s\n", epsFile);
