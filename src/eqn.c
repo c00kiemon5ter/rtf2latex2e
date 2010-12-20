@@ -19,8 +19,8 @@
 
 # include       "rtf.h"
 # include       "rtf2LaTeX2e.h"
-
-# include "eqn.h"
+# include       "cole_support.h"
+# include       "eqn.h"
 
 typedef struct {
     int log_level;
@@ -103,9 +103,10 @@ static char *Eqn_JoinzStrs(MTEquation * eqn, EQ_STRREC * strs,
 #define MA_FORCE_TEXT   2
 
 #define CHAR_EMBELL         0x01
-#define CHAR_FUNC_START         0x02
+#define CHAR_FUNC_START     0x02
 #define CHAR_ENC_CHAR_8     0x04
-#define CHAR_ENC_CHAR_16        0x10
+#define CHAR_NUDGE          0x08
+#define CHAR_ENC_CHAR_16    0x10
 #define CHAR_ENC_NO_MTCODE  0x20
 
 // Various data which used to be in rtf2latex.ini.  Initialized at bottom of file.
@@ -119,6 +120,16 @@ char *Profile_CHARTABLE[];
 char *Profile_TEMPLATES[];
 
 char *Template_EMBELLS[];
+
+unsigned char hi_nibble(unsigned char x)
+{
+	return (x & 0xF0)/16;
+}
+
+unsigned char lo_nibble(unsigned char x)
+{
+	return (x & 0x0F);
+}
 
 /* MathType Equation converter */
 
@@ -439,8 +450,8 @@ int skip_nibbles(unsigned char *p, int num)
         fprintf(stderr, " #%02d -- ", count);
     while (count <= num) {
 
-        hi = (*(p + nbytes) & 0xF0) / 16;
-        lo = (*(p + nbytes) & 0x0F);
+        hi = hi_nibble(*(p + nbytes));
+        lo = lo_nibble(*(p + nbytes));
         nbytes++;
 
         if (new_str)
@@ -479,36 +490,32 @@ int skip_nibbles(unsigned char *p, int num)
 
 
 // scanning routines.  Convert MT equation into internal form
-MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src,
-                              int *src_index, int num_objs)
+MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_index, int num_objs)
 {
-    unsigned char c;
-    unsigned char size;
+    unsigned char c, size, curr_tag;
     int i;
     int tally = 0;
     MT_OBJLIST *head = (MT_OBJLIST *) NULL;
     MT_OBJLIST *curr;
     void *new_obj;
 
-    unsigned char curr_tag = *(src + *src_index);
-    unsigned char attrs;
+    curr_tag = *(src + *src_index);
 
+	if (eqn->m_mtef_ver < 5) 
+		curr_tag = lo_nibble(curr_tag);
+		
     while (curr_tag != END && curr_tag != 0xFF) {
 
         new_obj = (void *) NULL;
 
         print_tag(curr_tag);
+	__cole_dump(src+*src_index, src+*src_index, 16, "equation stream");
 
         switch (curr_tag) {
 
         case LINE:
-            attrs = *(src + *src_index);
-            if (attrs & xfNULL)
-                (*src_index)++;
-            else
-                new_obj = (void *) Eqn_inputLINE(eqn, src, src_index);
+			new_obj = (void *) Eqn_inputLINE(eqn, src, src_index);
             break;
-
         case CHAR:
             new_obj = (void *) Eqn_inputCHAR(eqn, src, src_index);
             break;
@@ -531,17 +538,22 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src,
         case FONT:
             new_obj = (void *) Eqn_inputFONT(eqn, src, src_index);
             break;
+            
         case SIZE:
-        case FULL:
+            new_obj = (void *) Eqn_inputSIZE(eqn, src, src_index);
+            break;
+
+        case FULL: 
         case SUB:
         case SUB2:
         case SYM:
         case SUBSYM:
-            new_obj = (void *) Eqn_inputSIZE(eqn, src, src_index);
+            (*src_index)++; 
             break;
 
         case COLOR_DEF:
             break;
+            
         case FONT_DEF:
             (*src_index)++;
             (*src_index)++;
@@ -619,18 +631,32 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src,
     return head;
 }
 
+/*
+    * record type (1)
+    * options
+    * [nudge] if mtefOPT_NUDGE is set
+    * [line spacing] if mtefOPT_LINE_LSPACE is set (16-bit integer)
+    * [RULER record] if mtefOPT_LP_RULER is set
+    * object list contents of line (a single pile, characters and templates, or nothing)
+*/
+
 MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
                        int *src_index)
 {
-    unsigned char attrs = *(src + *src_index);
-
+    unsigned char attrs;
     MT_LINE *new_line = (MT_LINE *) malloc(sizeof(MT_LINE));
 
-    (*src_index)++;             // step over tag
+    if (eqn->m_mtef_ver == 5) {
+    	(*src_index)++;
+    	attrs = *(src + *src_index);
+    } else
+    	attrs = hi_nibble(*(src + *src_index));
+    (*src_index)++;
+    
+    fprintf(stderr, "LINE options  = 0x%02x\n", attrs);
+    
     if (attrs & xfLMOVE)
-        *src_index +=
-            GetNudge(src + *src_index, &new_line->nudge_x,
-                     &new_line->nudge_y);
+        *src_index += GetNudge(src + *src_index, &new_line->nudge_x, &new_line->nudge_y);
     else {
         new_line->nudge_x = 0;
         new_line->nudge_y = 0;
@@ -649,44 +675,46 @@ MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
 
     if (attrs & xfNULL)
         new_line->object_list = (MT_OBJLIST *) NULL;
-    else
+    else {
+    	fprintf(stderr,"new object list in LINE!\n");
         new_line->object_list = Eqn_GetObjectList(eqn, src, src_index, 0);
-
+    }
+    
     return new_line;
 }
 
 /*
-    * options
+    * attributes
     * [nudge] if xfLMOVE is set
     * [typeface] typeface value (see FONT below) + 128
     * [character] 16-bit character value (encoding depends on typeface)
     * [embellishment list] if xfEMBELL is set (embellishments)
 */
 
-MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src,
-                       int *src_index)
+MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
 {
-
     MT_CHAR *new_char = (MT_CHAR *) malloc(sizeof(MT_CHAR));
     new_char->nudge_x = 0;
     new_char->nudge_y = 0;
 
-    (*src_index)++;             /* skip token */
-
-    new_char->atts = *(src + *src_index);
+    if (eqn->m_mtef_ver == 5) {
+    	(*src_index)++;
+    	new_char->atts = *(src + *src_index);
+    } else
+    	new_char->atts = hi_nibble(*(src + *src_index));
     (*src_index)++;
 
-    if (new_char->atts & xfLMOVE)
-        *src_index +=
-            GetNudge(src + *src_index, &new_char->nudge_x,
-                     &new_char->nudge_y);
+    if (new_char->atts & CHAR_NUDGE)
+        *src_index += GetNudge(src + *src_index, &new_char->nudge_x, &new_char->nudge_y);
 
     new_char->typeface = *(src + *src_index);
     (*src_index)++;
 
     fprintf(stderr, "options  = 0x%02x\n", new_char->atts);
-    fprintf(stderr, "typeface = %d-128=%d\n", new_char->typeface,
-            new_char->typeface - 128);
+    fprintf(stderr, "typeface = %d-128=%d\n", new_char->typeface, new_char->typeface - 128);
+    if (new_char->typeface <128)
+    	RTFPanic("typeface less than 128 is impossible!");
+    
     switch (eqn->m_mtef_ver) {
     case 1:
     case 2:
@@ -698,7 +726,7 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src,
     case 4:
         new_char->character = *(src + *src_index);
         (*src_index)++;
-        new_char->character |= *(src + *src_index) << 8;        /* high byte last */
+        new_char->character |= *(src + *src_index) << 8;
         (*src_index)++;
         break;
 
@@ -706,7 +734,7 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src,
         if (!(new_char->atts & CHAR_ENC_NO_MTCODE)) {
             new_char->character = *(src + *src_index);
             (*src_index)++;
-            new_char->character |= *(src + *src_index) << 8;    /* high byte last */
+            new_char->character |= *(src + *src_index) << 8;
             (*src_index)++;
         }
         if (new_char->atts & CHAR_ENC_CHAR_8) {
@@ -742,15 +770,18 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src,
 MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src,
                        int *src_index)
 {
-
+	unsigned char attrs;
     MT_TMPL *new_tmpl = (MT_TMPL *) malloc(sizeof(MT_TMPL));
 
-    unsigned char attrs = *(src + *src_index);
+    if (eqn->m_mtef_ver == 5) {
+    	(*src_index)++;
+    	attrs = *(src + *src_index);
+    } else
+    	attrs = hi_nibble(*(src + *src_index));
     (*src_index)++;
+    
     if (attrs & xfLMOVE)
-        *src_index +=
-            GetNudge(src + *src_index, &new_tmpl->nudge_x,
-                     &new_tmpl->nudge_y);
+        *src_index += GetNudge(src + *src_index, &new_tmpl->nudge_x, &new_tmpl->nudge_y);
     else {
         new_tmpl->nudge_x = 0;
         new_tmpl->nudge_y = 0;
@@ -772,21 +803,24 @@ MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src,
 MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
                        int *src_index)
 {
-
+	unsigned char attrs;
     MT_PILE *new_pile = (MT_PILE *) malloc(sizeof(MT_PILE));
+	new_pile->nudge_x = 0;
+	new_pile->nudge_y = 0;
 
-    unsigned char attrs = *(src + *src_index);
-    (*src_index)++;             // Step over the tag
+    if (eqn->m_mtef_ver == 5) {
+    	(*src_index)++;
+    	attrs = *(src + *src_index);
+    } else
+    	attrs = hi_nibble(*(src + *src_index));
+    (*src_index)++;
+    
     if (attrs & xfLMOVE)
-        *src_index +=
-            GetNudge(src + *src_index, &new_pile->nudge_x,
-                     &new_pile->nudge_y);
-    else {
-        new_pile->nudge_x = 0;
-        new_pile->nudge_y = 0;
-    }
+        *src_index += GetNudge(src + *src_index, &new_pile->nudge_x, &new_pile->nudge_y);
+ 
     new_pile->halign = *(src + *src_index);
     (*src_index)++;
+    
     new_pile->valign = *(src + *src_index);
     (*src_index)++;
 
@@ -804,22 +838,24 @@ MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
 MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
                            int *src_index)
 {
-
-    MT_MATRIX *new_matrix = (MT_MATRIX *) malloc(sizeof(MT_MATRIX));
+	unsigned char attrs;
     int row_bytes;
     int col_bytes;
     int idx = 0;
+    MT_MATRIX *new_matrix = (MT_MATRIX *) malloc(sizeof(MT_MATRIX));
+	new_matrix->nudge_x = 0;
+    new_matrix->nudge_y = 0;
 
-    unsigned char attrs = *(src + *src_index);
+    if (eqn->m_mtef_ver == 5) {
+    	(*src_index)++;
+    	attrs = *(src + *src_index);
+    } else
+    	attrs = hi_nibble(*(src + *src_index));
     (*src_index)++;
+    
     if (attrs & xfLMOVE)
-        *src_index +=
-            GetNudge(src + *src_index, &new_matrix->nudge_x,
-                     &new_matrix->nudge_y);
-    else {
-        new_matrix->nudge_x = 0;
-        new_matrix->nudge_y = 0;
-    }
+        *src_index += GetNudge(src + *src_index, &new_matrix->nudge_x, &new_matrix->nudge_y);
+
     new_matrix->valign = *(src + *src_index);
     (*src_index)++;
     new_matrix->h_just = *(src + *src_index);
@@ -857,11 +893,17 @@ MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
 MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
                            int *src_index)
 {
-
-    unsigned char attrs = *(src + *src_index);
+	unsigned char attrs;
     MT_EMBELL *head = NULL;
     MT_EMBELL *new_embell = NULL;
     MT_EMBELL *curr = NULL;
+    
+    if (eqn->m_mtef_ver == 5) {
+    	(*src_index)++;
+    	attrs = *(src + *src_index);
+    } else
+    	attrs = hi_nibble(*(src + *src_index));
+    (*src_index)++;
 
     do {
 
@@ -871,9 +913,7 @@ MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
         new_embell->next = NULL;
 
         if (attrs & xfLMOVE) {
-            *src_index +=
-                GetNudge(src + *src_index, &new_embell->nudge_x,
-                         &new_embell->nudge_y);
+            *src_index += GetNudge(src + *src_index, &new_embell->nudge_x, &new_embell->nudge_y);
         } else {
             new_embell->nudge_x = 0;
             new_embell->nudge_y = 0;
@@ -958,7 +998,6 @@ MT_FONT *Eqn_inputFONT(MTEquation * eqn, unsigned char *src,
     return new_font;
 }
 
-
 MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
                        int *src_index)
 {
@@ -1012,25 +1051,28 @@ static
 int GetNudge(unsigned char *src, int *x, int *y)
 {
 
-    int nudge_ln;
+    int nudge_length;
     short tmp;
 
     unsigned char b1 = *src;
     unsigned char b2 = *(src + 1);
+    
 
     if (b1 == 128 && b2 == 128) {
         tmp = *(src + 2) | *(src + 3) << 8;     // high byte last
         *x = tmp;
         tmp = *(src + 4) | *(src + 5) << 8;     // high byte last
         *y = tmp;
-        nudge_ln = 6;
+        nudge_length = 6;
     } else {
         *x = b1;
         *y = b2;
-        nudge_ln = 2;
+        nudge_length = 2;
     }
 
-    return nudge_ln;
+fprintf(stderr, "nudge gotten size=%d",nudge_length);
+
+    return nudge_length;
 }
 
 
