@@ -446,8 +446,7 @@ int skip_nibbles(unsigned char *p, int num)
     int count = 1;
     int new_str = 1;
 
-    if (0)
-        fprintf(stderr, " #%02d -- ", count);
+    if (0) fprintf(stderr, " #%02d -- ", count);
     while (count <= num) {
 
         hi = hi_nibble(*(p + nbytes));
@@ -463,9 +462,7 @@ int skip_nibbles(unsigned char *p, int num)
         if (hi == 0x0F) {
             new_str = 1;
             count++;
-            if (0)
-                fprintf(stderr, " ---> total of %d bytes\n #%02d -- ",
-                        nbytes, count);
+            if (0) fprintf(stderr, " ---> total of %d bytes\n #%02d -- ", nbytes, count);
         }
 
         if (new_str)
@@ -477,13 +474,10 @@ int skip_nibbles(unsigned char *p, int num)
         if (lo == 0x0F) {
             new_str = 1;
             count++;
-            if (0)
-                fprintf(stderr, " ---> total of %d bytes\n #%02d -- ",
-                        nbytes, count);
+            if (0) fprintf(stderr, " ---> total of %d bytes\n #%02d -- ", nbytes, count);
         }
     }
-    if (0)
-        fprintf(stderr, "\n");
+    if (0) fprintf(stderr, "\n");
 
     return nbytes;
 }
@@ -499,10 +493,10 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
     MT_OBJLIST *curr;
     void *new_obj;
 
-    curr_tag = *(src + *src_index);
-
-	if (eqn->m_mtef_ver < 5) 
-		curr_tag = lo_nibble(curr_tag);
+	if (eqn->m_mtef_ver == 5) 
+    	curr_tag = *(src + *src_index);
+    else
+		curr_tag = lo_nibble(*(src + *src_index));
 		
     while (curr_tag != END && curr_tag != 0xFF) {
 
@@ -618,7 +612,10 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
             curr = new_node;
         }
 
-        curr_tag = *(src + *src_index);
+		if (eqn->m_mtef_ver == 5) 
+			curr_tag = *(src + *src_index);
+		else
+			curr_tag = lo_nibble(*(src + *src_index));
 
         tally++;
         if (tally == num_objs)
