@@ -1,4 +1,4 @@
-VERSION = 1.2.0
+VERSION = 1-2-0
 
 CC?=gcc
 TAR?=gnutar
@@ -33,44 +33,42 @@ CFLAGS:=$(CFLAGS) $(PLATFORM)
 
 LIBS= 
 
-SRCS=src/writer.c              src/cole_decode.c         src/figure2eps.c \
-     src/cole.c                src/cole_support.c        src/jpeg2eps.c   \
-     src/cole_internal.c       src/cole_version.c        src/reader.c     \
-     src/cole_encode.c         src/eqn.c                 src/main.c       \
-     src/mygetopt.c
+SRCS         = src/cole.c                 src/cole_decode.c         src/cole_encode.c       \
+               src/cole_internal.c        src/cole_support.c        src/cole_version.c      \
+               src/eqn.c                  src/figure2eps.c          src/jpeg2eps.c          \
+               src/main.c                 src/mygetopt.c            src/reader.c            \
+               src/writer.c
 
-HDRS=src/cole.h        src/cole_internal.h   src/rtf.h           src/eqn.h   \
-     src/jpeg2eps.h    src/rtf2LaTeX2e.h     src/cole_support.h  src/mygetopt.h
+HDRS         = src/cole.h                 src/cole_internal.h       src/rtf.h               \
+               src/eqn.h                  src/jpeg2eps.h            src/rtf2LaTeX2e.h       \
+               src/cole_support.h         src/mygetopt.h
 
-RTFPREP_SRCS = src/rtfprep/Makefile     src/rtfprep/rtf-controls  src/rtfprep/rtfprep.c  src/rtfprep/standard-names \
-               src/rtfprep/tokenscan.c  src/rtfprep/tokenscan.h  
+RTFPREP_SRCS = src/rtfprep/Makefile       src/rtfprep/rtf-controls  src/rtfprep/rtfprep.c   \
+               src/rtfprep/standard-names src/rtfprep/tokenscan.c   src/rtfprep/tokenscan.h  
 
-PREFS=pref/TeX-map           pref/TeX-map.latin1    pref/cp437.map         pref/r2l-map \
-      pref/TeX-map.applemac  pref/ansi-sym          pref/cp850.map         pref/r2l-pref \
-      pref/TeX-map.cp1250    pref/applemac.map      pref/mac-sym           pref/rtf-ctrl \
-      pref/TeX-map.cp1252    pref/cp1250.map        pref/pc-sym \
-      pref/TeX-map.default   pref/cp1252.map        pref/pca-sym \
-      pref/TeX-map.german    pref/cp1254.map        pref/r2l-head
+PREFS        = pref/TeX-map               pref/TeX-map.latin1       pref/cp437.map          \
+               pref/TeX-map.applemac      pref/ansi-sym             pref/cp850.map          \
+               pref/TeX-map.cp1250        pref/applemac.map         pref/mac-sym            \
+               pref/TeX-map.cp1252        pref/cp1250.map           pref/pc-sym             \
+               pref/TeX-map.default       pref/cp1252.map           pref/pca-sym            \
+               pref/TeX-map.german        pref/cp1254.map           pref/r2l-head           \
+               pref/r2l-map               pref/r2l-pref             pref/rtf-ctrl
 
-DOCS= doc/GPL_license          doc/rtf2latex2eSWP.tex   \
-     doc/rtfReader.tex         doc/Release-notes.txt    doc/rtf2LaTeX2eDoc.pdf   \
-     doc/rtfReader.dvi         doc/rtf2LaTeX2eDoc.dvi   doc/rtf2LaTeX2eDoc.tex   \
-     doc/rtfReader.pdf
+DOCS         = doc/GPL_license            doc/Release-notes.txt     README                  \
+               doc/rtf2latex2eSWP.tex     doc/rtfReader.tex         doc/rtf2latex2eDoc.tex
+               
+PDFS         = doc/rtf2latex2eSWP.pdf     doc/rtfReader.pdf         doc/rtf2latex2eDoc.pdf  
 
-TEST = test/Makefile      test/arch.rtf      test/fig-jpeg.rtf  test/multiline.rtf test/rtf.rtf \
-       test/arch-mac.rtf  test/equation.rtf  test/mapping.rtf   test/rtf-misc.rtf  test/table.rtf \
-       test/test.rtf
+TEST         = test/Makefile              test/arch.rtf              test/arch-mac.rtf      \
+               test/equation.rtf          test/fig-jpeg.rtf          test/multiline.rtf     \
+               test/mapping.rtf           test/rtf-misc.rtf          test/rtf.rtf           \
+               test/table.rtf             test/test.rtf
 
-README= README
-
-TEST = test/Makefile      test/arch.rtf      test/fig-jpeg.rtf  test/multiline.rtf test/rtf.rtf \
-       test/arch-mac.rtf  test/equation.rtf  test/mapping.rtf   test/rtf-misc.rtf  test/table.rtf
-	
-OBJS=src/writer.o              src/cole_decode.o         src/figure2eps.o \
-     src/cole.o                src/cole_support.o        src/jpeg2eps.o   \
-     src/cole_internal.o       src/cole_version.o        src/reader.o     \
-     src/cole_encode.o         src/eqn.o                 src/main.o \
-     src/rtfprep/tokenscan.o   src/mygetopt.o
+OBJS         = src/cole.o                 src/cole_decode.o         src/cole_encode.o       \
+               src/cole_internal.o        src/cole_support.o        src/cole_version.o      \
+               src/eqn.o                  src/figure2eps.o          src/jpeg2eps.o          \
+               src/main.o                 src/mygetopt.o            src/reader.o            \
+               src/rtfprep/tokenscan.o    src/writer.o
 
 all : checkdir rtf2latex2e
 
@@ -84,38 +82,39 @@ src/rtfprep/rtf-ctrldef.h  src/rtfprep/rtf-namedef.h  src/rtfprep/stdcharnames.h
 	cd src/rtfprep && make
 	cp src/rtfprep/rtf-ctrl pref/rtf-ctrl
 
+doc : doc/rtf2latex2eSWP.tex doc/rtfReader.tex doc/rtf2latex2eDoc.tex
+	cd doc && $(MAKE)
+
 check test: rtf2latex2e
 	cd test && $(MAKE)
 
-checkdir: $(README) $(SRCS) $(HDRS) $(PREFS) $(TEST) Makefile
+checkdir: $(SRCS) $(HDRS) $(PREFS) $(TEST) $(DOCS) Makefile
 
 depend: $(SRCS)
 	$(CC) -MM $(SRCS) >makefile.depend
 	@echo "***** Append makefile.depend to Makefile manually ******"
 
-dist: checkdir doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREF) $(DOCS) $(TEST) Makefile
+dist: checkdir doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $(DOCS) Makefile
+	make doc
 	$(MKDIR)           rtf2latex2e-$(VERSION)
 	$(MKDIR)           rtf2latex2e-$(VERSION)/pref
 	$(MKDIR)           rtf2latex2e-$(VERSION)/doc
 	$(MKDIR)           rtf2latex2e-$(VERSION)/test
 	$(MKDIR)           rtf2latex2e-$(VERSION)/src
 	$(MKDIR)           rtf2latex2e-$(VERSION)/src/rtfprep
-	ln $(README)       rtf2latex2e-$(VERSION)
+	ln README          rtf2latex2e-$(VERSION)
 	ln Makefile        rtf2latex2e-$(VERSION)
 	ln $(SRCS)         rtf2latex2e-$(VERSION)/src
 	ln $(HDRS)         rtf2latex2e-$(VERSION)/src
 	ln $(RTFPREP_SRCS) rtf2latex2e-$(VERSION)/src/rtfprep
-	ln $(PREF)         rtf2latex2e-$(VERSION)/pref
+	ln $(PREFS)        rtf2latex2e-$(VERSION)/pref
 	ln $(DOCS)         rtf2latex2e-$(VERSION)/doc
+	ln $(PDFS)         rtf2latex2e-$(VERSION)/doc
 	ln $(TEST)         rtf2latex2e-$(VERSION)/test
-	tar cvf - rtf2latex2e-$(VERSION) | gzip > rtf2latex2e-$(VERSION).tar.gz
+#	tar cvf - rtf2latex2e-$(VERSION) | gzip > rtf2latex2e-$(VERSION).tar.gz
+	zip -r rtf2latex2e-$(VERSION) rtf2latex2e-$(VERSION)
 	rm -rf rtf2latex2e-$(VERSION)
 	
-doc/rtf2LaTeX2eDoc.pdf : doc
-
-doc: doc/rtf2LaTeX2eDoc.tex doc/Makefile
-	cd doc && $(MAKE) -k
-
 install: rtf2latex2e $(PREFS) doc/rtf2LaTeX2eDoc.pdf
 	$(MKDIR)                   $(BIN_INSTALL)
 	$(MKDIR)                   $(SUPPORT_INSTALL)
