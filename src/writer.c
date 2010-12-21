@@ -116,7 +116,6 @@ const char *r2lList[] = {
     "table"
 };
 
-
 static struct pageStyleStruct {
     double width;
     double leftMargin;
@@ -186,8 +185,8 @@ static boolean requireFontEncPackage;
 struct EQN_OLE_FILE_HDR {
     uint16_t   cbHdr;     /* length of header, sizeof(EQNOLEFILEHDR) = 28 bytes */
     uint32_t   version;   /* hiword = 2, loword = 0 */
-    uint16_t   cf;        /* clipboard format ("MathType EF") */
-    uint32_t   cbObject;  /* length of MTEF data following this header in bytes */
+    uint16_t   format;
+    uint32_t   size;
     uint32_t   reserved1; 
     uint32_t   reserved2; 
     uint32_t   reserved3; 
@@ -204,14 +203,18 @@ static char *outMap[rtfSC_MaxChar];
 static char *r2lMap[NumberOfR2LMappings];
 static boolean r2lMapPresent = true;
 
-static char *boldString, *noBoldString, *italicString, *noItalicString;
-static char *underlineString, *smallcapsString;
-static char *documentclassString, *heading1String, *heading2String,
-    *heading3String;
+static char *boldString;
+static char *noBoldString;
+static char *italicString;
+static char *noItalicString;
+static char *underlineString;
+static char *smallcapsString;
+static char *documentclassString;
+static char *heading1String;
+static char *heading2String;
+static char *heading3String;
 static char *tableString;
 static short itemNumber;
-
-
 
 static FILE *ostream;
 static textStyleStruct textStyle;
@@ -272,7 +275,9 @@ static short ReadR2LMap(void)
     while (fgets(buf, (int) sizeof(buf), f) != (char *) NULL) {
         if (buf[0] == '#')      /* skip comment lines */
             continue;
+
         TSScanInit(buf);
+
         if ((name = TSScan()) == (char *) NULL)
             continue;           /* skip blank lines */
 
@@ -280,14 +285,15 @@ static short ReadR2LMap(void)
             RTFMsg("%s: unknown preference: %s\n", fn, name);
             continue;
         }
+
         if ((seq = TSScan()) == (char *) NULL) {
-            RTFMsg
-                ("%s: malformed output sequence line for preference %s\n",
-                 fn, name);
+            RTFMsg("%s: malformed output sequence line for preference %s\n", fn, name);
             continue;
         }
+
         if ((seq = RTFStrSave(seq)) == (char *) NULL)
             RTFPanic("%s: out of memory", fn);
+
         r2lMap[stdCode] = seq;
     }
     scanner.scanEscape = scanEscape;
@@ -308,22 +314,22 @@ void WriterInit(void)
 {
     /* read character map files */
     if (RTFReadCharSetMap("cp1252.map", rtfCS1252) == 0)
-        RTFPanic
-            ("Cannot read character set map file cp1252.map for code page 1252!\n");
+        RTFPanic("Cannot read character set map file cp1252.map for code page 1252!\n");
+        
     if (RTFReadCharSetMap("cp1250.map", rtfCS1250) == 0)
-        RTFPanic
-            ("Cannot read character set map file cp1250.map for code page 1250!\n");
+        RTFPanic("Cannot read character set map file cp1250.map for code page 1250!\n");
+        
     if (RTFReadCharSetMap("cp1254.map", rtfCS1254) == 0)
-        RTFPanic
-            ("Cannot read character set map file cp1254.map for code page 1254!\n");
+        RTFPanic("Cannot read character set map file cp1254.map for code page 1254!\n");
+        
     if (RTFReadCharSetMap("applemac.map", rtfCSMac) == 0)
         RTFPanic("Cannot read character set map file applemac.map!\n");
+        
     if (RTFReadCharSetMap("cp437.map", rtfCS437) == 0)
-        RTFPanic
-            ("Cannot read character set map file cp437.map for code page 437!\n");
+        RTFPanic("Cannot read character set map file cp437.map for code page 437!\n");
+        
     if (RTFReadCharSetMap("cp850.map", rtfCS850) == 0)
-        RTFPanic
-            ("Cannot read character set map file cp850.map for code page 850!\n");
+        RTFPanic("Cannot read character set map file cp850.map for code page 850!\n");
 
     /* read preferences */
     if (ReadPrefFile(prefFileName) == 0)
@@ -342,7 +348,6 @@ void WriterInit(void)
     /* read r2l mapping file if present */
     if (ReadR2LMap() == 0)
         r2lMapPresent = false;
-
 }
 
 static boolean IsValidPref(char *name, char *pref)
@@ -407,13 +412,17 @@ short ReadPrefFile(char *file)
     while (fgets(buf, (int) sizeof(buf), f) != (char *) NULL) {
         if (buf[0] == '#')      /* skip comment lines */
             continue;
+            
         TSScanInit(buf);
+        
         if ((name = TSScan()) == (char *) NULL)
             continue;           /* skip blank lines */
+            
         if ((whichPref = GetPreferenceNum(name)) < 0) {
             RTFMsg("%s: unkown preference: %s\n", fn, name);
             continue;
         }
+        
         if ((seq = TSScan()) == (char *) NULL || !IsValidPref(name, seq)) {
             RTFMsg("%s: malformed preference setting for %s\n", fn, name);
             continue;
@@ -443,14 +452,13 @@ short ReadPrefFile(char *file)
         printf("¥ error closing pref file %s\n", file);
 
     /* set the preferences here to values in file or to default */
-    if ((page.width =
-         preferenceValue[GetPreferenceNum("paperWidth")]) == 0)
+    if ((page.width = preferenceValue[GetPreferenceNum("paperWidth")]) == 0)
         page.width = 8.5;
-    if ((page.leftMargin =
-         preferenceValue[GetPreferenceNum("leftMargin")]) == 0)
+        
+    if ((page.leftMargin = preferenceValue[GetPreferenceNum("leftMargin")]) == 0)
         page.leftMargin = 1.0;
-    if ((page.rightMargin =
-         preferenceValue[GetPreferenceNum("rightMargin")]) == 0)
+        
+    if ((page.rightMargin = preferenceValue[GetPreferenceNum("rightMargin")]) == 0)
         page.rightMargin = 1.0;
 
     return (1);
@@ -511,8 +519,9 @@ static void DefineColors(void)
     }
 }
 
-/* a really useful diagnostic function that lets me examine
- * the token just read.
+
+/* 
+ * a useful diagnostic function to examine the token just read.
  */
 void ExamineToken(void)
 {
@@ -523,17 +532,19 @@ void ExamineToken(void)
     printf("* Param is %ld\n\n", rtfParam);
 }
 
+
 static int CountCharInString(char *theString, char theChar)
 {
-    int i;
-    int count = 0;
+    int i, count, length;
+    
+    count = 0;
+    length = strlen(theString);
 
-    for (i = 0; i < strlen(theString); i++)
+    for (i = 0; i < length; i++)
         if (theString[i] == theChar)
             count++;
 
     return (count);
-
 }
 
 /*
@@ -582,7 +593,8 @@ char buf[rtfBufSiz];
 }
 */
 
-/* make sure we write this all important stuff. This routine is called 
+/* 
+ * make sure we write this all important stuff. This routine is called 
  * whenever something is written to the output file.
  */
 static void CheckForBeginDocument(void)
@@ -659,11 +671,9 @@ static void SetGroupLevels(int flag)
     textStyle.fontSize = restoreStyle.fontSize;
 }
 
-
 /*
  * This function initializes the text style. Pretty much self-explanatory.
  */
-
 static void InitializeTextStyle(void)
 {
     textStyle.foreColor = -1;
@@ -709,25 +719,23 @@ void CheckForCharAttr(void)
     int fontSizeGL, allCapsGL, smallCapsGL;
     int i;
 
-
-    italicGL = textStyle.italicGroupLevel;
-    noItalicGL = textStyle.noItalicGroupLevel;
-    boldGL = textStyle.boldGroupLevel;
-    noBoldGL = textStyle.noBoldGroupLevel;
-    underlinedGL = textStyle.underlinedGroupLevel;
-    noUnderlinedGL = textStyle.noUnderlinedGroupLevel;
-    dbUnderlinedGL = textStyle.dbUnderlinedGroupLevel;
+    italicGL         = textStyle.italicGroupLevel;
+    noItalicGL       = textStyle.noItalicGroupLevel;
+    boldGL           = textStyle.boldGroupLevel;
+    noBoldGL         = textStyle.noBoldGroupLevel;
+    underlinedGL     = textStyle.underlinedGroupLevel;
+    noUnderlinedGL   = textStyle.noUnderlinedGroupLevel;
+    dbUnderlinedGL   = textStyle.dbUnderlinedGroupLevel;
     noDbUnderlinedGL = textStyle.noDbUnderlinedGroupLevel;
-    foreColorGL = textStyle.foreColorGroupLevel;
-    backColorGL = textStyle.backColorGroupLevel;
-    subScriptGL = textStyle.subScriptGroupLevel;
-    noSubScriptGL = textStyle.noSubScriptGroupLevel;
-    superScriptGL = textStyle.superScriptGroupLevel;
-    noSuperScriptGL = textStyle.noSuperScriptGroupLevel;
-    fontSizeGL = textStyle.fontSizeGroupLevel;
-    allCapsGL = textStyle.allCapsGroupLevel;
-    smallCapsGL = textStyle.smallCapsGroupLevel;
-
+    foreColorGL      = textStyle.foreColorGroupLevel;
+    backColorGL      = textStyle.backColorGroupLevel;
+    subScriptGL      = textStyle.subScriptGroupLevel;
+    noSubScriptGL    = textStyle.noSubScriptGroupLevel;
+    superScriptGL    = textStyle.superScriptGroupLevel;
+    noSuperScriptGL  = textStyle.noSuperScriptGroupLevel;
+    fontSizeGL       = textStyle.fontSizeGroupLevel;
+    allCapsGL        = textStyle.allCapsGroupLevel;
+    smallCapsGL      = textStyle.smallCapsGroupLevel;
 
     if (smallCapsGL == groupLevel && smallCapsGL > 0) {
         if (charAttrCount > 0 && textStyle.wroteSmallCaps) {
@@ -959,14 +967,11 @@ static void ForceCloseCharAttr(void)
     for (i = 0; i < charAttrCount; i++)
         PutLitStr("}");
     charAttrCount = 0;
-
-
 }
 
 /*
- * This function stores the text style. Pretty much self-explanatory.
+ * This function stores the text style.
  */
-
 static void SetTextStyle(void)
 {
     if (insideHyperlink)
@@ -1120,15 +1125,11 @@ static void SetTextStyle(void)
 
     }
     textStyle.newStyle = true;
-
 }
 
-
-
 /*
- * This function writes the text style. Pretty much self-explanatory.
+ * This function writes the text style.
  */
-
 static void WriteTextStyle(void)
 {
     char buf[rtfBufSiz];
@@ -1165,7 +1166,6 @@ static void WriteTextStyle(void)
     if (rtfClass == 2 && rtfMajor == 32)
         PutLitChar(' ');
 
-
     if (foreColorGL <= groupLevel && foreColorGL > 0
         && (textStyle.foreColor) > 0 && !(textStyle.wroteForeColor)) {
 
@@ -1176,8 +1176,8 @@ static void WriteTextStyle(void)
         textStyle.wroteForeColor = true;
 
     }
-    if (subScriptGL <= groupLevel && subScriptGL > 0
-        && !(textStyle.wroteSubScript)) {
+    
+    if (subScriptGL <= groupLevel && subScriptGL > 0 && !(textStyle.wroteSubScript)) {
         if (boldGL <= superScriptGL && boldGL > 0 && textStyle.wroteBold) {
             PutLitStr("}");
             charAttrCount--;
@@ -1197,6 +1197,7 @@ static void WriteTextStyle(void)
         textStyle.wroteSubScript = true;
         textStyle.open = true;
     }
+    
     if (superScriptGL <= groupLevel && superScriptGL > 0 &&
         !(textStyle.wroteSuperScript)) {
         if (boldGL <= superScriptGL && boldGL > 0 && textStyle.wroteBold) {
@@ -1218,6 +1219,7 @@ static void WriteTextStyle(void)
         textStyle.wroteSuperScript = true;
         textStyle.open = true;
     }
+    
     if (boldGL <= groupLevel && boldGL > 0 && !(textStyle.wroteBold)) {
         if (!mathMode) {
             PutLitStr(boldString);
@@ -1231,6 +1233,7 @@ static void WriteTextStyle(void)
         textStyle.wroteBold = true;
 //              textStyle.open = true;
     }
+    
     if (noBoldGL <= groupLevel && noBoldGL > 0 && !(textStyle.wroteNoBold)
         && textStyle.wroteBold && !mathMode) {
         PutLitStr(noBoldString);
@@ -1238,6 +1241,7 @@ static void WriteTextStyle(void)
         charAttrCount += CountCharInString(noBoldString, '{');
         textStyle.wroteNoBold = true;
     }
+    
     if (italicGL <= groupLevel && italicGL > 0 && !(textStyle.wroteItalic)) {
         if (!mathMode) {
             PutLitStr(italicString);
@@ -1360,12 +1364,10 @@ static void WriteLaTeXHeader(void)
 
     PutLitStr("\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
     blankLineCount++;
-
 }
 
-static void WriteColours(void)
+static void WriteColors(void)
 {
-    /* This function is in the reader. I made it public. */
     ReadColorTbl();
     if (requireColorPackage)
         DefineColors();
@@ -1468,7 +1470,6 @@ static void WriteLaTeXFooter(void)
 
     DoParagraphCleanUp();
     DoSectionCleanUp();
-
 
     PutLitStr("\n\n\\end{document}\n");
     fseek(ofp, packagePos, 0);
@@ -3250,10 +3251,11 @@ static void ConvertHexPicture(char *pictureType)
      * (1 byte total) such as ff, a1, 4c, etc...*/
     while (!groupEnd) {
         RTFGetToken();
-        /* the next line is just to make sure that any 
-         * CR or LF in the hex code are skipped */
+
+        /* CR or LF in the hex stream should be skipped */
         if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
             RTFGetToken();
+
         if (rtfClass == rtfGroup) {
             groupEnd = true;
             break;
@@ -3266,6 +3268,7 @@ static void ConvertHexPicture(char *pictureType)
         RTFGetToken();
         if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
             RTFGetToken();
+            
         if (rtfClass == rtfGroup) {
             groupEnd = true;
             break;
@@ -3284,11 +3287,8 @@ static void ConvertHexPicture(char *pictureType)
     if (fclose(pictureFile) != 0)
         printf("* error closing picture file %s\n", picture.name);
     if (hexEvenOdd)
-        printf
-            ("* Warning! Odd number of hex characters read for picture %s\n",
+        printf("* Warning! Odd number of hex characters read for picture %s\n",
              picture.name);
-
-
 }
 
 
@@ -3945,7 +3945,6 @@ static void ReadWord97Object(void)
     RTFStoreStack();
     objectStart = ftell(ifp);
 
-
     while (!RTFCheckMM(rtfDestination, rtfObject)) {
         RTFGetToken();
 
@@ -3981,7 +3980,6 @@ static void ReadWord97Object(void)
 
     groupCount = 1;
 
-
     while (!ReachedResult(&groupCount)) {
         if (groupCount == 0) {
             RTFMsg("*Êunknown Word97 object...\n");
@@ -3989,7 +3987,6 @@ static void ReadWord97Object(void)
             return;
         }
     }
-
 
     switch (word97ObjectType) {
     case word97Picture:
@@ -4040,11 +4037,10 @@ static void ReadWord97Object(void)
 
     /* send the last closing brace back into the router */
     RTFRouteToken();
-
 }
 
 
-/* all these should streams should just emit ... HToc268803753
+/* the following streams should just emit ... HToc268803753
  *    PAGEREF _Toc268803753 \\h 
  *    HYPERLINK \\l "_Toc268803753"
  *     _Toc268803753
@@ -4344,7 +4340,7 @@ int BeginLaTeXFile(void)
     RTFSetClassCallback(rtfControl, ControlClass);
 
     /* install destination callbacks */
-    RTFSetDestinationCallback(rtfColorTbl, WriteColours);
+    RTFSetDestinationCallback(rtfColorTbl, WriteColors);
     RTFSetDestinationCallback(rtfParNumTextAfter, SkipGroup);
     RTFSetDestinationCallback(rtfParNumTextBefore, SkipGroup);
     RTFSetDestinationCallback(rtfFieldInst, ReadFieldInst);

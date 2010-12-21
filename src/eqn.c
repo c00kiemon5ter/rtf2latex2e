@@ -1207,7 +1207,7 @@ char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line)
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-    return Eqn_JoinzStrs(eqn, strs, num_strs);
+    return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
 
@@ -1254,7 +1254,7 @@ char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar)
         }
     }
 
-    return Eqn_JoinzStrs(eqn, strs, num_strs);
+    return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
 
@@ -1328,7 +1328,7 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
         eqn->math_mode = 1;
     }
 
-    return Eqn_JoinzStrs(eqn, strs, num_strs);
+    return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
 
@@ -1398,7 +1398,7 @@ char *Eqn_TranslateTEXTRUN(MTEquation * eqn, MT_OBJLIST * curr_node,
     strs[num_strs].data = zdata;
     num_strs++;
 
-    return Eqn_JoinzStrs(eqn, strs, num_strs);
+    return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
 static
@@ -2024,7 +2024,7 @@ char *Eqn_TranslateSIZE(MTEquation * eqn, MT_SIZE * size)
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-    return Eqn_JoinzStrs(eqn, strs, num_strs);
+    return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
 
@@ -2048,7 +2048,7 @@ char *Eqn_TranslateRULER(MTEquation * eqn, MT_RULER * ruler)
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-    return Eqn_JoinzStrs(eqn, strs, num_strs);
+    return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
 
@@ -2072,7 +2072,7 @@ char *Eqn_TranslateFONT(MTEquation * eqn, MT_FONT * font)
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-    return Eqn_JoinzStrs(eqn, strs, num_strs);
+    return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
 
@@ -2129,7 +2129,7 @@ void SetDollar(EQ_STRREC * strs, int turn_on)
 
 
 static
-char *Eqn_JoinzStrs(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
+char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
 {
     char *join;
 
@@ -2356,7 +2356,7 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
     eqn->math_mode--;
-    return Eqn_JoinzStrs(eqn, strs, num_strs);
+    return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
 
@@ -2388,7 +2388,7 @@ char *Eqn_TranslatePILE(MTEquation * eqn, MT_PILE * pile)
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-    return Eqn_JoinzStrs(eqn, strs, num_strs);
+    return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
 // Character translation, MathType to TeX, using inifile data

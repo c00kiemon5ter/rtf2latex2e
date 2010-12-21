@@ -250,7 +250,7 @@ static void BreakTeX(char *ztex, FILE * outfile);
 static char *ToBuffer(char *src, char *buffer, int *off, int *lim);
 static void SetComment(EQ_STRREC * strs, int lev, char *src);
 static void SetDollar(EQ_STRREC * strs, int turn_on);
-static char *Eqn_JoinzStrs(MTEquation * eqn, EQ_STRREC * strs, int num_strs);
+static char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs);
 
 
 #define NUM_TYPEFACE_SLOTS    32
