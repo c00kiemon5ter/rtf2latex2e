@@ -628,7 +628,8 @@ MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_index)
     new_tmpl->options = *(src + *src_index);
     (*src_index)++;
 
-    fprintf(stderr, "          sel=%d var=0x%04x\n", new_tmpl->selector, new_tmpl->variation);
+    fprintf(stderr, "          sel=%d var=0x%04x (%d.%d)\n", 
+    new_tmpl->selector, new_tmpl->variation, new_tmpl->selector, new_tmpl->variation);
 
     new_tmpl->subobject_list = Eqn_GetObjectList(eqn, src, src_index, 0);
 
@@ -3335,26 +3336,30 @@ char *Profile_TEMPLATES[] = {
 
 //[TEMPLATES]
 char *Profile_TEMPLATES5[] = {
-    "0.0=fence: angle-both,\\left\\langle #1[M]\\right\\rangle ",
+    "0.3=fence: angle-both,\\left\\langle #1[M]\\right\\rangle ",
     "0.1=fence: angle-left only,\\left\\langle #1[M]\\right. ",
     "0.2=fence: angle-right only,\\left. #1[M]\\right\\rangle ",
-    "1.0=fence: paren-both,\\left( #1[M]\\right) ",
+    "1.3=fence: paren-both,\\left( #1[M]\\right) ",
     "1.1=fence: paren-left only,\\left( #1[M]\\right. ",
     "1.2=fence: paren-right only,\\left. #1[M]\\right) ",
-    "2.0=fence: brace-both,\\left\\{ #1[M]\\right\\} ",
+    "2.3=fence: brace-both,\\left\\{ #1[M]\\right\\} ",
     "2.1=fence: brace-left only,\\left\\{ #1[M]\\right. ",
     "2.2=fence: brace-right only,\\left. #1[M]\\right\\} ",
-    "3.0=fence: brack-both,\\left[ #1[M]\\right] ",
+    "3.3=fence: brack-both,\\left[ #1[M]\\right] ",
     "3.1=fence: brack-left only,\\lef]t[ #1[M]\\right. ",
     "3.2=fence: brack-right only,\\left. #1[M]\\right] ",
-    "4.0=fence: bar-both,\\left| #1[M]\\right| ",
+    "4.3=fence: bar-both,\\left| #1[M]\\right| ",
     "4.1=fence: bar-left only,\\left| #1[M]\\right. ",
     "4.2=fence: bar-right only,\\left. #1[M]\\right| ",
-    "5.0=fence: dbar-both,\\left\\| #1[M]\\right\\| ",
+    "5.3=fence: dbar-both,\\left\\| #1[M]\\right\\| ",
     "5.1=fence: dbar-left only,\\left\\| #1[M]\\right. ",
     "5.2=fence: dbar-right only,\\left. #1[M]\\right\\| ",
-    "6.0=fence: floor,\\left\\lfloor #1[M]\\right\\rfloor ",
-    "7.0=fence: ceiling,\\left\\lceil #1[M]\\right\\rceil ",
+    "6.3=fence: floor,\\left\\lfloor #1[M]\\right\\rfloor ",
+    "6.1=fence: floor,\\left\\lfloor #1[M]\\right. ",
+    "6.2=fence: floor,\\left. #1[M]\\right\\rfloor ",
+    "7.3=fence: ceiling,\\left\\lceil #1[M]\\right\\rceil ",
+    "7.1=fence: ceiling,\\left\\lceil #1[M]\\right. ",
+    "7.2=fence: ceiling,\\left. #1[M]\\right\\rceil ",
     "8.0=fence: LBLB,\\left[ #1[M]\\right[ ",
     "9.0=fence: LPLP,\\left( #1[M]\\right( ",
     "9.1=fence: RPLP,\\left) #1[M]\\right( ",
