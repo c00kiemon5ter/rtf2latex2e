@@ -567,37 +567,44 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
             (*src_index)++;
             new_char->character |= *(src + *src_index) << 8;
             (*src_index)++;
-
-            /* sequence 02 00 00 00 00 ^ 2d */
-            if (new_char->typeface == 0 && new_char->character == 0) {
-                new_char->character = *(src + *src_index);
-                (*src_index)++;
-            }
-
-            /* sequence 02 00 00 00 00 ^ 01 01  *or* 02 00 00 00 00 ^ 02 00 96 29 00 */
-            /* in this case just give up and scan the next token */
-			if (new_char->character == 0x01 || new_char->character == 0x02) {
-                (*src_index)--;			
-				break;
-			}
-			
-            /* sequence 02 00 00 00 00 00 ^ 2d */
-            if (new_char->typeface == 0 && new_char->character == 0) {
-                new_char->character = *(src + *src_index);
-                (*src_index)++;
-            }
-              
-            /* sequence 02 00 00 00 00 00 00 ^ 96 29 00  */
-            if (new_char->typeface == 0 && new_char->character == 0) {
-                new_char->typeface = *(src + *src_index);
-                (*src_index)++;
-                new_char->character = *(src + *src_index);
-                (*src_index)++;
-                new_char->character |= *(src + *src_index) << 8;
-                (*src_index)++;
-            }
-
         }
+            
+        /* special handling for sequence 02 00 00 00 00 */
+        if (new_char->atts == 0 && new_char->typeface == 0 && new_char->character == 0) {
+            unsigned char peek = *(src + *src_index);
+            (*src_index)++;
+            
+            switch (peek) {
+            
+            case 0:
+                    peek = *(src + *src_index);
+                    (*src_index)++;
+                    
+                    if (peek) {
+                        /* sequence 02 00 00 00 00 00 2d */
+                        new_char->character = peek;
+                    } else {
+                        /* sequence 02 00 00 00 00 00 00 ^ 96 29 00  */
+                        new_char->typeface = *(src + *src_index);
+                        (*src_index)++;
+                        new_char->character = *(src + *src_index);
+                        (*src_index)++;
+                        new_char->character |= *(src + *src_index) << 8;
+                        (*src_index)++;
+                    }
+                    break;
+                    
+            case 1:  /* e.g, sequence 02 00 00 00 00 ^ 01 01  */
+            case 2:  /* e.g, sequence 02 00 00 00 00 ^ 02 00 96 29 00 */
+                    (*src_index)--;
+                    break;
+
+            default:  /* e.g., sequence 02 00 00 00 00 2d */
+                    new_char->character = peek;
+                    break;
+            }              
+        }
+
         if (new_char->atts & CHAR_ENC_CHAR_8) {
             new_char->character = *(src + *src_index);
             (*src_index)++;
@@ -613,7 +620,6 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     default:
         RTFMsg("this can't happen");
         break;
-
     }
 
     if (eqn->m_mtef_ver == 5) {
@@ -1255,7 +1261,7 @@ char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar)
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-    if (math_attr) {
+    if (0 && math_attr) {
         if (eqn->math_mode == 0) {
             if (math_attr == MA_FORCE_MATH) {
                 SetDollar(strs + save_index, 1);        // turn math on
@@ -1340,7 +1346,7 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     strs[num_strs].data = zdata;
     num_strs++;
 
-    if (*advance && eqn->math_mode == 0) {
+    if (0 && *advance && eqn->math_mode == 0) {
         SetDollar(strs + save_index, 1);        // turn math on
         eqn->math_mode = 1;
     }
@@ -2307,7 +2313,7 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     MT_OBJLIST *obj_list;
 
 
-    if (eqn->math_mode == 0) {
+    if (0 && eqn->math_mode == 0) {
         SetDollar(strs, 1);
         num_strs++;
         eqn->math_mode = 1;

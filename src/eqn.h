@@ -1,3 +1,6 @@
+# define DISPLAY_EQUATION 0
+# define INLINE_EQUATION 1
+
 typedef struct {
     int mathattr;
     int do_lookup;

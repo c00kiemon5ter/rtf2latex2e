@@ -31,7 +31,10 @@
 
 char outputMapName[255];
 # define        prefFileName    "r2l-pref"
-# define        MAX_BLANK_LINES         2
+# define        MAX_BLANK_LINES       2
+# define        MATH_NONE_MODE        0
+# define        MATH_INLINE_MODE      1
+# define        MATH_DISPLAY_MODE     2 
 
 char texMapQualifier[rtfBufSiz];
 
@@ -482,15 +485,61 @@ static void InsertNewLine(void)
     lineIsBlank = true;
 }
 
-static void CheckForMathMode(void)
+static void EnsureInlineMathMode(void)
 {
-    if (!mathMode) {
-        PutLitStr("$");
-        wrapCount++;
-        mathMode = 1;
-        return;
+	switch (mathMode) {
+	case MATH_INLINE_MODE:
+		break;
+		
+    case MATH_DISPLAY_MODE:
+    	break;
+   
+    case MATH_NONE_MODE:
+        PutLitStr("$ ");
+        wrapCount+=2;
+        mathMode = MATH_INLINE_MODE;
     }
-    mathMode = 0;
+}
+
+static void EnsureDisplayMathMode(void)
+{
+	switch (mathMode) {
+	case MATH_INLINE_MODE:
+        PutLitStr(" $ ");
+        wrapCount+=3;
+        PutLitStr("\n$$ ");
+        wrapCount+=4;
+        mathMode = MATH_DISPLAY_MODE;
+		break;
+		
+    case MATH_DISPLAY_MODE:
+    	break;
+   
+    case MATH_NONE_MODE:
+        PutLitStr("\n$$ ");
+        wrapCount+=4;
+        mathMode = MATH_DISPLAY_MODE;
+    }
+}
+
+static void EnsureNoMathMode(void)
+{
+	switch (mathMode) {
+	case MATH_INLINE_MODE:
+        PutLitStr(" $ ");
+        wrapCount+=3;
+        mathMode = MATH_NONE_MODE;
+		break;
+		
+    case MATH_DISPLAY_MODE:
+        PutLitStr("$$\n");
+        wrapCount+=4;
+        mathMode = MATH_NONE_MODE;
+    	break;
+   
+    case MATH_NONE_MODE:
+    	break;
+    }
 }
 
 
@@ -817,10 +866,7 @@ void CheckForCharAttr(void)
         if (charAttrCount > 0) {
             PutLitStr("}");
             charAttrCount -= 1;
-            if (mathMode) {
-                PutLitChar('$');
-                mathMode = 0;
-            }
+            EnsureNoMathMode();
         }
         textStyle.superScriptGroupLevel = 0;
         textStyle.wroteSuperScript = false;
@@ -842,10 +888,7 @@ void CheckForCharAttr(void)
         if (charAttrCount > 0) {
             PutLitStr("}");
             charAttrCount -= 1;
-            if (mathMode) {
-                PutLitChar('$');
-                mathMode = 0;
-            }
+            EnsureNoMathMode();
         }
         textStyle.subScriptGroupLevel = 0;
         textStyle.wroteSubScript = false;
@@ -926,9 +969,7 @@ static void ForceCloseCharAttr(void)
     if (charAttrCount > 0 && textStyle.wroteSuperScript) {
         PutLitStr("}");
         charAttrCount -= 1;
-        if (mathMode)
-            PutLitChar('$');
-        mathMode = 0;
+        EnsureNoMathMode();
         textStyle.superScriptGroupLevel = 0;
         textStyle.wroteSuperScript = false;
     }
@@ -936,9 +977,7 @@ static void ForceCloseCharAttr(void)
     if (charAttrCount > 0 && textStyle.wroteSubScript) {
         PutLitStr("}");
         charAttrCount -= 1;
-        if (mathMode)
-            PutLitChar('$');
-        mathMode = 0;
+        EnsureNoMathMode();
         textStyle.subScriptGroupLevel = 0;
         textStyle.wroteSubScript = false;
     }
@@ -1190,11 +1229,10 @@ static void WriteTextStyle(void)
             charAttrCount--;
             textStyle.wroteItalic = false;
         }
-        CheckForMathMode();
+        EnsureInlineMathMode();
         PutLitStr("_{");
         wrapCount += 2;
         charAttrCount += 1;
-        mathMode = 1;
         textStyle.wroteSubScript = true;
         textStyle.open = true;
     }
@@ -1212,17 +1250,16 @@ static void WriteTextStyle(void)
             charAttrCount--;
             textStyle.wroteItalic = false;
         }
-        CheckForMathMode();
+        EnsureInlineMathMode();
         PutLitStr("^{");
         wrapCount += 2;
         charAttrCount += 1;
-        mathMode = 1;
         textStyle.wroteSuperScript = true;
         textStyle.open = true;
     }
     
     if (boldGL <= groupLevel && boldGL > 0 && !(textStyle.wroteBold)) {
-        if (!mathMode) {
+        if (mathMode == MATH_NONE_MODE) {
             PutLitStr(boldString);
             wrapCount += strlen(boldString);
             charAttrCount += CountCharInString(boldString, '{');
@@ -1236,7 +1273,7 @@ static void WriteTextStyle(void)
     }
     
     if (noBoldGL <= groupLevel && noBoldGL > 0 && !(textStyle.wroteNoBold)
-        && textStyle.wroteBold && !mathMode) {
+        && textStyle.wroteBold && mathMode == MATH_NONE_MODE) {
         PutLitStr(noBoldString);
         wrapCount += strlen(noBoldString);
         charAttrCount += CountCharInString(noBoldString, '{');
@@ -1244,7 +1281,7 @@ static void WriteTextStyle(void)
     }
     
     if (italicGL <= groupLevel && italicGL > 0 && !(textStyle.wroteItalic)) {
-        if (!mathMode) {
+        if (mathMode==MATH_NONE_MODE) {
             PutLitStr(italicString);
             wrapCount += strlen(italicString);
             charAttrCount += CountCharInString(italicString, '{');
@@ -1258,14 +1295,14 @@ static void WriteTextStyle(void)
     }
     if (noItalicGL <= groupLevel && noItalicGL > 0
         && !(textStyle.wroteNoItalic)
-        && textStyle.wroteItalic && !mathMode) {
+        && textStyle.wroteItalic && mathMode==MATH_NONE_MODE) {
         PutLitStr(noItalicString);
         wrapCount += strlen(noItalicString);
         charAttrCount += CountCharInString(noItalicString, '{');
         textStyle.wroteNoItalic = true;
     }
     if (underlinedGL <= groupLevel && underlinedGL > 0
-        && !(textStyle.wroteUnderlined) && !mathMode) {
+        && !(textStyle.wroteUnderlined) && mathMode==MATH_NONE_MODE) {
         PutLitStr(underlineString);
         wrapCount += strlen(underlineString);
         charAttrCount += CountCharInString(underlineString, '{');
@@ -1274,7 +1311,7 @@ static void WriteTextStyle(void)
 
     }
     if (dbUnderlinedGL <= groupLevel && dbUnderlinedGL > 0
-        && !(textStyle.wroteDbUnderlined) && !mathMode) {
+        && !(textStyle.wroteDbUnderlined) && mathMode==MATH_NONE_MODE) {
         PutLitStr("{\\uuline {");
         wrapCount += 12;
         charAttrCount += 2;
@@ -1283,14 +1320,14 @@ static void WriteTextStyle(void)
         requireUlemPackage = true;
     }
     if (smallCapsGL <= groupLevel && smallCapsGL > 0
-        && !(textStyle.wroteSmallCaps) && !mathMode) {
+        && !(textStyle.wroteSmallCaps) && mathMode==MATH_NONE_MODE) {
         PutLitStr(smallcapsString);
         wrapCount += strlen(smallcapsString);
         charAttrCount += CountCharInString(smallcapsString, '{');
         textStyle.wroteSmallCaps = true;
     }
-    if (textStyle.fontSize != normalSize && !mathMode
-        && !(textStyle.wroteFontSize) && !mathMode) {
+    if (textStyle.fontSize != normalSize && mathMode==MATH_NONE_MODE
+        && !(textStyle.wroteFontSize)) {
         sprintf(buf, "{%s ", fontSizeList[textStyle.fontSize]);
         PutLitStr(buf);
         charAttrCount++;
@@ -1999,16 +2036,13 @@ static void SpecialChar(void)
             CheckForParagraph();
         break;
 /*      case rtfCurFNote:
-                if (mathMode)
-                {
-                        PutLitChar ('}');
-                        PutLitChar ('$');
-                        mathMode = 0;
-                        charAttrCount--;
-                }
+				PutLitChar ('}');
+				EnsureNoMathMode();
+				charAttrCount--;
                 textStyle.subScriptGroupLevel = 0;
                 textStyle.superScriptGroupLevel = 0;
-                break; */
+                break; 
+*/
     case rtfNoBrkSpace:
         PutStdChar(rtfSC_nobrkspace);
         break;
@@ -3798,8 +3832,15 @@ static boolean ReadEquation(int *groupCount)
         DoParagraphCleanUp();
         DoSectionCleanUp();
 
+		if (theEquation->m_inline == INLINE_EQUATION)
+			EnsureInlineMathMode();
+		else 
+			EnsureDisplayMathMode();
+		
         Eqn_TranslateObjectList(theEquation, ostream, 0);
         Eqn_Destroy(theEquation);
+        
+        EnsureNoMathMode();
     }
 
     if (theEquation != NULL)
