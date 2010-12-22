@@ -32,6 +32,7 @@ char *Profile_MT_CHARSET_ATTS3[];
 char *Profile_CHARTABLE3[];
 char *Profile_CHARTABLE[];
 char *Profile_TEMPLATES[];
+char *Profile_TEMPLATES5[];
 char *Template_EMBELLS[];
 
 /* MathType Equation converter */
@@ -227,67 +228,67 @@ void print_tag(unsigned char tag, int src_index)
 {
     switch (tag) {
     case 0:
-        RTFMsg("%-14s [%03d]\n", "END", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "END");
         break;
     case 1:
-        RTFMsg("%-14s [%03d]\n", "LINE", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "LINE");
         break;
     case 2:
-        RTFMsg("%-14s [%03d]\n", "CHAR", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "CHAR");
         break;
     case 3:
-        RTFMsg("%-14s [%03d]\n", "TMPL", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "TMPL");
         break;
     case 4:
-        RTFMsg("%-14s [%03d]\n", "PILE", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "PILE");
         break;
     case 5:
-        RTFMsg("%-14s [%03d]\n", "MATRIX", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "MATRIX");
         break;
     case 6:
-        RTFMsg("%-14s [%03d]\n", "EMBELL", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "EMBELL");
         break;
     case 7:
-        RTFMsg("%-14s [%03d]\n", "RULER", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "RULER");
         break;
     case 8:
-        RTFMsg("%-14s [%03d]\n", "FONT_STYLE_DEF", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "FONT_STYLE_DEF");
         break;
     case 9:
-        RTFMsg("%-14s [%03d]\n", "SIZE", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "SIZE");
         break;
     case 10:
-        RTFMsg("%-14s [%03d]\n", "FULL", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "FULL");
         break;
     case 11:
-        RTFMsg("%-14s [%03d]\n", "SUB", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "SUB");
         break;
     case 12:
         RTFMsg("%-14s [%03d =  SUB2\n", src_index);
         break;
     case 13:
-        RTFMsg("%-14s [%03d]\n", "SYM", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "SYM");
         break;
     case 14:
-        RTFMsg("%-14s [%03d]\n", "SUBSYM", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "SUBSYM");
         break;
     case 15:
-        RTFMsg("%-14s [%03d]\n", "COLOR", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "COLOR");
         break;
     case 16:
-        RTFMsg("%-14s [%03d]\n", "COLOR_DEF", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "COLOR_DEF");
         break;
     case 17:
-        RTFMsg("%-14s [%03d]\n", "FONT_DEF", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "FONT_DEF");
         break;
     case 18:
-        RTFMsg("%-14s [%03d]\n", "EQN_PREFS", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "EQN_PREFS");
         break;
     case 19:
-        RTFMsg("%-14s [%03d]\n", "ENCODING_DEF", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "ENCODING_DEF");
         break;
     default:
-        RTFMsg("%-14s [%03d]\n", "FUTURE", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "FUTURE");
         break;
     }
 }
@@ -485,7 +486,7 @@ MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
 
 	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
-    fprintf(stderr, "LINE options  = 0x%02x\n", attrs);
+    if (0) fprintf(stderr, "LINE options  = 0x%02x\n", attrs);
 
     if (attrs & xfLMOVE)
         *src_index += GetNudge(src + *src_index, &new_line->nudge_x, &new_line->nudge_y);
@@ -508,7 +509,7 @@ MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
     if (attrs & xfNULL)
         new_line->object_list = (MT_OBJLIST *) NULL;
     else {
-        fprintf(stderr,"new object list in LINE!\n");
+        if (0) fprintf(stderr,"new object list in LINE!\n");
         new_line->object_list = Eqn_GetObjectList(eqn, src, src_index, 0);
     }
 
@@ -525,23 +526,21 @@ MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
 
 MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
 {
+    unsigned char attrs;
     MT_CHAR *new_char = (MT_CHAR *) malloc(sizeof(MT_CHAR));
     new_char->nudge_x = 0;
     new_char->nudge_y = 0;
     new_char->embellishment_list = (MT_EMBELL *) NULL;
 
-	*src_index += GetAttribute(eqn, src+*src_index, &(new_char->atts));
+	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
+	new_char->atts = attrs;
 
     if (new_char->atts & CHAR_NUDGE)
         *src_index += GetNudge(src + *src_index, &new_char->nudge_x, &new_char->nudge_y);
 
-    new_char->typeface = *(src + *src_index);
+    new_char->typeface = *(src + *src_index) - 128;
     (*src_index)++;
-
-    fprintf(stderr, "options  = 0x%02x\n", new_char->atts);
-    fprintf(stderr, "typeface = %d-128=%d\n", new_char->typeface, new_char->typeface - 128);
-    if (new_char->typeface <128)
-        RTFMsg("typeface less than 128 is impossible!\n");
+    if (new_char->typeface > 128) new_char->typeface -=  128;
 
     switch (eqn->m_mtef_ver) {
     case 1:
@@ -595,7 +594,8 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
             new_char->embellishment_list = Eqn_inputEMBELL(eqn, src, src_index);
     }
 
-    fprintf(stderr, "char     = 0x%04x -- %c\n", new_char->character, new_char->character);
+    fprintf(stderr, "          '%c' or 0x%04x,", new_char->character, new_char->character);
+    fprintf(stderr, " typeface = %d\n", new_char->typeface);
 
     return new_char;
 }
@@ -627,6 +627,8 @@ MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_index)
 
     new_tmpl->options = *(src + *src_index);
     (*src_index)++;
+
+    fprintf(stderr, "          sel=%d var=0x%04x\n", new_tmpl->selector, new_tmpl->variation);
 
     new_tmpl->subobject_list = Eqn_GetObjectList(eqn, src, src_index, 0);
 
@@ -2281,9 +2283,7 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     }
     eqn->math_mode++;
 
-    num_strs +=
-        Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation,
-                       strs + num_strs);
+    num_strs += Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation, strs + num_strs);
 
     the_template = strs[num_strs - 1].data;
 
@@ -2526,7 +2526,10 @@ int Eqn_GetTmplStr(MTEquation * eqn, int selector, int variation,
 
     sprintf(key, "%d.%d", selector, variation); // ini_line = "msg,template"
 
-    zlen = GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
+    if (eqn->m_mtef_ver==5)
+    	zlen = GetProfileStr(Profile_TEMPLATES5, key, ini_line, 256);
+    else
+    	zlen = GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
 
     tmpl_ptr = strchr(ini_line, ',');
 
@@ -3238,8 +3241,8 @@ char *Profile_TEMPLATES[] = {
     "12.0=fence: LPRB,\\left( #1[M]\\right] ",
     "13.0=root: sqroot,\\sqrt{#1[M]} ",
     "13.1=root: nthroot,\\sqrt[#2[M]]{#1[M]} ",
-    "-14.0=fract: ffract,\\frac{#1[M]}{#2[M]} ",
-    "-14.1=fract: pfract,\\frac{#1[M]}{#2[M]} ",
+    "14.0=fract: ffract,\\frac{#1[M]}{#2[M]} ",
+    "14.1=fract: pfract,\\frac{#1[M]}{#2[M]} ",
     "15.0=script: super,#1[L][STARTSUP][ENDSUP] ",
     "15.1=script: sub,#1[L][STARTSUB][ENDSUB] ",
     "15.2=script: subsup,#1[L][STARTSUB][ENDSUB]#2[L][STARTSUP][ENDSUP] ",
@@ -3330,6 +3333,108 @@ char *Profile_TEMPLATES[] = {
     0
 };
 
+//[TEMPLATES]
+char *Profile_TEMPLATES5[] = {
+    "0.0=fence: angle-both,\\left\\langle #1[M]\\right\\rangle ",
+    "0.1=fence: angle-left only,\\left\\langle #1[M]\\right. ",
+    "0.2=fence: angle-right only,\\left. #1[M]\\right\\rangle ",
+    "1.0=fence: paren-both,\\left( #1[M]\\right) ",
+    "1.1=fence: paren-left only,\\left( #1[M]\\right. ",
+    "1.2=fence: paren-right only,\\left. #1[M]\\right) ",
+    "2.0=fence: brace-both,\\left\\{ #1[M]\\right\\} ",
+    "2.1=fence: brace-left only,\\left\\{ #1[M]\\right. ",
+    "2.2=fence: brace-right only,\\left. #1[M]\\right\\} ",
+    "3.0=fence: brack-both,\\left[ #1[M]\\right] ",
+    "3.1=fence: brack-left only,\\lef]t[ #1[M]\\right. ",
+    "3.2=fence: brack-right only,\\left. #1[M]\\right] ",
+    "4.0=fence: bar-both,\\left| #1[M]\\right| ",
+    "4.1=fence: bar-left only,\\left| #1[M]\\right. ",
+    "4.2=fence: bar-right only,\\left. #1[M]\\right| ",
+    "5.0=fence: dbar-both,\\left\\| #1[M]\\right\\| ",
+    "5.1=fence: dbar-left only,\\left\\| #1[M]\\right. ",
+    "5.2=fence: dbar-right only,\\left. #1[M]\\right\\| ",
+    "6.0=fence: floor,\\left\\lfloor #1[M]\\right\\rfloor ",
+    "7.0=fence: ceiling,\\left\\lceil #1[M]\\right\\rceil ",
+    "8.0=fence: LBLB,\\left[ #1[M]\\right[ ",
+    "9.0=fence: LPLP,\\left( #1[M]\\right( ",
+    "9.1=fence: RPLP,\\left) #1[M]\\right( ",
+    "9.2=fence: LBLP,\\left[ #1[M]\\right( ",
+    "9.3=fence: RBLP,\\left] #1[M]\\right( ",
+    "9.16=fence: LPRP,\\left( #1[M]\\right) ",
+    "9.17=fence: RPRP,\\left) #1[M]\\right) ",
+    "9.18=fence: LBRP,\\left[ #1[M]\\right) ",
+    "9.19=fence: RBRP,\\left] #1[M]\\right) ",
+    "9.32=fence: LPLB,\\left( #1[M]\\right[ ",
+    "9.33=fence: RPLB,\\left) #1[M]\\right[ ",
+    "9.34=fence: LBLB,\\left[ #1[M]\\right[ ",
+    "9.35=fence: RBLB,\\left] #1[M]\\right[ ",
+    "9.48=fence: LPRB,\\left( #1[M]\\right] ",
+    "9.49=fence: RPRB,\\left) #1[M]\\right] ",
+    "9.50=fence: LBRB,\\left[ #1[M]\\right] ",
+    "9.51=fence: RBRB,\\left] #1[M]\\right] ",
+    "10.0=root: sqroot,\\sqrt{#1[M]} ",
+    "10.1=root: nthroot,\\sqrt[#2[M]]{#1[M]} ",
+    "11.1=fract: smfract,\\frac{#1[M]}{#2[M]} ",
+    "11.2=fract: slfract,\\frac{#1[M]}{#2[M]} ",
+    "11.4=fract: basefract,\\frac{#1[M]}{#2[M]} ",
+    "12.0=ubar: subar,\\underline{#1[M]} ",
+    "12.1=ubar: dubar,\\underline{\\underline{#1[M]}} ",
+    "13.0=obar: sobar,\\overline{#1[M]} ",
+    "13.1=obar: dobar,\\overline{\\overline{#1[M]}} ",
+    "14.0=larrow: box on top,\\stackrel{#1[M]}{\\longleftarrow} ",
+    "14.1=larrow: box below ,\\stackunder{#1[M]}{\\longleftarrow} ",
+    "14.0=rarrow: box on top,\\stackrel{#1[M]}{\\longrightarrow} ",
+    "14.1=rarrow: box below ,\\stackunder{#1[M]}{\\longrightarrow} ",
+    "14.0=barrow: box on top,\\stackrel{#1[M]}{\\longleftrightarrow} ",
+    "14.1=barrow: box below ,\\stackunder{#1[M]}{\\longleftrightarrow} ",
+    "15.0=integrals: single - no limits,\\int #1[M] ",
+    "15.1=integrals: single - lower only,\\int\\nolimits#2[L][STARTSUB][ENDSUB]#1[M] ",
+    "15.2=integrals: single - both,\\int\\nolimits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
+    "15.3=integrals: contour - no limits,\\oint #1[M] ",
+    "15.4=integrals: contour - lower only,\\oint\\nolimits#2[L][STARTSUB][ENDSUB]#1[M] ",
+    "15.0=integrals: double - no limits ,\\iint #1[M] ",
+    "15.1=integrals: double - lower only,\\iint\\nolimits#2[L][STARTSUB][ENDSUB]#1[M] ",
+    "15.2=integrals: area - no limits ,\\iint #1[M] ",
+    "15.3=integrals: area - lower only,\\iint\\nolimits#2[L][STARTSUB][ENDSUB]#1[M] ",
+    "15.0=integrals: triple - no limits ,\\iiint #1[M] ",
+    "15.1=integrals: triple - lower only,\\iiint\\nolimits#2[L][STARTSUB][ENDSUB]#1[M] ",
+    "15.2=integrals: volume - no limits ,\\iiint #1[M] ",
+    "15.3=integrals: volume - lower only,\\iiint\\nolimits#2[L][STARTSUB][ENDSUB] #1[M] ",
+    "15.0=integrals: single - sum style - both,\\int\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
+    "15.1=integrals: single - sum style - lower only,\\int\\limits#2[L][STARTSUB][ENDSUB]#1[M] ",
+    "15.2=integrals: contour - sum style - lower only,\\oint\\limits#2[L][STARTSUB][ENDSUB] #1[M] ",
+    "15.0=integrals: area - sum style - lower only,\\iint\\limits#2[L][STARTSUB][ENDSUB] #1[M] ",
+    "15.1=integrals: double - sum style - lower only,\\iint\\limits#2[L][STARTSUB][ENDSUB] #1[M] ",
+    "15.0=integrals: volume - sum style - lower only,\\iiint\\limits#2[L][STARTSUB][ENDSUB] #1[M] ",
+    "15.1=integrals: triple - sum style - lower only,\\iiint\\limits#2[L][STARTSUB][ENDSUB] #1[M] ",
+    "16.0=sum: limits top/bottom - both,\\sum\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
+    "17.0=product: limits top/bottom - both,\\dprod\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
+    "18.0=coproduct: limits top/bottom - both,\\dcoprod\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
+    "19.0=union: limits top/bottom - both,\\dbigcup\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
+    "20.0=intersection: limits top/bottom - both,\\dbigcap\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
+    "21.0=integrals: single - both,\\int#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
+    "22.0=sum: single - both,\\sum#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",    
+    "23.0=limit: both,#1 #2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP] ",
+    "24.0=horizontal brace: lower,\\stackunder{#2[M]}{\\underbrace{#1[M]}} ",
+    "24.1=horizontal brace: upper,\\stackrel{#2[M]}{\\overbrace{#1[M]}} ",
+    "25.0=horizontal brace: lower,\\stackunder{#2[M]}{\\underbrace{#1[M]}} ",
+    "25.1=horizontal brace: upper,\\stackrel{#2[M]}{\\overbrace{#1[M]}} ",
+    "25.0=hbracket,",
+    "26.0=limi",
+    "27.0=script: sub,#1[L][STARTSUB][ENDSUB] ",
+    "28.0=script: super,#1[L][STARTSUP][ENDSUP] ",
+    "29.0=script: subsup,#1[L][STARTSUB][ENDSUB]#2[L][STARTSUP][ENDSUP] ",
+    "30.0=limi",
+    "31.0=limi",
+    "32.0=limi",
+    "33.0=limi",
+    "34.0=limi",
+    "35.0=limi",
+    "36.0=limi",
+    "37.0=limi",
+    "TextInMath=\text{#1} ",
+    0
+};
 
 //[EMBELLS]
 //;format is "math template,text template" (different from all the above)
