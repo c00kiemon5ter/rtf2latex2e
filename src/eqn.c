@@ -368,9 +368,9 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
             break;
 
         case FONT_DEF:
-			(*src_index)++;
+            (*src_index)++;
             id = *(src + *src_index);
-			(*src_index)++;
+            (*src_index)++;
             fprintf(stderr,"          ");
             while ((c = *(src + *src_index))) { fprintf(stderr,"%c",c);
                 (*src_index)++;
@@ -462,12 +462,12 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
 static int GetAttribute(MTEquation * eqn, unsigned char *src, unsigned char *attrs)
 {
     if (eqn->m_mtef_ver < 5) {
-    	*attrs = HiNibble(*src);
-    	return 1;
+        *attrs = HiNibble(*src);
+        return 1;
     }
 
-	*attrs = *(src + 1);
-	return 2;
+    *attrs = *(src + 1);
+    return 2;
 }
 
 
@@ -486,7 +486,7 @@ MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
     unsigned char attrs;
     MT_LINE *new_line = (MT_LINE *) malloc(sizeof(MT_LINE));
 
-	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
+    *src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
     if (0) fprintf(stderr, "LINE options  = 0x%02x\n", attrs);
 
@@ -534,8 +534,8 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     new_char->nudge_y = 0;
     new_char->embellishment_list = (MT_EMBELL *) NULL;
 
-	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
-	new_char->atts = attrs;
+    *src_index += GetAttribute(eqn, src+*src_index, &attrs);
+    new_char->atts = attrs;
 
     if (new_char->atts & CHAR_NUDGE)
         *src_index += GetNudge(src + *src_index, &new_char->nudge_x, &new_char->nudge_y);
@@ -559,7 +559,7 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
         break;
 
     case 5:
-        	
+            
         if (!(new_char->atts & CHAR_ENC_NO_MTCODE)) {
         
             /* typical 02 00 83 ^ 59 00 */
@@ -569,29 +569,29 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
             (*src_index)++;
 
             /* sequence 02 00 00 00 00 ^ 2d */
-			if (new_char->typeface == 0 && new_char->character == 0) {
-				new_char->character = *(src + *src_index);
-				(*src_index)++;
+            if (new_char->typeface == 0 && new_char->character == 0) {
+                new_char->character = *(src + *src_index);
+                (*src_index)++;
             }
 
             /* sequence 02 00 00 00 00 00 ^ 2d */
-			if (new_char->typeface == 0 && new_char->character == 0) {
-				new_char->character = *(src + *src_index);
-				/* sequence 02 00 00 00 00 ^ 01 01  *or* 02 00 00 00 00 ^ 02 00 96 29 00 */
-				/* in this case just give up and scan the next token */
-				if (new_char->character == 0x01 || new_char->character == 0x01) 
-					break;
-				(*src_index)++;
+            if (new_char->typeface == 0 && new_char->character == 0) {
+                new_char->character = *(src + *src_index);
+                /* sequence 02 00 00 00 00 ^ 01 01  *or* 02 00 00 00 00 ^ 02 00 96 29 00 */
+                /* in this case just give up and scan the next token */
+                if (new_char->character == 0x01 || new_char->character == 0x01) 
+                    break;
+                (*src_index)++;
             }
               
             /* sequence 02 00 00 00 00 00 00 ^ 96 29 00  */
-			if (new_char->typeface == 0 && new_char->character == 0) {
-				new_char->typeface = *(src + *src_index);
-				(*src_index)++;
-				new_char->character = *(src + *src_index);
-				(*src_index)++;
-				new_char->character |= *(src + *src_index) << 8;
-				(*src_index)++;
+            if (new_char->typeface == 0 && new_char->character == 0) {
+                new_char->typeface = *(src + *src_index);
+                (*src_index)++;
+                new_char->character = *(src + *src_index);
+                (*src_index)++;
+                new_char->character |= *(src + *src_index) << 8;
+                (*src_index)++;
             }
 
         }
@@ -634,7 +634,7 @@ MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_index)
     new_tmpl->nudge_x = 0;
     new_tmpl->nudge_y = 0;
 
-	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
+    *src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
     if (attrs & xfLMOVE)
         *src_index += GetNudge(src + *src_index, &new_tmpl->nudge_x, &new_tmpl->nudge_y);
@@ -673,7 +673,7 @@ MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
     new_pile->nudge_y = 0;
     new_pile->ruler = (MT_RULER *) NULL;
 
-	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
+    *src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
     if (attrs & xfLMOVE)
         *src_index += GetNudge(src + *src_index, &new_pile->nudge_x, &new_pile->nudge_y);
@@ -704,7 +704,7 @@ MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
     new_matrix->nudge_x = 0;
     new_matrix->nudge_y = 0;
 
-	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
+    *src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
     if (attrs & xfLMOVE)
         *src_index += GetNudge(src + *src_index, &new_matrix->nudge_x, &new_matrix->nudge_y);
@@ -751,7 +751,7 @@ MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
     MT_EMBELL *new_embell = NULL;
     MT_EMBELL *curr = NULL;
 
-	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
+    *src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
     do {
 
@@ -853,47 +853,47 @@ MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
     MT_SIZE *new_size = (MT_SIZE *) malloc(sizeof(MT_SIZE));
     new_size->dsize = 0;
 
-	/* works MTEF5 because all supported tags are less than 16 */
-	tag = *(src + *src_index) & 0x0F;
+    /* works MTEF5 because all supported tags are less than 16 */
+    tag = *(src + *src_index) & 0x0F;
     (*src_index)++;
 
-	/* FULL or SUB or SUB2 or SYM or SUBSYM */
+    /* FULL or SUB or SUB2 or SYM or SUBSYM */
     if (tag >= FULL && tag <= SUBSYM) {
         new_size->type  = tag;
         new_size->lsize = tag - FULL;
-    	return new_size;
+        return new_size;
     } 
     
     option = *(src + *src_index);
     (*src_index)++;
     
     /* large dsize */
-	if (option == 100) {
-		new_size->type = option;
-		new_size->lsize = *(src + *src_index);
-		(*src_index)++;
-		new_size->dsize = *(src + *src_index);
-		(*src_index)++;
-		new_size->dsize += (*(src + *src_index) << 8);
-		(*src_index)++;
-		return new_size;
-	}
-	
-	/* explicit point size */
-	if (option == 101) {
-		new_size->type = option;
-		new_size->lsize = *(src + *src_index);
-		(*src_index)++;
-		new_size->lsize += (*(src + *src_index) << 8);
-		(*src_index)++;
-		return new_size;
-	} 
-	
-	/* -128 < dsize < 128 */
-	new_size->type = 0;
-	new_size->lsize = option;
-	new_size->dsize = *(src + *src_index) - 128;
-	(*src_index)++;
+    if (option == 100) {
+        new_size->type = option;
+        new_size->lsize = *(src + *src_index);
+        (*src_index)++;
+        new_size->dsize = *(src + *src_index);
+        (*src_index)++;
+        new_size->dsize += (*(src + *src_index) << 8);
+        (*src_index)++;
+        return new_size;
+    }
+    
+    /* explicit point size */
+    if (option == 101) {
+        new_size->type = option;
+        new_size->lsize = *(src + *src_index);
+        (*src_index)++;
+        new_size->lsize += (*(src + *src_index) << 8);
+        (*src_index)++;
+        return new_size;
+    } 
+    
+    /* -128 < dsize < 128 */
+    new_size->type = 0;
+    new_size->lsize = option;
+    new_size->dsize = *(src + *src_index) - 128;
+    (*src_index)++;
     return new_size;
 }
 
@@ -2555,9 +2555,9 @@ int Eqn_GetTmplStr(MTEquation * eqn, int selector, int variation,
     sprintf(key, "%d.%d", selector, variation); // ini_line = "msg,template"
 
     if (eqn->m_mtef_ver==5)
-    	zlen = GetProfileStr(Profile_TEMPLATES5, key, ini_line, 256);
+        zlen = GetProfileStr(Profile_TEMPLATES5, key, ini_line, 256);
     else
-    	zlen = GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
+        zlen = GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
 
     tmpl_ptr = strchr(ini_line, ',');
 
