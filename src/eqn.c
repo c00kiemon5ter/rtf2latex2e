@@ -559,15 +559,41 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
         break;
 
     case 5:
+        	
         if (!(new_char->atts & CHAR_ENC_NO_MTCODE)) {
+        
+            /* typical 02 00 83 ^ 59 00 */
             new_char->character = *(src + *src_index);
             (*src_index)++;
             new_char->character |= *(src + *src_index) << 8;
             (*src_index)++;
-            if (new_char->character == 0) {
+
+            /* sequence 02 00 00 00 00 ^ 2d */
+			if (new_char->typeface == 0 && new_char->character == 0) {
 				new_char->character = *(src + *src_index);
 				(*src_index)++;
             }
+
+            /* sequence 02 00 00 00 00 00 ^ 2d */
+			if (new_char->typeface == 0 && new_char->character == 0) {
+				new_char->character = *(src + *src_index);
+				/* sequence 02 00 00 00 00 ^ 01 01  *or* 02 00 00 00 00 ^ 02 00 96 29 00 */
+				/* in this case just give up and scan the next token */
+				if (new_char->character == 0x01 || new_char->character == 0x01) 
+					break;
+				(*src_index)++;
+            }
+              
+            /* sequence 02 00 00 00 00 00 00 ^ 96 29 00  */
+			if (new_char->typeface == 0 && new_char->character == 0) {
+				new_char->typeface = *(src + *src_index);
+				(*src_index)++;
+				new_char->character = *(src + *src_index);
+				(*src_index)++;
+				new_char->character |= *(src + *src_index) << 8;
+				(*src_index)++;
+            }
+
         }
         if (new_char->atts & CHAR_ENC_CHAR_8) {
             new_char->character = *(src + *src_index);
@@ -3380,9 +3406,11 @@ char *Profile_TEMPLATES5[] = {
     "9.51=fence: RBRB,\\left] #1[M]\\right] ",
     "10.0=root: sqroot,\\sqrt{#1[M]} ",
     "10.1=root: nthroot,\\sqrt[#2[M]]{#1[M]} ",
+    "11.0=fract: tmfract,\\frac{#1[M]}{#2[M]} ",
     "11.1=fract: smfract,\\frac{#1[M]}{#2[M]} ",
-    "11.2=fract: slfract,\\frac{#1[M]}{#2[M]} ",
-    "11.4=fract: basefract,\\frac{#1[M]}{#2[M]} ",
+    "11.2=fract: slfract,{#1[M]}/{#2[M]} ",
+    "11.3=fract: slsmfract,{#1[M]}/{#2[M]} ",
+    "11.4=fract: basefract,{#1[M]}/{#2[M]} ",
     "12.0=ubar: subar,\\underline{#1[M]} ",
     "12.1=ubar: dubar,\\underline{\\underline{#1[M]}} ",
     "13.0=obar: sobar,\\overline{#1[M]} ",
