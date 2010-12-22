@@ -574,13 +574,16 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
                 (*src_index)++;
             }
 
+            /* sequence 02 00 00 00 00 ^ 01 01  *or* 02 00 00 00 00 ^ 02 00 96 29 00 */
+            /* in this case just give up and scan the next token */
+			if (new_char->character == 0x01 || new_char->character == 0x02) {
+                (*src_index)--;			
+				break;
+			}
+			
             /* sequence 02 00 00 00 00 00 ^ 2d */
             if (new_char->typeface == 0 && new_char->character == 0) {
                 new_char->character = *(src + *src_index);
-                /* sequence 02 00 00 00 00 ^ 01 01  *or* 02 00 00 00 00 ^ 02 00 96 29 00 */
-                /* in this case just give up and scan the next token */
-                if (new_char->character == 0x01 || new_char->character == 0x01) 
-                    break;
                 (*src_index)++;
             }
               
