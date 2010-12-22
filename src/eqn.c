@@ -305,7 +305,7 @@ void print_tag(unsigned char tag, int src_index)
 MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_index, int num_objs)
 {
     unsigned char c, size, curr_tag;
-    int i;
+    int i,id;
     int tally = 0;
     MT_OBJLIST *head = (MT_OBJLIST *) NULL;
     MT_OBJLIST *curr;
@@ -368,13 +368,15 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
             break;
 
         case FONT_DEF:
-            (*src_index)++;
-            (*src_index)++;
-            while ((c = *(src + *src_index))) { /*fprintf(stderr,"%c",c); */
+			(*src_index)++;
+            id = *(src + *src_index);
+			(*src_index)++;
+            fprintf(stderr,"          ");
+            while ((c = *(src + *src_index))) { fprintf(stderr,"%c",c);
                 (*src_index)++;
             }
-            /* fprintf(stderr,"\n"); */
-            (*src_index)++;     /* skip NULL */
+            fprintf(stderr," ==> %d\n",id);
+            (*src_index)++;
             tally--;
             break;
 
@@ -538,9 +540,8 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     if (new_char->atts & CHAR_NUDGE)
         *src_index += GetNudge(src + *src_index, &new_char->nudge_x, &new_char->nudge_y);
 
-    new_char->typeface = *(src + *src_index) - 128;
+    new_char->typeface = *(src + *src_index);
     (*src_index)++;
-    if (new_char->typeface > 128) new_char->typeface -=  128;
 
     switch (eqn->m_mtef_ver) {
     case 1:
@@ -595,7 +596,7 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     }
 
     fprintf(stderr, "          '%c' or 0x%04x,", new_char->character, new_char->character);
-    fprintf(stderr, " typeface = %d\n", new_char->typeface);
+    fprintf(stderr, " typeface = %d\n", new_char->typeface-128);
 
     return new_char;
 }
