@@ -2,7 +2,7 @@ RTF2LATEX= ../rtf2latex2e
 OPTIONS  = -P ../pref
 
 TEX= arch-mac.tex arch.tex Equation.tex fig-jpeg.tex mapping.tex \
-     rtf-misc.tex rtf.tex table.tex test.tex
+     rtf-misc.tex rtf.tex table.tex test.tex moreEqns.tex twoEqn.tex
 
 HARDTEX = multiline.tex 
 

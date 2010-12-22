@@ -59,10 +59,10 @@ DOCS         = doc/GPL_license            doc/Release-notes.txt     README      
                
 PDFS         = doc/rtf2latex2eSWP.pdf     doc/rtfReader.pdf         doc/rtf2latex2eDoc.pdf  
 
-TEST         = test/Makefile              test/arch.rtf              test/arch-mac.rtf      \
-               test/equation.rtf          test/fig-jpeg.rtf          test/multiline.rtf     \
-               test/mapping.rtf           test/rtf-misc.rtf          test/rtf.rtf           \
-               test/table.rtf             test/test.rtf
+TEST         = test/Makefile              test/arch.rtf             test/arch-mac.rtf       \
+               test/equation.rtf          test/fig-jpeg.rtf         test/multiline.rtf      \
+               test/mapping.rtf           test/rtf-misc.rtf         test/rtf.rtf            \
+               test/table.rtf             test/test.rtf             test/moreEqns.rtf
 
 OBJS         = src/cole.o                 src/cole_decode.o         src/cole_encode.o       \
                src/cole_internal.o        src/cole_support.o        src/cole_version.o      \
