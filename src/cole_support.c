@@ -125,8 +125,7 @@ void __cole_dump(void *_m, void *_start, int length, char *msg)
     buff[8] = ' ';
     buff[17] = 0;
     if (msg != NULL)
-        printf("VERBOSE: %s (from 0x%08lx length 0x%08x (%d)):\n",
-               msg, m - start, length, length);
+        printf("VERBOSE: %s (from 0x%p length 0x%08x (%d)):\n", msg, m, length, length);
     for (pm = m; pm - m < length; pm++) {
         achar = (pm - m) % 16;
         /* print offset */

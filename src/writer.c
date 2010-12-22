@@ -70,6 +70,7 @@ const char *preferenceList[] = {
 
 const char *objectClassList[] = { 
     "Unknown",
+    "Equation.DSMT4",
     "Equation",
     "equation",
     "Word.Picture",
@@ -3237,7 +3238,7 @@ static void ConvertHexPicture(char *pictureType)
         strcpy(pictureType, "unknown");
 
     strcpy(picture.name, RTFGetInputName());
-    sprintf(dummyBuf, "Fig%d.%s", picture.count, pictureType);
+    sprintf(dummyBuf, "Fig%03d.%s", picture.count, pictureType);
     strcat(picture.name, dummyBuf);
 
     /* open picture file */
@@ -3591,13 +3592,13 @@ DecodeOLE(char *objectFileName, char *streamType,
     }
 
     /* this prints the directory structure for the OLE object */
-    /*
+    
     if (cole_print_tree (cfs, &colerrno)) {
             cole_perror ("DecodeOLE cole_print_tree", colerrno);
             cole_umount (cfs, NULL);
             return (1);
     }
-    */
+    
 
     if ((coleFile = cole_fopen(cfs, streamType, &colerrno)) == NULL) {
         cole_perror("DecodeOLE cole_fopen", colerrno);
@@ -3657,7 +3658,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 
     if (type == equation) {
         (oleEquation.count)++;
-        sprintf(dummyBuf, "Eq%d.eqn", oleEquation.count);
+        sprintf(dummyBuf, "Eq%03d.eqn", oleEquation.count);
     } else
         sprintf(dummyBuf, ".obj");
 
@@ -3722,11 +3723,11 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 static boolean ReadEquation(int *groupCount)
 {
     char objectFileName[rtfBufSiz];
-    unsigned char *nativeEquationStream, *equationStream;
+    unsigned char *nativeStream;
     MTEquation *theEquation;
     size_t equationSize;    
 
-    nativeEquationStream = NULL;
+    nativeStream = NULL;
     theEquation = NULL;
 
     /* look for start of \objdata  group */
@@ -3754,40 +3755,42 @@ static boolean ReadEquation(int *groupCount)
     ReadObjectData(objectFileName, equation, EQUATION_OFFSET);
     (*groupCount)--;
 
-    /* Decode the OLE and extract the equation stream into buffer nativeEquationStream */
-    if (DecodeOLE(objectFileName, "/Equation Native", &nativeEquationStream, &equationSize)) {
+    /* Decode the OLE and extract the equation stream into buffer nativeStream */
+    if (DecodeOLE(objectFileName, "/Equation Native", &nativeStream, &equationSize)) {
         RTFMsg("* error decoding OLE equation object!\n");
         return (false);
     }
 
     /* remove(objectFileName); */
-    RTFMsg("MTEF Equation has %ld bytes\n", equationSize);
 
     theEquation = (MTEquation *) malloc(sizeof(MTEquation));
     if (theEquation == NULL) {
         RTFMsg("* error allocating memory for equation!\n");
-        free(nativeEquationStream);
+        free(nativeStream);
         return (false);
     }
 
-    equationStream = nativeEquationStream;
-
     /* hack ... newer OLE streams seem to start with an extra 4 bytes of zeros */
-    if (fil_sreadU32(equationStream) == 0) {
-        equationStream += 4;
-        equationSize -= 4;
+    if (fil_sreadU32(nativeStream) == 0) {
+        int i;
+        for (i=0; i<equationSize-4; i++)
+        	nativeStream[i] = nativeStream[i+4];
+        	
+        nativeStream[equationSize-4] = 0;
+        nativeStream[equationSize-3] = 0;
+        nativeStream[equationSize-2] = 0;
+        nativeStream[equationSize-1] = 0;
     }
 
     /* the first two bytes should contain 0x1c 0x00 */
-    if (fil_sreadU16(equationStream) == MTEF_HEADER_SIZE) {
-        equationStream += MTEF_HEADER_SIZE;
-        equationSize   -= MTEF_HEADER_SIZE;
+    if (fil_sreadU16(nativeStream) == MTEF_HEADER_SIZE) {
+        equationSize -= MTEF_HEADER_SIZE;
 
-        __cole_dump(equationStream, equationStream, equationSize, "original native equation");
+        __cole_dump(nativeStream+MTEF_HEADER_SIZE, nativeStream+MTEF_HEADER_SIZE, equationSize, "equation");
 
-        if (!Eqn_Create(theEquation, equationStream, equationSize)) {
+        if (!Eqn_Create(theEquation, nativeStream+MTEF_HEADER_SIZE, equationSize)) {
             RTFMsg("* could not create equation structure!\n");
-            free(nativeEquationStream);
+            free(nativeStream);
             free(theEquation);
             return (false);
         }
@@ -3802,8 +3805,8 @@ static boolean ReadEquation(int *groupCount)
     if (theEquation != NULL)
         free(theEquation);
 
-    if (nativeEquationStream != NULL)
-        free(nativeEquationStream);
+    if (nativeStream != NULL)
+        free(nativeStream);
 
     requireAmsMathPackage = true;
     return (true);

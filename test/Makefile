@@ -15,6 +15,6 @@ clean:
 	rm -rf *.tex *.eps
 	
 realclean: clean
-	rm -rf *.log *.aux *.pdf *.dvi *.pict *.eps *.ps *.eqn
+	rm -rf *.log *.aux *.pdf *.dvi *.pict *.eps *.ps *.eqn *.jpg *.png
 
 .PHONY: clean all realclean

@@ -227,67 +227,67 @@ void print_tag(unsigned char tag, int src_index)
 {
     switch (tag) {
     case 0:
-        RTFMsg("Tag @ %03d =  END\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "END", src_index);
         break;
     case 1:
-        RTFMsg("Tag @ %03d =  LINE\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "LINE", src_index);
         break;
     case 2:
-        RTFMsg("Tag @ %03d =  CHAR\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "CHAR", src_index);
         break;
     case 3:
-        RTFMsg("Tag @ %03d =  TMPL\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "TMPL", src_index);
         break;
     case 4:
-        RTFMsg("Tag @ %03d =  PILE\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "PILE", src_index);
         break;
     case 5:
-        RTFMsg("Tag @ %03d =  MATRIX\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "MATRIX", src_index);
         break;
     case 6:
-        RTFMsg("Tag @ %03d =  EMBELL\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "EMBELL", src_index);
         break;
     case 7:
-        RTFMsg("Tag @ %03d =  RULER\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "RULER", src_index);
         break;
     case 8:
-        RTFMsg("Tag @ %03d =  FONT_STYLE_DEF\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "FONT_STYLE_DEF", src_index);
         break;
     case 9:
-        RTFMsg("Tag @ %03d =  SIZE\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "SIZE", src_index);
         break;
     case 10:
-        RTFMsg("Tag @ %03d =  FULL\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "FULL", src_index);
         break;
     case 11:
-        RTFMsg("Tag @ %03d =  SUB\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "SUB", src_index);
         break;
     case 12:
-        RTFMsg("Tag @ %03d =  SUB2\n", src_index);
+        RTFMsg("%-14s [%03d =  SUB2\n", src_index);
         break;
     case 13:
-        RTFMsg("Tag @ %03d =  SYM\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "SYM", src_index);
         break;
     case 14:
-        RTFMsg("Tag @ %03d =  SUBSYM\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "SUBSYM", src_index);
         break;
     case 15:
-        RTFMsg("Tag @ %03d =  COLOR\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "COLOR", src_index);
         break;
     case 16:
-        RTFMsg("Tag @ %03d =  COLOR_DEF\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "COLOR_DEF", src_index);
         break;
     case 17:
-        RTFMsg("Tag @ %03d =  FONT_DEF\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "FONT_DEF", src_index);
         break;
     case 18:
-        RTFMsg("Tag @ %03d =  EQN_PREFS\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "EQN_PREFS", src_index);
         break;
     case 19:
-        RTFMsg("Tag @ %03d =  ENCODING_DEF\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "ENCODING_DEF", src_index);
         break;
     default:
-        RTFMsg("Tag @ %03d =  FUTURE\n", src_index);
+        RTFMsg("%-14s [%03d]\n", "FUTURE", src_index);
         break;
     }
 }
@@ -320,7 +320,7 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
         new_obj = (void *) NULL;
 
         print_tag(curr_tag, *src_index);
-    __cole_dump(src+*src_index, src+*src_index, 16, "equation stream");
+    __cole_dump(src+*src_index, src+*src_index, 16, NULL);
 
         switch (curr_tag) {
         case END:
@@ -355,15 +355,12 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
             break;
 
         case SIZE:
-            new_obj = (void *) Eqn_inputSIZE(eqn, src, src_index);
-            break;
-
         case FULL:
         case SUB:
         case SUB2:
         case SYM:
         case SUBSYM:
-            (*src_index)++;
+            new_obj = (void *) Eqn_inputSIZE(eqn, src, src_index);
             break;
 
         case COLOR_DEF:
@@ -385,7 +382,7 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
             (*src_index)++;     /* options */
 
             size = *(src + *src_index); /* sizes[] */
-            fprintf(stderr, " size array has %d entries\n", size);
+            if (0) fprintf(stderr, " size array has %d entries\n", size);
             (*src_index)++;
             (*src_index) += SkipNibbles(src + *src_index, size);
 
@@ -395,7 +392,7 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
 
             size = *(src + *src_index); /* styles[] */
             (*src_index)++;
-            fprintf(stderr, " style array has %d entries\n", size);
+            if (0) fprintf(stderr, " style array has %d entries\n", size);
             for (i = 0; i < size; i++) {
                 c = *(src + *src_index);
                 (*src_index)++;
@@ -410,10 +407,10 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
         case ENCODING_DEF:
             (*src_index)++;     /* skip tag */
             while ((c = *(src + *src_index))) {
-                fprintf(stderr, "%c", c);
+                if (0) fprintf(stderr, "%c", c);
                 (*src_index)++;
             }
-            fprintf(stderr, "\n");
+            if (0) fprintf(stderr, "\n");
             (*src_index)++;     /* skip NULL */
             tally--;
             break;
@@ -459,6 +456,18 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
     return head;
 }
 
+static int GetAttribute(MTEquation * eqn, unsigned char *src, unsigned char *attrs)
+{
+    if (eqn->m_mtef_ver < 5) {
+    	*attrs = HiNibble(*src);
+    	return 1;
+    }
+
+	*attrs = *(src + 1);
+	return 2;
+}
+
+
 /*
     * record type (1)
     * options
@@ -474,12 +483,7 @@ MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
     unsigned char attrs;
     MT_LINE *new_line = (MT_LINE *) malloc(sizeof(MT_LINE));
 
-    if (eqn->m_mtef_ver == 5) {
-        (*src_index)++;
-        attrs = *(src + *src_index);
-    } else
-        attrs = HiNibble(*(src + *src_index));
-    (*src_index)++;
+	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
     fprintf(stderr, "LINE options  = 0x%02x\n", attrs);
 
@@ -526,12 +530,7 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     new_char->nudge_y = 0;
     new_char->embellishment_list = (MT_EMBELL *) NULL;
 
-    if (eqn->m_mtef_ver == 5) {
-        (*src_index)++;
-        new_char->atts = *(src + *src_index);
-    } else
-        new_char->atts = HiNibble(*(src + *src_index));
-    (*src_index)++;
+	*src_index += GetAttribute(eqn, src+*src_index, &(new_char->atts));
 
     if (new_char->atts & CHAR_NUDGE)
         *src_index += GetNudge(src + *src_index, &new_char->nudge_x, &new_char->nudge_y);
@@ -565,6 +564,10 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
             (*src_index)++;
             new_char->character |= *(src + *src_index) << 8;
             (*src_index)++;
+            if (new_char->character == 0) {
+				new_char->character = *(src + *src_index);
+				(*src_index)++;
+            }
         }
         if (new_char->atts & CHAR_ENC_CHAR_8) {
             new_char->character = *(src + *src_index);
@@ -597,21 +600,14 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     return new_char;
 }
 
-
-MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src,
-                       int *src_index)
+MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_index)
 {
     unsigned char attrs;
     MT_TMPL *new_tmpl = (MT_TMPL *) malloc(sizeof(MT_TMPL));
     new_tmpl->nudge_x = 0;
     new_tmpl->nudge_y = 0;
 
-    if (eqn->m_mtef_ver == 5) {
-        (*src_index)++;
-        attrs = *(src + *src_index);
-    } else
-        attrs = HiNibble(*(src + *src_index));
-    (*src_index)++;
+	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
     if (attrs & xfLMOVE)
         *src_index += GetNudge(src + *src_index, &new_tmpl->nudge_x, &new_tmpl->nudge_y);
@@ -647,12 +643,7 @@ MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
     new_pile->nudge_y = 0;
     new_pile->ruler = (MT_RULER *) NULL;
 
-    if (eqn->m_mtef_ver == 5) {
-        (*src_index)++;
-        attrs = *(src + *src_index);
-    } else
-        attrs = HiNibble(*(src + *src_index));
-    (*src_index)++;
+	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
     if (attrs & xfLMOVE)
         *src_index += GetNudge(src + *src_index, &new_pile->nudge_x, &new_pile->nudge_y);
@@ -683,12 +674,7 @@ MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
     new_matrix->nudge_x = 0;
     new_matrix->nudge_y = 0;
 
-    if (eqn->m_mtef_ver == 5) {
-        (*src_index)++;
-        attrs = *(src + *src_index);
-    } else
-        attrs = HiNibble(*(src + *src_index));
-    (*src_index)++;
+	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
     if (attrs & xfLMOVE)
         *src_index += GetNudge(src + *src_index, &new_matrix->nudge_x, &new_matrix->nudge_y);
@@ -735,12 +721,7 @@ MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
     MT_EMBELL *new_embell = NULL;
     MT_EMBELL *curr = NULL;
 
-    if (eqn->m_mtef_ver == 5) {
-        (*src_index)++;
-        attrs = *(src + *src_index);
-    } else
-        attrs = HiNibble(*(src + *src_index));
-    (*src_index)++;
+	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
     do {
 
@@ -838,48 +819,51 @@ MT_FONT *Eqn_inputFONT(MTEquation * eqn, unsigned char *src,
 MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
                        int *src_index)
 {
-
-    RTFMsg("Reading SIZE record\n");
-
+    unsigned char tag, option;
     MT_SIZE *new_size = (MT_SIZE *) malloc(sizeof(MT_SIZE));
-    int test;
+    new_size->dsize = 0;
 
-    unsigned char size_tag = *(src + *src_index) & 0x0F;
+	/* works MTEF5 because all supported tags are less than 16 */
+	tag = *(src + *src_index) & 0x0F;
     (*src_index)++;
 
-    if (size_tag >= FULL && size_tag <= SUBSYM) {
-        new_size->type = size_tag;
-        new_size->lsize = size_tag - FULL;
-        new_size->dsize = 0;
-
-    } else {
-
-        test = *(src + *src_index);
-        if (test == 100) {
-            new_size->type = 100;
-            (*src_index)++;
-            new_size->lsize = *(src + *src_index);
-            (*src_index)++;
-            new_size->dsize = *(src + *src_index);
-            (*src_index)++;
-            new_size->dsize += (*(src + *src_index) << 8);
-            (*src_index)++;
-
-        } else if (test == 101) {
-            new_size->type = 101;
-            (*src_index)++;
-            new_size->lsize = *(src + *src_index);
-            (*src_index)++;
-
-        } else {
-            new_size->type = 0;
-            new_size->lsize = *(src + *src_index);
-            (*src_index)++;
-            new_size->dsize = *(src + *src_index);
-            (*src_index)++;
-        }
-    }
-
+	/* FULL or SUB or SUB2 or SYM or SUBSYM */
+    if (tag >= FULL && tag <= SUBSYM) {
+        new_size->type  = tag;
+        new_size->lsize = tag - FULL;
+    	return new_size;
+    } 
+    
+    option = *(src + *src_index);
+    (*src_index)++;
+    
+    /* large dsize */
+	if (option == 100) {
+		new_size->type = option;
+		new_size->lsize = *(src + *src_index);
+		(*src_index)++;
+		new_size->dsize = *(src + *src_index);
+		(*src_index)++;
+		new_size->dsize += (*(src + *src_index) << 8);
+		(*src_index)++;
+		return new_size;
+	}
+	
+	/* explicit point size */
+	if (option == 101) {
+		new_size->type = option;
+		new_size->lsize = *(src + *src_index);
+		(*src_index)++;
+		new_size->lsize += (*(src + *src_index) << 8);
+		(*src_index)++;
+		return new_size;
+	} 
+	
+	/* -128 < dsize < 128 */
+	new_size->type = 0;
+	new_size->lsize = option;
+	new_size->dsize = *(src + *src_index) - 128;
+	(*src_index)++;
     return new_size;
 }
 
@@ -2831,16 +2815,16 @@ char *Profile_MT_CHARSET_ATTS[] = {
     "138=1,1,0",
 //;fnMTEXTRA
     "139=1,1,1",
-    "140=1,1,0",
-    "141=1,1,0",
-    "142=1,1,0",
-    "143=1,1,0",
-    "144=1,1,0",
-    "145=1,1,0",
-    "146=1,1,0",
-    "147=1,1,0",
-    "148=1,1,0",
-    "149=1,1,0",
+    "-140=1,1,0",
+    "-141=1,1,0",
+    "-142=1,1,0",
+    "-143=1,1,0",
+    "-144=1,1,0",
+    "-145=1,1,0",
+    "-146=1,1,0",
+    "-147=1,1,0",
+    "-148=1,1,0",
+    "-149=1,1,0",
 //;fnEXPAND
     "150=1,1,0",
 //;fnMARKER
@@ -2873,16 +2857,16 @@ char *Profile_MT_CHARSET_ATTS3[] = {
     "138=1,1,0",
 //;fnMTEXTRA
     "139=1,1,1",
-    "140=1,1,0",
-    "141=1,1,0",
-    "142=1,1,0",
-    "143=1,1,0",
-    "144=1,1,0",
-    "145=1,1,0",
-    "146=1,1,0",
-    "147=1,1,0",
-    "148=1,1,0",
-    "149=1,1,0",
+    "-140=1,1,0",
+    "-141=1,1,0",
+    "-142=1,1,0",
+    "-143=1,1,0",
+    "-144=1,1,0",
+    "-145=1,1,0",
+    "-146=1,1,0",
+    "-147=1,1,0",
+    "-148=1,1,0",
+    "-149=1,1,0",
 //;fnEXPAND
     "150=1,1,0",
 //;fnMARKER
@@ -2916,7 +2900,7 @@ char *Profile_CHARTABLE[] = {
     "132.111=\\o ",
     "132.112=\\pi ",
     "132.113=\\theta ",
-    "132.114=\\rho ",
+    "132.1-14=\\rho ",
     "132.115=\\sigma ",
     "132.116=\\tau ",
     "132.117=\\upsilon ",
@@ -2976,7 +2960,7 @@ char *Profile_CHARTABLE[] = {
     "134.110=\\nu ",
     "134.112=\\pi ",
     "134.113=\\theta ",
-    "134.114=\\rho ",
+    "134.1-14=\\rho ",
     "134.115=\\sigma ",
     "134.116=\\tau ",
     "134.117=\\upsilon ",
@@ -3103,7 +3087,7 @@ char *Profile_CHARTABLE3[] = {
     "132.962=\\varsigma ",
     "132.982=\\varpi ",
     "133.913=A",
-    "133.914=B",
+    "133.9-14=B",
     "133.935=X",
     "133.916=\\Delta ",
     "133.917=E",
@@ -3200,7 +3184,7 @@ char *Profile_CHARTABLE3[] = {
     "139.8883=\\vartriangleright ",
     "139.8723=\\mp ",
     "139.8728=\\circ ",
-    "139.8614=\\longmapsto ",
+    "139.86-14=\\longmapsto ",
     "139.8597=\\updownarrow ",
     "139.8661=\\Updownarrow ",
     "139.4746=\\bigcup ",
@@ -3254,8 +3238,8 @@ char *Profile_TEMPLATES[] = {
     "12.0=fence: LPRB,\\left( #1[M]\\right] ",
     "13.0=root: sqroot,\\sqrt{#1[M]} ",
     "13.1=root: nthroot,\\sqrt[#2[M]]{#1[M]} ",
-    "14.0=fract: ffract,\\frac{#1[M]}{#2[M]} ",
-    "14.1=fract: pfract,\\frac{#1[M]}{#2[M]} ",
+    "-14.0=fract: ffract,\\frac{#1[M]}{#2[M]} ",
+    "-14.1=fract: pfract,\\frac{#1[M]}{#2[M]} ",
     "15.0=script: super,#1[L][STARTSUP][ENDSUP] ",
     "15.1=script: sub,#1[L][STARTSUB][ENDSUB] ",
     "15.2=script: subsup,#1[L][STARTSUB][ENDSUB]#2[L][STARTSUP][ENDSUP] ",
