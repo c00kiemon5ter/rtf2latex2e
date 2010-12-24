@@ -400,7 +400,7 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
                 c = *(src + *src_index);
                 (*src_index)++;
                 if (c) {
-                    c = *(src + *src_index);
+                   /* c = *(src + *src_index); */
                     (*src_index)++;
                 }
             }
@@ -837,7 +837,7 @@ MT_RULER *Eqn_inputRULER(MTEquation * eqn, unsigned char *src,
 MT_FONT *Eqn_inputFONT(MTEquation * eqn, unsigned char *src,
                        int *src_index)
 {
-    int zln;
+    uint32_t zln;
     MT_FONT *new_font = (MT_FONT *) malloc(sizeof(MT_FONT));
 
     (*src_index)++;             // step over the tag
@@ -847,7 +847,7 @@ MT_FONT *Eqn_inputFONT(MTEquation * eqn, unsigned char *src,
     new_font->style = *(src + *src_index);
     (*src_index)++;
 
-    zln = strlen((char *) src + *src_index) + 1;
+    zln = (uint32_t) strlen((char *) src + *src_index) + 1;
     new_font->zname = (char *) malloc(sizeof(char) * zln);
     strcpy((char *) new_font->zname, (char *) src + *src_index);
     *src_index += zln;
@@ -941,7 +941,7 @@ fprintf(stderr, "nudge gotten size=%d",nudge_length);
 static
 void DeleteObjectList(MT_OBJLIST * the_list)
 {
-    MT_OBJLIST *del_node = the_list;
+    MT_OBJLIST *del_node;
     MT_LINE *line;
     MT_CHAR *charptr;
 
@@ -1084,7 +1084,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
 
     char *zcurr;
     char *rv = (char *) malloc(1024);
-    int di = 0;
+    uint32_t di = 0;
     int lim = 1024;
 
     MT_OBJLIST *curr_node;
@@ -1541,10 +1541,10 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
             }
 
             if (obj_list && obj_list->tag == LINE) {
-                char *data =
-                    Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
+				uint32_t b_off;
+                char *data = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
 
-                int b_off = strlen(rv);
+                b_off = (uint32_t) strlen(rv);
                 rv = ToBuffer(data, rv, &b_off, &buf_limit);    // strcat( rv,data );
 
                 curr_col++;
@@ -1626,7 +1626,7 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
     int curr_row = 0;
     int right_only = 0;
     char *data;
-    int b_off;
+    uint32_t b_off;
 
     *rv = 0;
 
@@ -1684,11 +1684,9 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
             if (left_node) {
                 if (curr_node) {
                     left_node->next = NULL;
-                    data =
-                        Eqn_TranslateLINE(eqn,
-                                          (MT_LINE *) obj_list->obj_ptr);
+                    data = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
 
-                    b_off = strlen(rv);
+                    b_off = (uint32_t) strlen(rv);
                     rv = ToBuffer(data, rv, &b_off, &buf_limit);        // strcat( rv,data );
 
                     left_node->next = (void *) curr_node;
@@ -1714,18 +1712,14 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 
             if (right_node) {
                 char *data;
-                int b_off;
                 if (right_only)
-                    data =
-                        Eqn_TranslateLINE(eqn,
-                                          (MT_LINE *) obj_list->obj_ptr);
+                    data = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
                 else
                     data = Eqn_TranslateObjects(eqn, right_node);
 
-                b_off = strlen(rv);
+                b_off = (uint32_t) strlen(rv);
                 rv = ToBuffer(data, rv, &b_off, &buf_limit);    // strcat( rv,data );
             }
-
 
             obj_list = (MT_OBJLIST *) obj_list->next;
         } else
@@ -1760,14 +1754,13 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 static
 char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
 {
-
+    MT_OBJLIST *obj_list;
     int buf_limit = 8192;
-    char *rv = malloc(buf_limit);
     int save_math_mode = eqn->math_mode;
     char *tablev_align = "{";   // default is vertical centering
     char *col_align = "c";
-    MT_OBJLIST *obj_list = pile->line_list;
     int curr_row = 0;
+    char *rv = malloc(buf_limit);
 
     *rv = 0;
 
@@ -1827,10 +1820,9 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
         }
 
         if (obj_list && obj_list->tag == LINE) {
-            char *data =
-                Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
-
-            int b_off = strlen(rv);
+			uint32_t b_off;
+            char *data = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
+            b_off = (uint32_t) strlen(rv);
             rv = ToBuffer(data, rv, &b_off, &buf_limit);        // strcat( rv,data );
 
             obj_list = (MT_OBJLIST *) obj_list->next;
@@ -1870,10 +1862,9 @@ static
 char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile,
                                 char *targ_nom)
 {
-
+    MT_OBJLIST *obj_list;
     char ini_line[256];
     int dlen = 0;
-
     int forces_math = 1;
     int forces_text = 0;
     int allow_text_runs = 1;
@@ -1881,19 +1872,16 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile,
     char *line_sep = " \\\\ ";
     char *tail = "";
     int buf_limit = 8192;
-    char *rv = (char *) malloc(buf_limit);
     int save_math_mode;
-    MT_OBJLIST *obj_list;
     int curr_row = 0;
 
-
+    char *rv = (char *) malloc(buf_limit);
     *rv = 0;
 
     if (targ_nom && *targ_nom)
-        dlen =
-            GetProfileStr(Profile_PILEtranslation, targ_nom, ini_line,
-                          256);
+        dlen = GetProfileStr(Profile_PILEtranslation, targ_nom, ini_line, 256);
 
+	save_math_mode = eqn->math_mode;
 
     //  ini_line  =  "TextOnly,\begin{env}, \\,\end{env}"
 
@@ -1980,10 +1968,9 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile,
         }
 
         if (obj_list && obj_list->tag == LINE) {
-            char *data =
-                Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
+            char *data = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
 
-            int b_off = strlen(rv);
+            uint32_t b_off = (uint32_t) strlen(rv);
             rv = ToBuffer(data, rv, &b_off, &buf_limit);
 
             obj_list = (MT_OBJLIST *) obj_list->next;
@@ -2100,10 +2087,10 @@ char *Eqn_TranslateFONT(MTEquation * eqn, MT_FONT * font)
 
 
 static
-char *ToBuffer(char *src, char *buffer, int *off, int *lim)
+char *ToBuffer(char *src, char *buffer, uint32_t *off, int *lim)
 {
 
-    int zln = strlen(src) + 1;
+    int zln = (uint32_t) strlen(src) + 1;
 
     if (*off + zln + 256 >= *lim) {
         char *newbuf;
@@ -2130,7 +2117,7 @@ void SetComment(EQ_STRREC * strs, int lev, char *src)
     strs[0].is_line = 0;
 
     if (src) {
-        int zln = strlen(src) + 1;
+        int zln = (uint32_t) strlen(src) + 1;
         char *newbuf = (char *) malloc(zln);
         strcpy(newbuf, src);
         strs[0].data = newbuf;
@@ -2164,7 +2151,7 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
         char *dat = strs[count].data;
         if (dat)
             if (lev <= eqn->log_level)
-                zln += strlen(dat);
+                zln += (uint32_t) strlen(dat);
         count++;
     }
 
@@ -2179,7 +2166,7 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
             if (lev <= eqn->log_level) {
                 if (strs[count].ilk == Z_TMPL) {        // dat = "\sqrt[#2]{#1}"
                     int si = 0;
-                    int di = strlen(join);
+                    uint32_t di = (uint32_t) strlen(join);
                     char ch;
                     while ((ch = dat[si])) {
                         if (ch == '\\') {
@@ -2196,7 +2183,7 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
                                 char *vars[9];
                                 int var_count = 0;
                                 char *thetex;
-                                int slot = count + 1;
+                                int slot;
                                 int curr_line_num;
                                 int targ_line_num;
 
@@ -2206,12 +2193,11 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
                                 var_count = 0;
                                 while (dat[si + 1] == '[') {
 // Get the [] args
-                                    char *nom_end =
-                                        strchr(dat + si + 2, ']');
+                                    char *nom_end = strchr(dat + si + 2, ']');
                                     if (nom_end) {
                                         *nom_end = 0;
                                         vars[var_count++] = dat + si + 2;
-                                        si += strlen(dat + si + 2) + 2;
+                                        si += (uint32_t) strlen(dat + si + 2) + 2;
                                     } else
                                         break;
                                 }
@@ -2238,34 +2224,29 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
                                     char *var_nom = vars[1];
                                     if (var_nom) {      // we have a variable leadin
                                         char buf[128];
-                                        int zdl =
-                                            GetProfileStr
-                                            (Profile_VARIABLES, var_nom,
-                                             buf, 128);
+                                        int zdl = GetProfileStr(Profile_VARIABLES, var_nom, buf, 128);
                                         if (zdl > 0) {
                                             char *head = buf;
                                             char *comma = strchr(buf, ',');
-                                            int inc_len;
+                                            uint32_t inc_len;
                                             if (strs[slot].is_line == 2)        // it's a pile
                                                 head = comma + 1;
                                             else
                                                 *comma = 0;
-                                            inc_len = strlen(head);
+                                            inc_len = (uint32_t) strlen(head);
                                             strcpy(join + di, head);
                                             di += inc_len;
                                         }
                                     }
 
                                     strcpy(join + di, thetex);
-                                    di += strlen(thetex);
+                                    di += (uint32_t) strlen(thetex);
 
                                     var_nom = vars[2];
                                     if (var_nom) {
                                         char buf[128];
                                         int zdl =
-                                            GetProfileStr
-                                            (Profile_VARIABLES, var_nom,
-                                             buf, 128);
+                                            GetProfileStr(Profile_VARIABLES, var_nom, buf, 128);
                                         if (zdl > 0) {
                                             char *tail = buf;
                                             char *comma =
@@ -2275,7 +2256,7 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
                                                 tail = comma + 1;
                                             else
                                                 *comma = 0;
-                                            inc_len = strlen(tail);
+                                            inc_len = (uint32_t) strlen(tail);
                                             strcpy(join + di, tail);
                                             di += inc_len;
                                         }
@@ -2319,6 +2300,11 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
         eqn->math_mode = 1;
     }
     eqn->math_mode++;
+
+	switch (eqn->m_mtef_ver == 5) {
+		if (tmpl->selector == 15)
+			tmpl->variation &= 0x000F;
+	}
 
     num_strs += Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation, strs + num_strs);
 
@@ -2450,7 +2436,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar,
 
     *math_attr = set_atts.mathattr;
     if (set_atts.do_lookup) {
-        int zln;
+        uint32_t zln;
         char key[16];           // 132.65m
         char buff[256];
 
@@ -2488,23 +2474,26 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar,
         MT_EMBELL *embells = thechar->embellishment_list;
         while (embells) {
             char tmp[128];
-            int zlen;
+            uint32_t zlen;
             strcpy(tmp, Template_EMBELLS[embells->embell]);
-            zlen = strlen(tmp);
+            zlen = (uint32_t) strlen(tmp);
 
             if (zlen > 0) {     // patch the char into the embell template
-
-                int si = 0;
-                char *ptr = strchr(tmp, ',');
                 char *join;
-                int di = 0;
                 char ch;
+				uint32_t di = 0;
+                uint32_t si = 0;
+                char *ptr = strchr(tmp, ',');
+				
+				/* found comma */
                 if (ptr) {
-                    if (eqn->math_mode || *math_attr == MA_FORCE_MATH)
+                    if (eqn->math_mode || *math_attr == MA_FORCE_MATH) {
                         *ptr = 0;
-                    else
-                        si = ptr - tmp + 1;
-                    zlen = strlen(tmp + si);
+						zlen = (uint32_t) strlen(tmp);
+					} else {
+						zlen = (uint32_t) strlen(ptr + 1);
+						si = (uint32_t) strlen(tmp) - zlen;
+					}
                 }
 
                 join = (char *) malloc(zlen + strlen(zdata) + 16);
@@ -2518,10 +2507,10 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar,
                             break;
                     } else if (ch == '%') {
                         si++;
-                        if ((ch = tmp[si])) {   // 1 - 9
+                        if (tmp[si]) {   // 1 - 9
                             strcpy(join + di, zdata);
                             free(zdata);
-                            di = strlen(join);
+                            di = (uint32_t) strlen(join);
                         } else
                             break;
                     } else
@@ -2559,14 +2548,13 @@ int Eqn_GetTmplStr(MTEquation * eqn, int selector, int variation,
     char ini_line[256];
     char *tmpl_ptr;
     int num_strs = 0;           // this becomes the return value
-    int zlen;
 
     sprintf(key, "%d.%d", selector, variation); // ini_line = "msg,template"
 
     if (eqn->m_mtef_ver==5)
-        zlen = GetProfileStr(Profile_TEMPLATES5, key, ini_line, 256);
+        GetProfileStr(Profile_TEMPLATES5, key, ini_line, 256);
     else
-        zlen = GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
+        GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
 
     tmpl_ptr = strchr(ini_line, ',');
 
@@ -2647,17 +2635,17 @@ void Eqn_LoadCharSetAtts(MTEquation * eqn, char **table)
 // section contains strings of the form
 //    key=data
 static
-int GetProfileStr(char **section, char *key, char *data, int datalen)
+uint32_t GetProfileStr(char **section, char *key, char *data, int datalen)
 {
     char **rover;
-    int keylen;
+    uint32_t keylen;
 
-    keylen = strlen(key);
+    keylen = (uint32_t) strlen(key);
     for (rover = &section[0]; *rover; ++rover) {
         if (strncmp(*rover, key, keylen) == 0) {
             strncpy(data, *rover + keylen + 1, datalen - 1);    // skip over = (no check for white space
             data[datalen - 1] = 0;      // null terminate
-            return (strlen(data));
+            return ((uint32_t) strlen(data));
         }
     }
     return 0;
@@ -3431,25 +3419,12 @@ char *Profile_TEMPLATES5[] = {
     "14.0=barrow: box on top,\\stackrel{#1[M]}{\\longleftrightarrow} ",
     "14.1=barrow: box below ,\\stackunder{#1[M]}{\\longleftrightarrow} ",
     "15.0=integrals: single - no limits,\\int #1[M] ",
-    "15.1=integrals: single - lower only,\\int\\nolimits#2[L][STARTSUB][ENDSUB]#1[M] ",
-    "15.2=integrals: single - both,\\int\\nolimits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
-    "15.3=integrals: contour - no limits,\\oint #1[M] ",
-    "15.4=integrals: contour - lower only,\\oint\\nolimits#2[L][STARTSUB][ENDSUB]#1[M] ",
-    "15.0=integrals: double - no limits ,\\iint #1[M] ",
-    "15.1=integrals: double - lower only,\\iint\\nolimits#2[L][STARTSUB][ENDSUB]#1[M] ",
-    "15.2=integrals: area - no limits ,\\iint #1[M] ",
-    "15.3=integrals: area - lower only,\\iint\\nolimits#2[L][STARTSUB][ENDSUB]#1[M] ",
-    "15.0=integrals: triple - no limits ,\\iiint #1[M] ",
-    "15.1=integrals: triple - lower only,\\iiint\\nolimits#2[L][STARTSUB][ENDSUB]#1[M] ",
-    "15.2=integrals: volume - no limits ,\\iiint #1[M] ",
-    "15.3=integrals: volume - lower only,\\iiint\\nolimits#2[L][STARTSUB][ENDSUB] #1[M] ",
-    "15.0=integrals: single - sum style - both,\\int\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
-    "15.1=integrals: single - sum style - lower only,\\int\\limits#2[L][STARTSUB][ENDSUB]#1[M] ",
-    "15.2=integrals: contour - sum style - lower only,\\oint\\limits#2[L][STARTSUB][ENDSUB] #1[M] ",
-    "15.0=integrals: area - sum style - lower only,\\iint\\limits#2[L][STARTSUB][ENDSUB] #1[M] ",
-    "15.1=integrals: double - sum style - lower only,\\iint\\limits#2[L][STARTSUB][ENDSUB] #1[M] ",
-    "15.0=integrals: volume - sum style - lower only,\\iiint\\limits#2[L][STARTSUB][ENDSUB] #1[M] ",
-    "15.1=integrals: triple - sum style - lower only,\\iiint\\limits#2[L][STARTSUB][ENDSUB] #1[M] ",
+    "15.1=integrals: single - both,\\int\\nolimits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
+    "15.2=integrals: double - both,\\iint\\nolimits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
+    "15.3=integrals: triple - both,\\iiint\\nolimits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
+    "15.4=integrals: contour - no limits,\\oint #1[M] ",
+    "15.8=integrals: contour - no limits,\\oint #1[M] ",
+    "15.12=integrals: contour - no limits,\\oint #1[M] ",
     "16.0=sum: limits top/bottom - both,\\sum\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
     "17.0=product: limits top/bottom - both,\\dprod\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
     "18.0=coproduct: limits top/bottom - both,\\dcoprod\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",

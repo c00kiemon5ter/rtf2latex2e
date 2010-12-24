@@ -133,10 +133,10 @@ typedef struct
 
 typedef struct cell
 {
-	long	x;
-	long	y;
-	long	left;
-	long	right;
+	int	x;
+	int	y;
+	int	left;
+	int	right;
 	double	width;
 	int		columnSpan;
 	int		index;
@@ -154,12 +154,12 @@ typedef struct
 	int		rows;
 	int		cols;
 	int		cellCount;
-	long	leftEdge;
+	int 	leftEdge;
 	cell	*cellInfo;
 	int		rowInfo[rtfBufSiz];
-	long	*columnBorders;
+	int  	*columnBorders;
 	int		cellMergePar;
-	long	previousColumnValue;
+	int 	previousColumnValue;
 	boolean	newRowDef;
     boolean multiCol;
     boolean multiRow;

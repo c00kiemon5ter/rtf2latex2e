@@ -243,11 +243,10 @@ static int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs,
 static void Eqn_LoadCharSetAtts(MTEquation * eqn, char **table);
 static void GetPileType(char *the_template, int arg_num, char *targ_nom);
 
-static int GetProfileStr(char **section, char *key, char *data,
-                         int datalen);
+static uint32_t GetProfileStr(char **section, char *key, char *data, int datalen);
 
 static void BreakTeX(char *ztex, FILE * outfile);
-static char *ToBuffer(char *src, char *buffer, int *off, int *lim);
+static char *ToBuffer(char *src, char *buffer, uint32_t *off, int *lim);
 static void SetComment(EQ_STRREC * strs, int lev, char *src);
 static void SetDollar(EQ_STRREC * strs, int turn_on);
 static char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs);

@@ -64,8 +64,8 @@ typedef struct {
   int      adobe;              /* image includes Adobe comment marker */
 } imagedata;
 
-#define DPI_IGNORE      -1.0      /* dummy value for imagedata.dpi       */
-#define DPI_USE_FILE     0.0      /* dummy value for imagedata.dpi       */
+#define DPI_IGNORE      -1.0f      /* dummy value for imagedata.dpi       */
+#define DPI_USE_FILE     0.0f      /* dummy value for imagedata.dpi       */
 
 typedef enum {      /* JPEG marker codes            */
   M_SOF0  = 0xc0,   /* baseline DCT             */
@@ -137,7 +137,7 @@ typedef enum {      /* JPEG marker codes            */
 
 void JPEGtoEPS(pictureStruct *picturePtr);
 void WriteEPSHeader (imagedata *JPEG, FILE *PSfile, int *llx1, int *lly1, int *urx1, int *ury1);
-int ReadOneByteInHex (FILE *pictureFile);
-long ReadTwoBytesInHex (FILE *pictureFile);
+uint8_t ReadOneByteInHex (FILE *pictureFile);
+uint16_t ReadTwoBytesInHex (FILE *pictureFile);
 int ReadNextMarker (FILE *pictureFile);
 

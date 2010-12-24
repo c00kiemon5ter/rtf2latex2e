@@ -5,7 +5,7 @@
    http://www.ifconnection.de/~tm
 */
 
-
+# include       <stdint.h>
 # include       <stdio.h>
 # include       <string.h>
 # include       <stdlib.h>
@@ -22,7 +22,6 @@ static long hexCount;
 void JPEGtoEPS(pictureStruct * picturePtr)
 {
     imagedata image;
-    long startHeXJpeg;
     char dummyBuf[100];
     FILE *pictureFile;
     int b, c, unit, j;
@@ -31,8 +30,6 @@ void JPEGtoEPS(pictureStruct * picturePtr)
 #define APP_MAX 255
     char appstring[APP_MAX];
     int llx, lly, urx, ury;
-
-    startHeXJpeg = ftell(ifp);
 
     strcpy(dummyBuf, "");
 
@@ -403,9 +400,9 @@ int ReadNextMarker(FILE * pictureFile)
 
 }
 
-int ReadOneByteInHex(FILE * pictureFile)
+uint8_t ReadOneByteInHex(FILE * pictureFile)
 {
-    int hexNumber;
+    uint8_t hexNumber;
 
     RTFGetToken();
     hexCount++;
@@ -426,9 +423,9 @@ int ReadOneByteInHex(FILE * pictureFile)
     return (hexNumber);
 }
 
-long ReadTwoBytesInHex(FILE * pictureFile)
+uint16_t ReadTwoBytesInHex(FILE * pictureFile)
 {
-    int hexNumber;
+    uint16_t hexNumber;
 
     hexNumber = 256 * ReadOneByteInHex(pictureFile);
     hexNumber += ReadOneByteInHex(pictureFile);

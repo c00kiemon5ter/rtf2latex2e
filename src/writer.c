@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+# include <stdint.h>
 # include <stdio.h>
 # include <string.h>
 # include <stdlib.h>
@@ -43,7 +44,7 @@ int Figure2eps(char *inFile, char *outFile);
 void JPEGtoEPS(pictureStruct * picturePtr);
 static void ReadObject(void);
 
-long groupLevel = 0;            /* a counter for keeping track of opening and closing braces */
+int groupLevel = 0;            /* a counter for keeping track of opening and closing braces */
 extern FILE *ifp, *ofp;
 
 # define EQUATION_OFFSET 35
@@ -448,7 +449,7 @@ short ReadPrefFile(char *file)
         else if (strcmp(seq, "false") == 0)
             strcpy(seq, "0");
 
-        preferenceValue[whichPref] = atof(seq);
+        preferenceValue[whichPref] = (int) atof(seq);
     }
     scanner.scanEscape = scanEscape;
     TSSetScanner(&scanner);
@@ -583,12 +584,12 @@ void ExamineToken(void)
 }
 
 
-static int CountCharInString(char *theString, char theChar)
+static uint32_t CountCharInString(char *theString, char theChar)
 {
-    int i, count, length;
+    uint32_t i, count, length;
     
     count = 0;
-    length = strlen(theString);
+    length = (uint32_t) strlen(theString);
 
     for (i = 0; i < length; i++)
         if (theString[i] == theChar)
@@ -626,7 +627,7 @@ int stdCode;
         oStr = buf;
     }
     PutLitStr(oStr);
-    wrapCount += strlen(oStr);
+    wrapCount += (int) strlen(oStr);
 }
 
 /* unused */
@@ -1261,7 +1262,7 @@ static void WriteTextStyle(void)
     if (boldGL <= groupLevel && boldGL > 0 && !(textStyle.wroteBold)) {
         if (mathMode == MATH_NONE_MODE) {
             PutLitStr(boldString);
-            wrapCount += strlen(boldString);
+            wrapCount += (int) strlen(boldString);
             charAttrCount += CountCharInString(boldString, '{');
         } else {
             PutLitStr("\\mathbf{");
@@ -1275,7 +1276,7 @@ static void WriteTextStyle(void)
     if (noBoldGL <= groupLevel && noBoldGL > 0 && !(textStyle.wroteNoBold)
         && textStyle.wroteBold && mathMode == MATH_NONE_MODE) {
         PutLitStr(noBoldString);
-        wrapCount += strlen(noBoldString);
+        wrapCount += (int) strlen(noBoldString);
         charAttrCount += CountCharInString(noBoldString, '{');
         textStyle.wroteNoBold = true;
     }
@@ -1283,7 +1284,7 @@ static void WriteTextStyle(void)
     if (italicGL <= groupLevel && italicGL > 0 && !(textStyle.wroteItalic)) {
         if (mathMode==MATH_NONE_MODE) {
             PutLitStr(italicString);
-            wrapCount += strlen(italicString);
+            wrapCount += (int) strlen(italicString);
             charAttrCount += CountCharInString(italicString, '{');
         } else {
             PutLitStr("\\mathit{");
@@ -1297,14 +1298,14 @@ static void WriteTextStyle(void)
         && !(textStyle.wroteNoItalic)
         && textStyle.wroteItalic && mathMode==MATH_NONE_MODE) {
         PutLitStr(noItalicString);
-        wrapCount += strlen(noItalicString);
+        wrapCount += (int) strlen(noItalicString);
         charAttrCount += CountCharInString(noItalicString, '{');
         textStyle.wroteNoItalic = true;
     }
     if (underlinedGL <= groupLevel && underlinedGL > 0
         && !(textStyle.wroteUnderlined) && mathMode==MATH_NONE_MODE) {
         PutLitStr(underlineString);
-        wrapCount += strlen(underlineString);
+        wrapCount += (int) strlen(underlineString);
         charAttrCount += CountCharInString(underlineString, '{');
         textStyle.wroteUnderlined = true;
         textStyle.open = true;
@@ -1322,7 +1323,7 @@ static void WriteTextStyle(void)
     if (smallCapsGL <= groupLevel && smallCapsGL > 0
         && !(textStyle.wroteSmallCaps) && mathMode==MATH_NONE_MODE) {
         PutLitStr(smallcapsString);
-        wrapCount += strlen(smallcapsString);
+        wrapCount += (int) strlen(smallcapsString);
         charAttrCount += CountCharInString(smallcapsString, '{');
         textStyle.wroteSmallCaps = true;
     }
@@ -1868,19 +1869,19 @@ static void CheckForParagraph(void)
             DoParagraphCleanUp();
             PutLitStr(heading1String);
             writingHeading1 = true;
-            wrapCount = strlen(heading1String);
+            wrapCount = (int) strlen(heading1String);
             paragraph.newStyle = false;
         } else if (writingHeading2) {
             DoParagraphCleanUp();
             PutLitStr(heading2String);
             writingHeading2 = true;
-            wrapCount = strlen(heading2String);
+            wrapCount = (int) strlen(heading2String);
             paragraph.newStyle = false;
         } else if (writingHeading3) {
             DoParagraphCleanUp();
             PutLitStr(heading3String);
             writingHeading3 = true;
-            wrapCount = strlen(heading3String);
+            wrapCount = (int) strlen(heading3String);
             paragraph.newStyle = false;
         }
         return;
@@ -1939,14 +1940,12 @@ static void CheckForParagraph(void)
 
         /* or if we see a paragraph definition */
         else if (rtfMajor == rtfParAttr && rtfMinor == rtfParDef) {
-            stop = true;
             newParagraph = true;
             break;
         }
 
         /* if it is a destination */
         else if (RTFCheckCM(rtfControl, rtfDestination)) {
-            stop = true;
             newParagraph = false;
             break;
         }
@@ -1957,7 +1956,6 @@ static void CheckForParagraph(void)
                  || rtfMajor == rtfTblAttr || rtfMajor == rtfFontAttr
                  || rtfMajor == rtfSectAttr || rtfMajor == rtfPictAttr
                  || rtfMajor == rtfObjAttr) {
-            stop = true;
             newParagraph = false;
             break;
         }
@@ -2173,10 +2171,9 @@ static void ReadCell(void)
     cell *cellPtr;
     char *fn = "ReadCell";
 
-
-    if ((cellPtr = New(cell)) == (cell *) NULL)
+	cellPtr = New(cell);
+    if (cellPtr == NULL)
         RTFPanic("%s: cannot allocate cell entry", fn);
-
 
     cellPtr->nextCell = table.cellInfo;
     cellPtr->x = table.rows;
@@ -2283,7 +2280,8 @@ static void InheritTableRowDef(void)
 
         cellPtr = GetCellByPos(prevRow, i);
 
-        if ((newCellPtr = New(cell)) == (cell *) NULL)
+        newCellPtr = New(cell);
+		if (newCellPtr == NULL)
             RTFPanic("%s: cannot allocate inheriting cell entry", fn);
 
         newCellPtr->nextCell = table.cellInfo;
@@ -2341,13 +2339,12 @@ static int GetColumnSpan(cell * cellPtr)
 */
 static void PrescanTable(void)
 {
-    long tableStart, tempGroupLevel;
+    long tableStart;
     boolean foundRow = true;
     boolean foundColumn = true;
     int i, j;
     cell *cellPtr, *cellPtr1;
     char *fn = "PrescanTable";
-    boolean stop = false;
     short prevChar;
     int maxCols = 0;
     int rowWithMaxCols = 0;
@@ -2355,7 +2352,7 @@ static void PrescanTable(void)
 
     RTFStoreStack();
     prevChar = RTFPushedChar();
-    tempGroupLevel = groupLevel;
+
     /* mark the current cursor position */
     tableStart = ftell(ifp);
 
@@ -2365,8 +2362,6 @@ static void PrescanTable(void)
     table.cols = 0;
     table.inside = true;
     table.cellInfo = (cell *) NULL;
-
-    i = 0;
 
     /* Prescan each row until end of the table. */
     while (foundRow) {
@@ -2391,9 +2386,8 @@ static void PrescanTable(void)
 
         table.inside = false;
         table.newRowDef = false;
-        stop = false;
 
-        while (!stop) {
+        while (1) {
 
             RTFGetToken();
 
@@ -2402,32 +2396,25 @@ static void PrescanTable(void)
             }
 
             else if (RTFCheckMM(rtfTblAttr, rtfRowDef) != 0) {
-                stop = true;
                 table.inside = true;
                 table.newRowDef = true;
+				break;
             }
 
-
-            else if (rtfClass == rtfText
-                     || RTFCheckCM(rtfControl, rtfSpecialChar) != 0) {
-                stop = true;
+            else if (rtfClass == rtfText || RTFCheckCM(rtfControl, rtfSpecialChar) != 0) {
                 break;
             }
 
             else if (RTFCheckMM(rtfParAttr, rtfInTable) != 0) {
-                stop = true;
                 table.inside = true;
                 break;
             }
 
             else if (rtfClass == rtfEOF) {
 /*                              printf ("* end of file!\n"); */
-                stop = true;
                 table.inside = false;
                 break;
             }
-
-
         }
 
 
@@ -2475,8 +2462,7 @@ static void PrescanTable(void)
             RTFPanic("%s: cannot allocate array for cell borders\n", fn);
 
         table.cols = 0;
-        for (cellPtr = table.cellInfo; cellPtr != (cell *) NULL;
-             cellPtr = cellPtr->nextCell) {
+        for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
             enteredValue = false;
             for (j = 0; j < table.cols; j++)
                 if (rightBorders[j] == cellPtr->right)
@@ -2488,16 +2474,15 @@ static void PrescanTable(void)
         }
 
         /* allocate array for coulumn border entries. */
-        table.columnBorders =
-            (long *) RTFAlloc(((table.cols) + 1) * sizeof(long));
-        if ((table.columnBorders) == (long *) NULL)
+        table.columnBorders = (long *) RTFAlloc(((table.cols) + 1) * sizeof(long));
+		
+        if ((table.columnBorders) == NULL)
             RTFPanic("%s: cannot allocate array for cell borders\n", fn);
 
         for (i = 0; i < table.cols; i++)
             (table.columnBorders)[i + 1] = rightBorders[i];
 
         RTFFree(rightBorders);
-
     }
 
 /*      
@@ -2543,9 +2528,8 @@ static void PrescanTable(void)
     /* fill in column spans for each cell */
     for (i = 0; i < table.cellCount; i++) {
         cellPtr = GetCellInfo(i);
-        if (cellPtr == (cell *) NULL)
-            RTFPanic("%s: Attempting to access invalid cell at index %d\n",
-                     fn, i);
+        if (cellPtr == NULL)
+            RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn, i);
         cellPtr->columnSpan = GetColumnSpan(cellPtr);
         if (cellPtr->columnSpan > 1)
             table.multiCol = true;
@@ -2595,10 +2579,9 @@ static void PrescanTable(void)
 static void DoMergedCells(cell * cellPtr)
 {
     int i;
-    long x, y;
-    cell *localCellPtr = cellPtr;
+    int x, y;
+    cell *localCellPtr;
     char buf[rtfBufSiz];
-
 
     x = cellPtr->x;
     y = cellPtr->y;
@@ -2735,7 +2718,6 @@ static void ProcessTableRow(int rowNum)
         else if (RTFCheckCM(rtfControl, rtfSpecialChar) != 0) {
             switch (rtfMinor) {
             case rtfRow:
-                endOfRow = true;
                 return;
 
             case rtfCell:
@@ -2937,7 +2919,6 @@ static void DoTable(void)
     suppressLineBreak = true;
 
     wrapCount = 0;
-    cols = 0;
 
 
     RTFFree((char *) table.columnBorders);
@@ -3291,10 +3272,9 @@ static void ConvertHexPicture(char *pictureType)
         if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
             RTFGetToken();
 
-        if (rtfClass == rtfGroup) {
-            groupEnd = true;
+        if (rtfClass == rtfGroup)
             break;
-        }
+        
         if (!groupEnd) {
             hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
             hexEvenOdd++;
@@ -3304,19 +3284,16 @@ static void ConvertHexPicture(char *pictureType)
         if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
             RTFGetToken();
             
-        if (rtfClass == rtfGroup) {
-            groupEnd = true;
+        if (rtfClass == rtfGroup)
             break;
-        }
+        
         if (!groupEnd) {
             hexNumber += RTFCharToHex(rtfTextBuf[0]);   /* this is the the number */
             hexEvenOdd--;
             /* shove that number into a character of 1 byte */
             pictByte = hexNumber;
             fputc(pictByte, pictureFile);
-
         }
-
     }
 
     if (fclose(pictureFile) != 0)
@@ -3717,10 +3694,8 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
         if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
             RTFGetToken();
 
-        if (rtfClass == rtfGroup) {
-            groupEnd = true;
+        if (rtfClass == rtfGroup)
             break;
-        }
 
         if (!groupEnd) {
             hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
@@ -3731,10 +3706,8 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
         if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
             RTFGetToken();  /* should not happen */
 
-        if (rtfClass == rtfGroup) {
-            groupEnd = true;
+        if (rtfClass == rtfGroup)
             break;
-        }
 
         if (!groupEnd) {
             hexNumber += RTFCharToHex(rtfTextBuf[0]);   /* this is the the number */

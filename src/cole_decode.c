@@ -89,7 +89,7 @@ static U32 *root_list;
 
 
 int
-__OLEdecode(char *OLEfilename, pps_entry ** stream_list, U32 * root,
+__OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
             U8 ** _BDepot, U8 ** _SDepot, FILE ** _sbfile,
             char **_sbfilename, FILE ** _input, U16 max_level)
 {
@@ -602,7 +602,7 @@ void verbosePPSTree(pps_entry * pps_list, U32 start_entry, int level)
         if (pps_list[entry].type == 2) {
             for (i = 0; i < level * 3; i++)
                 printf(" ");
-            printf("FILE %02x %8d '%c%s'\n", pps_list[entry].ppsnumber,
+            printf("FILE %02x %8ul '%c%s'\n", pps_list[entry].ppsnumber,
                    pps_list[entry].size,
                    !isprint(pps_list[entry].
                             name[0]) ? ' ' : pps_list[entry].name[0],

@@ -33,9 +33,9 @@ struct pps_block
     char filename[L_tmpnam];	/* valid only if type == 2 */
     U8 type;			/* 5 == root, 1 == dir, 2 == file */
     U32 size;			/* the size of the file,
-				   valid only if type == 2 */
+				           valid only if type == 2 */
     U32 next;			/* next entry in this level,
-				   in this directory */
+				           this directory */
     U32 dir;			/* valid only if type != 2 */
     U16 level;			/* level in the ole tree */
     U32 seconds1;
@@ -44,7 +44,7 @@ struct pps_block
     U32 days2;
     U32 start;			/* start block */
 
-    /* private fields, used only inside OLEdecoded and OLEcode,
+    /* private fields, used only inside OLEdecode and OLEcode,
        don't modify them if you want to use OLEcode */
     U32 previous;		/* previous pps, valid before reordering */
     U32 ppsnumber;		/* pps number */
@@ -73,7 +73,7 @@ typedef struct pps_block pps_entry;
    .       7 = Error creating temporal files, can use perror.
    .       10 = Error allocating memory, there's no more memory.
  */
-int __OLEdecode (char *OLEfilename, pps_entry ** stream_list, U32 * root,
+int __OLEdecode (char *OLEfilename, pps_entry ** stream_list, size_t * root,
 		 U8 **_BDepot, U8 **_SDepot, FILE **_sbfile, char **_sbfilename,
 		 FILE **_input, U16 max_level);
 
@@ -90,7 +90,7 @@ int __OLEdecode (char *OLEfilename, pps_entry ** stream_list, U32 * root,
 struct _COLEFS {
 	/* This structure is for internal use only, not for the public API */
 	pps_entry *tree;
-	U32 root;			/* entry root, root pps_entry */
+	size_t root;			/* entry root, root pps_entry */
 	U8 *BDepot;
 	U8 *SDepot;
 	FILE *sbfile;
@@ -99,23 +99,23 @@ struct _COLEFS {
 };
 struct _COLEDIRENT {
 	/* This structure is for internal use only, not for the public API */
-	U32 entry;
+	size_t entry;
 	struct _COLEDIR *dir;		/* father */
 };
 struct _COLEDIR {
 	/* This structure is for internal use only, not for the public API */
-	U32 entry;
+	size_t entry;
 	struct _COLEDIRENT visited_entry;
 	struct _COLEFS *fs;		/* father */
 };
 struct _COLEFILE {
 	/* This structure is for internal use only, not for the public API */
-	U32 entry;
+	size_t entry;
 	FILE *file;			/* actual extracted file */
 	char *filename;			/* actual extracted file's name */
 	U32 filesize;			/* actual extracted file size */
 	struct _COLEFS *fs;		/* father */
-	U32 pos;			/* file pointer position */
+	size_t pos;			/* file pointer position */
 };
 int __cole_extract_file (FILE **file, char **filename, U32 size,
 			 U32 pps_start, U8 *BDepot, U8 *SDepot, FILE *sbfile,

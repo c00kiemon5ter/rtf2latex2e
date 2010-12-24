@@ -27,6 +27,8 @@
 #include     "mygetopt.h"
 #include     "rtf2latex2e.h"
 
+#define      LIBDIR       "/opt/local"
+
 extern long  groupLevel;
 extern char  outputMapName[];
 FILE         *OpenLibFile(char *name, char *mode);
@@ -213,8 +215,8 @@ int
 main(int argc, char **argv)
 {
     char            c, buf[rtfBufSiz], *buf1, buf2[rtfBufSiz];
-    int             i, bufLength, fileCounter;
-    long            cursorPos;
+    int             i, fileCounter;
+    long            cursorPos, bufLength;
     extern char    *optarg;
     extern int      optind;
 

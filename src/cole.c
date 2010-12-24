@@ -16,12 +16,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-/*
-   Arturo Tena <arturo@directmail.org>
- */
-
 #include <stdlib.h>
-
 #include "cole.h"
 #include "cole_internal.h"
 
@@ -69,8 +64,7 @@ void cole_perror(const char *s, COLERRNO colerrno)
         fprintf(stderr, "End of file has been reached\n");
         break;
     case COLE_EMEMBERISNOTDIR:
-        fprintf(stderr, "A member of the filename is not "
-                "a directory\n");
+        fprintf(stderr, "A member of the filename is not a directory\n");
         break;
     case COLE_EBROKENFILENAME:
         fprintf(stderr, "The filename is not right written\n");
@@ -93,7 +87,6 @@ void cole_perror(const char *s, COLERRNO colerrno)
         break;
     }
 }
-
 
 
 /**
@@ -163,7 +156,7 @@ COLEFS *cole_mount(char *filename, COLERRNO * colerrno)
  *
  * Umounts the filesystem @colefilesystem.
  *
- * Returns: zero in success, no zero in other case.
+ * Returns: zero in success, non-zero otherwise.
  */
 int cole_umount(COLEFS * colefilesystem, COLERRNO * colerrno)
 {
@@ -207,9 +200,9 @@ int cole_umount(COLEFS * colefilesystem, COLERRNO * colerrno)
  *
  * Prints on the standard output the tree of files and directories contained
  * in @colefilesystem.
- * Currently this call always success.
+ * Currently this call always succeeds.
  *
- * Returns: zero in success, no zero in other case.
+ * Returns: zero in success, non-zero in other case.
  */
 static COLE_RECURSE_DIR_FUNC __cole_print_tree_indir;
 static COLE_RECURSE_DIR_FUNC __cole_print_tree_outdir;
@@ -217,7 +210,7 @@ static COLE_RECURSE_DIR_FUNC __cole_print_tree_inroot;
 static COLE_RECURSE_DIRENT_FUNC __cole_print_tree_indirentry;
 int cole_print_tree(COLEFS * colefilesystem, COLERRNO * colerrno)
 {
-    long level;
+    int32_t level;
 
     level = 1;
     if (cole_recurse_tree(colefilesystem, &level,
@@ -238,7 +231,7 @@ int __cole_print_tree_indir(COLEDIR * cd, void *info, COLERRNO * colerrno)
  *      Modify colerrno comment in the functions that call it,
  *      ie. cole_print_tree().
  */
-    (*((long *) info))++;
+    (*((int32_t *) info))++;
     return 0;
 }
 
@@ -249,7 +242,7 @@ int __cole_print_tree_outdir(COLEDIR * cd, void *info, COLERRNO * colerrno)
  *      Modify colerrno comment in the functions that call it,
  *      ie. cole_print_tree().
  */
-    (*((long *) info))--;
+    (*((int32_t *) info))--;
     return 0;
 }
 
@@ -264,7 +257,7 @@ int __cole_print_tree_inroot(COLEDIR * cd, void *info, COLERRNO * colerrno)
 
     printf("DIR ");
     printf(" %7lu", cole_dir_getsize(cd));
-    printf(" %08lx-%08lx %08lx-%08lx",
+    printf(" %08x-%08x %08x-%08x",
            cole_dir_getdays1(cd),
            cole_dir_getsec1(cd),
            cole_dir_getdays2(cd), cole_dir_getsec2(cd));
@@ -287,10 +280,10 @@ __cole_print_tree_indirentry(COLEDIRENT * cde, void *info,
  *      ie. cole_print_tree().
  */
     char *entry_name;
-    long level;
-    long i;
+    int32_t level;
+    int32_t i;
 
-    level = *((long *) info);
+    level = *((int32_t *) info);
     for (i = 0; i < level; i++) {
         if (i == level - 1)
             printf("\\--");
@@ -305,7 +298,7 @@ __cole_print_tree_indirentry(COLEDIRENT * cde, void *info,
     else
         printf("????");
     printf(" %7lu", cole_direntry_getsize(cde));
-    printf(" %08lx-%08lx %08lx-%08lx",
+    printf(" %08x-%08x %08x-%08x",
            cole_direntry_getdays1(cde),
            cole_direntry_getsec1(cde),
            cole_direntry_getdays2(cde), cole_direntry_getsec2(cde));
@@ -462,35 +455,30 @@ char *cole_direntry_getname(COLEDIRENT * coledirentry)
 
 size_t cole_direntry_getsize(COLEDIRENT * coledirentry)
 {
-    /* FIXME is it cast needed? */
     return coledirentry->dir->fs->tree[coledirentry->entry].size;
 }
 
 
-long cole_direntry_getsec1(COLEDIRENT * coledirentry)
+uint32_t cole_direntry_getsec1(COLEDIRENT * coledirentry)
 {
-    /* seconds1 is U32, long is at least U32 in all plattforms, isn't it? */
     return coledirentry->dir->fs->tree[coledirentry->entry].seconds1;
 }
 
 
-long cole_direntry_getsec2(COLEDIRENT * coledirentry)
+uint32_t cole_direntry_getsec2(COLEDIRENT * coledirentry)
 {
-    /* seconds2 is U32, long is at least U32 in all plattforms, isn't it? */
     return coledirentry->dir->fs->tree[coledirentry->entry].seconds2;
 }
 
 
-long cole_direntry_getdays1(COLEDIRENT * coledirentry)
+uint32_t cole_direntry_getdays1(COLEDIRENT * coledirentry)
 {
-    /* days1 is U32, long is at least U32 in all plattforms, isn't it? */
     return coledirentry->dir->fs->tree[coledirentry->entry].days1;
 }
 
 
-long cole_direntry_getdays2(COLEDIRENT * coledirentry)
+uint32_t cole_direntry_getdays2(COLEDIRENT * coledirentry)
 {
-    /* days2 is U32, long is at least U32 in all plattforms, isn't it? */
     return coledirentry->dir->fs->tree[coledirentry->entry].days2;
 }
 
@@ -503,35 +491,30 @@ char *cole_dir_getname(COLEDIR * coledir)
 
 size_t cole_dir_getsize(COLEDIR * coledir)
 {
-    /* FIXME is it cast needed? */
     return coledir->fs->tree[coledir->entry].size;
 }
 
 
-long cole_dir_getsec1(COLEDIR * coledir)
+U32 cole_dir_getsec1(COLEDIR * coledir)
 {
-    /* seconds1 is U32, long is at least U32 in all plattforms, isn't it? */
     return coledir->fs->tree[coledir->entry].seconds1;
 }
 
 
-long cole_dir_getsec2(COLEDIR * coledir)
+U32 cole_dir_getsec2(COLEDIR * coledir)
 {
-    /* seconds2 is U32, long is at least U32 in all plattforms, isn't it? */
     return coledir->fs->tree[coledir->entry].seconds2;
 }
 
 
-long cole_dir_getdays1(COLEDIR * coledir)
+U32 cole_dir_getdays1(COLEDIR * coledir)
 {
-    /* days1 is U32, long is at least U32 in all plattforms, isn't it? */
     return coledir->fs->tree[coledir->entry].days1;
 }
 
 
-long cole_dir_getdays2(COLEDIR * coledir)
+U32 cole_dir_getdays2(COLEDIR * coledir)
 {
-    /* days2 is U32, long is at least U32 in all plattforms, isn't it? */
     return coledir->fs->tree[coledir->entry].days2;
 }
 
@@ -1066,9 +1049,10 @@ __cole_recurse_tree(COLEDIR * _cd, long level, void *info,
  *                         from call cole_recurse_tree()).
  *
  * Locate the @filename in the filesystem @colefilesystem, calling @action when
- * it's found. @info is arbitrary pointer passed to @action.
- * Currently, @filename must begin with a '/' character, it means @filename is
- * the absolute filename.
+ * it is found. @info is arbitrary pointer passed to @action.
+ *
+ * @filename must begin with a '/' character, it means @filename is
+ * an absolute path to the file.
  *
  * Returns: zero in success, 1  in other case.
  */
@@ -1089,7 +1073,6 @@ cole_locate_filename(COLEFS * colefilesystem, char *filename,
     struct __cole_locate_filenameinfo _info;
     COLERRNO _colerrno;
 
-    /* FIXME allow no absolute paths */
     if (filename[0] != '/') {
         if (colerrno != NULL)
             *colerrno = COLE_EBROKENFILENAME;
@@ -1124,8 +1107,7 @@ int __cole_locate_filename_visitdir(COLEDIR * cd, void *info)
 }
 
 int
-__cole_locate_filename_indirentry(COLEDIRENT * cde, void *_info,
-                                  COLERRNO * colerrno)
+__cole_locate_filename_indirentry(COLEDIRENT * cde, void *_info, COLERRNO * colerrno)
 {
     char *entry_name;
     struct __cole_locate_filenameinfo *info;
@@ -1142,6 +1124,7 @@ __cole_locate_filename_indirentry(COLEDIRENT * cde, void *_info,
             return 0;           /* don't break recurse */
         }
     }
+    
     switch (*pentry_name) {
     case 0:
         switch (*pcurrent) {

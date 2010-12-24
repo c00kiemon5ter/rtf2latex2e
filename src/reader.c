@@ -1254,7 +1254,7 @@ short RTFGetCharSet()
 
 static void ReadFontTbl()
 {
-    RTFFont *fp;
+    RTFFont *fp = NULL;
     char buf[rtfBufSiz], *bp;
     short old = -1;
     char *fn = "ReadFontTbl";
@@ -1357,7 +1357,7 @@ static void ReadFontTbl()
                 RTFPanic("%s: missing \"}\"", fn);
         }
     }
-    if (fp->rtfFNum == -1)
+    if (fp == NULL || fp->rtfFNum == -1)
         RTFPanic("%s: missing font number", fn);
 /*
  * Could check other pieces of structure here, too, I suppose.
@@ -1450,7 +1450,8 @@ static void ReadStyleSheet()
         (void) RTFGetToken();
         if (RTFCheckCM(rtfGroup, rtfEndGroup))
             break;
-        if ((sp = New(RTFStyle)) == (RTFStyle *) NULL)
+		sp = New(RTFStyle);
+        if (!sp)
             RTFPanic("%s: cannot allocate stylesheet entry", fn);
         sp->rtfSName = (char *) NULL;
         sp->rtfSNum = -1;
@@ -1503,7 +1504,8 @@ static void ReadStyleSheet()
                     sp->rtfSType = rtfTableStyle;
                     continue;
                 }
-                if ((sep = New(RTFStyleElt)) == (RTFStyleElt *) NULL)
+				sep = New(RTFStyleElt);
+                if (!sep)
                     RTFPanic("%s: cannot allocate style element", fn);
                 sep->rtfSEClass = rtfClass;
                 sep->rtfSEMajor = rtfMajor;
@@ -2271,7 +2273,7 @@ static void RTFSwitchCharSet(long enc)
 
 }
 
-void RTFSetDefaultFont(long fontNumber)
+void RTFSetDefaultFont(int fontNumber)
 {
     defaultFontNumber = fontNumber;
 }

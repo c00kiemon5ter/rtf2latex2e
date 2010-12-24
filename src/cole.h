@@ -16,32 +16,16 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-/*
-   Arturo Tena <arturo@directmail.org>
- */
 
 #ifndef __COLE_H
 #define __COLE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 /*
- * Attention: this API is documentated in the `doc' subdirectory
+ * Attention: this API is documented in the `doc' subdirectory
  */
 
-
-
-/* Just to get size_t */
+#include <stdint.h>
 #include <stdio.h>
-#ifndef size_t
-	/* autoconf defines size_t as unsigned if not defined */
-	/* unsigned changed to unsigned long by Ujwal S. Sathyam for rtf2latex2e */
-#	define size_t unsigned long
-#endif
-
 
 
 /*
@@ -214,24 +198,19 @@ COLEDIRENT *	cole_visiteddirentry	(COLEDIR *coledir);
 COLEDIRENT *	cole_nextdirentry	(COLEDIR *coledir);
 char *		cole_dir_getname	(COLEDIR *coledir);
 size_t		cole_dir_getsize	(COLEDIR *coledir);
-long		cole_dir_getdays1	(COLEDIR *coledir);
-long		cole_dir_getsec1	(COLEDIR *coledir);
-long		cole_dir_getdays2	(COLEDIR *coledir);
-long		cole_dir_getsec2	(COLEDIR *coledir);
+uint32_t		cole_dir_getdays1	(COLEDIR *coledir);
+uint32_t		cole_dir_getsec1	(COLEDIR *coledir);
+uint32_t		cole_dir_getdays2	(COLEDIR *coledir);
+uint32_t		cole_dir_getsec2	(COLEDIR *coledir);
 char *		cole_direntry_getname	(COLEDIRENT *coledirentry);
 size_t		cole_direntry_getsize	(COLEDIRENT *coledirentry);
-long		cole_direntry_getdays1	(COLEDIRENT *coledirentry);
-long		cole_direntry_getsec1	(COLEDIRENT *coledirentry);
-long		cole_direntry_getdays2	(COLEDIRENT *coledirentry);
-long		cole_direntry_getsec2	(COLEDIRENT *coledirentry);
+uint32_t		cole_direntry_getdays1	(COLEDIRENT *coledirentry);
+uint32_t		cole_direntry_getsec1	(COLEDIRENT *coledirentry);
+uint32_t		cole_direntry_getdays2	(COLEDIRENT *coledirentry);
+uint32_t		cole_direntry_getsec2	(COLEDIRENT *coledirentry);
 int		cole_direntry_isdir	(COLEDIRENT *coledirentry);
 int		cole_direntry_isfile	(COLEDIRENT *coledirentry);
 
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* __COLE_H */
 

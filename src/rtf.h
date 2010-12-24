@@ -323,7 +323,7 @@ typedef	void (*RTFFuncPtr) ();		/* generic function pointer */
  */
 
 void		RTFSimpleInit ();
-void 		RTFSetDefaultFont (long fontNumber);
+void 		RTFSetDefaultFont (int fontNumber);
 void		RTFInit ();
 void 		RTFSetStream(FILE *stream);
 char 		*RTFGetInputName();

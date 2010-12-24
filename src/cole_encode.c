@@ -29,22 +29,13 @@
 #include "cole_support.h"
 #include "cole_internal.h"
 
-
-
-#ifdef COLE_VERBOSE
-#define VERBOSE
-#else
-#undef VERBOSE
-#endif
-
-
 /* warning: some lines are longer than 80 characters */
 
 struct str_MY_FILE {
     enum {
         real, MY_FILE_list, block_list, root_list
     } type;
-    U32 size;                   /* size of list _itself_ */
+    size_t size;                   /* size of list _itself_ */
     U32 *blocks;                /* size in big blocks (0x0200) of the information
                                    that contains this file */
     union union_file {
@@ -128,8 +119,8 @@ static U32 sum_blocks_MY_FILE_list(MY_FILE * list);
 
 static void ends(void);
 
-#define size2blocks(s,b) (!(s) ? 1 : (1+((s)-1)/(b)))
-#define size2blocks_preserve_zero(s,b) (!(s) ? 0 : (1+((s)-1)/(b)))
+#define size2blocks(s,b) ((U32)(!(s) ? 1 : (1+((s)-1)/(b))))
+#define size2blocks_preserve_zero(s,b) ((U32)(!(s) ? 0 : (1+((s)-1)/(b))))
 #define clean_block(b,s) memset((b),0xff,(s))
 #define init_MY_FILE(n, t, s, b, f) { \
   (n)->type = t; \
@@ -191,21 +182,18 @@ or may be:
 #define dummy() {;}
 */
 
-
-
 /*
-  Exit codes:
-  0 = All goes OK.
-  1 = error writting in OLEfilename, can use perror
-  2 = trunc == 0 and file exist
-  3 = can't create OLEfilename, can use perror
-  10 = Error allocating memory, there's no more memory
-  11 = Error reading streams files
-  12 = Error reading stream_list, it's broken
-*/
+ *  Exit codes:
+ *  0 = All goes OK.
+ *  1 = error writing in OLEfilename, can use perror
+ *  2 = trunc == 0 and file exist
+ *  3 = can't create OLEfilename, can use perror
+ * 10 = Error allocating memory, there's no more memory
+ * 11 = Error reading streams files
+ * 12 = Error reading stream_list, it's broken
+ */
 int
-__OLEcode(const char *OLEfilename, int trunc, pps_entry * stream_list,
-          U32 root)
+__OLEcode(const char *OLEfilename, int trunc, pps_entry * stream_list, U32 root)
 {
     verbose("calling: OLEcode ()");
 
@@ -214,16 +202,19 @@ __OLEcode(const char *OLEfilename, int trunc, pps_entry * stream_list,
 
     /* -- init static things -- */
     output_file = NULL;
+	
+	 /* just needed clean up once, for security reasons */
     clean_block(output_block, 0x0200);
-    /* just needed clean up once, for security reasons */
+	
     pos_block = 0x00;
-    next_block = 0xffffffffUL;
-    /* it need to be 0xffffffffUL, because next time we make next_block++
+    next_block = 0xffffffff;
+    /* it need to be 0xffffffff, because next time we make next_block++
        it must be zero (bad hack? next_block is always 32 bits) */
-    BDepot = SDepot = bbd_list = NULL;
-    Root = NULL;
+	
+    BDepot = NULL;
+    SDepot = NULL;
+    Root   = NULL;
     sbfile = NULL;
-
 
     /* -- allocate initial memory needed for my files (Structure called at HACKING) -- */
 
@@ -288,16 +279,16 @@ int process_Root(pps_entry * pps_list, U32 root)
     verboseU32(pps_list_entries);
 
     for (i = 0; i < pps_list_entries; i++)
-        test_call(add_entry_to_Root(pps_list + i, 0x00000000UL), int);
+        test_call(add_entry_to_Root(pps_list + i, 0x00000000), int);
     /*
-       start_block = 0x00000000UL is a dummy value.
+       start_block = 0x00000000 is a dummy value.
        The real start block:
        for files in SDepot is written in Root in generate_real_file(),
        for files in BDepot is written in Root in generate_real_file(),
        and for sbfile: the default is written in process_streams()
        and the real, if any, is written when generating the first
        small stream in generate_real_file().
-       But 0x00000000UL is a perfect value to directory entries (type=1)
+       But 0x00000000 is a perfect value to directory entries (type=1)
        About sizes: every pps have its size, incluiding sbfile,
        that value will be comparated later in generate_real_file().
      */
@@ -330,20 +321,20 @@ U32 max_pps_referenced(pps_entry * pps_list, U32 node)
 
     max_pps = max3(node,
                    pps_list[node].previous !=
-                   0xffffffffUL ? pps_list[node].previous : 0,
+                   0xffffffff ? pps_list[node].previous : 0,
                    pps_list[node].next !=
-                   0xffffffffUL ? pps_list[node].next : 0,
+                   0xffffffff ? pps_list[node].next : 0,
                    pps_list[node].dir !=
-                   0xffffffffUL ? pps_list[node].dir : 0);
+                   0xffffffff ? pps_list[node].dir : 0);
 
-    if (pps_list[node].previous != 0xffffffffUL)
+    if (pps_list[node].previous != 0xffffffff)
         max_pps = MAX(max_pps,
                       max_pps_referenced(pps_list,
                                          pps_list[node].previous));
-    if (pps_list[node].next != 0xffffffffUL)
+    if (pps_list[node].next != 0xffffffff)
         max_pps = MAX(max_pps,
                       max_pps_referenced(pps_list, pps_list[node].next));
-    if (pps_list[node].dir != 0xffffffffUL)
+    if (pps_list[node].dir != 0xffffffff)
         max_pps = MAX(max_pps,
                       max_pps_referenced(pps_list, pps_list[node].dir));
 
@@ -354,7 +345,7 @@ U32 max_pps_referenced(pps_entry * pps_list, U32 node)
 /* reviewed when coding ole2 file */
 int process_streams(pps_entry * pps_list, pps_entry * node)
 {
-    U32 U32end_chain = 0xfffffffeUL;
+    U32 U32end_chain = 0xfffffffe;
 
     verbose("calling: process_streams ()");
 
@@ -362,10 +353,10 @@ int process_streams(pps_entry * pps_list, pps_entry * node)
     switch (node->type) {
     case 1:                     /* dir */
         warning(node->size == 0);
-        if (node->dir != 0xffffffffUL)
+        if (node->dir != 0xffffffff)
             test_call(process_streams(pps_list, &pps_list[node->dir]),
                       int);
-        if (node->next != 0xffffffffUL)
+        if (node->next != 0xffffffff)
             test_call(process_streams(pps_list, &pps_list[node->next]),
                       int);
         break;
@@ -375,16 +366,16 @@ int process_streams(pps_entry * pps_list, pps_entry * node)
         /* write the default start block of SDepot: empty if there are no
            sbfile at all */
         fil_swriteU32(Root->file.root_list + 0x74, &U32end_chain);
-        if (node->dir != 0xffffffffUL)
+        if (node->dir != 0xffffffff)
             test_call(process_streams(pps_list, &pps_list[node->dir]),
                       int);
-        if (node->next != 0xffffffffUL)
+        if (node->next != 0xffffffff)
             test_call(process_streams(pps_list, &pps_list[node->next]),
                       int);
         break;
 
     case 2:                     /* file */
-        test_exitf(node->dir == 0xffffffffUL, 12, dummy());
+        test_exitf(node->dir == 0xffffffff, 12, dummy());
         if (node->size < 0x1000)
             /* must be in sbfile, and its block list in SDepot */
             test_call(add_stream_to_sbfile_and_SDepot
@@ -393,7 +384,7 @@ int process_streams(pps_entry * pps_list, pps_entry * node)
             /* must be in Input, and its block list in BDepot */
              test_call(add_stream_to_Input_and_BDepot
                        (node->size, node->filename, node->ppsnumber), int);
-        if (node->next != 0xffffffffUL)
+        if (node->next != 0xffffffff)
             test_call(process_streams(pps_list, &pps_list[node->next]),
                       int);
         break;
@@ -416,7 +407,7 @@ int add_entry_to_Root(pps_entry * node, U32 start_block)
 
     /* 1. add entry in Root */
     entry_number = add_MY_FILE_entry(Root, 0 /*dummy value, not used */ );
-    test_exitf(entry_number != 0xffffffffUL, 10, dummy());
+    test_exitf(entry_number != 0xffffffff, 10, dummy());
     new_entry_Root = Root->file.root_list + entry_number * 0x80;
 
     /* 2. write info about the new stream in the new entry in Root */
@@ -447,11 +438,11 @@ int add_stream_to_sbfile_and_SDepot(U32 size, char *name, U32 ppsnumber)
     /* 1. add entries in SDepot and sbfile */
     /*    add in SDepot */
     entry_number = add_MY_FILE_entry(SDepot, size);
-    test_exitf(entry_number != 0xffffffffUL, 10, dummy());
+    test_exitf(entry_number != 0xffffffff, 10, dummy());
     new_entry_SDepot = SDepot->file.block_list + entry_number;
     /*    add in sbfile */
     entry_number = add_MY_FILE_entry(sbfile, size);
-    test_exitf(entry_number != 0xffffffffUL, 10, dummy());
+    test_exitf(entry_number != 0xffffffff, 10, dummy());
     new_entry_sbfile = sbfile->file.MY_FILE_list + entry_number;
 
     /* 2. write info about the new stream in the new entry in SDepot */
@@ -499,11 +490,11 @@ int add_stream_to_Input_and_BDepot(U32 size, char *name, U32 ppsnumber)
     /* 1. add entries in BDepot and Input */
     /*    add in BDepot */
     entry_number = add_MY_FILE_entry(BDepot, size);
-    test_exitf(entry_number != 0xffffffffUL, 10, dummy());
+    test_exitf(entry_number != 0xffffffff, 10, dummy());
     new_entry_BDepot = BDepot->file.block_list + entry_number;
     /*    add in Input */
     entry_number = add_MY_FILE_entry(&Input, size);
-    test_exitf(entry_number != 0xffffffffUL, 10, dummy());
+    test_exitf(entry_number != 0xffffffff, 10, dummy());
     new_entry_Input = Input.file.MY_FILE_list + entry_number;
 
     /* 2. write info about the new stream in the new entry in BDepot */
@@ -583,8 +574,8 @@ U32 add_MY_FILE_entry(MY_FILE * list, U32 size)
             new_MY_FILE_list =
                 realloc(list->file.MY_FILE_list, list->size);
             list->file.MY_FILE_list = new_MY_FILE_list;
-            test_exitf(new_MY_FILE_list != NULL, 0xffffffffUL, dummy());
-            new_entry = list->size / sizeof(MY_FILE) - 1;
+            test_exitf(new_MY_FILE_list != NULL, 0xffffffff, dummy());
+            new_entry = (U32) (list->size / sizeof(MY_FILE) - 1);
             reset_links();
 
             return new_entry;
@@ -601,8 +592,8 @@ U32 add_MY_FILE_entry(MY_FILE * list, U32 size)
             list->size = list->size + sizeof(U32);
             new_block_list = realloc(list->file.block_list, list->size);
             list->file.block_list = new_block_list;
-            test_exitf(new_block_list != NULL, 0xffffffffUL, dummy());
-            new_entry = list->size / sizeof(U32) - 1;
+            test_exitf(new_block_list != NULL, 0xffffffff, dummy());
+            new_entry = (U32) (list->size / sizeof(U32) - 1);
             reset_links();
 
             return new_entry;
@@ -618,8 +609,8 @@ U32 add_MY_FILE_entry(MY_FILE * list, U32 size)
             list->size = list->size + 0x80;
             new_root_list = realloc(list->file.root_list, list->size);
             list->file.root_list = new_root_list;
-            test_exitf(new_root_list != NULL, 0xffffffffUL, dummy());
-            new_entry = list->size / 0x80 - 1;
+            test_exitf(new_root_list != NULL, 0xffffffff, dummy());
+            new_entry = (U32) (list->size / 0x80 - 1);
             reset_links();
 
             return new_entry;
@@ -640,9 +631,9 @@ int pps2root(U8 pps[0x80], pps_entry * node, U32 start_block)
     U16 size_of_name;
     /* next vars are constant, should it be static for performance? */
     U8 U8magiczero = 0x00;
-    U32 U32magiczero = 0x00000000UL;
-    U32 U32magic1 = 0x00020900UL;
-    U32 U32magic2 = 0x46000000UL;
+    U32 U32magiczero = 0x00000000;
+    U32 U32magic1 = 0x00020900;
+    U32 U32magic2 = 0x46000000;
 
     verbose("calling: pps2root ()");
 
@@ -815,15 +806,15 @@ int generate_ole2_file(const char *filename, int trunc)
 
 int generate_header(void)
 {
-    U32 identifier1 = 0xe011cfd0UL;
-    U32 identifier2 = 0xe11ab1a1UL;
-    U32 U32magiczero = 0x00000000UL;
-    U32 U32magic1 = 0x0003003bUL;
-    U32 U32magic2 = 0x0009fffeUL;
-    U32 U32magic3 = 0x00000006UL;
-    U32 U32magic4 = 0x00001000UL;
-    U32 U32magic5 = 0x00000001UL;
-    U32 U32magic6 = 0xfffffffeUL;
+    U32 identifier1 = 0xe011cfd0;
+    U32 identifier2 = 0xe11ab1a1;
+    U32 U32magiczero = 0x00000000;
+    U32 U32magic1 = 0x0003003b;
+    U32 U32magic2 = 0x0009fffe;
+    U32 U32magic3 = 0x00000006;
+    U32 U32magic4 = 0x00001000;
+    U32 U32magic5 = 0x00000001;
+    U32 U32magic6 = 0xfffffffe;
 
     verbose("calling: generate_header ()");
 
@@ -941,7 +932,7 @@ int generate_BDepot(void)
 
     verbose("calling: generate_BDepot ()");
 
-    next_block_link = 0xffffffffUL + header_blocks + 1;
+    next_block_link = 0xffffffff + header_blocks + 1;
     /* + 1 because is the ___next link___ */
 
     /* 1. generate sbfile block list */
@@ -989,7 +980,7 @@ int generate_BDepot(void)
 int generate_real_file(MY_FILE * MY_FILE_file)
 {
     FILE *file;
-    int n_read;
+    uint32_t n_read;
     U8 *pps;
     U32 total_bytes;
     U32 sbfile_size;
@@ -1069,8 +1060,7 @@ int generate_real_file(MY_FILE * MY_FILE_file)
     total_bytes = 0;
     /* copy real file to output_file */
     while (!feof(file)) {
-        n_read =
-            fread(output_block + pos_block, 1, 0x0200 - pos_block, file);
+        n_read = (uint32_t) fread(output_block + pos_block, 1, 0x0200 - pos_block, file);
         test_exitf(!ferror(file), 11, dummy());
         if (n_read < 0x0200 - pos_block)
             /* if it was readed less than it could be possible */
@@ -1100,7 +1090,7 @@ int write_block_list(U32 start_count, MY_FILE * list, int write_end_chain)
 {
     U32 *p;
     U32 n;
-    U32 end_chain = 0xfffffffeUL;
+    U32 end_chain = 0xfffffffe;
     U32 value_to_write;
     U32 delta;
 
@@ -1243,19 +1233,19 @@ void calculate_blocks(void)
     /* 19 + because the first 19 U32 doesn't belong to BDepot_blocks, but to header */
 
     /* calculate starting */
-    sbfile_start_block = 0xffffffffUL + header_blocks;
+    sbfile_start_block = 0xffffffff + header_blocks;
     /* if there are sbfile, should start in sbfile_start_block */
-    Root_start_block = 0xffffffffUL + header_blocks + sbfile_blocks +
+    Root_start_block = 0xffffffff + header_blocks + sbfile_blocks +
         big_streams_blocks + SDepot_blocks;
-    /* 0xffffffffUL because first block is -1, second 0, third 1 and son on */
+    /* 0xffffffff because first block is -1, second 0, third 1 and son on */
     if (SDepot_blocks > 0)
         /* if there are small streams */
-        SDepot_start_block = 0xffffffffUL + header_blocks + sbfile_blocks +
+        SDepot_start_block = 0xffffffff + header_blocks + sbfile_blocks +
             big_streams_blocks;
     else                        /* SDepot_blocks == 0 */
         /* if there are not small streams, neither sbfile, neither SDepot */
-        SDepot_start_block = 0xfffffffeUL;
-    BDepot_start_block = 0xffffffffUL + header_blocks + sbfile_blocks +
+        SDepot_start_block = 0xfffffffe;
+    BDepot_start_block = 0xffffffff + header_blocks + sbfile_blocks +
         big_streams_blocks + SDepot_blocks + Root_blocks;
 
     verboseU32(header_blocks);

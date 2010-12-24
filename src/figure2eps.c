@@ -28,7 +28,6 @@ int Figure2eps(char *inputPicture, char *outputPicture)
 {
     int res = 0;
     pid_t pid;
-    int err = 0;
 
     pid = fork();
 
@@ -40,9 +39,7 @@ int Figure2eps(char *inputPicture, char *outputPicture)
         printf("Calling ImageMagick to convert figure to EPS...\n");
         convertArgv[0] = inputPicture;
         convertArgv[1] = outputPicture;
-        err =
-            execlp("convert", "convert", convertArgv[0], convertArgv[1],
-                   (char *) 0);
+        execlp("convert", "convert", convertArgv[0], convertArgv[1], (char *) 0);
         /* if we reach here, the convert utility could not be found */
         exit(1);
         break;
@@ -52,10 +49,9 @@ int Figure2eps(char *inputPicture, char *outputPicture)
 
     if (pid != 0) {
         int stat_val;
-        pid_t child_pid;
 
         /* wait for the conversion process to finish */
-        child_pid = wait(&stat_val);
+        wait(&stat_val);
         if (WIFEXITED(stat_val) && !WEXITSTATUS(stat_val))
             res = 0;
         else
