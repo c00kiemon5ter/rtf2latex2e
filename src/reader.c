@@ -61,6 +61,7 @@
 # include       <string.h>
 # include       <stdarg.h>
 # include       <stdlib.h>
+# include       <stdint.h>
 
 # include       "rtfprep/tokenscan.h"
 
@@ -130,11 +131,11 @@ void RTFPopTextStyle(void);
 short rtfClass;
 short rtfMajor;
 short rtfMinor;
-long rtfParam;
+int32_t rtfParam;
 char *rtfTextBuf = (char *) NULL;
 short rtfTextLen;
 
-long rtfLineNum;
+int32_t rtfLineNum;
 short rtfLinePos;
 short rtfTokenIndex;
 
@@ -148,7 +149,7 @@ static short pushedChar;        /* pushback char if read too far */
 static short pushedClass;       /* pushed token info for RTFUngetToken() */
 static short pushedMajor;
 static short pushedMinor;
-static long pushedParam;
+static int32_t pushedParam;
 static char *pushedTextBuf = (char *) NULL;
 
 static short prevChar;
@@ -209,7 +210,7 @@ static short *genCharCode = cp1252CharCode;
 
 static int globalCharSet;
 static int defaultFontNumber;
-extern long groupLevel;
+extern int32_t groupLevel;
 
 /* end additions by Ujwal Sathyam */
 
@@ -241,7 +242,7 @@ static short csTop = 0;
 /* added by Ujwal Sathyam */
 static short savedCSStack[maxCSStack];
 static short savedCSTop;
-static long savedGroupLevel;
+static int32_t savedGroupLevel;
 
 static void ReadUnicode();
 
@@ -268,12 +269,13 @@ void RTFInit()
     prevChar = EOF;
     bumpLine = 0;
 
-    if (rtfTextBuf == (char *) NULL) {  /* initialize text buffers */
+    if (!rtfTextBuf) {  /* initialize text buffers */
         rtfTextBuf = RTFAlloc(rtfBufSiz);
         pushedTextBuf = RTFAlloc(rtfBufSiz);
-        if (rtfTextBuf == (char *) NULL || pushedTextBuf == (char *) NULL)
+        if (!rtfTextBuf || !pushedTextBuf)
             RTFPanic("Cannot allocate text buffers.");
-        rtfTextBuf[0] = pushedTextBuf[0] = '\0';
+        rtfTextBuf[0] = '\0';
+        pushedTextBuf[0] = '\0';
     }
 
     RTFFree(inputName);
@@ -875,7 +877,7 @@ static short GetChar()
  * part of the token text.
  */
 
-void RTFSetToken(short class, short major, short minor, long param, char *text)
+void RTFSetToken(short class, short major, short minor, int32_t param, char *text)
 {
     rtfClass = class;
     rtfMajor = major;
@@ -884,7 +886,7 @@ void RTFSetToken(short class, short major, short minor, long param, char *text)
     if (param == rtfNoParam)
         (void) strcpy(rtfTextBuf, text);
     else
-        sprintf(rtfTextBuf, "%s%ld", text, param);
+        sprintf(rtfTextBuf, "%s%d", text, param);
     rtfTextLen = strlen(rtfTextBuf);
 }
 
@@ -1276,7 +1278,9 @@ static void ReadFontTbl()
                 RTFPanic("%s: missing \"{\"", fn);
             (void) RTFGetToken();       /* yes, skip to next token */
         }
-        if ((fp = New(RTFFont)) == (RTFFont *) NULL)
+		
+        fp = New(RTFFont);
+		if (!fp)
             RTFPanic("%s: cannot allocate font entry", fn);
 
         fp->rtfNextFont = fontList;
@@ -1399,7 +1403,9 @@ void ReadColorTbl()
         (void) RTFGetToken();
         if (RTFCheckCM(rtfGroup, rtfEndGroup))
             break;
-        if ((cp = New(RTFColor)) == (RTFColor *) NULL)
+        
+		cp = New(RTFColor);
+		if (!cp)
             RTFPanic("%s: cannot allocate color entry", fn);
         cp->rtfCNum = cnum++;
         cp->rtfCRed = cp->rtfCGreen = cp->rtfCBlue = -1;
@@ -1612,7 +1618,7 @@ static void ReadObjGroup()
 
 static void ReadUnicode()
 {
-	fprintf(stderr,"unicode %ld\n",rtfParam);
+	fprintf(stderr,"unicode %d\n",rtfParam);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1779,7 +1785,7 @@ static void LookupInit()
     scanner.scanEscape = "";
     TSSetScanner(&scanner);
 
-    while (fgets(buf, (int) sizeof(buf), f) != (char *) NULL) {
+    while (fgets(buf, (int) sizeof(buf), f) ) {
         if (buf[0] == '#')      /* skip comments */
             continue;
         ++line;
@@ -1798,19 +1804,21 @@ static void LookupInit()
             nCtrls = atoi(p1);
             tokBytes = atoi(p2);
             rtfCtrl = (RTFCtrl **) RTFAlloc(nCtrls * sizeof(RTFCtrl *));
-            if (rtfCtrl == (RTFCtrl **) NULL)
+            if (!rtfCtrl)
                 RTFPanic("%s: out of memory.", fn);
+			
             for (i = 0; i < nCtrls; i++) {
                 rp = (RTFCtrl *) RTFAlloc(sizeof(RTFCtrl));
-                if (rp == (RTFCtrl *) NULL)
+                if (!rp)
                     RTFPanic("%s: out of memory.", fn);
                 rtfCtrl[i] = rp;
             }
+			
             /*
              * Allocate a buffer into which to copy all the tokens
              */
             tokBuf = RTFAlloc(tokBytes);
-            if (tokBuf == (char *) NULL)
+            if (!tokBuf)
                 RTFPanic("%s: out of memory.", fn);
             tokBufEnd = tokBuf;
         } else {
@@ -1823,6 +1831,7 @@ static void LookupInit()
             rp->minor = atoi(p2);
             rp->str = tokBufEnd;
             rp->index = line - 2;
+			
             /* process string to remove embedded escapes */
             p1 = p3;
             while ((c = *p1++) != '\0') {
@@ -1833,14 +1842,8 @@ static void LookupInit()
                  */
                 if (c == '\\') {
                     c = *p1++;
-                    switch (c) {
-                    case 'n':
-                        c = '\n';
-                        break;
-                    case 'r':
-                        c = '\r';
-                        break;
-                    }
+					if (c == 'n') c = '\n';
+					if (c == 'r') c = '\r';
                 }
                 *tokBufEnd++ = c;
             }
@@ -1924,13 +1927,12 @@ void DebugMessage()
  * not enough memory available.
  *
  * This is called through RTFAlloc(), a define which coerces the
- * argument to long.  This avoids the persistent problem of allocation
+ * argument to int32_t.  This avoids the persistent problem of allocation
  * failing and causing mysterious crashes under THINK C when an argument
  * of the wrong size is passed.
  */
 
-char *_RTFAlloc(size)
-long size;
+char * RTFAlloc(size_t size)
 {
     return ((char *) malloc(size));
 }
@@ -2206,7 +2208,7 @@ void RTFPanic(char *fmt, ...)
     (void) strcat(buf, "\n");
     if (prevChar != EOF && rtfTextBuf != (char *) NULL) {
         sprintf(buf + strlen(buf),
-                "Last token read was \"%s\" near line %ld, position %hd.\n",
+                "Last token read was \"%s\" near line %d, position %hd.\n",
                 rtfTextBuf, rtfLineNum, rtfLinePos);
     }
     (*panicProc) (buf);

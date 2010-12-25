@@ -27,7 +27,7 @@
 #include     "mygetopt.h"
 #include     "rtf2latex2e.h"
 
-#define      LIBDIR       "/opt/local"
+//#define      LIBDIR       "/opt/local"
 
 extern long  groupLevel;
 extern char  outputMapName[];

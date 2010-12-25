@@ -46,7 +46,7 @@ F64 fil_sreadF64 (U8 * in);
 void fil_swriteU16 (U8 * dest, U16 * src);
 void fil_swriteU32 (U8 * dest, U32 * src);
 
-void __cole_dump (void *_m, void *_start, int length, char *msg);
+void __cole_dump (void *_m, void *_start, U32 length, char *msg);
 
 #define verbose_return()               \
   {                                    \

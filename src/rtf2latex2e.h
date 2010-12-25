@@ -27,7 +27,7 @@
 typedef unsigned char boolean;
 #endif
 # define	New(t)	((t *) RTFAlloc (sizeof (t)))
-# define	Swap(a, b) {double tmp;\
+# define	Swap(a, b) {int tmp;\
 						tmp = a;\
 						a = b;\
 						b = tmp;}
@@ -67,12 +67,12 @@ typedef struct
 {
 	int	count;
 	int	type;
-	long	width;
-	long	height;
-	long	goalWidth;
-	long	goalHeight;
-	long	scaleX;
-	long	scaleY;
+	int32_t	width;
+	int32_t	height;
+	int32_t	goalWidth;
+	int32_t	goalHeight;
+	int32_t	scaleX;
+	int32_t	scaleY;
 	int		llx;
 	int		lly;
 	int		urx;

@@ -100,10 +100,10 @@ void fil_swriteU32(U8 * dest, U32 * src)
         @param (void *) m memory position which content will be dumped
         @param (void *) start memory position from where calculate
                                 offset
-        @param (int) length size in bytes of the dumped memory
+        @param (U32) length size in bytes of the dumped memory
         @param (char *) msg optional message, can be NULL
  *-*/
-void __cole_dump(void *_m, void *_start, int length, char *msg)
+void __cole_dump(void *_m, void *_start, U32 length, char *msg)
 {
     unsigned char *pm;
     char buff[18];

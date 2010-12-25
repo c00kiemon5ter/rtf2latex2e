@@ -134,15 +134,15 @@ static struct {
     int oldSpacing;
     int lineSpacing;
     boolean wroteSpacing;
-    long firstIndent;
-    long leftIndent;
-    long rightIndent;
+    int	firstIndent;
+    int leftIndent;
+    int rightIndent;
     boolean parbox;
 } paragraph;
 
 static struct {
     boolean newStyle;
-    long cols;
+    int cols;
 } section;
 
 static struct {
@@ -176,7 +176,7 @@ static boolean requireMultiColPackage;
 static boolean requireUlemPackage;
 static boolean requireHyperrefPackage;
 static boolean requireAmsMathPackage;
-static long packagePos;
+static size_t packagePos;
 static boolean writingHeading1, writingHeading2, writingHeading3;
 static boolean insideFootnote, justWroteFootnote;
 static boolean insideHyperlink;
@@ -198,7 +198,7 @@ struct EQN_OLE_FILE_HDR {
     uint32_t   reserved4; 
 };
 
-static long codePage;
+static int codePage;
 char fileCreator[10];
 
 
@@ -580,7 +580,7 @@ void ExamineToken(void)
     printf("* Class is %d\n", rtfClass);
     printf("* Major is %d\n", rtfMajor);
     printf("* Minor is %d\n", rtfMinor);
-    printf("* Param is %ld\n\n", rtfParam);
+    printf("* Param is %d\n\n", rtfParam);
 }
 
 
@@ -637,7 +637,7 @@ static void WriteColor (void)
 char buf[rtfBufSiz];
 
 
-        sprintf(buf, "{\\color{color%ld} ", (long)rtfParam);
+        sprintf(buf, "{\\color{color%ld} ", (int)rtfParam);
         PutLitStr (buf);        
         wrapCount += 17;
 
@@ -1210,7 +1210,7 @@ static void WriteTextStyle(void)
     if (foreColorGL <= groupLevel && foreColorGL > 0
         && (textStyle.foreColor) > 0 && !(textStyle.wroteForeColor)) {
 
-        sprintf(buf, "{\\color{color%ld} ", (long) (textStyle.foreColor));
+        sprintf(buf, "{\\color{color%d} ", (int) (textStyle.foreColor));
         PutLitStr(buf);
         wrapCount += 17;
         charAttrCount++;
@@ -1566,7 +1566,7 @@ static void WriteParagraphStyle(void)
 {
     char buf[rtfBufSiz];
     double spacing;
-    long temp1, temp2, temp3;
+    int temp1, temp2, temp3;
     double textWidth = page.width - page.leftMargin - page.rightMargin;
 
     temp1 = paragraph.firstIndent;
@@ -1647,7 +1647,7 @@ static void WriteSectionStyle(void)
     }
 
     if (section.cols > 1) {
-        sprintf(buf, "\n\\begin{multicols}{%ld}", section.cols);
+        sprintf(buf, "\n\\begin{multicols}{%d}", section.cols);
         PutLitStr(buf);
         InsertNewLine();
         wrapCount = 0;
@@ -1847,11 +1847,9 @@ static void ReadFootnote(void)
 */
 static void CheckForParagraph(void)
 {
-    boolean stop = false;
     int i;
     int storeGroupLevel = groupLevel;
     boolean newParagraph = false;
-
 
     if (suppressLineBreak == true)
         return;
@@ -1925,26 +1923,20 @@ static void CheckForParagraph(void)
 
     RTFGetToken();
 
-    while (!stop) {
-        /* keep going if an unknown token is encountered */
-        if (rtfClass == rtfUnknown)
-            stop = false;
-
-        /* stop if we see a line break */
-        else if (rtfMajor == rtfSpecialChar
-                 && (rtfMinor == rtfPar || rtfMinor == rtfPage)) {
-            stop = true;
+    while (1) {
+		/* stop if we see a line break */
+        if (rtfMajor == rtfSpecialChar && (rtfMinor == rtfPar || rtfMinor == rtfPage)) {
             newParagraph = true;
             break;
         }
 
-        /* or if we see a paragraph definition */
+        /* or a paragraph definition */
         else if (rtfMajor == rtfParAttr && rtfMinor == rtfParDef) {
             newParagraph = true;
             break;
         }
 
-        /* if it is a destination */
+        /* or a destination */
         else if (RTFCheckCM(rtfControl, rtfDestination)) {
             newParagraph = false;
             break;
@@ -1961,17 +1953,12 @@ static void CheckForParagraph(void)
         }
 
         /* otherwise keep looking and route the tokens scanned */
-        if (!stop) {
-            RTFRouteToken();
-            RTFGetToken();
-        }
-
+		RTFRouteToken();
+		RTFGetToken();
     }
 
-    /* if we saw a line break or a paragraph definition, the paragraph has ended.
-     */
+    /* if we saw a line break or a paragraph definition, the paragraph has ended. */
     if (newParagraph) {
-
 
         if (charAttrCount > 0) {
             SetGroupLevels(SAVE_LEVELS);
@@ -2172,7 +2159,7 @@ static void ReadCell(void)
     char *fn = "ReadCell";
 
 	cellPtr = New(cell);
-    if (cellPtr == NULL)
+    if (!cellPtr)
         RTFPanic("%s: cannot allocate cell entry", fn);
 
     cellPtr->nextCell = table.cellInfo;
@@ -2281,7 +2268,7 @@ static void InheritTableRowDef(void)
         cellPtr = GetCellByPos(prevRow, i);
 
         newCellPtr = New(cell);
-		if (newCellPtr == NULL)
+		if (!newCellPtr)
             RTFPanic("%s: cannot allocate inheriting cell entry", fn);
 
         newCellPtr->nextCell = table.cellInfo;
@@ -2339,7 +2326,7 @@ static int GetColumnSpan(cell * cellPtr)
 */
 static void PrescanTable(void)
 {
-    long tableStart;
+    size_t tableStart;
     boolean foundRow = true;
     boolean foundColumn = true;
     int i, j;
@@ -2348,7 +2335,7 @@ static void PrescanTable(void)
     short prevChar;
     int maxCols = 0;
     int rowWithMaxCols = 0;
-    long tableLeft, tableRight, tableWidth;
+    int tableLeft, tableRight, tableWidth;
 
     RTFStoreStack();
     prevChar = RTFPushedChar();
@@ -2454,11 +2441,11 @@ static void PrescanTable(void)
     table.cols = maxCols;
 
     {
-        long *rightBorders;
+        int *rightBorders;
         boolean enteredValue;
 
-        rightBorders = (long *) RTFAlloc((table.cellCount) * sizeof(long));
-        if (rightBorders == (long *) NULL)
+        rightBorders = (int *) RTFAlloc((table.cellCount) * sizeof(int));
+        if (!rightBorders)
             RTFPanic("%s: cannot allocate array for cell borders\n", fn);
 
         table.cols = 0;
@@ -2474,9 +2461,9 @@ static void PrescanTable(void)
         }
 
         /* allocate array for coulumn border entries. */
-        table.columnBorders = (long *) RTFAlloc(((table.cols) + 1) * sizeof(long));
+        table.columnBorders = (int *) RTFAlloc(((table.cols) + 1) * sizeof(int));
 		
-        if ((table.columnBorders) == NULL)
+        if (!table.columnBorders)
             RTFPanic("%s: cannot allocate array for cell borders\n", fn);
 
         for (i = 0; i < table.cols; i++)
@@ -2528,7 +2515,7 @@ static void PrescanTable(void)
     /* fill in column spans for each cell */
     for (i = 0; i < table.cellCount; i++) {
         cellPtr = GetCellInfo(i);
-        if (cellPtr == NULL)
+        if (!cellPtr)
             RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn, i);
         cellPtr->columnSpan = GetColumnSpan(cellPtr);
         if (cellPtr->columnSpan > 1)
@@ -2620,9 +2607,8 @@ static void WriteCellHeader(int cellNum)
         return;
 
     cellPtr = GetCellInfo(cellNum);
-    if (cellPtr == (cell *) NULL)
-        RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn,
-                 cellNum);
+    if (!cellPtr)
+        RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn, cellNum);
 
     if (table.multiCol) {
         sprintf(buf, "\\multicolumn{%d}{", cellPtr->columnSpan);
@@ -2802,7 +2788,7 @@ static void DrawTableRowLine(int rowNum)
         cellPosition += cellInfo1->columnSpan;
 
         if (cellInfo1->mergePar == none) {
-            sprintf(buf, "\\cline{%ld-%ld}", cellInfo1->y + 1,
+            sprintf(buf, "\\cline{%d-%d}", cellInfo1->y + 1,
                     cellInfo1->y + cellInfo1->columnSpan);
             PutLitStr(buf);
         }
@@ -2810,7 +2796,7 @@ static void DrawTableRowLine(int rowNum)
         else if (cellInfo1->mergePar == previous) {
             cellInfo2 = GetCellByPos(rowNum + 1, i);
             if (cellInfo2->mergePar != previous) {
-                sprintf(buf, "\\cline{%ld-%ld}", cellInfo1->y + 1,
+                sprintf(buf, "\\cline{%d-%d}", cellInfo1->y + 1,
                         cellInfo1->y + cellInfo1->columnSpan);
                 PutLitStr(buf);
             }
@@ -2833,7 +2819,6 @@ static void DrawTableRowLine(int rowNum)
 static void DoTable(void)
 {
     int i, rowNum;
-    int cols = 0;
     cell *cellPtr;
     char buf[100];
 
@@ -2980,21 +2965,21 @@ static void ParAttr(void)
                 InsertNewLine();
                 PutLitStr(heading1String);
                 writingHeading1 = true;
-                wrapCount = strlen(heading1String);
+                wrapCount = (int)strlen(heading1String);
                 paragraph.newStyle = false;
             } else if (strcmp(stylePtr->rtfSName, "heading 2") == 0) {
                 InsertNewLine();
                 InsertNewLine();
                 PutLitStr(heading2String);
                 writingHeading2 = true;
-                wrapCount = strlen(heading2String);
+                wrapCount = (int)strlen(heading2String);
                 paragraph.newStyle = false;
             } else if (strcmp(stylePtr->rtfSName, "heading 3") == 0) {
                 InsertNewLine();
                 InsertNewLine();
                 PutLitStr(heading3String);
                 writingHeading3 = true;
-                wrapCount = strlen(heading3String);
+                wrapCount = (int)strlen(heading3String);
                 paragraph.newStyle = false;
             }
             break;
@@ -3177,31 +3162,24 @@ static int HexData(void)
 static void WritePictureHeader(FILE * pictureFile)
 {
     unsigned char wmfhead[22] = {
-/* key = */ 0xd7, 0xcd, 0xc6, 0x9a,
-/* hmf = */ 0, 0,
-        /* bbox = */ 0xfc, 0xff, 0xfc, 0xff, /*width */ 0, 0, /*height */
-            0, 0,
-/* inch = */ 0x60, 0x00,
-/* reserved = */ 0, 0, 0, 0,
-/* checksum = */ 0, 0
+		/* key      = */ 0xd7, 0xcd, 0xc6, 0x9a,
+		/* hmf      = */ 0x00, 0x00,
+        /* bbox     = */ 0xfc, 0xff, 0xfc, 0xff, 
+		/* width    = */ 0x00, 0x00, 
+		/* height   = */ 0x00, 0x00,
+		/* inch     = */ 0x60, 0x00,
+		/* reserved = */ 0x00, 0x00, 0x00, 0x00,
+		/* checksum = */ 0x00, 0x00
     };
     int i;
     int height, width;
 
     if (picture.goalHeight == 0) {
-        height =
-            ((float) picture.height * picture.scaleY * 96) / (rtfTpi *
-                                                              100);
-        width =
-            ((float) picture.width * picture.scaleX * 96) / (rtfTpi * 100);
+        height = ((float) picture.height * picture.scaleY * 96) / ((float) rtfTpi * 100);
+        width = (int)((float) picture.width * picture.scaleX * 96) / (rtfTpi * 100);
     } else {
-        height =
-            ((float) picture.goalHeight * picture.scaleY * 96) / (rtfTpi *
-                                                                  100);
-
-        width =
-            ((float) picture.goalWidth * picture.scaleX * 96) / (rtfTpi *
-                                                                 100);
+        height = (int)((float) picture.goalHeight * picture.scaleY * 96) / (rtfTpi * 100);
+        width = (int)((float) picture.goalWidth * picture.scaleX * 96) / (rtfTpi * 100);
     }
     wmfhead[10] = (width) % 256;
     wmfhead[11] = (width) / 256;
@@ -3372,7 +3350,7 @@ static void IncludeGraphics(char *pictureType)
                 wrapCount = 0;
             }
             PutLitStr(dummyBuf);
-            wrapCount += strlen(dummyBuf);
+            wrapCount += (int) strlen(dummyBuf);
             if (height > 50) {
                 sprintf(dummyBuf, "\n\\caption{%s about here.}", figPtr);
                 PutLitStr(dummyBuf);
@@ -3590,7 +3568,7 @@ static int ReachedResult(int *groupCount)
  */
 static int
 DecodeOLE(char *objectFileName, char *streamType,
-          unsigned char **nativeStream, size_t * size)
+          unsigned char **nativeStream, uint32_t * size)
 {
     COLEFS *cfs;
     COLERRNO colerrno;
@@ -3617,7 +3595,7 @@ DecodeOLE(char *objectFileName, char *streamType,
         return 1;
     }
 
-    *size = cole_fsize(coleFile);
+    *size = (uint32_t) cole_fsize(coleFile);
 
     *nativeStream = (unsigned char *) malloc(*size);
 
@@ -3732,7 +3710,7 @@ static boolean ReadEquation(int *groupCount)
     char objectFileName[rtfBufSiz];
     unsigned char *nativeStream;
     MTEquation *theEquation;
-    size_t equationSize;    
+    uint32_t equationSize;    
 
     nativeStream = NULL;
     theEquation = NULL;
@@ -4143,7 +4121,6 @@ static void ReadHyperlink(void)
 
 static void ReadSymbolField(void)
 {
-    short tokenClass;
     char buf[100];
     short major, minor;
     short currentCharSet = RTFGetCharSet();
@@ -4152,7 +4129,7 @@ static void ReadSymbolField(void)
 
     /* go to the start of the symbol representation */
     strcpy(buf, "");
-    if ((tokenClass = RTFGetToken()) != rtfText) {
+    if (RTFGetToken() != rtfText) {
         if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0)
             RTFSkipGroup();
         RTFSkipGroup();

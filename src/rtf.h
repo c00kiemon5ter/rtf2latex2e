@@ -6,6 +6,7 @@
 
 #define _RTF_H
 
+# include <stdint.h>
 /*
  * Twentieths of a point (twips) per inch (Many RTF measurements
  * are in twips per inch (tpi) units).  Assumes 72 points/inch.
@@ -62,11 +63,11 @@ extern short	rtfClass;		/* token class */
 extern short	rtfMajor;		/* token major number */
 extern short	rtfMinor;		/* token minor number */
 extern short	rtfTokenIndex;		/* token index number */
-extern long	rtfParam;		/* control symbol parameter */
+extern int32_t	rtfParam;		/* control symbol parameter */
 
 # define	rtfNoParam	(-1000000)
 
-extern long	rtfLineNum;		/* input line number */
+extern int32_t	rtfLineNum;		/* input line number */
 extern short	rtfLinePos;		/* input line position */
 
 /*
@@ -309,7 +310,7 @@ struct RTFStyleElt
 	short		rtfSEClass;	/* token class */
 	short		rtfSEMajor;	/* token major number */
 	short		rtfSEMinor;	/* token minor number */
-	long		rtfSEParam;	/* control symbol parameter */
+	int32_t		rtfSEParam;	/* control symbol parameter */
 	char		*rtfSEText;	/* text of symbol */
 	RTFStyleElt	*rtfNextSE;	/* next element in style */
 };
@@ -338,7 +339,7 @@ void		RTFRead ();
 short		RTFGetToken ();	/* writer should rarely need this */
 void		RTFUngetToken ();
 short		RTFPeekToken ();
-void 		RTFSetToken(short class, short major, short minor, long param, char *text);
+void 		RTFSetToken(short class, short major, short minor, int32_t param, char *text);
 void		RTFSetReadHook ();
 RTFFuncPtr	RTFGetReadHook ();
 void		RTFRouteToken ();
@@ -350,8 +351,7 @@ short		RTFCheckMM ();
 RTFFont		*RTFGetFont ();
 RTFColor	*RTFGetColor ();
 RTFStyle	*RTFGetStyle ();
-# define	RTFAlloc(size)	_RTFAlloc ((long) (size))
-char		*_RTFAlloc ();
+char        *RTFAlloc(size_t size);
 char		*RTFStrSave ();
 void		RTFFree ();
 short		RTFCharToHex ();
