@@ -34,7 +34,7 @@ __cole_extract_file(FILE ** file, char **filename, U32 size, U32 pps_start,
                     U8 * BDepot, U8 * SDepot, FILE * sbfile,
                     FILE * inputfile)
 {
-    /* FIXME rewrite this cleanner */
+    /* FIXME rewrite this cleaner */
 
     FILE *ret;
     U16 BlockSize, Offset;
@@ -52,12 +52,14 @@ __cole_extract_file(FILE ** file, char **filename, U32 size, U32 pps_start,
         free(*filename);
         return 2;
     }
+	
     ret = fopen(*filename, "w+b");
     *file = ret;
     if (ret == NULL) {
         free(*filename);
         return 3;
     }
+	
     if (size >= 0x1000) {
         /* read from big block depot */
         Offset = 1;
@@ -71,8 +73,7 @@ __cole_extract_file(FILE ** file, char **filename, U32 size, U32 pps_start,
         infile = sbfile;
         Depot = SDepot;
     }
-    while (pps_start != 0xfffffffeUL    /*&& pps_start != 0xffffffffUL &&
-                                           pps_start != 0xfffffffdUL */ ) {
+    while (pps_start < 0xfffffffd) {
         FilePos = (long) ((pps_start + Offset) * BlockSize);
         if (FilePos < 0) {
             fclose(ret);

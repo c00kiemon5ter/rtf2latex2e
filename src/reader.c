@@ -244,8 +244,6 @@ static short savedCSStack[maxCSStack];
 static short savedCSTop;
 static int32_t savedGroupLevel;
 
-static void ReadUnicode();
-
 /*
  * Initialize the reader.  This may be called multiple times,
  * to read multiple files.  The only thing not reset is the input
@@ -272,8 +270,10 @@ void RTFInit()
     if (!rtfTextBuf) {  /* initialize text buffers */
         rtfTextBuf = RTFAlloc(rtfBufSiz);
         pushedTextBuf = RTFAlloc(rtfBufSiz);
-        if (!rtfTextBuf || !pushedTextBuf)
+        if (!rtfTextBuf || !pushedTextBuf) {
             RTFPanic("Cannot allocate text buffers.");
+			exit(1);
+		}
         rtfTextBuf[0] = '\0';
         pushedTextBuf[0] = '\0';
     }
@@ -297,7 +297,6 @@ void RTFInit()
     RTFSetDestinationCallback(rtfInfo, ReadInfoGroup);
     RTFSetDestinationCallback(rtfPict, ReadPictGroup);
     RTFSetDestinationCallback(rtfObject, ReadObjGroup);
-/*    RTFSetDestinationCallback(rtfUnicode, ReadUnicode);*/
 
 
     RTFSetReadHook((RTFFuncPtr) NULL);
@@ -1280,8 +1279,10 @@ static void ReadFontTbl()
         }
 		
         fp = New(RTFFont);
-		if (!fp)
+		if (!fp) {
             RTFPanic("%s: cannot allocate font entry", fn);
+			exit(1);
+		}
 
         fp->rtfNextFont = fontList;
         fontList = fp;
@@ -1405,8 +1406,11 @@ void ReadColorTbl()
             break;
         
 		cp = New(RTFColor);
-		if (!cp)
+		if (!cp) {
             RTFPanic("%s: cannot allocate color entry", fn);
+			exit(1);
+		}
+			
         cp->rtfCNum = cnum++;
         cp->rtfCRed = cp->rtfCGreen = cp->rtfCBlue = -1;
         cp->rtfNextColor = colorList;
@@ -1454,11 +1458,16 @@ static void ReadStyleSheet()
 
     for (;;) {
         (void) RTFGetToken();
+		
         if (RTFCheckCM(rtfGroup, rtfEndGroup))
             break;
+		
 		sp = New(RTFStyle);
-        if (!sp)
+        if (!sp) {
             RTFPanic("%s: cannot allocate stylesheet entry", fn);
+			exit(1);
+		}
+		
         sp->rtfSName = (char *) NULL;
         sp->rtfSNum = -1;
         sp->rtfSType = rtfParStyle;
@@ -1510,9 +1519,13 @@ static void ReadStyleSheet()
                     sp->rtfSType = rtfTableStyle;
                     continue;
                 }
+				
 				sep = New(RTFStyleElt);
-                if (!sep)
+                if (!sep) {
                     RTFPanic("%s: cannot allocate style element", fn);
+					exit(1);
+				}
+				
                 sep->rtfSEClass = rtfClass;
                 sep->rtfSEMajor = rtfMajor;
                 sep->rtfSEMinor = rtfMinor;
@@ -1614,11 +1627,6 @@ static void ReadObjGroup()
 {
     RTFSkipGroup();
     RTFRouteToken();            /* feed "}" back to router */
-}
-
-static void ReadUnicode()
-{
-	fprintf(stderr,"unicode %d\n",rtfParam);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1804,13 +1812,17 @@ static void LookupInit()
             nCtrls = atoi(p1);
             tokBytes = atoi(p2);
             rtfCtrl = (RTFCtrl **) RTFAlloc(nCtrls * sizeof(RTFCtrl *));
-            if (!rtfCtrl)
+            if (!rtfCtrl) {
                 RTFPanic("%s: out of memory.", fn);
+				exit(1);
+			}
 			
             for (i = 0; i < nCtrls; i++) {
                 rp = (RTFCtrl *) RTFAlloc(sizeof(RTFCtrl));
-                if (!rp)
+                if (!rp) {
                     RTFPanic("%s: out of memory.", fn);
+					exit(1);
+				}
                 rtfCtrl[i] = rp;
             }
 			
@@ -1818,8 +1830,10 @@ static void LookupInit()
              * Allocate a buffer into which to copy all the tokens
              */
             tokBuf = RTFAlloc(tokBytes);
-            if (!tokBuf)
+            if (!tokBuf) {
                 RTFPanic("%s: out of memory.", fn);
+				exit(1);
+			}
             tokBufEnd = tokBuf;
         } else {
             if (p3 == (char *) NULL)    /* malformed */

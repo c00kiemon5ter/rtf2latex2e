@@ -395,7 +395,7 @@ int cole_closedir(COLEDIR * coledir, COLERRNO * colerrno)
 
 COLEDIRENT *cole_visiteddirentry(COLEDIR * coledir)
 {
-    if (coledir->visited_entry.entry == 0xffffffffUL)
+    if (coledir->visited_entry.entry == 0xffffffff)
         return NULL;
 
     return &coledir->visited_entry;
@@ -404,13 +404,13 @@ COLEDIRENT *cole_visiteddirentry(COLEDIR * coledir)
 
 COLEDIRENT *cole_nextdirentry(COLEDIR * coledir)
 {
-    if (coledir->visited_entry.entry == 0xffffffffUL)
+    if (coledir->visited_entry.entry == 0xffffffff)
         return NULL;
 
     coledir->visited_entry.entry =
         coledir->fs->tree[coledir->visited_entry.entry].next;
 
-    if (coledir->visited_entry.entry == 0xffffffffUL)
+    if (coledir->visited_entry.entry == 0xffffffff)
         return NULL;
 
     return &coledir->visited_entry;
@@ -544,10 +544,8 @@ COLEFILE *cole_fopen(COLEFS * colefilesystem, char *filename,
 {
     struct _cole_fopen_info info;
 
-    if (cole_locate_filename(colefilesystem, filename, &info,
-                             _cole_fopen_action, colerrno)) {
-        /* couldn't locate the filename */
-        /* colerrno is set */
+    if (cole_locate_filename(colefilesystem, filename, &info, _cole_fopen_action, colerrno)) {
+        /* couldn't locate the filename, colerrno is set already */
         return NULL;
     }
 

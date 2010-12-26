@@ -27,8 +27,6 @@
 #include     "mygetopt.h"
 #include     "rtf2latex2e.h"
 
-//#define      LIBDIR       "/opt/local"
-
 extern long  groupLevel;
 extern char  outputMapName[];
 FILE         *OpenLibFile(char *name, char *mode);
@@ -160,7 +158,7 @@ OpenLibFile(char *name, char *mode)
         s = getenv("RTFPATH");
         fprintf(stderr, "Current RTFPATH: %s", (s) ? s : "not defined\n");
         s = LIBDIR;
-        fprintf(stderr, "Compiledin support directory: %s", (s) ? s : "not defined\n\n");
+        fprintf(stderr, "Compiled-in support directory: %s", (s) ? s : "not defined\n\n");
         fprintf(stderr, " Depending on your shell, you can set the environment variable RTFPATH using\n");
         fprintf(stderr, "     export RTFPATH=directory (bash) or \n");
         fprintf(stderr, "     setenv RTFPATH directory (csh) or \n");
@@ -275,7 +273,8 @@ main(int argc, char **argv)
          * global access to input file name
          */
         /* strip .rtf from file name if found */
-        if ((ifp = fopen(argv[fileCounter], "r")) == NULL) {
+		ifp = fopen(argv[fileCounter], "r");
+        if (!ifp) {
             RTFPanic("* Cannot open input file %s\n", argv[fileCounter]);
             exit(1);
         }
@@ -288,8 +287,7 @@ main(int argc, char **argv)
         if (rtfMajor != rtfVersion) {
             RTFMsg("* Oops! %s is not an rtf file!\n", argv[fileCounter]);
             if (fclose(ifp) != 0)
-                printf("* error closing input file %s\n",
-                       argv[fileCounter]);
+                printf("* error closing input file %s\n", argv[fileCounter]);
             continue;
         }
         fseek(ifp, cursorPos, 0);

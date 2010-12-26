@@ -762,12 +762,16 @@ void CheckForCharAttr(void)
 {
     int italicGL, noItalicGL;
     int boldGL, noBoldGL;
-    int underlinedGL, noUnderlinedGL;
-    int dbUnderlinedGL, noDbUnderlinedGL;
+    int underlinedGL;
+//	int noUnderlinedGL;
+    int dbUnderlinedGL;
+//	int noDbUnderlinedGL;
     int foreColorGL, backColorGL;
     int subScriptGL, superScriptGL;
-    int noSubScriptGL, noSuperScriptGL;
-    int fontSizeGL, allCapsGL, smallCapsGL;
+//    int noSubScriptGL, noSuperScriptGL;
+    int fontSizeGL;
+//	int allCapsGL;
+	int smallCapsGL;
     int i;
 
     italicGL         = textStyle.italicGroupLevel;
@@ -775,17 +779,17 @@ void CheckForCharAttr(void)
     boldGL           = textStyle.boldGroupLevel;
     noBoldGL         = textStyle.noBoldGroupLevel;
     underlinedGL     = textStyle.underlinedGroupLevel;
-    noUnderlinedGL   = textStyle.noUnderlinedGroupLevel;
+//    noUnderlinedGL   = textStyle.noUnderlinedGroupLevel;
     dbUnderlinedGL   = textStyle.dbUnderlinedGroupLevel;
-    noDbUnderlinedGL = textStyle.noDbUnderlinedGroupLevel;
+//    noDbUnderlinedGL = textStyle.noDbUnderlinedGroupLevel;
     foreColorGL      = textStyle.foreColorGroupLevel;
     backColorGL      = textStyle.backColorGroupLevel;
     subScriptGL      = textStyle.subScriptGroupLevel;
-    noSubScriptGL    = textStyle.noSubScriptGroupLevel;
+//    noSubScriptGL    = textStyle.noSubScriptGroupLevel;
     superScriptGL    = textStyle.superScriptGroupLevel;
-    noSuperScriptGL  = textStyle.noSuperScriptGroupLevel;
+//    noSuperScriptGL  = textStyle.noSuperScriptGroupLevel;
     fontSizeGL       = textStyle.fontSizeGroupLevel;
-    allCapsGL        = textStyle.allCapsGroupLevel;
+ //   allCapsGL        = textStyle.allCapsGroupLevel;
     smallCapsGL      = textStyle.smallCapsGroupLevel;
 
     if (smallCapsGL == groupLevel && smallCapsGL > 0) {
@@ -1176,11 +1180,16 @@ static void WriteTextStyle(void)
     char buf[rtfBufSiz];
     int italicGL, noItalicGL;
     int boldGL, noBoldGL;
-    int underlinedGL, noUnderlinedGL;
-    int dbUnderlinedGL, noDbUnderlinedGL;
-    int foreColorGL, backColorGL;
+    int underlinedGL;
+//	int noUnderlinedGL;
+    int dbUnderlinedGL;
+//	int noDbUnderlinedGL;
+    int foreColorGL;
+//	int backColorGL;
     int subScriptGL, superScriptGL;
-    int fontSizeGL, allCapsGL, smallCapsGL;
+//    int fontSizeGL;
+	int smallCapsGL;
+//	int allCapsGL;
 
     if (writingHeading1 || writingHeading2 || writingHeading3
         || insideHyperlink)
@@ -1191,15 +1200,15 @@ static void WriteTextStyle(void)
     boldGL = textStyle.boldGroupLevel;
     noBoldGL = textStyle.noBoldGroupLevel;
     underlinedGL = textStyle.underlinedGroupLevel;
-    noUnderlinedGL = textStyle.noUnderlinedGroupLevel;
+//    noUnderlinedGL = textStyle.noUnderlinedGroupLevel;
     dbUnderlinedGL = textStyle.dbUnderlinedGroupLevel;
-    noDbUnderlinedGL = textStyle.noDbUnderlinedGroupLevel;
+//    noDbUnderlinedGL = textStyle.noDbUnderlinedGroupLevel;
     foreColorGL = textStyle.foreColorGroupLevel;
-    backColorGL = textStyle.backColorGroupLevel;
+//    backColorGL = textStyle.backColorGroupLevel;
     subScriptGL = textStyle.subScriptGroupLevel;
     superScriptGL = textStyle.superScriptGroupLevel;
-    fontSizeGL = textStyle.fontSizeGroupLevel;
-    allCapsGL = textStyle.allCapsGroupLevel;
+//    fontSizeGL = textStyle.fontSizeGroupLevel;
+//    allCapsGL = textStyle.allCapsGroupLevel;
     smallCapsGL = textStyle.smallCapsGroupLevel;
 
     CheckForBeginDocument();
@@ -2159,8 +2168,10 @@ static void ReadCell(void)
     char *fn = "ReadCell";
 
 	cellPtr = New(cell);
-    if (!cellPtr)
+    if (!cellPtr) {
         RTFPanic("%s: cannot allocate cell entry", fn);
+		exit(1);
+	}
 
     cellPtr->nextCell = table.cellInfo;
     cellPtr->x = table.rows;
@@ -2268,8 +2279,10 @@ static void InheritTableRowDef(void)
         cellPtr = GetCellByPos(prevRow, i);
 
         newCellPtr = New(cell);
-		if (!newCellPtr)
+		if (!newCellPtr) {
             RTFPanic("%s: cannot allocate inheriting cell entry", fn);
+			exit(1);
+		}
 
         newCellPtr->nextCell = table.cellInfo;
         newCellPtr->x = prevRow + 1;
@@ -2334,7 +2347,6 @@ static void PrescanTable(void)
     char *fn = "PrescanTable";
     short prevChar;
     int maxCols = 0;
-    int rowWithMaxCols = 0;
     int tableLeft, tableRight, tableWidth;
 
     RTFStoreStack();
@@ -2416,7 +2428,6 @@ static void PrescanTable(void)
 
         if (table.cols > maxCols) {
             maxCols = table.cols;
-            rowWithMaxCols = table.rows;
         }
 
 /*              RTFMsg ("* read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]); */
@@ -2445,8 +2456,10 @@ static void PrescanTable(void)
         boolean enteredValue;
 
         rightBorders = (int *) RTFAlloc((table.cellCount) * sizeof(int));
-        if (!rightBorders)
+        if (!rightBorders) {
             RTFPanic("%s: cannot allocate array for cell borders\n", fn);
+			exit(1);
+		}
 
         table.cols = 0;
         for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
@@ -2463,8 +2476,10 @@ static void PrescanTable(void)
         /* allocate array for coulumn border entries. */
         table.columnBorders = (int *) RTFAlloc(((table.cols) + 1) * sizeof(int));
 		
-        if (!table.columnBorders)
+        if (!table.columnBorders) {
             RTFPanic("%s: cannot allocate array for cell borders\n", fn);
+			exit(1);
+		}
 
         for (i = 0; i < table.cols; i++)
             (table.columnBorders)[i + 1] = rightBorders[i];
@@ -2515,8 +2530,11 @@ static void PrescanTable(void)
     /* fill in column spans for each cell */
     for (i = 0; i < table.cellCount; i++) {
         cellPtr = GetCellInfo(i);
-        if (!cellPtr)
+        if (!cellPtr){
             RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn, i);
+			exit(1);
+		}
+		
         cellPtr->columnSpan = GetColumnSpan(cellPtr);
         if (cellPtr->columnSpan > 1)
             table.multiCol = true;
@@ -2607,8 +2625,10 @@ static void WriteCellHeader(int cellNum)
         return;
 
     cellPtr = GetCellInfo(cellNum);
-    if (!cellPtr)
+    if (!cellPtr) {
         RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn, cellNum);
+		exit(1);
+	}
 
     if (table.multiCol) {
         sprintf(buf, "\\multicolumn{%d}{", cellPtr->columnSpan);

@@ -24,7 +24,7 @@ BINARY_NAME=rtf2latex2e
 
 # Location of binary, man, info, and support files - adapt as needed
 BIN_INSTALL    =$(PREFIX)/bin
-SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex
+SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex2e
 
 # Nothing to change below this line
 
