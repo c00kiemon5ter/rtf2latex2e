@@ -141,7 +141,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
     
     /* hack to allow a few bytes offset in file */
     for (offset=0; offset<10; offset++) {
-    verboseU32(fil_sreadU32(Block + offset));
+        verboseU32(fil_sreadU32(Block + offset));
     	if (fil_sreadU32(Block+offset) == 0xe011cfd0)
     		break;
     }
@@ -150,7 +150,6 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
     test_exitf(fil_sreadU32(Block + offset) != 0xd0cf11e0, 9, ends());
     verboseU32(fil_sreadU32(Block + offset + 0x04));
     test_exitf(fil_sreadU32(Block + offset + 0x04) != 0xa1b11ae1, 9, ends());
-
 
     /* read big block depot */
     verbose("read big block depot (bbd)");

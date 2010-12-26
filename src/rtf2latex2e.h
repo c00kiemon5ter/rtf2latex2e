@@ -55,7 +55,7 @@ void EndLaTeXFile (void);
 void RTFSetOutputStream (FILE *ofp);
 
 enum pictType {unknownPict, pict, wmf, gif, jpeg, bin, png};
-enum objClass {unknownObj, Equation, equation, WordPicture, MSGraphChart};
+enum objClass {unknownObjClass, EquationClass, WordPictureClass, MSGraphChartClass};
 enum word97ObjectClass {unknownWord97Object, word97Object, standardObject, word97Picture, word97ObjText};
 enum {left, center, right};
 enum {singleSpace, oneAndAHalfSpace, doubleSpace};

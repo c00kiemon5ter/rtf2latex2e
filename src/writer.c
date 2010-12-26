@@ -25,8 +25,8 @@
 
 # include "rtf.h"
 # include "rtfprep/tokenscan.h"
-# include "cole.h"
-# include "cole_support.h"
+# include "cole/cole.h"
+# include "cole/support.h"
 # include "rtf2latex2e.h"
 # include "eqn.h"
 
@@ -74,9 +74,7 @@ const char *preferenceList[] = {
 
 const char *objectClassList[] = { 
     "Unknown",
-    "Equation.DSMT4",
     "Equation",
-    "equation",
     "Word.Picture",
     "MSGraph.Chart",
     (char *) NULL
@@ -3510,7 +3508,7 @@ static void GetObjectClass(int *groupCounter)
         if (RTFCheckMM(rtfDestination, rtfObjClass) != 0)
             reachedObjectClass = 1;
         if (*groupCounter == 0) {
-            object.class = unknownObj;
+            object.class = unknownObjClass;
             return;
         }
     }
@@ -3531,7 +3529,7 @@ static void GetObjectClass(int *groupCounter)
 
 /* do we recognize this object class? */
     for (i = 0; objectClassList[i] != (char *) NULL; i++) {
-        if (strstr(object.className, objectClassList[i]) != (char *) NULL) {
+        if (strcasestr(object.className, objectClassList[i]) != (char *) NULL) {
             object.class = i;
             break;
         }
@@ -3602,14 +3600,9 @@ DecodeOLE(char *objectFileName, char *streamType,
 
     /* this prints the directory structure for the OLE object */
     
-    if (cole_print_tree (cfs, &colerrno)) {
-            cole_perror ("DecodeOLE cole_print_tree", colerrno);
-            cole_umount (cfs, NULL);
-            return (1);
-    }
-    
+    cole_print_tree (cfs, &colerrno);
 
-    if ((coleFile = cole_fopen(cfs, streamType, &colerrno)) == NULL) {
+    if ((coleFile = cole_fopen(cfs, streamType, NULL, &colerrno)) == NULL) {
         cole_perror("DecodeOLE cole_fopen", colerrno);
         cole_umount(cfs, NULL);
         return 1;
@@ -3658,14 +3651,12 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     char dummyBuf[20];
     FILE *objFile;
     int i;
-    int hexOffset;
-    int groupEnd = false;
     uint8_t hexNumber;
     uint8_t hexEvenOdd = 0;       /* should be even at the end */
     char *fn = "ReadObjectData";
-    RTFMsg("%s: * starting ...\n", fn);
+//    RTFMsg("%s: * starting ...\n", fn);
 
-    if (type == equation) {
+    if (type == EquationClass) {
         (oleEquation.count)++;
         sprintf(dummyBuf, "Eq%03d.eqn", oleEquation.count);
     } else
@@ -3676,42 +3667,39 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     strcat(objectFileName, dummyBuf);
 
     /* open object file */
-    if ((objFile = fopen(objectFileName, "wb")) == NULL)
+    objFile = fopen(objectFileName, "wb");
+    if (!objFile)
         RTFPanic("Cannot open input file %s\n", objectFileName);
 
     /* skip offset header (2 hex characters for each byte) */
-    hexOffset = offset * 2;
-    for (i = 0; i < hexOffset; i++)
+    for (i = 0; i < offset * 2; i++)
         RTFGetToken();
 
     /* each byte is encoded as two hex chars ... ff, a1, 4c, ...*/
-    while (!groupEnd) {
+    while (1) {
         RTFGetToken();
 
         /* CR or LF in the hex stream should be skipped */
-        if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
+        if (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d)
             RTFGetToken();
 
         if (rtfClass == rtfGroup)
             break;
 
-        if (!groupEnd) {
-            hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
-            hexEvenOdd++;
-        }
+        hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
+        hexEvenOdd++;
 
         RTFGetToken();
-        if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
+
+        if (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d)
             RTFGetToken();  /* should not happen */
 
         if (rtfClass == rtfGroup)
             break;
 
-        if (!groupEnd) {
-            hexNumber += RTFCharToHex(rtfTextBuf[0]);   /* this is the the number */
-            hexEvenOdd--;
-            fputc(hexNumber, objFile);
-        }
+        hexNumber += RTFCharToHex(rtfTextBuf[0]);   /* this is the the number */
+        hexEvenOdd--;
+        fputc(hexNumber, objFile);
     }
 
     if (fclose(objFile) != 0)
@@ -3727,7 +3715,9 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
  */
 static boolean ReadEquation(int *groupCount)
 {
+    FILE *in, *out;
     char objectFileName[rtfBufSiz];
+    char objectFileNameX[rtfBufSiz];
     unsigned char *nativeStream;
     MTEquation *theEquation;
     uint32_t equationSize;    
@@ -3757,9 +3747,28 @@ static boolean ReadEquation(int *groupCount)
     }
 
     /* save hex-encoded object data a binary objectFileName */
-    ReadObjectData(objectFileName, equation, EQUATION_OFFSET);
+    ReadObjectData(objectFileName, EquationClass, EQUATION_OFFSET);
     (*groupCount)--;
 
+	/* hack because sometimes EQUATION_OFFSET needs to be 4 bytes longer */
+	in = fopen(objectFileName, "r");
+	if (fgetc(in) == 0xd0) 
+		fclose(in);
+	else {
+		strcpy(objectFileNameX,objectFileName);
+		objectFileNameX[strlen(objectFileName)-1] = "x";
+		fgetc(in); 
+		fgetc(in); 
+		fgetc(in);
+		out = fopen(objectFileNameX, "wb");
+
+		while (!feof(in))
+			fputc(fgetc(in), out);
+		fclose(out);
+		fclose(in);
+		rename(objectFileNameX,objectFileName);
+	} 
+       	
     /* Decode the OLE and extract the equation stream into buffer nativeStream */
     if (DecodeOLE(objectFileName, "/Equation Native", &nativeStream, &equationSize)) {
         RTFMsg("* error decoding OLE equation object!\n");
@@ -3773,18 +3782,6 @@ static boolean ReadEquation(int *groupCount)
         RTFMsg("* error allocating memory for equation!\n");
         free(nativeStream);
         return (false);
-    }
-
-    /* hack ... newer OLE streams seem to start with an extra 4 bytes of zeros */
-    if (fil_sreadU32(nativeStream) == 0) {
-        int i;
-        for (i=0; i<equationSize-4; i++)
-        	nativeStream[i] = nativeStream[i+4];
-        	
-        nativeStream[equationSize-4] = 0;
-        nativeStream[equationSize-3] = 0;
-        nativeStream[equationSize-2] = 0;
-        nativeStream[equationSize-1] = 0;
     }
 
     /* the first two bytes should contain 0x1c 0x00 */
@@ -3840,14 +3837,13 @@ static void ReadObject(void)
     GetObjectClass(&groupCounter);
 
     switch (object.class) {
-    case unknownObj:
+    case unknownObjClass:
     default:
         RTFMsg("%s: * unsupported object '%s', skipping...\n", fn, object.className);
         RTFSkipGroup();
         break;
 
-    case Equation:
-    case equation:
+    case EquationClass:
         RTFMsg("%s: * equation object '%s', processing...\n", fn, object.className);
 
         if ((int) preferenceValue[GetPreferenceNum("convertEquations")])
@@ -3880,8 +3876,8 @@ static void ReadObject(void)
         }
         break;
 
-    case WordPicture:
-    case MSGraphChart:
+    case WordPictureClass:
+    case MSGraphChartClass:
         while (!ReachedResult(&groupCounter));
         ReadPicture();
         break;
@@ -4338,7 +4334,7 @@ int BeginLaTeXFile(void)
     picture.count = 0;
     picture.type = unknownPict;
     oleEquation.count = 0;
-    object.class = unknownObj;
+    object.class = unknownObjClass;
     object.word97 = 0;
     table.inside = false;
     table.cellCount = 0;

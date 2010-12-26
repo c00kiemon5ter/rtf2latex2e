@@ -388,10 +388,10 @@ U32 add_MY_FILE_entry(MY_FILE * list, U32 size)
 
 #define verbose_structures() { \
   if (SDepot->file.block_list!=NULL) \
-    verboseU32Array (SDepot->file.block_list, SDepot->size / sizeof(U32)); \
-  verboseU32 (Root->size); \
-  verboseU32Array (BDepot->file.block_list, BDepot->size / sizeof(U32)); \
-  verboseU32 (*(bbd_list->file.block_list)); \
+    verboseU32Array (SDepot->file.block_list, (U32)SDepot->size / sizeof(U32)); \
+  verboseU32 ((U32) Root->size); \
+  verboseU32Array (BDepot->file.block_list, (U32)BDepot->size / sizeof(U32)); \
+  verboseU32 ((U32) *(bbd_list->file.block_list)); \
   }
 
     assert(list != NULL);
