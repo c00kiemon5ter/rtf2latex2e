@@ -270,7 +270,7 @@ void print_tag(unsigned char tag, int src_index)
         RTFMsg("[%03d] %-14s\n", src_index, "SUB");
         break;
     case 12:
-        RTFMsg("%-14s [%03d =  SUB2\n", src_index);
+        RTFMsg("[%03d] %-14s\n", src_index, "SUB2");
         break;
     case 13:
         RTFMsg("[%03d] %-14s\n", src_index, "SYM");
@@ -326,8 +326,8 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
 
         new_obj = (void *) NULL;
 
-        print_tag(curr_tag, *src_index);
-    __cole_dump(src+*src_index, src+*src_index, 16, NULL);
+        if (0) print_tag(curr_tag, *src_index);
+    	if (0) __cole_dump(src+*src_index, src+*src_index, 16, NULL);
 
         switch (curr_tag) {
         case END:
@@ -636,8 +636,8 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
             new_char->embellishment_list = Eqn_inputEMBELL(eqn, src, src_index);
     }
 
-    fprintf(stderr, "          '%c' or 0x%04x,", new_char->character, new_char->character);
-    fprintf(stderr, " typeface = %d\n", new_char->typeface-128);
+    if (0) fprintf(stderr, "          '%c' or 0x%04x,", new_char->character, new_char->character);
+    if (0) fprintf(stderr, " typeface = %d\n", new_char->typeface-128);
 
     return new_char;
 }
@@ -670,7 +670,7 @@ MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_index)
     new_tmpl->options = *(src + *src_index);
     (*src_index)++;
 
-    fprintf(stderr, "          sel=%d var=0x%04x (%d.%d)\n", 
+    if (0) fprintf(stderr, "          sel=%d var=0x%04x (%d.%d)\n", 
     new_tmpl->selector, new_tmpl->variation, new_tmpl->selector, new_tmpl->variation);
 
     new_tmpl->subobject_list = Eqn_GetObjectList(eqn, src, src_index, 0);
@@ -936,7 +936,7 @@ int GetNudge(unsigned char *src, int *x, int *y)
         nudge_length = 2;
     }
 
-fprintf(stderr, "nudge gotten size=%d",nudge_length);
+	if (0) fprintf(stderr, "nudge gotten size=%d",nudge_length);
 
     return nudge_length;
 }
@@ -2152,6 +2152,7 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
     int zln = 0;
 
     int count = 0;
+    if (0) fprintf(stderr,"numstrs=%d\n",num_strs);
     while (count < num_strs) {
         int lev = strs[count].log_level;
         char *dat = strs[count].data;
@@ -2216,6 +2217,8 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
                                 targ_line_num = ch - '1';
                                 while (slot < num_strs) {
                                     if (strs[slot].is_line) {
+                                    	if (0) fprintf(stderr,"curr_line_num=%d, targ_line_num=%d\n", curr_line_num, targ_line_num);
+                                    	if (0) fprintf(stderr,"strs[slot].data=%s\n", strs[slot].data);
                                         if (curr_line_num == targ_line_num) {
                                             thetex = strs[slot].data;
                                             break;
@@ -2251,13 +2254,11 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
                                     var_nom = vars[2];
                                     if (var_nom) {
                                         char buf[128];
-                                        int zdl =
-                                            GetProfileStr(Profile_VARIABLES, var_nom, buf, 128);
+                                        int zdl = GetProfileStr(Profile_VARIABLES, var_nom, buf, 128);
                                         if (zdl > 0) {
                                             char *tail = buf;
-                                            char *comma =
-                                                strchr(tail, ',');
-                                            int inc_len;
+                                            char *comma = strchr(tail, ',');
+                                            uint32_t inc_len;
                                             if (strs[slot].is_line == 2)        // it's a pile
                                                 tail = comma + 1;
                                             else
@@ -2339,10 +2340,11 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
             strs[num_strs].do_delete = 1;
             strs[num_strs].ilk = Z_TEX;
             strs[num_strs].is_line = 1;
-            strs[num_strs].data =
-                Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
+            strs[num_strs].data = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
+        	if (0) fprintf(stderr,"strs[%d].data=%s\n",num_strs,strs[num_strs].data);
+            if (strlen(strs[num_strs].data)) {
             num_strs++;
-            tally++;
+            tally++;}
         } else if (obj_list->tag == PILE) {     // This one is DIFFICULT!!
             char targ_nom[32];
             strs[num_strs].log_level = 0;
@@ -2560,14 +2562,13 @@ int Eqn_GetTmplStr(MTEquation * eqn, int selector, int variation, EQ_STRREC * st
 
     tmpl_ptr = strchr(ini_line, ',');
 
-    if (1 || eqn->log_level >= 2) {
+    if (eqn->log_level >= 2) {
         char buf[512];
         sprintf(buf, "\n%sTMPL : %s=!%s!\n", eqn->indent, key, ini_line);
         SetComment(strs, 2, buf);
-                fprintf(stderr, "\n%sTMPL : %s=!%s!\n", eqn->indent, key, ini_line);
-
         num_strs++;
     }
+    if (0) fprintf(stderr, "\n%sTMPL : %s=!%s!\n", eqn->indent, key, ini_line);
 
     if (tmpl_ptr)
         *tmpl_ptr++ = 0;
@@ -2847,16 +2848,16 @@ char *Profile_MT_CHARSET_ATTS[] = {
     "138=1,1,0",
 //;fnMTEXTRA
     "139=1,1,1",
-    "-140=1,1,0",
-    "-141=1,1,0",
-    "-142=1,1,0",
-    "-143=1,1,0",
-    "-144=1,1,0",
-    "-145=1,1,0",
-    "-146=1,1,0",
-    "-147=1,1,0",
-    "-148=1,1,0",
-    "-149=1,1,0",
+    "140=1,1,0",
+    "141=1,1,0",
+    "142=1,1,0",
+    "143=1,1,0",
+    "144=1,1,0",
+    "145=1,1,0",
+    "146=1,1,0",
+    "147=1,1,0",
+    "148=1,1,0",
+    "149=1,1,0",
 //;fnEXPAND
     "150=1,1,0",
 //;fnMARKER
@@ -2889,16 +2890,16 @@ char *Profile_MT_CHARSET_ATTS3[] = {
     "138=1,1,0",
 //;fnMTEXTRA
     "139=1,1,1",
-    "-140=1,1,0",
-    "-141=1,1,0",
-    "-142=1,1,0",
-    "-143=1,1,0",
-    "-144=1,1,0",
-    "-145=1,1,0",
-    "-146=1,1,0",
-    "-147=1,1,0",
-    "-148=1,1,0",
-    "-149=1,1,0",
+    "140=1,1,0",
+    "141=1,1,0",
+    "142=1,1,0",
+    "143=1,1,0",
+    "144=1,1,0",
+    "145=1,1,0",
+    "146=1,1,0",
+    "147=1,1,0",
+    "148=1,1,0",
+    "149=1,1,0",
 //;fnEXPAND
     "150=1,1,0",
 //;fnMARKER
@@ -2932,7 +2933,7 @@ char *Profile_CHARTABLE[] = {
     "132.111=\\o ",
     "132.112=\\pi ",
     "132.113=\\theta ",
-    "132.1-14=\\rho ",
+    "132.114=\\rho ",
     "132.115=\\sigma ",
     "132.116=\\tau ",
     "132.117=\\upsilon ",
@@ -2992,7 +2993,7 @@ char *Profile_CHARTABLE[] = {
     "134.110=\\nu ",
     "134.112=\\pi ",
     "134.113=\\theta ",
-    "134.1-14=\\rho ",
+    "134.114=\\rho ",
     "134.115=\\sigma ",
     "134.116=\\tau ",
     "134.117=\\upsilon ",
@@ -3013,7 +3014,7 @@ char *Profile_CHARTABLE[] = {
     "134.179=\\geq ",
     "134.180=\\times ",
     "134.181=\\propto ",
-    "134.182=\\partial ",       /* added by Ujwal S. Sathyam */
+    "134.182=\\partial ",
     "134.183=\\bullet ",
     "134.184=\\div ",
     "134.185=\\neq ",
@@ -3119,7 +3120,7 @@ char *Profile_CHARTABLE3[] = {
     "132.962=\\varsigma ",
     "132.982=\\varpi ",
     "133.913=A",
-    "133.9-14=B",
+    "133.914=B",
     "133.935=X",
     "133.916=\\Delta ",
     "133.917=E",
@@ -3216,7 +3217,7 @@ char *Profile_CHARTABLE3[] = {
     "139.8883=\\vartriangleright ",
     "139.8723=\\mp ",
     "139.8728=\\circ ",
-    "139.86-14=\\longmapsto ",
+    "139.8614=\\longmapsto ",
     "139.8597=\\updownarrow ",
     "139.8661=\\Updownarrow ",
     "139.4746=\\bigcup ",
@@ -3410,8 +3411,11 @@ char *Profile_TEMPLATES5[] = {
     "11.0=fract: tmfract,\\frac{#1[M]}{#2[M]} ",
     "11.1=fract: smfract,\\frac{#1[M]}{#2[M]} ",
     "11.2=fract: slfract,{#1[M]}/{#2[M]} ",
-    "11.3=fract: slsmfract,{#1[M]}/{#2[M]} ",
-    "11.4=fract: basefract,{#1[M]}/{#2[M]} ",
+    "11.3=fract: slfract,{#1[M]}/{#2[M]} ",
+    "11.4=fract: slfract,{#1[M]}/{#2[M]} ",
+    "11.5=fract: smfract,\\frac{#1[M]}{#2[M]} ",
+    "11.6=fract: slfract,{#1[M]}/{#2[M]} ",
+    "11.7=fract: slfract,{#1[M]}/{#2[M]} ",
     "12.0=ubar: subar,\\underline{#1[M]} ",
     "12.1=ubar: dubar,\\underline{\\underline{#1[M]}} ",
     "13.0=obar: sobar,\\overline{#1[M]} ",

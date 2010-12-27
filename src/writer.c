@@ -3598,10 +3598,8 @@ DecodeOLE(char *objectFileName, char *streamType,
         return (1);
     }
 
-    /* this prints the directory structure for the OLE object */
+    /* cole_print_tree (cfs, &colerrno);  */
     
-    cole_print_tree (cfs, &colerrno);
-
     if ((coleFile = cole_fopen(cfs, streamType, NULL, &colerrno)) == NULL) {
         cole_perror("DecodeOLE cole_fopen", colerrno);
         cole_umount(cfs, NULL);
@@ -3653,7 +3651,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     int i;
     uint8_t hexNumber;
     uint8_t hexEvenOdd = 0;       /* should be even at the end */
-    char *fn = "ReadObjectData";
+//    char *fn = "ReadObjectData";
 //    RTFMsg("%s: * starting ...\n", fn);
 
     if (type == EquationClass) {
@@ -3756,7 +3754,7 @@ static boolean ReadEquation(int *groupCount)
 		fclose(in);
 	else {
 		strcpy(objectFileNameX,objectFileName);
-		objectFileNameX[strlen(objectFileName)-1] = "x";
+		objectFileNameX[strlen(objectFileName)-1] = 'x';
 		fgetc(in); 
 		fgetc(in); 
 		fgetc(in);
@@ -3788,7 +3786,7 @@ static boolean ReadEquation(int *groupCount)
     if (fil_sreadU16(nativeStream) == MTEF_HEADER_SIZE) {
         equationSize -= MTEF_HEADER_SIZE;
 
-        __cole_dump(nativeStream+MTEF_HEADER_SIZE, nativeStream+MTEF_HEADER_SIZE, equationSize, "equation");
+        if (0) __cole_dump(nativeStream+MTEF_HEADER_SIZE, nativeStream+MTEF_HEADER_SIZE, equationSize, "equation");
 
         if (!Eqn_Create(theEquation, nativeStream+MTEF_HEADER_SIZE, equationSize)) {
             RTFMsg("* could not create equation structure!\n");
