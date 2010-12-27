@@ -4,13 +4,19 @@
 // Initial implementation by Jack Medd.  Originally part of
 // RTF to LaTeX converter in Scientific WorkPlace (http://www.mackichan.com).
 //
-// The MathType equation format is described at
+// The MathType equation format were described at
 //   http://www.mathtype.com/support/tech/MTEF4.htm
 //   http://www.mathtype.com/support/tech/MTEF5.htm
 //   http://www.mathtype.com/support/tech/MTEF_storage.htm
 //   http://www.mathtype.com/support/tech/encodings/mtcode.stm
 // Various undocumented details determined by debugging and intuition.
 //
+// Access to these pages is available at
+// http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF5.htm
+// http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF4.htm
+// http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF3.htm
+// http://web.archive.org/web/20010304111449/http://mathtype.com/support/tech/MTEF_storage.htm
+// http://web.archive.org/web/20021020115826/http://www.mathtype.com/support/tech/encodings/mtcode.stm
 
 # include       <stdio.h>
 # include       <string.h>
@@ -2301,10 +2307,11 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     }
     eqn->math_mode++;
 
-	switch (eqn->m_mtef_ver == 5) {
-		if (tmpl->selector == 15)
-			tmpl->variation &= 0x000F;
-	}
+	if (tmpl->selector == 15 && tmpl->variation == 113)
+		tmpl->variation = 2;
+	
+	if (tmpl->selector == 15 && tmpl->variation == 49)
+		tmpl->variation = 1;
 
     num_strs += Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation, strs + num_strs);
 
@@ -2322,7 +2329,7 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     }
 
     if (obj_list && obj_list->tag >= SIZE && obj_list->tag <= SUBSYM) {
-//
+
         obj_list = (MT_OBJLIST *) obj_list->next;
     }
 
@@ -2345,11 +2352,7 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
 
             GetPileType(the_template, tally, targ_nom);
 
-            strs[num_strs].data = Eqn_TranslatePILEtoTARGET(eqn,
-                                                            (MT_PILE *)
-                                                            obj_list->
-                                                            obj_ptr,
-                                                            targ_nom);
+            strs[num_strs].data = Eqn_TranslatePILEtoTARGET(eqn, (MT_PILE *) obj_list-> obj_ptr, targ_nom);
 
             num_strs++;
             tally++;
@@ -2541,8 +2544,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar,
 
 
 static
-int Eqn_GetTmplStr(MTEquation * eqn, int selector, int variation,
-                   EQ_STRREC * strs)
+int Eqn_GetTmplStr(MTEquation * eqn, int selector, int variation, EQ_STRREC * strs)
 {
     char key[8];                // key = "20.1"
     char ini_line[256];
@@ -2558,10 +2560,12 @@ int Eqn_GetTmplStr(MTEquation * eqn, int selector, int variation,
 
     tmpl_ptr = strchr(ini_line, ',');
 
-    if (eqn->log_level >= 2) {
+    if (1 || eqn->log_level >= 2) {
         char buf[512];
         sprintf(buf, "\n%sTMPL : %s=!%s!\n", eqn->indent, key, ini_line);
         SetComment(strs, 2, buf);
+                fprintf(stderr, "\n%sTMPL : %s=!%s!\n", eqn->indent, key, ini_line);
+
         num_strs++;
     }
 
