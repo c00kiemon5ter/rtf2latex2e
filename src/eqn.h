@@ -19,9 +19,7 @@ typedef struct {
 
     char indent[128];
     int log_level;
-    int math_mode;
-
-    int text_mode;
+    
     MT_CHARSET_ATTS *atts_table;
     char **m_atts_table;
     char **m_char_table;
@@ -32,6 +30,7 @@ typedef struct {
     int m_version;
     int m_version_sub;
     int m_inline;
+    int m_mode;
 } MTEquation;
 
 int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size);

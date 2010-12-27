@@ -29,6 +29,14 @@
 # include       "eqn.h"
 # include       "eqn_support.h"
 
+# define        DEBUG_TEMPLATE 1
+# define        DEBUG_FONT     0
+
+# define EQN_MODE_TEXT     0
+# define EQN_MODE_INLINE   1
+# define EQN_MODE_DISPLAY  2
+# define EQN_MODE_EQNARRAY 3
+
 // Various local data which used to be in rtf2latex.ini.  Initialized at bottom of file.
 char *Profile_FUNCTIONS[];
 char *Profile_VARIABLES[];
@@ -52,11 +60,11 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream,
     eqn->indent[1] = 0;
     eqn->o_list = NULL;
     eqn->atts_table = NULL;
-    eqn->text_mode = 0;
+    eqn->m_mode = EQN_MODE_TEXT;
     eqn->m_inline = 0;
     eqn->m_mtef_ver = eqn_stream[src_index++];
 
-    RTFMsg("MTEF Version = 0x%08x\n", eqn->m_mtef_ver);
+    if (0) RTFMsg("MTEF Version = 0x%08x\n", eqn->m_mtef_ver);
 
     switch (eqn->m_mtef_ver) {
     case 1:
@@ -103,13 +111,15 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream,
         return (false);
     }
 
+    if (0) {
     RTFMsg("* Platform = %s\n", (eqn->m_platform) ? "Win" : "Mac",
            eqn->m_platform);
     RTFMsg("* Product  = %s\n",
            (eqn->m_product) ? "MathType" : "EqnEditor", eqn->m_product);
     RTFMsg("* Version  = %d.%d\n", eqn->m_version, eqn->m_version_sub);
     RTFMsg("* Type     = %s\n", eqn->m_inline ? "inline" : "display");
-
+	}
+	
     if (eqn->m_mtef_ver == 3) {
         eqn->m_atts_table = Profile_MT_CHARSET_ATTS3;
         Eqn_LoadCharSetAtts(eqn, Profile_MT_CHARSET_ATTS3);
@@ -138,6 +148,88 @@ void Eqn_Destroy(MTEquation * eqn)
     }
 }
 
+static void setMathMode(MTEquation * eqn, char * buff, int mode)
+{
+	char s[50];
+	*s = '\0';
+	fprintf(stderr,"old=%d, new=%d\n",eqn->m_mode,mode);
+	
+	switch (mode) {
+	case EQN_MODE_TEXT:
+		switch (eqn->m_mode) {
+		case EQN_MODE_TEXT:
+			break;
+		case EQN_MODE_INLINE:
+			strcpy(s," $");
+			break;	   
+		case EQN_MODE_DISPLAY:
+			strcpy(s," $$\n");
+			break;			
+		case EQN_MODE_EQNARRAY:
+			strcpy(s,"\\end{eqnarray}\n");
+			break;
+		}
+		break;
+		
+    case EQN_MODE_INLINE:
+		switch (eqn->m_mode) {
+		case EQN_MODE_TEXT:
+			strcpy(s,"$");
+			break;
+		case EQN_MODE_INLINE:
+			break;	   
+		case EQN_MODE_DISPLAY:
+			strcpy(s," $$\n$");
+			break;			
+		case EQN_MODE_EQNARRAY:
+			strcpy(s,"\\end{eqnarray}\n$");
+			break;
+		}
+    	break;
+   
+    case EQN_MODE_DISPLAY:
+		switch (eqn->m_mode) {
+		case EQN_MODE_TEXT:
+			strcpy(s,"$$");
+			break;
+		case EQN_MODE_INLINE:
+			strcpy(s," $\n$$");
+			break;	   
+		case EQN_MODE_DISPLAY:
+			break;			
+		case EQN_MODE_EQNARRAY:
+			strcpy(s,"\\end{eqnarray}\n$$");
+			break;
+		}
+		break;
+		
+    case EQN_MODE_EQNARRAY:
+		switch (eqn->m_mode) {
+		case EQN_MODE_TEXT:
+			strcpy(s,"\\begin{eqnarray}");
+			break;
+		case EQN_MODE_INLINE:
+			strcpy(s," $\n\\begin{eqnarray}");
+			break;	   
+		case EQN_MODE_DISPLAY:
+			strcpy(s," $$\n\\begin{eqnarray}");
+			break;			
+		case EQN_MODE_EQNARRAY:
+			break;
+		}
+    	break;
+    }
+    
+    eqn->m_mode = mode;
+    
+    if (strlen(s)) {
+    	if (buff)
+    		strcat(buff,s);
+    	else
+    		fputs(s, eqn->out_file);
+    }
+}
+
 void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
                              int loglevel)
 {
@@ -148,10 +240,8 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
 
     if (eqn->log_level == 2)
         fputs("%Begin Equation\n", eqn->out_file);
-    else
-        fputs("\n", eqn->out_file);
-
-    eqn->math_mode = 0;
+//    else
+  //      fputs("\n", eqn->out_file);
 
     ztex = Eqn_TranslateObjects(eqn, eqn->o_list);
     if (ztex) {
@@ -159,13 +249,12 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
         free(ztex);
     }
 
-    if (eqn->math_mode)
-        fputs("$", eqn->out_file);
+    setMathMode(eqn, NULL, EQN_MODE_TEXT);
 
     if (eqn->log_level == 2)
         fputs(" %End Equation\n", eqn->out_file);
-    else
-        fputs("\n", eqn->out_file);
+//    else
+ //       fputs("\n", eqn->out_file);
 }
 
 #define zLINE_MAX   75
@@ -173,11 +262,12 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
 static
 void BreakTeX(char *ztex, FILE * outfile)
 {
-
     char *start = ztex;
     int char_count = 0;
     int last_space = 0;
     int put_line = 0;
+    int any_non_space = 0; // empty lines in math are bad
+    
     char ch;
     while ((ch = *ztex)) {
         if (ch == '\\') {
@@ -185,6 +275,7 @@ void BreakTeX(char *ztex, FILE * outfile)
             ztex++;
             char_count++;
             ztex++;
+            any_non_space = 1;
 
         } else if (ch == '%') {
 
@@ -192,6 +283,7 @@ void BreakTeX(char *ztex, FILE * outfile)
                 ztex++;
             if (*ztex)
                 *ztex++ = 0;
+            any_non_space = 1;
             put_line = 1;
 
         } else if (ch == ' ') {
@@ -205,6 +297,7 @@ void BreakTeX(char *ztex, FILE * outfile)
         } else {
             char_count++;
             ztex++;
+            any_non_space = 1;
         }
 
         if (put_line == 0 && char_count >= zLINE_MAX) {
@@ -214,19 +307,20 @@ void BreakTeX(char *ztex, FILE * outfile)
                 put_line = 1;
             }
         }
-        if (put_line) {
+        if (put_line && any_non_space) {
             fputs(start, outfile);
             fputc('\n', outfile);
-            while (*ztex && *ztex <= ' ')
+            while (*ztex && *ztex <= ' ' )
                 ztex++;
             start = ztex;
             char_count = 0;
             last_space = 0;
             put_line = 0;
+            any_non_space = 0;
         }
     }
 
-    if (char_count)
+    if (char_count && any_non_space)
         fputs(start, outfile);
 }
 
@@ -377,11 +471,12 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
             (*src_index)++;
             id = *(src + *src_index);
             (*src_index)++;
-            fprintf(stderr,"          ");
-            while ((c = *(src + *src_index))) { fprintf(stderr,"%c",c);
+            if (DEBUG_FONT) fprintf(stderr,"          ");
+            while ((c = *(src + *src_index))) { 
+            	if (DEBUG_FONT) fprintf(stderr,"%c",c);
                 (*src_index)++;
             }
-            fprintf(stderr," ==> %d\n",id);
+            if (DEBUG_FONT) fprintf(stderr," ==> %d\n",id);
             (*src_index)++;
             tally--;
             break;
@@ -670,8 +765,9 @@ MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_index)
     new_tmpl->options = *(src + *src_index);
     (*src_index)++;
 
-    if (0) fprintf(stderr, "          sel=%d var=0x%04x (%d.%d)\n", 
-    new_tmpl->selector, new_tmpl->variation, new_tmpl->selector, new_tmpl->variation);
+    if (DEBUG_TEMPLATE) 
+    	fprintf(stderr, "TMPL : read sel=%2d var=0x%04x (%d.%d)\n", 
+    	new_tmpl->selector, new_tmpl->variation, new_tmpl->selector, new_tmpl->variation);
 
     new_tmpl->subobject_list = Eqn_GetObjectList(eqn, src, src_index, 0);
 
@@ -1103,6 +1199,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
 
         zcurr = (char *) NULL;
 
+        if (1) print_tag(curr_node->tag, 0);
         switch (curr_node->tag) {
 
         case LINE:{
@@ -1113,28 +1210,25 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
             break;
 
         case CHAR:{
+                int advance = 0;
                 MT_CHAR *charptr = (MT_CHAR *) curr_node->obj_ptr;
-                if (charptr) {
-                    int advance = 0;
-                    if (charptr->typeface == 130) {     // auto_recognize functions
-                        zcurr =
-                            Eqn_TranslateFUNCTION(eqn, curr_node,
-                                                  &advance);
-                        while (advance > 1) {
-                            the_list = (MT_OBJLIST *) the_list->next;
-                            advance--;
-                        }
-                    } else if (charptr->typeface == 129 && eqn->text_mode) {    // text in math
-                        zcurr =
-                            Eqn_TranslateTEXTRUN(eqn, curr_node, &advance);
-                        while (advance > 1) {
-                            the_list = (MT_OBJLIST *) the_list->next;
-                            advance--;
-                        }
-                    }
-                    if (!advance)
-                        zcurr = Eqn_TranslateCHAR(eqn, charptr);
-                }
+                if (!charptr) break;
+            
+				if (charptr->typeface == 130) {     // auto_recognize functions
+					zcurr = Eqn_TranslateFUNCTION(eqn, curr_node, &advance);
+					while (advance > 1) {
+						the_list = (MT_OBJLIST *) the_list->next;
+						advance--;
+					}
+				} else if (charptr->typeface == 129 && eqn->m_mode != EQN_MODE_TEXT) {    // text in math
+					zcurr = Eqn_TranslateTEXTRUN(eqn, curr_node, &advance);
+					while (advance > 1) {
+						the_list = (MT_OBJLIST *) the_list->next;
+						advance--;
+					}
+				}
+				if (!advance)
+					zcurr = Eqn_TranslateCHAR(eqn, charptr);
             }
             break;
 
@@ -1267,21 +1361,10 @@ char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar)
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-    if (0 && math_attr) {
-        if (eqn->math_mode == 0) {
-            if (math_attr == MA_FORCE_MATH) {
-                SetDollar(strs + save_index, 1);        // turn math on
-                eqn->math_mode = 1;
-            }
-        } else if (eqn->math_mode == 1) {
-            if (math_attr == MA_FORCE_TEXT) {
-                SetDollar(strs + save_index, 0);        // turn math off
-                eqn->math_mode = 0;
-            }
-        } else {
-
-        }
-    }
+	if (math_attr == MA_FORCE_MATH && eqn->m_mode == EQN_MODE_TEXT) 
+		setMathMode(eqn, NULL, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY);	
+	else if (math_attr == MA_FORCE_TEXT)
+		setMathMode(eqn, NULL, EQN_MODE_TEXT);
 
     return Eqn_JoinStrings(eqn, strs, num_strs);
 }
@@ -1352,10 +1435,8 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     strs[num_strs].data = zdata;
     num_strs++;
 
-    if (0 && *advance && eqn->math_mode == 0) {
-        SetDollar(strs + save_index, 1);        // turn math on
-        eqn->math_mode = 1;
-    }
+    if (*advance && eqn->m_mode == EQN_MODE_TEXT)
+		setMathMode(eqn, NULL, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY);	
 
     return Eqn_JoinStrings(eqn, strs, num_strs);
 }
@@ -1471,21 +1552,15 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
 
     strcat(eqn->indent, "  ");
 
-    // put "\n\\begin{array}"
+    // start matrix
+    is_tabular = (eqn->m_mode == EQN_MODE_TEXT) ? 1 : 0;
 
-    if (eqn->math_mode) {
-        strcat(rv, "\n\\begin{array}");
-        eqn->math_mode++;
-        is_tabular = 0;
-    } else {
-//      strcat( rv,"\n$\n\\begin{array}" );
-//      math_mode =  2;
+    if (is_tabular) 
         strcat(rv, "\n\\begin{tabular}");
-        is_tabular = 1;
-    }
+    else
+        strcat(rv, "\n\\begin{array}");
 
     // set the vertical alignment of the matrix
-
     if (matrix->valign == 0)
         matv_align = "[t]{";
     else if (matrix->valign == 2)
@@ -1493,14 +1568,12 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
     strcat(rv, matv_align);
 
     // set the horizontal column alignment char
-
     if (matrix->h_just == MT_LEFT)
         col_align = "l";
     else if (matrix->h_just == MT_RIGHT)
         col_align = "r";
 
     // script the LaTeX "cols"
-
     while (i <= matrix->cols) {
         if (HasHVLine(i, matrix->col_parts))
             strcat(rv, "|");
@@ -1510,21 +1583,18 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
     }
     strcat(rv, "}\n");
 
-    if (!is_tabular)
-        eqn->text_mode++;
     obj_list = matrix->element_list;
 
     while (obj_list && curr_row < matrix->rows) {       //  loop down rows
+    	int new_line = 0;
 
-        int new_line = 0;
         if (curr_row) {
-            if (is_tabular && eqn->math_mode) {
-                strcat(rv, " $ \\\\");
-                eqn->math_mode = 0;
-            } else
-                strcat(rv, " \\\\");
+            if (is_tabular)
+            	setMathMode(eqn, rv, EQN_MODE_TEXT);
+            strcat(rv, " \\\\");
             new_line = 1;
         }
+        
         if (HasHVLine(curr_row, matrix->row_parts)) {
             strcat(rv, " \\hline");
             new_line = 1;
@@ -1535,11 +1605,9 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
         while (curr_col < matrix->cols) {       // loop thru columns in one row
 
             if (curr_col) {
-                if (is_tabular && eqn->math_mode) {
-                    strcat(rv, " $ & ");
-                    eqn->math_mode = 0;
-                } else
-                    strcat(rv, " & ");
+				if (is_tabular)
+					setMathMode(eqn, rv, EQN_MODE_TEXT);
+				strcat(rv, " & ");
             }
 
             while (obj_list && obj_list->tag != LINE) { // could be a SIZE
@@ -1564,23 +1632,16 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
 
     }                           // loop down rows
 
-    if (is_tabular && eqn->math_mode) {
-        strcat(rv, " $");
-        eqn->math_mode = 0;
-    }
+	if (is_tabular)
+		setMathMode(eqn, rv, EQN_MODE_TEXT);
 
     if (HasHVLine(curr_row, matrix->row_parts))
         strcat(rv, " \\\\ \\hline\n");
-
-    // put "\n\\end{array}\n"
 
     if (is_tabular)
         strcat(rv, "\n\\end{tabular}\n");
     else
         strcat(rv, "\n\\end{array}\n");
-
-    if (!is_tabular)
-        eqn->text_mode--;
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
@@ -1589,9 +1650,6 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
         sprintf(buf, "\n%sEnd MATRIX\n", eqn->indent);
         strcat(rv, buf);
     }
-
-    if (!is_tabular)
-        eqn->math_mode--;
 
     return rv;
 }
@@ -1627,7 +1685,6 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 
     int buf_limit = 8192;
     char *rv = (char *) malloc(buf_limit);
-    int save_math_mode;
     MT_OBJLIST *obj_list;
     int curr_row = 0;
     int right_only = 0;
@@ -1644,17 +1701,7 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 
     strcat(eqn->indent, "  ");
 
-    // put "\n\\begin{eqnarray}"
-
-    save_math_mode = eqn->math_mode;
-
-    if (eqn->math_mode) {
-        strcpy(rv, " $\n\\begin{eqnarray*}\n");
-    } else {
-        strcpy(rv, "\\begin{eqnarray*}\n");
-    }
-    eqn->math_mode = 2;
-    eqn->text_mode++;
+    setMathMode(eqn,rv,EQN_MODE_EQNARRAY);
 
     obj_list = pile->line_list;
 
@@ -1734,17 +1781,6 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
         curr_row++;
     }                           // loop down thru lines
 
-
-    // put "\n\\end{array}\n"
-
-    strcat(rv, "\n\\end{eqnarray*}\n");
-
-    if (save_math_mode)
-        strcat(rv, "$ ");
-    eqn->math_mode = save_math_mode;
-
-    eqn->text_mode--;
-
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
     if (eqn->log_level >= 2) {
@@ -1762,7 +1798,7 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
 {
     MT_OBJLIST *obj_list;
     int buf_limit = 8192;
-    int save_math_mode = eqn->math_mode;
+    int save_math_mode;
     char *tablev_align = "{";   // default is vertical centering
     char *col_align = "c";
     int curr_row = 0;
@@ -1778,17 +1814,11 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
 
     strcat(eqn->indent, "  ");
 
-    // put "\n\\begin{tabular}"
-
-    if (eqn->math_mode) {
-        strcpy(rv, " $\n\\begin{tabular}");
-        eqn->math_mode = 0;
-    } else {
-        strcpy(rv, "\n\\begin{tabular}");
-    }
+    save_math_mode = eqn->m_mode;
+	setMathMode(eqn,rv,EQN_MODE_TEXT);
+    strcpy(rv, "\n\\begin{tabular}");
 
     // set the vertical alignment of the tabular
-
     if (pile->valign == 0)
         tablev_align = "[t]{";
     else if (pile->valign == 2)
@@ -1796,7 +1826,6 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
     strcat(rv, tablev_align);
 
     // set the horizontal column alignment char
-
     if (pile->valign == MT_PILE_LEFT)
         col_align = "l";
     else if (pile->valign == MT_PILE_RIGHT)
@@ -1814,11 +1843,8 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
     while (obj_list) {          //  loop down thru lines
 
         if (curr_row) {
-            if (eqn->math_mode) {
-                strcat(rv, " $ \\\\\n");
-                eqn->math_mode = 0;
-            } else
-                strcat(rv, " \\\\\n");
+			setMathMode(eqn,rv,EQN_MODE_TEXT);
+            strcat(rv, " \\\\\n");
         }
 
         while (obj_list && obj_list->tag != LINE) {     // could be a SIZE
@@ -1838,19 +1864,9 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
         curr_row++;
     }                           // loop down thru lines
 
-
-    // put "\n\\end{tabular}\n"
-
-    if (eqn->math_mode) {
-        strcat(rv, " $");
-        eqn->math_mode = 0;
-    }
+	setMathMode(eqn,rv,EQN_MODE_TEXT);
     strcat(rv, "\n\\end{tabular}\n");
-
-    if (save_math_mode) {
-        strcat(rv, "$ ");
-        eqn->math_mode = save_math_mode;
-    }
+	setMathMode(eqn,rv,save_math_mode);
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
@@ -1865,8 +1881,7 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
 
 
 static
-char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile,
-                                char *targ_nom)
+char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom)
 {
     MT_OBJLIST *obj_list;
     char ini_line[256];
@@ -1887,7 +1902,7 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile,
     if (targ_nom && *targ_nom)
         dlen = GetProfileStr(Profile_PILEtranslation, targ_nom, ini_line, 256);
 
-	save_math_mode = eqn->math_mode;
+	save_math_mode = eqn->m_mode;
 
     //  ini_line  =  "TextOnly,\begin{env}, \\,\end{env}"
 
@@ -1930,41 +1945,25 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile,
     }
 
     strcat(eqn->indent, "  ");
-
-    if (forces_math) {
-        if (eqn->math_mode == 0) {
-            strcat(rv, " $");
-            eqn->math_mode = 1;
-        }
-        eqn->math_mode++;
-
-    } else if (forces_text) {
-        if (eqn->math_mode) {
-            save_math_mode = eqn->math_mode;
-            strcat(rv, " $");
-            eqn->math_mode = 0;
-        }
-    }
-
-    if (allow_text_runs)
-        eqn->text_mode++;
-
+/*
+    if (forces_math && eqn->m_mode == EQN_MODE_TEXT) 
+    	setMathMode(eqn,rv,EQN_MODE_INLINE);
+    else if (forces_text) 
+    	setMathMode(eqn,rv,EQN_MODE_TEXT);
+*/    	
     // put "\\begin{array}"
 
     strcat(rv, "\n");
     strcat(rv, head);
     strcat(rv, "\n");
 
-
     obj_list = pile->line_list;
 
     while (obj_list) {          //  loop down thru lines
 
         if (curr_row) {
-            if (forces_text && eqn->math_mode) {
-                strcat(rv, " $");
-                eqn->math_mode = 0;
-            }
+//			if (forces_math) 
+//				setMathMode(eqn,rv,EQN_MODE_INLINE);
             strcat(rv, line_sep);
             strcat(rv, "\n");
         }
@@ -1986,27 +1985,15 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile,
         curr_row++;
     }                           // loop down thru lines
 
-    if (allow_text_runs)
-        eqn->text_mode--;
-
     // put "\n\\end{array*}\n"
 
-    if (forces_text && eqn->math_mode) {
-        strcat(rv, " $");
-        eqn->math_mode = 0;
-    }
+//	if (forces_text) 
+//		setMathMode(eqn,rv,EQN_MODE_TEXT);
     strcat(rv, "\n");
     strcat(rv, tail);
     strcat(rv, "\n");
 
-    if (forces_math) {
-        eqn->math_mode--;
-    } else if (forces_text) {
-        if (save_math_mode) {
-            strcat(rv, "$ ");
-            eqn->math_mode = save_math_mode;
-        }
-    }
+//	setMathMode(eqn,rv,save_math_mode);
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
@@ -2300,20 +2287,15 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     int num_strs = 0;
     MT_OBJLIST *obj_list;
 
+    if (eqn->m_mode == EQN_MODE_TEXT) {
+    	strs[0].data = '\0';
+		setMathMode(eqn, strs[0].data, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY);	
+	}
 
-    if (0 && eqn->math_mode == 0) {
-        SetDollar(strs, 1);
-        num_strs++;
-        eqn->math_mode = 1;
-    }
-    eqn->math_mode++;
-
-	if (tmpl->selector == 15 && tmpl->variation == 113)
-		tmpl->variation = 2;
-	
-	if (tmpl->selector == 15 && tmpl->variation == 49)
-		tmpl->variation = 1;
-
+	if (eqn->m_mtef_ver == 5 && tmpl->selector == 15)
+		tmpl->variation &= 0x000f;
+    
+    if (DEBUG_TEMPLATE) fprintf(stderr,"TMPL : Processing (%d.%d)\n", tmpl->selector, tmpl->variation);
     num_strs += Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation, strs + num_strs);
 
     the_template = strs[num_strs - 1].data;
@@ -2336,17 +2318,18 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
 
     while (obj_list) {
         if (obj_list->tag == LINE) {
+            if (DEBUG_TEMPLATE) fprintf(stderr,"TMPL : LINE object\n");
             strs[num_strs].log_level = 0;
             strs[num_strs].do_delete = 1;
             strs[num_strs].ilk = Z_TEX;
             strs[num_strs].is_line = 1;
             strs[num_strs].data = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
-        	if (0) fprintf(stderr,"strs[%d].data=%s\n",num_strs,strs[num_strs].data);
-            if (strlen(strs[num_strs].data)) {
+        	if (DEBUG_TEMPLATE) fprintf(stderr,"TMPL : strs[%d].data='%s'\n",num_strs,strs[num_strs].data);
             num_strs++;
-            tally++;}
+            tally++;
         } else if (obj_list->tag == PILE) {     // This one is DIFFICULT!!
             char targ_nom[32];
+            if (DEBUG_TEMPLATE) fprintf(stderr,"TMPL : PILE object, targ_nom=%s\n",targ_nom);
             strs[num_strs].log_level = 0;
             strs[num_strs].do_delete = 1;
             strs[num_strs].ilk = Z_TEX;
@@ -2355,6 +2338,7 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
             GetPileType(the_template, tally, targ_nom);
 
             strs[num_strs].data = Eqn_TranslatePILEtoTARGET(eqn, (MT_PILE *) obj_list-> obj_ptr, targ_nom);
+        	if (DEBUG_TEMPLATE) fprintf(stderr,"PILE : strs[%d].data='%s'\n",num_strs,strs[num_strs].data);
 
             num_strs++;
             tally++;
@@ -2367,7 +2351,6 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-    eqn->math_mode--;
     return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
@@ -2406,8 +2389,7 @@ char *Eqn_TranslatePILE(MTEquation * eqn, MT_PILE * pile)
 // Character translation, MathType to TeX, using inifile data
 
 static
-int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar,
-                   int *math_attr)
+int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *math_attr)
 {
     int num_strs = 0;           // this holds the returned value
 
@@ -2448,10 +2430,10 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar,
         sprintf(key, "%d.%d", set, code_point);
 
         if (*math_attr == 3) {
-            if (eqn->math_mode && !eqn->text_mode)
-                strcat(key, "m");
-            else
+        	if (eqn->m_mode == EQN_MODE_TEXT)
                 strcat(key, "t");
+            else
+                strcat(key, "m");
             *math_attr = 0;
         }
 
@@ -2492,7 +2474,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar,
 				
 				/* found comma */
                 if (ptr) {
-                    if (eqn->math_mode || *math_attr == MA_FORCE_MATH) {
+                    if (eqn->m_mode != EQN_MODE_TEXT || *math_attr == MA_FORCE_MATH) {
                         *ptr = 0;
 						zlen = (uint32_t) strlen(tmp);
 					} else {
@@ -3448,7 +3430,7 @@ char *Profile_TEMPLATES5[] = {
     "25.0=hbracket,",
     "26.0=limi",
     "27.0=script: sub,#1[L][STARTSUB][ENDSUB] ",
-    "28.0=script: super,#1[L][STARTSUP][ENDSUP] ",
+    "28.0=script: super,#2[L][STARTSUP][ENDSUP] ",
     "29.0=script: subsup,#1[L][STARTSUB][ENDSUB]#2[L][STARTSUP][ENDSUP] ",
     "30.0=limi",
     "31.0=limi",

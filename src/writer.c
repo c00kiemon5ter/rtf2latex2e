@@ -507,7 +507,7 @@ static void EnsureDisplayMathMode(void)
         PutLitStr(" $ ");
         wrapCount+=3;
         PutLitStr("\n$$ ");
-        wrapCount+=4;
+        wrapCount=3;
         mathMode = MATH_DISPLAY_MODE;
 		break;
 		
@@ -516,7 +516,7 @@ static void EnsureDisplayMathMode(void)
    
     case MATH_NONE_MODE:
         PutLitStr("\n$$ ");
-        wrapCount+=4;
+        wrapCount=3;
         mathMode = MATH_DISPLAY_MODE;
     }
 }
@@ -532,7 +532,7 @@ static void EnsureNoMathMode(void)
 		
     case MATH_DISPLAY_MODE:
         PutLitStr("$$\n");
-        wrapCount+=4;
+        wrapCount=0;
         mathMode = MATH_NONE_MODE;
     	break;
    
@@ -3798,15 +3798,15 @@ static boolean ReadEquation(int *groupCount)
         DoParagraphCleanUp();
         DoSectionCleanUp();
 
-		if (theEquation->m_inline == INLINE_EQUATION)
+/*		if (theEquation->m_inline == INLINE_EQUATION)
 			EnsureInlineMathMode();
 		else 
 			EnsureDisplayMathMode();
-		
+*/		
         Eqn_TranslateObjectList(theEquation, ostream, 0);
         Eqn_Destroy(theEquation);
         
-        EnsureNoMathMode();
+/*        EnsureNoMathMode();*/
     }
 
     if (theEquation != NULL)
