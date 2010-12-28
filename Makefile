@@ -159,14 +159,14 @@ splint:
 .PHONY: all check checkdir clean depend dist doc install realclean rtfprep test
 
 # created using "make depend"
-cole.o: src/cole.c src/cole.h src/cole_internal.h src/cole_support.h
-cole_decode.o: src/cole_decode.c src/cole.h src/cole_support.h src/cole_internal.h
-cole_encode.o: src/cole_encode.c src/cole.h src/cole_support.h src/cole_internal.h
+cole.o:          src/cole.c src/cole.h src/cole_internal.h src/cole_support.h
+cole_decode.o:   src/cole_decode.c src/cole.h src/cole_support.h src/cole_internal.h
+cole_encode.o:   src/cole_encode.c src/cole.h src/cole_support.h src/cole_internal.h
 cole_internal.o: src/cole_internal.c src/cole_internal.h src/cole_support.h
-cole_support.o: src/cole_support.c src/cole_support.h
-cole_version.o: src/cole_version.c
-eqn.o: src/eqn.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
-       src/rtf2latex2e.h src/cole_support.h src/eqn.h src/eqn_support.h
+cole_support.o:  src/cole_support.c src/cole_support.h
+cole_version.o:  src/cole_version.c
+eqn.o:           src/eqn.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
+                 src/rtf2latex2e.h src/cole_support.h src/eqn.h src/eqn_support.h
 figure2eps.o: src/figure2eps.c
 jpeg2eps.o: src/jpeg2eps.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
             src/rtfprep/tokenscan.h src/rtf2latex2e.h src/jpeg2eps.h

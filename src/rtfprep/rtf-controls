@@ -30,41 +30,40 @@ major	rtfDestination
 /* lowest destination number */
 # define	rtfMinDestination	(rtfFontTbl)
 
-minor	rtfFontTbl		fonttbl
+minor	rtfFontTbl			fonttbl
 minor	rtfFontAltName		falt
 minor	rtfEmbeddedFont		fontemb
-minor	rtfFontFile		fontfile
-minor	rtfFileTbl		filetbl
-minor	rtfFileInfo		file
-minor	rtfColorTbl		colortbl
+minor	rtfFontFile			fontfile
+minor	rtfFileTbl			filetbl
+minor	rtfFileInfo			file
+minor	rtfColorTbl			colortbl
 minor	rtfStyleSheet		stylesheet
-minor	rtfKeyCode		keycode
+minor	rtfKeyCode			keycode
 minor	rtfRevisionTbl		revtbl
-minor	rtfInfo			info
-minor	rtfITitle		title
-minor	rtfISubject		subject
-minor	rtfIAuthor		author
+minor	rtfInfo				info
+minor	rtfITitle			title
+minor	rtfISubject			subject
+minor	rtfIAuthor			author
 minor	rtfIOperator		operator
 minor	rtfIKeywords		keywords
-minor	rtfIComment		comment
-minor	rtfIDoccomm		doccomm
-/* \verscomm may not exist -- was seen in earlier spec version */
+minor	rtfIComment			comment
+minor	rtfIDoccomm			doccomm
 minor	rtfIVerscomm		verscomm
 minor	rtfICreateTime		creatim
 minor	rtfIRevisionTime	revtim
 minor	rtfIPrintTime		printim
 minor	rtfIBackupTime		buptim
-minor	rtfNextFile		nextfile
-minor	rtfTemplate		template
-minor	rtfFNSep		ftnsep
+minor	rtfNextFile			nextfile
+minor	rtfTemplate			template
+minor	rtfFNSep			ftnsep
 minor	rtfFNContSep		ftnsepc
 minor	rtfFNContNotice		ftncn
-minor	rtfENSep		aftnsep
+minor	rtfENSep			aftnsep
 minor	rtfENContSep		aftnsepc
 minor	rtfENContNotice		aftncn
 minor	rtfParNumLevelStyle	pnseclvl
-minor	rtfHeader		header
-minor	rtfFooter		footer
+minor	rtfHeader			header
+minor	rtfFooter			footer
 minor	rtfHeaderLeft		headerl
 minor	rtfHeaderRight		headerr
 minor	rtfHeaderFirst		headerf
@@ -77,59 +76,53 @@ minor	rtfParNumTextAfter	pntxta
 minor	rtfParNumTextBefore	pntxtb
 minor	rtfBookmarkStart	bkmkstart
 minor	rtfBookmarkEnd		bkmkend
-minor	rtfPict			pict
-minor	rtfObject		object
-minor	rtfObjClass		objclass
-minor	rtfObjName		objname
-minor	rtfObjTime		objtime
-minor	rtfObjData		objdata
-minor	rtfObjAlias		objalias
+minor	rtfUnicode			u
+minor	rtfPict				pict
+minor	rtfObject			object
+minor	rtfObjClass			objclass
+minor	rtfObjName			objname
+minor	rtfObjTime			objtime
+minor	rtfObjData			objdata
+minor	rtfObjAlias			objalias
 minor	rtfObjSection		objsect
 minor	rtfObjResult		result
-/* \objitem and \objtopic aren't documented in the spec! */
-minor	rtfObjItem		objitem
-minor	rtfObjTopic		objtopic
+minor	rtfObjItem			objitem
+minor	rtfObjTopic			objtopic
 minor	rtfDrawObject		do
-minor	rtfFootnote		footnote
+minor	rtfFootnote			footnote
 minor	rtfAnnotRefStart	atrfstart
 minor	rtfAnnotRefEnd		atrfend
-minor	rtfAnnotID		atnid
+minor	rtfAnnotID			atnid
 minor	rtfAnnotAuthor		atnauthor
 minor	rtfAnnotation		annotation
-minor	rtfAnnotRef		atnref
+minor	rtfAnnotRef			atnref
 minor	rtfAnnotTime		atntime
 minor	rtfAnnotIcon		atnicn
-minor	rtfField		field
+minor	rtfField			field
 minor	rtfFieldInst		fldinst
 minor	rtfFieldResult		fldrslt
 minor	rtfDataField		datafield
-minor	rtfIndex		xe
+minor	rtfIndex			xe
 minor	rtfIndexText		txe
 minor	rtfIndexRange		rxe
-minor	rtfTOC			tc
-/* NeXT-specific -- non-standard */
+minor	rtfTOC				tc
 minor	rtfNeXTGraphic		NeXTGraphic
-/* NeXT-specific -- non-standard */
 minor	rtfNeXTHelpMarker	NeXTHelpMarker
-/* NeXT-specific -- non-standard */
-minor	rtfNeXTHelpLink	NeXTHelpLink
+minor	rtfNeXTHelpLink		NeXTHelpLink
 minor	rtfDrawTextBoxText	dptxbxtext
-/* added by Ujwal Sathyam */
-minor	rtfSp			sp
+minor	rtfSp				sp
 minor	rtfWord97Object		shp 
 minor	rtfWord97ObjectGroup	shpgrp
 minor	rtfWord97Picture	shppict
 minor	rtfWord97NoPicture	nonshppict
-minor	rtfDocvar		docvar
-minor	rtfUpr			upr
-minor	rtfFchars		fchars
-minor	rtfLchars		lchars
-minor	rtfPgdsctbl		pgdsctbl			
-minor	rtfTOCN			tcn
+minor	rtfDocvar			docvar
+minor	rtfUpr				upr
+minor	rtfFchars			fchars
+minor	rtfLchars			lchars
+minor	rtfPgdsctbl			pgdsctbl			
+minor	rtfTOCN				tcn
 minor	rtfUserPropsGroup	userprops
-minor	rtfWGRFmtFilter	wgrffmtfilter
-
-comment	minor	rtfUnicode		u
+minor	rtfWGRFmtFilter		wgrffmtfilter
 
 comment rtfMaxDestination should be set equal to
 comment the final destination symbol.
@@ -218,8 +211,8 @@ major	rtfKeyCodeAttr
 
 minor	rtfAltKey		alt
 minor	rtfShiftKey		shift
-minor	rtfControlKey		ctrl
-minor	rtfFunctionKey		fn
+minor	rtfControlKey	ctrl
+minor	rtfFunctionKey	fn
 
 /*
  * Document formatting attributes
@@ -405,20 +398,20 @@ minor	rtfLTRSect		ltrsect
 
 major	rtfParAttr
 
-minor	rtfParDef		pard
-minor	rtfStyleNum		s
+minor	rtfParDef			pard
+minor	rtfStyleNum			s
 minor	rtfHyphenate		hyphpar
-minor	rtfInTable		intbl
-minor	rtfKeep			keep
+minor	rtfInTable			intbl
+minor	rtfKeep				keep
 minor	rtfNoWidowControl	nowidctlpar
-minor	rtfKeepNext		keepn
+minor	rtfKeepNext			keepn
 minor	rtfOutlineLevel		level
 minor	rtfNoLineNum		noline
-minor	rtfPBBefore		pagebb
+minor	rtfPBBefore			pagebb
 minor	rtfSideBySide		sbys
-minor	rtfQuadLeft		ql
+minor	rtfQuadLeft			ql
 minor	rtfQuadRight		qr
-minor	rtfQuadJust		qj
+minor	rtfQuadJust			qj
 minor	rtfQuadCenter		qc
 minor	rtfFirstIndent		fi
 minor	rtfLeftIndent		li
@@ -430,10 +423,10 @@ minor	rtfSpaceMultiply	slmult
 
 minor	rtfSubDocument		subdocument
 
-minor	rtfRTLPar		rtlpar
-minor	rtfLTRPar		ltrpar
+minor	rtfRTLPar			rtlpar
+minor	rtfLTRPar			ltrpar
 
-minor	rtfTabPos		tx
+minor	rtfTabPos			tx
 /*
  * FrameMaker writes \tql (to mean left-justified tab, apparently)
  * although it's not in the spec.  It's also redundant, since lj
@@ -505,9 +498,9 @@ minor	rtfBorderWidth		brdrw
 minor	rtfBorderColor		brdrcf
 minor	rtfBorderSpace		brsp
 
-minor	rtfShading		shading
-minor	rtfBgPatH		bghoriz
-minor	rtfBgPatV		bgvert
+minor	rtfShading			shading
+minor	rtfBgPatH			bghoriz
+minor	rtfBgPatV			bgvert
 minor	rtfFwdDiagBgPat		bgfdiag
 minor	rtfBwdDiagBgPat		bgbdiag
 minor	rtfHatchBgPat		bgcross

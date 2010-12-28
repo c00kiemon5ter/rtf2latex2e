@@ -1,3 +1,7 @@
+#ifndef _EQN_H
+
+#define _EQN_H
+
 # define DISPLAY_EQUATION 0
 # define INLINE_EQUATION 1
 
@@ -36,3 +40,5 @@ typedef struct {
 int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size);
 void Eqn_Destroy(MTEquation * eqn);
 void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile, int loglevel);
+
+#endif _EQN_H

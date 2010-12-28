@@ -1,3 +1,7 @@
+#ifndef _EQN_SUPPORT_H
+
+#define _EQN_SUPPORT_H
+
 /* MathType Equation converter, see comments in C file */
 
 #define embDOT        2
@@ -274,3 +278,5 @@ static unsigned char LoNibble(unsigned char x);
 static void PrintNibble(unsigned char n);
 static void PrintNibbleDimension(unsigned char n);
 static int SkipNibbles(unsigned char *p, int num);
+
+#endif _EQN_SUPPORT_H

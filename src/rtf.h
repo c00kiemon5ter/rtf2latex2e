@@ -6,7 +6,6 @@
 
 #define _RTF_H
 
-# include <stdint.h>
 /*
  * Twentieths of a point (twips) per inch (Many RTF measurements
  * are in twips per inch (tpi) units).  Assumes 72 points/inch.

@@ -18,6 +18,7 @@
 // http://web.archive.org/web/20010304111449/http://mathtype.com/support/tech/MTEF_storage.htm
 // http://web.archive.org/web/20021020115826/http://www.mathtype.com/support/tech/encodings/mtcode.stm
 
+# include       <stdint.h>
 # include       <stdio.h>
 # include       <string.h>
 # include       <stdlib.h>
@@ -1199,7 +1200,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
 
         zcurr = (char *) NULL;
 
-        if (1) print_tag(curr_node->tag, 0);
+        if (0) print_tag(curr_node->tag, 0);
         switch (curr_node->tag) {
 
         case LINE:{

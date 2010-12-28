@@ -174,6 +174,7 @@ static boolean requireMultiColPackage;
 static boolean requireUlemPackage;
 static boolean requireHyperrefPackage;
 static boolean requireAmsMathPackage;
+static boolean requireUnicodePackage;
 static size_t packagePos;
 static boolean writingHeading1, writingHeading2, writingHeading3;
 static boolean insideFootnote, justWroteFootnote;
@@ -1539,6 +1540,8 @@ static void WriteLaTeXFooter(void)
         PutLitStr("\\usepackage{ulem}\n");
     if (requireAmsMathPackage)
         PutLitStr("\\usepackage{amsmath}\n");
+    if (requireUnicodePackage) 
+        PutLitStr("\\usepackage{ucs}\n");
     if (requireHyperrefPackage) {
         PutLitStr("\\usepackage{hyperref}\n");
         PutLitStr("\\def\\R2Lurl#1#2{\\mbox{\\href{#1}{\\tt #2}}}");
@@ -4085,6 +4088,18 @@ static void emitBookmark(void)
     }
 }
 
+static void ReadUnicode(void)
+{
+	char unitext[20];
+	if (rtfParam<0) rtfParam += 65536;
+	sprintf(unitext,"\\unichar{%d}",rtfParam);
+    PutLitStr(unitext);
+	if (0) fprintf(stderr,"unicode --- %s!\n",unitext);
+    wrapCount += (uint32_t) strlen(unitext);
+    requireUnicodePackage = true;
+    RTFGetToken();
+}
+
 static void ReadHyperlink(void)
 {
     int localGL;
@@ -4327,6 +4342,7 @@ int BeginLaTeXFile(void)
     requireHyperrefPackage = false;
     requireMultirowPackage = false;
     requireAmsMathPackage = false;
+    requireUnicodePackage = false;
 
 
     picture.count = 0;
@@ -4348,6 +4364,7 @@ int BeginLaTeXFile(void)
     RTFSetClassCallback(rtfControl, ControlClass);
 
     /* install destination callbacks */
+    RTFSetDestinationCallback(rtfUnicode, ReadUnicode);
     RTFSetDestinationCallback(rtfColorTbl, WriteColors);
     RTFSetDestinationCallback(rtfParNumTextAfter, SkipGroup);
     RTFSetDestinationCallback(rtfParNumTextBefore, SkipGroup);
