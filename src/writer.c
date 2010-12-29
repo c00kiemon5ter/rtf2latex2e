@@ -501,27 +501,6 @@ static void EnsureInlineMathMode(void)
     }
 }
 
-static void EnsureDisplayMathMode(void)
-{
-	switch (mathMode) {
-	case MATH_INLINE_MODE:
-        PutLitStr(" $ ");
-        wrapCount+=3;
-        PutLitStr("\n$$ ");
-        wrapCount=3;
-        mathMode = MATH_DISPLAY_MODE;
-		break;
-		
-    case MATH_DISPLAY_MODE:
-    	break;
-   
-    case MATH_NONE_MODE:
-        PutLitStr("\n$$ ");
-        wrapCount=3;
-        mathMode = MATH_DISPLAY_MODE;
-    }
-}
-
 static void EnsureNoMathMode(void)
 {
 	switch (mathMode) {
@@ -1729,6 +1708,7 @@ static void TextClass(void)
          */
         while (RTFCheckCMM(rtfText, 32, rtfSC_space))
             RTFGetToken();
+            
         if (RTFCheckCM(rtfGroup, rtfEndGroup)) {
             RTFRouteToken();
             PutStdChar(rtfSC_space);
@@ -1954,6 +1934,7 @@ static void CheckForParagraph(void)
 
         /* or something else */
         else if ((rtfClass == rtfText && rtfMinor != rtfSC_space)
+                 || (rtfClass == rtfDestination && rtfMinor != rtfUnicode)
                  || rtfClass == rtfEOF || rtfMajor == rtfSpecialChar
                  || rtfMajor == rtfTblAttr || rtfMajor == rtfFontAttr
                  || rtfMajor == rtfSectAttr || rtfMajor == rtfPictAttr
@@ -3426,7 +3407,7 @@ static void IncludeGraphics(char *pictureType)
 /* This function reads in a picture */
 static void ReadPicture(void)
 {
-    char *fn = "ReadPicture";
+//    char *fn = "ReadPicture";
     requireGraphicxPackage = true;
     picture.type = unknownPict;
     picture.width = 0;
@@ -3436,7 +3417,7 @@ static void ReadPicture(void)
     picture.scaleX = 100;
     picture.scaleY = 100;
 
-    RTFMsg("%s: Starting ...\n",fn);
+//    RTFMsg("%s: Starting ...\n",fn);
 
     /* skip everything until we reach hex data */
     while (!HexData());
@@ -3447,25 +3428,25 @@ static void ReadPicture(void)
     /* Process picture */
     switch (picture.type) {
     case pict:
-        RTFMsg("* Warning: PICT format image encountered.\n");
+//        RTFMsg("* Warning: PICT format image encountered.\n");
         ConvertHexPicture("pict");
         IncludeGraphics("pict");
         suppressLineBreak = true;
         break;
     case wmf:
-        RTFMsg("* Warning: WMF format image encountered.\n");
+//        RTFMsg("* Warning: WMF format image encountered.\n");
         ConvertHexPicture("wmf");
         IncludeGraphics("wmf");
         suppressLineBreak = true;
         break;
     case png:
-        RTFMsg("* Warning: PNG format image encountered.\n");
+//        RTFMsg("* Warning: PNG format image encountered.\n");
         ConvertHexPicture("png");
         IncludeGraphics("png");
         suppressLineBreak = true;
         break;
     case jpeg:
-        RTFMsg("* Warning: JPEG format image encountered.\n");
+//        RTFMsg("* Warning: JPEG format image encountered.\n");
         ConvertHexPicture("jpg");
         IncludeGraphics("jpg");
         suppressLineBreak = true;
@@ -3801,15 +3782,8 @@ static boolean ReadEquation(int *groupCount)
         DoParagraphCleanUp();
         DoSectionCleanUp();
 
-/*		if (theEquation->m_inline == INLINE_EQUATION)
-			EnsureInlineMathMode();
-		else 
-			EnsureDisplayMathMode();
-*/		
         Eqn_TranslateObjectList(theEquation, ostream, 0);
         Eqn_Destroy(theEquation);
-        
-/*        EnsureNoMathMode();*/
     }
 
     if (theEquation != NULL)
@@ -3832,20 +3806,20 @@ static void ReadObject(void)
     int groupCounter = 1;       /* one opening brace has been counted */
     int temp;
     boolean res;
-    char *fn = "ReadObject";
-    RTFMsg("%s: * starting ...\n", fn);
+    //char *fn = "ReadObject";
+    // RTFMsg("%s: * starting ...\n", fn);
 
     GetObjectClass(&groupCounter);
 
     switch (object.class) {
     case unknownObjClass:
     default:
-        RTFMsg("%s: * unsupported object '%s', skipping...\n", fn, object.className);
+        //RTFMsg("%s: * unsupported object '%s', skipping...\n", fn, object.className);
         RTFSkipGroup();
         break;
 
     case EquationClass:
-        RTFMsg("%s: * equation object '%s', processing...\n", fn, object.className);
+        //RTFMsg("%s: * equation object '%s', processing...\n", fn, object.className);
 
         if ((int) preferenceValue[GetPreferenceNum("convertEquations")])
             res = ReadEquation(&groupCounter);
@@ -3903,8 +3877,8 @@ static void ReadWord97Result(void)
 {
     int i;
     int groupCount = 1;         /* one opening brace has been counted */
-    char *fn = "ReadWord97Result";
-    RTFMsg("%s: starting ...\n",fn);
+//    char *fn = "ReadWord97Result";
+//    RTFMsg("%s: starting ...\n",fn);
 
     /* scan until object or picture is reached */
     while (groupCount != 0) {
@@ -3946,8 +3920,8 @@ static void ReadWord97Object(void)
     int groupCount = 1;         /* one opening brace has been counted */
     int word97ObjTextGL = 1;
     short prevChar;
-    char *fn = "ReadWord97Object";
-    RTFMsg("%s: starting ...\n",fn);
+//    char *fn = "ReadWord97Object";
+//    RTFMsg("%s: starting ...\n",fn);
 
     word97ObjectType = unknownWord97Object;
 
@@ -4091,10 +4065,32 @@ static void emitBookmark(void)
 static void ReadUnicode(void)
 {
 	char unitext[20];
-	if (rtfParam<0) rtfParam += 65536;
+
+    if (rtfParam == 8220) {
+        PutStdChar(rtfSC_quotedblleft);
+   	    RTFGetToken();
+        return;
+    }
+
+    if (rtfParam == 8221) {
+        PutStdChar(rtfSC_quotedblright);
+   	    RTFGetToken();
+        return;
+    }
+
+    if (rtfParam == 8230) {
+    	PutLitStr("...");
+    	wrapCount+=3;
+   	    RTFGetToken();
+        return;
+    }
+
+	if (rtfParam<0) 
+		rtfParam += 65536;
+
 	sprintf(unitext,"\\unichar{%d}",rtfParam);
-    PutLitStr(unitext);
 	if (0) fprintf(stderr,"unicode --- %s!\n",unitext);
+    PutLitStr(unitext);
     wrapCount += (uint32_t) strlen(unitext);
     requireUnicodePackage = true;
     RTFGetToken();

@@ -78,6 +78,7 @@ rtfprep:
 
 rtf2latex2e: $(OBJS) $(HDRS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS)	$(LIBS) -o $(BINARY_NAME)
+	cp $(BINARY_NAME) rtf2latex
 
 src/main.o: Makefile src/main.c
 	$(CC) $(CFLAGS) -DLIBDIR=\"$(SUPPORT_INSTALL)\" -c src/main.c -o src/main.o

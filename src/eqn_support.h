@@ -252,7 +252,6 @@ static uint32_t GetProfileStr(char **section, char *key, char *data, int datalen
 static void BreakTeX(char *ztex, FILE * outfile);
 static char *ToBuffer(char *src, char *buffer, uint32_t *off, int *lim);
 static void SetComment(EQ_STRREC * strs, int lev, char *src);
-static void SetDollar(EQ_STRREC * strs, int turn_on);
 static char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs);
 
 

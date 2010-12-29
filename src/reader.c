@@ -846,6 +846,7 @@ static short GetChar()
         rtfTextBuf[rtfTextLen++] = c;
         rtfTextBuf[rtfTextLen] = '\0';
     }
+   /* fputc(c,stderr); */
     if (prevChar == EOF)
         bumpLine = 1;
     oldBumpLine = bumpLine;     /* non-zero if prev char was line ending */
@@ -1926,8 +1927,9 @@ char *s;
 
 void DebugMessage() 
 {
-    if (g_debug_level > 0)
-    	fprintf(stderr, "%s (%d,%d,%d)\n",rtfCtrl[rtfTokenIndex]->str,rtfClass,rtfMajor,rtfMinor);
+    if (0 && g_debug_level > 0)
+    	if (strcmp(rtfCtrl[rtfTokenIndex]->str,"objdata"))
+    		fprintf(stderr, "%s (%d,%d,%d)\n",rtfCtrl[rtfTokenIndex]->str,rtfClass,rtfMajor,rtfMinor);
 }
 /* ---------------------------------------------------------------------- */
 

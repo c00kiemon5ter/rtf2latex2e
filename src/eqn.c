@@ -30,8 +30,14 @@
 # include       "eqn.h"
 # include       "eqn_support.h"
 
-# define        DEBUG_TEMPLATE 1
-# define        DEBUG_FONT     0
+# define        DEBUG_PARSING     0
+# define        DEBUG_TRANSLATION 0
+# define        DEBUG_TEMPLATE    0
+# define        DEBUG_FONT        0
+# define        DEBUG_EMBELLS     0
+# define        DEBUG_CHAR        0
+# define        DEBUG_MODE        0
+# define        DEBUG_SIZE        0
 
 # define EQN_MODE_TEXT     0
 # define EQN_MODE_INLINE   1
@@ -93,14 +99,14 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream,
 
         /* the application key is a null terminated string */
         while (eqn_stream[src_index]) {
-            fprintf(stderr, "%c", eqn_stream[src_index]);
+            // fprintf(stderr, "%c", eqn_stream[src_index]);
             src_index++;
             if (src_index == eqn_size) {
                 RTFMsg("The Application Key for the Equation is screwy!");
                 return (false);
             }
         }
-        fprintf(stderr, "\n");
+        // fprintf(stderr, "\n");
         src_index++;
 
         eqn->m_inline = eqn_stream[src_index++];
@@ -153,7 +159,7 @@ static void setMathMode(MTEquation * eqn, char * buff, int mode)
 {
 	char s[50];
 	*s = '\0';
-	fprintf(stderr,"old=%d, new=%d\n",eqn->m_mode,mode);
+	if (DEBUG_MODE) fprintf(stderr,"old=%d, new=%d\n",eqn->m_mode,mode);
 	
 	switch (mode) {
 	case EQN_MODE_TEXT:
@@ -241,10 +247,9 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
 
     if (eqn->log_level == 2)
         fputs("%Begin Equation\n", eqn->out_file);
-//    else
-  //      fputs("\n", eqn->out_file);
 
     ztex = Eqn_TranslateObjects(eqn, eqn->o_list);
+//    fprintf(stderr,"EQN: DONE with eqn!\n");
     if (ztex) {
         BreakTeX(ztex, eqn->out_file);
         free(ztex);
@@ -254,8 +259,6 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
 
     if (eqn->log_level == 2)
         fputs(" %End Equation\n", eqn->out_file);
-//    else
- //       fputs("\n", eqn->out_file);
 }
 
 #define zLINE_MAX   75
@@ -421,7 +424,7 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
 
         new_obj = (void *) NULL;
 
-        if (0) print_tag(curr_tag, *src_index);
+        if (DEBUG_PARSING) print_tag(curr_tag, *src_index);
     	if (0) __cole_dump(src+*src_index, src+*src_index, 16, NULL);
 
         switch (curr_tag) {
@@ -879,6 +882,7 @@ MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
             new_embell->nudge_y = 0;
         }
         new_embell->embell = *(src + *src_index);
+		if (DEBUG_EMBELLS) fprintf(stderr, "[%-3d] EMBELL --- embell=%d\n", *src_index, new_embell->embell);
         (*src_index)++;
 
         if (head)
@@ -965,7 +969,7 @@ MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
     MT_SIZE *new_size = (MT_SIZE *) malloc(sizeof(MT_SIZE));
     new_size->dsize = 0;
 
-    /* works MTEF5 because all supported tags are less than 16 */
+    /* also works in MTEF5 because all supported tags are less than 16 */
     tag = *(src + *src_index) & 0x0F;
     (*src_index)++;
 
@@ -1200,7 +1204,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
 
         zcurr = (char *) NULL;
 
-        if (0) print_tag(curr_node->tag, 0);
+        if (DEBUG_TRANSLATION) print_tag(curr_node->tag, 0);
         switch (curr_node->tag) {
 
         case LINE:{
@@ -1338,9 +1342,7 @@ char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line)
 static
 char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar)
 {
-
     EQ_STRREC strs[4];
-    int save_index;
     int num_strs = 0;
     int math_attr;
 
@@ -1352,10 +1354,14 @@ char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar)
         SetComment(strs, 2, buf);
         num_strs++;
     }
-
+    if (DEBUG_CHAR) 
+    	fprintf(stderr, "\n%sCHAR : atts=%d,typeface=%d,char=%c,%d\n",
+                eqn->indent, thechar->atts, thechar->typeface,
+                (char) thechar->character, thechar->character);
+/*
     SetComment(strs + num_strs, 100, (char *) NULL);    // place_holder for $ if needed
-    save_index = num_strs++;
-
+    num_strs++;
+*/
     strcat(eqn->indent, "  ");
 
     num_strs += Eqn_GetTexChar(eqn, strs + num_strs, thechar, &math_attr);
@@ -1384,7 +1390,6 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     EQ_STRREC strs[4];
     int num_strs = 0;
     int zlen;
-    int save_index;
     char *zdata;
 
     *advance = 0;
@@ -1425,7 +1430,7 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     }
 
     SetComment(strs + num_strs, 100, (char *) NULL);    // place_holder for $ if needed
-    save_index = num_strs++;
+    num_strs++;
 
     strs[num_strs].log_level = 0;
     strs[num_strs].do_delete = 1;
@@ -1889,7 +1894,6 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom
     int dlen = 0;
     int forces_math = 1;
     int forces_text = 0;
-    int allow_text_runs = 1;
     char *head = "";
     char *line_sep = " \\\\ ";
     char *tail = "";
@@ -1912,7 +1916,6 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom
         if (*rover == 'T') {
             forces_math = 0;
             forces_text = 1;
-            allow_text_runs = 0;
         }
         rover = strchr(rover, ',');     // end math/text force flag
         if (rover && *(rover + 1)) {
@@ -2021,6 +2024,7 @@ char *Eqn_TranslateSIZE(MTEquation * eqn, MT_SIZE * size)
         SetComment(strs, 2, buf);
         num_strs++;
     }
+    if (DEBUG_SIZE) fprintf(stderr, "\n%sSIZE type=%d, lsize=%d, dsize=%d\n", eqn->indent, size->type, size->lsize, size->dsize);
 
     strcat(eqn->indent, "  ");
 
@@ -2117,18 +2121,6 @@ void SetComment(EQ_STRREC * strs, int lev, char *src)
         strs[0].data = newbuf;
     } else
         strs[0].data = (char *) NULL;
-}
-
-
-static
-void SetDollar(EQ_STRREC * strs, int turn_on)
-{
-    strs[0].log_level = 0;
-    strs[0].do_delete = 0;
-    strs[0].ilk = Z_TEX;
-    strs[0].is_line = 0;
-//  strs[0].data        =  turn_on ? " $" : "$ "; /* spaces removed by Ujwal S. Sathyam */
-    strs[0].data = turn_on ? "$" : "$";
 }
 
 
@@ -2285,7 +2277,7 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     EQ_STRREC strs[10];
     char *the_template;
     int tally = 1;
-    int num_strs = 0;
+    int num_strs;
     MT_OBJLIST *obj_list;
 
     if (eqn->m_mode == EQN_MODE_TEXT) {
@@ -2297,9 +2289,12 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
 		tmpl->variation &= 0x000f;
     
     if (DEBUG_TEMPLATE) fprintf(stderr,"TMPL : Processing (%d.%d)\n", tmpl->selector, tmpl->variation);
-    num_strs += Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation, strs + num_strs);
+
+    num_strs = Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation, strs);
 
     the_template = strs[num_strs - 1].data;
+    
+    if (DEBUG_TEMPLATE) fprintf(stderr,"TMPL : num_strs=%d, strs[%d].data='%s'\n",num_strs,num_strs-1,the_template);
 
     strcat(eqn->indent, "  ");
 
@@ -2392,7 +2387,8 @@ char *Eqn_TranslatePILE(MTEquation * eqn, MT_PILE * pile)
 static
 int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *math_attr)
 {
-    int num_strs = 0;           // this holds the returned value
+	MT_EMBELL *embells;
+	int num_strs = 0;           // this holds the returned value
 
     int set = thechar->typeface;
     int code_point = thechar->character;
@@ -2402,6 +2398,13 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
     char *zdata = (char *) NULL;
 
     MT_CHARSET_ATTS set_atts;
+    if (DEBUG_CHAR) fprintf(stderr,"in GetTeXChar seeking eqn->atts_table[%d]\n",set - 129);
+
+	strs[0].log_level = 0;
+	strs[0].do_delete = 1;
+	strs[0].ilk = Z_TEX;
+	strs[0].is_line = 0;
+	strs[0].data = NULL;
 
     if (set >= 129 && set < 129 + NUM_TYPEFACE_SLOTS) {
         set_atts = eqn->atts_table[set - 129];
@@ -2429,6 +2432,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
         char buff[256];
 
         sprintf(key, "%d.%d", set, code_point);
+        if (DEBUG_CHAR) fprintf(stderr, "looking up char in table[%d] as %d.%d\n", set - 129, set, code_point);
 
         if (*math_attr == 3) {
         	if (eqn->m_mode == EQN_MODE_TEXT)
@@ -2457,73 +2461,63 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
         zdata[1] = 0;
     }
 
-    if (zdata) {
+    if (!zdata) 
+    	return num_strs;
 
-        MT_EMBELL *embells = thechar->embellishment_list;
-        while (embells) {
-            char tmp[128];
-            uint32_t zlen;
-            strcpy(tmp, Template_EMBELLS[embells->embell]);
-            zlen = (uint32_t) strlen(tmp);
+	embells = thechar->embellishment_list;
+	
+	while (embells) {
+		char template[128];
+		*template = '\0';
+		
+		/* template will in the form "math template,text template" */
+		if (embells->embell<37-2)
+			strcpy(template, Template_EMBELLS[embells->embell]);
+		
+		if (DEBUG_EMBELLS) fprintf(stderr,"Yikes --- embell template is '%s'!\n",template);
 
-            if (zlen > 0) {     // patch the char into the embell template
-                char *join;
-                char ch;
-				uint32_t di = 0;
-                uint32_t si = 0;
-                char *ptr = strchr(tmp, ',');
-				
-				/* found comma */
-                if (ptr) {
-                    if (eqn->m_mode != EQN_MODE_TEXT || *math_attr == MA_FORCE_MATH) {
-                        *ptr = 0;
-						zlen = (uint32_t) strlen(tmp);
-					} else {
-						zlen = (uint32_t) strlen(ptr + 1);
-						si = (uint32_t) strlen(tmp) - zlen;
-					}
-                }
+		if (strlen(template)) {     // only bother if there is a character
+			char *join, *t_ptr, *j_ptr;
 
-                join = (char *) malloc(zlen + strlen(zdata) + 16);
-                while ((ch = tmp[si])) {
-                    if (ch == '\\') {
-                        join[di++] = ch;
-                        si++;
-                        if ((ch = tmp[si]))
-                            join[di++] = ch;
-                        else
-                            break;
-                    } else if (ch == '%') {
-                        si++;
-                        if (tmp[si]) {   // 1 - 9
-                            strcpy(join + di, zdata);
-                            free(zdata);
-                            di = (uint32_t) strlen(join);
-                        } else
-                            break;
-                    } else
-                        join[di++] = ch;
-                    si++;
-                }
+			t_ptr = strchr(template, ',');
+			
+			if (!t_ptr) RTFPanic("Malformed EMBELL Template!\n");
+			
+			/* set string to first or second half of template depending on mode */
+			if (eqn->m_mode == EQN_MODE_TEXT) {
+				*t_ptr = '\0';
+				t_ptr = template;
+			} else 
+				t_ptr++;
 
-                join[di] = 0;
-                zdata = join;
+			join = (char *) malloc(strlen(t_ptr) + strlen(zdata) + 16);
+			j_ptr = join;
 
-            }                   // patch char into embell template
+			if (DEBUG_EMBELLS) fprintf(stderr,"Yikes --- replacement template is '%s'!\n",t_ptr);
+			
+			/* replace %1 in template with zdata */
+			while (*t_ptr) {		
+				if (*t_ptr == '%') {
+					t_ptr+=2;             /* skip over %1 */
+					strcpy(j_ptr, zdata);
+					j_ptr += strlen(zdata);
+				} else {
+					*j_ptr = *t_ptr;
+					j_ptr++;
+					t_ptr++;
+				}
+			}
+			*j_ptr = '\0';
+			free(zdata);
+			zdata = join;
+		}
+		if (DEBUG_EMBELLS) fprintf(stderr,"Yikes --- after replacement strs[0].data is '%s'!\n",zdata);
 
-            embells = (MT_EMBELL *) embells->next;
+		embells = (MT_EMBELL *) embells->next;
+	}
 
-        }                       // while ( embells )
-
-        strs[0].log_level = 0;
-        strs[0].do_delete = 1;
-        strs[0].ilk = Z_TEX;
-        strs[0].is_line = 0;
-        strs[0].data = zdata;
-        num_strs++;
-
-    }                           //  if ( zdata )
-
+	strs[0].data = zdata;
+	num_strs++;
     return num_strs;
 }
 
@@ -3467,5 +3461,22 @@ char *Template_EMBELLS[] = {
 /* embTPRIME  */ "%1\\prime \\prime \\prime ,",
 /* embFROWN   */ "\\widehat{%1} ,%1 ",
 /* embSMILE   */ "\\breve{%1} ,%1 ",
+/* embX_BARS    */ "{%1} ,%1 ",
+/* embUP_BAR    */ "{%1} ,%1 ",
+/* embDOWN_BAR 	*/ "{%1} ,%1 ",
+/* emb4DOT 	    */ "{%1} ,%1 ",
+/* embU_1DOT 	*/ "{%1} ,%1 ",
+/* embU_2DOT 	*/ "{%1} ,%1 ",
+/* embU_3DOT 	*/ "{%1} ,%1 ",
+/* embU_4DOT 	*/ "{%1} ,%1 ",
+/* embU_BAR 	*/ "{%1} ,%1 ",
+/* embU_TILDE 	*/ "{%1} ,%1 ",
+/* embU_FROWN 	*/ "{%1} ,%1 ",
+/* embU_SMILE 	*/ "{%1} ,%1 ",
+/* embU_RARROW 	*/ "{%1} ,%1 ",
+/* embU_LARROW 	*/ "{%1} ,%1 ",
+/* embU_BARROW 	*/ "{%1} ,%1 ",
+/* embU_R1ARROW */ "{%1} ,%1 ",
+/* embU_L1ARROW */ "{%1} ,%1 ",
     0
 };
