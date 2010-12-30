@@ -1519,8 +1519,10 @@ static void WriteLaTeXFooter(void)
         PutLitStr("\\usepackage{ulem}\n");
     if (requireAmsMathPackage)
         PutLitStr("\\usepackage{amsmath}\n");
-    if (requireUnicodePackage) 
+    if (requireUnicodePackage) {
+        PutLitStr("\\usepackage{textgreek}\n");
         PutLitStr("\\usepackage{ucs}\n");
+    }
     if (requireHyperrefPackage) {
         PutLitStr("\\usepackage{hyperref}\n");
         PutLitStr("\\def\\R2Lurl#1#2{\\mbox{\\href{#1}{\\tt #2}}}");

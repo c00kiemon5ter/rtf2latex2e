@@ -425,7 +425,7 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
         new_obj = (void *) NULL;
 
         if (DEBUG_PARSING) print_tag(curr_tag, *src_index);
-    	if (0) __cole_dump(src+*src_index, src+*src_index, 16, NULL);
+    	if (DEBUG_PARSING) __cole_dump(src+*src_index, src+*src_index, 16, NULL);
 
         switch (curr_tag) {
         case END:
@@ -531,6 +531,7 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
             (*src_index) += size + 1;
 
             fprintf(stderr, "Future tag = 0x%02x with size %d\n",curr_tag,size);
+            exit(1);
             break;
         }
 
@@ -637,6 +638,8 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     MT_CHAR *new_char = (MT_CHAR *) malloc(sizeof(MT_CHAR));
     new_char->nudge_x = 0;
     new_char->nudge_y = 0;
+    new_char->mtchar = 0;
+    new_char->bits16 = 0;
     new_char->embellishment_list = (MT_EMBELL *) NULL;
 
     *src_index += GetAttribute(eqn, src+*src_index, &attrs);
@@ -664,60 +667,25 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
         break;
 
     case 5:
-            
-        if (!(new_char->atts & CHAR_ENC_NO_MTCODE)) {
         
-            /* typical 02 00 83 ^ 59 00 */
+        /* nearly always have a 16 bit MT character */
+        if (!(new_char->atts & CHAR_ENC_NO_MTCODE)) {
             new_char->character = *(src + *src_index);
             (*src_index)++;
             new_char->character |= *(src + *src_index) << 8;
             (*src_index)++;
         }
-            
-        /* special handling for sequence 02 00 00 00 00 */
-        if (new_char->atts == 0 && new_char->typeface == 0 && new_char->character == 0) {
-            unsigned char peek = *(src + *src_index);
-            (*src_index)++;
-            
-            switch (peek) {
-            
-            case 0:
-                    peek = *(src + *src_index);
-                    (*src_index)++;
-                    
-                    if (peek) {
-                        /* sequence 02 00 00 00 00 00 2d */
-                        new_char->character = peek;
-                    } else {
-                        /* sequence 02 00 00 00 00 00 00 ^ 96 29 00  */
-                        new_char->typeface = *(src + *src_index);
-                        (*src_index)++;
-                        new_char->character = *(src + *src_index);
-                        (*src_index)++;
-                        new_char->character |= *(src + *src_index) << 8;
-                        (*src_index)++;
-                    }
-                    break;
-                    
-            case 1:  /* e.g, sequence 02 00 00 00 00 ^ 01 01  */
-            case 2:  /* e.g, sequence 02 00 00 00 00 ^ 02 00 96 29 00 */
-                    (*src_index)--;
-                    break;
-
-            default:  /* e.g., sequence 02 00 00 00 00 2d */
-                    new_char->character = peek;
-                    break;
-            }              
-        }
-
+        
+        // 02 05 84 bc 03 6d 06 00  11 00 02 04 86 
         if (new_char->atts & CHAR_ENC_CHAR_8) {
             new_char->character = *(src + *src_index);
             (*src_index)++;
         }
+        
         if (new_char->atts & CHAR_ENC_CHAR_16) {
-            new_char->character = *(src + *src_index);
+            new_char->bits16 = *(src + *src_index);
             (*src_index)++;
-            new_char->character |= *(src + *src_index) << 8;    /* high byte last */
+            new_char->bits16 |= *(src + *src_index) << 8;
             (*src_index)++;
         }
         break;
@@ -727,6 +695,9 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
         break;
     }
 
+    if (DEBUG_CHAR) fprintf(stderr, "          '%c' or 0x%04x,", new_char->character, new_char->character);
+    if (DEBUG_CHAR) fprintf(stderr, " typeface = %d mtchar=%u, 16bit=%u \n", new_char->typeface-128, new_char->mtchar, new_char->bits16);
+
     if (eqn->m_mtef_ver == 5) {
         if (new_char->atts & CHAR_EMBELL)
             new_char->embellishment_list = Eqn_inputEMBELL(eqn, src, src_index);
@@ -735,8 +706,6 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
             new_char->embellishment_list = Eqn_inputEMBELL(eqn, src, src_index);
     }
 
-    if (0) fprintf(stderr, "          '%c' or 0x%04x,", new_char->character, new_char->character);
-    if (0) fprintf(stderr, " typeface = %d\n", new_char->typeface-128);
 
     return new_char;
 }
@@ -861,26 +830,22 @@ MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
 MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
                            int *src_index)
 {
-    unsigned char attrs;
+    unsigned char attrs, tag;
     MT_EMBELL *head = NULL;
     MT_EMBELL *new_embell = NULL;
     MT_EMBELL *curr = NULL;
 
-    *src_index += GetAttribute(eqn, src+*src_index, &attrs);
-
     do {
-
-        (*src_index)++;         // step over the embell tag - "06" - one for every acc
-
         new_embell = (MT_EMBELL *) malloc(sizeof(MT_EMBELL));
         new_embell->next = NULL;
+        new_embell->nudge_x = 0;
+        new_embell->nudge_y = 0;
 
-        if (attrs & xfLMOVE) {
+    	*src_index += GetAttribute(eqn, src+*src_index, &attrs);
+
+        if (attrs & xfLMOVE)
             *src_index += GetNudge(src + *src_index, &new_embell->nudge_x, &new_embell->nudge_y);
-        } else {
-            new_embell->nudge_x = 0;
-            new_embell->nudge_y = 0;
-        }
+        
         new_embell->embell = *(src + *src_index);
 		if (DEBUG_EMBELLS) fprintf(stderr, "[%-3d] EMBELL --- embell=%d\n", *src_index, new_embell->embell);
         (*src_index)++;
@@ -891,8 +856,12 @@ MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
             head = new_embell;
         curr = new_embell;
 
-        attrs = *(src + *src_index);
-    } while (attrs);
+        if (eqn->m_mtef_ver == 5)
+            tag = *(src + *src_index);
+        else
+            tag = LoNibble(*(src + *src_index));
+
+    } while (tag == EMBELL);
 
     (*src_index)++;             // advance over end byte
 
@@ -3336,7 +3305,7 @@ char *Profile_TEMPLATES[] = {
     "47.0=over arrow: left,\\overleftarrow{#1[M]} ",
     "47.1=over arrow: right,\\overrightarrow{#1[M]} ",
     "47.2=over arrow: both,\\overleftrightarrow{#1[M]} ",
-    "TextInMath=\text{#1} ",
+    "TextInMath=\\text{#1} ",
     0
 };
 
@@ -3435,7 +3404,7 @@ char *Profile_TEMPLATES5[] = {
     "35.0=limi",
     "36.0=limi",
     "37.0=limi",
-    "TextInMath=\text{#1} ",
+    "TextInMath=\\text{#1} ",
     0
 };
 

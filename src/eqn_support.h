@@ -112,7 +112,9 @@ typedef struct {
     int nudge_y;
     int atts;
     int typeface;
-    uint32_t character;
+    uint16_t mtchar;
+    uint16_t bits16;
+    uint16_t character;
     MT_EMBELL *embellishment_list;
 } MT_CHAR;
 
