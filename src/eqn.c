@@ -38,6 +38,7 @@
 # define        DEBUG_CHAR        0
 # define        DEBUG_MODE        0
 # define        DEBUG_SIZE        0
+# define        DEBUG_JOIN        0
 
 # define EQN_MODE_TEXT     0
 # define EQN_MODE_INLINE   1
@@ -248,8 +249,10 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
     if (eqn->log_level == 2)
         fputs("%Begin Equation\n", eqn->out_file);
 
+    if (DEBUG_TRANSLATION) fprintf(stderr,"new equation\n");
+
     ztex = Eqn_TranslateObjects(eqn, eqn->o_list);
-//    fprintf(stderr,"EQN: DONE with eqn!\n");
+
     if (ztex) {
         BreakTeX(ztex, eqn->out_file);
         free(ztex);
@@ -263,69 +266,29 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
 
 #define zLINE_MAX   75
 
+/* avoid blank lines in equation */
 static
 void BreakTeX(char *ztex, FILE * outfile)
 {
-    char *start = ztex;
-    int char_count = 0;
-    int last_space = 0;
-    int put_line = 0;
-    int any_non_space = 0; // empty lines in math are bad
+    char *p;    
+    int line_is_empty = 1;
     
-    char ch;
-    while ((ch = *ztex)) {
-        if (ch == '\\') {
-            char_count++;
-            ztex++;
-            char_count++;
-            ztex++;
-            any_non_space = 1;
+    p = ztex;
+    while (*p) {
 
-        } else if (ch == '%') {
-
-            while (*ztex && *ztex != '\r' && *ztex != '\n')
-                ztex++;
-            if (*ztex)
-                *ztex++ = 0;
-            any_non_space = 1;
-            put_line = 1;
-
-        } else if (ch == ' ') {
-            last_space = char_count++;
-            ztex++;
-
-        } else if (ch == '\r' || ch == '\n') {
-            *ztex++ = 0;
-            put_line = 1;
-
-        } else {
-            char_count++;
-            ztex++;
-            any_non_space = 1;
-        }
-
-        if (put_line == 0 && char_count >= zLINE_MAX) {
-            if (last_space) {
-                ztex = start + last_space;
-                *ztex++ = 0;
-                put_line = 1;
+		if (*p == '\r' || *p == '\n') {
+			if (!line_is_empty) {
+            	fputc('\n', outfile);
+            	line_is_empty = 1;
             }
+        } else {
+        	fputc(*p, outfile);
+            if (line_is_empty && *p != ' ')
+            	line_is_empty = 0;
         }
-        if (put_line && any_non_space) {
-            fputs(start, outfile);
-            fputc('\n', outfile);
-            while (*ztex && *ztex <= ' ' )
-                ztex++;
-            start = ztex;
-            char_count = 0;
-            last_space = 0;
-            put_line = 0;
-            any_non_space = 0;
-        }
-    }
 
-    if (char_count && any_non_space)
-        fputs(start, outfile);
+		p++;
+	}
 }
 
 void print_tag(unsigned char tag, int src_index)
@@ -755,7 +718,7 @@ MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
     MT_PILE *new_pile = (MT_PILE *) malloc(sizeof(MT_PILE));
     new_pile->nudge_x = 0;
     new_pile->nudge_y = 0;
-    new_pile->ruler = (MT_RULER *) NULL;
+    new_pile->ruler = NULL;
 
     *src_index += GetAttribute(eqn, src+*src_index, &attrs);
 
@@ -1166,6 +1129,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
     MT_OBJLIST *curr_node;
     *rv = 0;
 
+    if (DEBUG_TRANSLATION) fprintf(stderr,"new object list\n");
     while (the_list) {
 
         curr_node = the_list;
@@ -1530,6 +1494,7 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
     // start matrix
     is_tabular = (eqn->m_mode == EQN_MODE_TEXT) ? 1 : 0;
 
+    strcat(rv, "*there*");
     if (is_tabular) 
         strcat(rv, "\n\\begin{tabular}");
     else
@@ -1564,8 +1529,8 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
     	int new_line = 0;
 
         if (curr_row) {
-            if (is_tabular)
-            	setMathMode(eqn, rv, EQN_MODE_TEXT);
+//            if (is_tabular)
+//            	setMathMode(eqn, rv, EQN_MODE_TEXT);
             strcat(rv, " \\\\");
             new_line = 1;
         }
@@ -1580,8 +1545,8 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
         while (curr_col < matrix->cols) {       // loop thru columns in one row
 
             if (curr_col) {
-				if (is_tabular)
-					setMathMode(eqn, rv, EQN_MODE_TEXT);
+//				if (is_tabular)
+//					setMathMode(eqn, rv, EQN_MODE_TEXT);
 				strcat(rv, " & ");
             }
 
@@ -1607,8 +1572,8 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
 
     }                           // loop down rows
 
-	if (is_tabular)
-		setMathMode(eqn, rv, EQN_MODE_TEXT);
+//	if (is_tabular)
+//		setMathMode(eqn, rv, EQN_MODE_TEXT);
 
     if (HasHVLine(curr_row, matrix->row_parts))
         strcat(rv, " \\\\ \\hline\n");
@@ -1626,6 +1591,7 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
         strcat(rv, buf);
     }
 
+fprintf(stderr,"xxx\n%s\n",rv);
     return rv;
 }
 
@@ -1773,85 +1739,82 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
 {
     MT_OBJLIST *obj_list;
     int buf_limit = 8192;
-    int save_math_mode;
-    char *tablev_align = "{";   // default is vertical centering
-    char *col_align = "c";
-    int curr_row = 0;
-    char *rv = malloc(buf_limit);
+    int row, head_len;
+    char *thetex, *line;
+    
+    thetex = (char *) malloc(buf_limit);
 
-    *rv = 0;
+	//fprintf(stderr, "PILE : Translating Tabular PILE\n");
+    *thetex = '\0';
 
     if (eqn->log_level >= 2) {
         char buf[128];
         sprintf(buf, "\n%sStart TABULAR\n", eqn->indent);
-        strcat(rv, buf);
+        strcat(thetex, buf);
     }
 
     strcat(eqn->indent, "  ");
 
-    save_math_mode = eqn->m_mode;
-	setMathMode(eqn,rv,EQN_MODE_TEXT);
-    strcpy(rv, "\n\\begin{tabular}");
+    strcat(thetex, "\n\\begin{array}");
 
-    // set the vertical alignment of the tabular
-    if (pile->valign == 0)
-        tablev_align = "[t]{";
-    else if (pile->valign == 2)
-        tablev_align = "[b]{";
-    strcat(rv, tablev_align);
+    switch (pile->valign) {
+    	case PVA_TOP:
+        	strcat(thetex, "[t]");
+        	break;
+    	case PVA_BOTTOM:
+        	strcat(thetex, "[b]");
+        	break;
+        case PVA_CENTER:
+        case PVA_CENTERING:
+        case PVA_MATH:
+        	break;
+    }
 
-    // set the horizontal column alignment char
-    if (pile->valign == MT_PILE_LEFT)
-        col_align = "l";
-    else if (pile->valign == MT_PILE_RIGHT)
-        col_align = "r";
+    switch (pile->halign) {
+    	case MT_PILE_LEFT:
+        	strcat(thetex, "{l}\n");
+        	break;
+    	case MT_PILE_RIGHT:
+        	strcat(thetex, "{r}\n");
+        	break;
+        case MT_PILE_CENTER:
+        case MT_PILE_OPERATOR:
+        case MT_PILE_DECIMAL:
+        	strcat(thetex, "{r}\n");
+        	break;
+    }
 
-    // script the LaTeX "cols"
+	head_len = strlen(thetex);
 
-    strcat(rv, col_align);
+    row = 1;
+    for (obj_list = pile->line_list; obj_list != NULL; obj_list = (MT_OBJLIST *)obj_list->next) {
 
-    strcat(rv, "}\n");
+        if (obj_list->tag != LINE) 
+            continue;
+        
+        line = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
+        
+        if (strlen(line)>0) {
+        	if (row > 1) strcat(thetex, " \\\\\n");  // end previous row
+            strcat(thetex, line);
+            row++;
+		}
+		free(line);
+    }
 
-    obj_list = pile->line_list;
-
-    curr_row = 0;
-    while (obj_list) {          //  loop down thru lines
-
-        if (curr_row) {
-			setMathMode(eqn,rv,EQN_MODE_TEXT);
-            strcat(rv, " \\\\\n");
-        }
-
-        while (obj_list && obj_list->tag != LINE) {     // could be a SIZE
-            obj_list = (MT_OBJLIST *) obj_list->next;
-        }
-
-        if (obj_list && obj_list->tag == LINE) {
-			uint32_t b_off;
-            char *data = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
-            b_off = (uint32_t) strlen(rv);
-            rv = ToBuffer(data, rv, &b_off, &buf_limit);        // strcat( rv,data );
-
-            obj_list = (MT_OBJLIST *) obj_list->next;
-        } else
-            break;
-
-        curr_row++;
-    }                           // loop down thru lines
-
-	setMathMode(eqn,rv,EQN_MODE_TEXT);
-    strcat(rv, "\n\\end{tabular}\n");
-	setMathMode(eqn,rv,save_math_mode);
+	if (row==2 && strlen(thetex) > head_len) 
+	    strcat(thetex, "\n");
+    strcat(thetex, "\\end{array}\n");
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
     if (eqn->log_level >= 2) {
         char buf[128];
         sprintf(buf, "\n%sEnd TABULAR\n", eqn->indent);
-        strcat(rv, buf);
+        strcat(thetex, buf);
     }
 
-    return rv;
+    return thetex;
 }
 
 
@@ -2092,152 +2055,134 @@ void SetComment(EQ_STRREC * strs, int lev, char *src)
         strs[0].data = (char *) NULL;
 }
 
-
+// this mangles the contents of strs[].data, so just call once!
 static
 char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
 {
-    char *join;
+	char join[8192], buf[128];
+    char *p, *substition_text, *marker, *thetex;
+	char *vars[3];
+	int i, j, id, is_pile;
 
-    int zln = 0;
+    if (DEBUG_JOIN) {
+    	for (i=0; i<num_strs; i++)
+			fprintf(stderr,"   is_line=%d, strs[%d].data=%s\n", strs[i].is_line, i, strs[i].data);
+    }
+    
+    *join = '\0';
 
-    int count = 0;
-    if (0) fprintf(stderr,"numstrs=%d\n",num_strs);
-    while (count < num_strs) {
-        int lev = strs[count].log_level;
-        char *dat = strs[count].data;
-        if (dat)
-            if (lev <= eqn->log_level)
-                zln += (uint32_t) strlen(dat);
-        count++;
+    for (i=0; i<num_strs; i++) {
+    
+        if (!strs[i].data) continue;
+        	
+		if (strs[i].log_level > eqn->log_level) continue;
+		
+		if (strs[i].ilk != Z_TMPL) { 
+			strcat(join, strs[i].data);
+			continue;
+		}
+
+		// the current string is a TMPL and needs to be filled and added
+		// e.g., dat = "\sqrt[#2]{#1}"
+		
+		p = strs[i].data;
+		
+		while (*p) {
+
+			marker = strchr(p, '#');
+			if (!marker) {
+				strcat(join, p);
+				break;
+			}
+			
+			*marker = '\0';
+			strcat(join, p);
+			p = marker + 1;
+				
+/*  #1[L][STARTSUB][ENDSUB]  ... substitute text according to byzantine scheme */
+			
+			/* only #1, #2, and #3 are used */	
+			id = *p - '1';
+			if (id < 0 || id > 3) break;
+			p++;
+			
+			/* Extract the bracketed items */
+			/* vars[0]="L", vars[1]="STARTSUB", vars[2]="ENDSUB" */
+			/* only vars[1] and vars[2] are used */
+			
+			vars[1] = NULL;
+			vars[2] = NULL;
+			j = 0;
+			while (*p == '[') {     
+				p++;
+				marker = strchr(p, ']');
+				if (!marker) break;
+				*marker = '\0';
+				vars[j++] = p;
+				p = marker+1;
+			}
+
+			// This is pretty confusing. All the strs[] have an is_line flag
+			// only strs[] entries that have this flag set may be used for replacement
+			// The replacement text for #1 or #2 or #3 is the first, second, or third
+			// strs[] entry that has its flag set.
+			
+			thetex = NULL;
+			for (j=i+1; j<num_strs; j++) {
+				if (strs[j].is_line == 0) continue;
+							
+				if (id == 0) {
+					thetex = strs[j].data;
+					strs[j].log_level = 100; // mark this entry as used
+					is_pile = (strs[j].is_line == 2) ? 1 : 0;
+					break;
+				}
+				id--;  // one string closer to our goal
+			}
+
+			// this should not happen, but if it does, just go on to the next character
+			if (!thetex) continue;
+
+			if (GetProfileStr(Profile_VARIABLES, vars[1], buf, 128)) {
+				
+				substition_text = buf;
+				marker = strchr(buf, ',');
+
+				if (is_pile)
+					substition_text = marker + 1;
+				else
+					*marker = '\0';
+
+				strcat(join, substition_text);
+			}
+
+			strcat(join, thetex);
+
+			if (GetProfileStr(Profile_VARIABLES, vars[2], buf, 128)) {
+				
+				substition_text = buf;
+				marker = strchr(buf, ',');
+
+				if (is_pile)
+					substition_text = marker + 1;
+				else
+					*marker = 0;
+
+				strcat(join, substition_text);
+			}
+		}
     }
 
-    join = (char *) malloc(zln + 1);
-    *join = 0;
-
-    count = 0;
-    while (count < num_strs) {
-        int lev = strs[count].log_level;
-        char *dat = strs[count].data;
-        if (dat) {
-            if (lev <= eqn->log_level) {
-                if (strs[count].ilk == Z_TMPL) {        // dat = "\sqrt[#2]{#1}"
-                    int si = 0;
-                    uint32_t di = (uint32_t) strlen(join);
-                    char ch;
-                    while ((ch = dat[si])) {
-                        if (ch == '\\') {
-                            join[di++] = ch;
-                            si++;
-                            if ((ch = dat[si]))
-                                join[di++] = ch;
-                            else
-                                break;
-                        } else if (ch == '#') {
-                            si++;
-                            if ((ch = dat[si])) {       // 1 - 9
-
-                                char *vars[9];
-                                int var_count = 0;
-                                char *thetex;
-                                int slot;
-                                int curr_line_num;
-                                int targ_line_num;
-
-                                while (var_count < 9)
-                                    vars[var_count++] = (char *) NULL;
-
-                                var_count = 0;
-                                while (dat[si + 1] == '[') {
-// Get the [] args
-                                    char *nom_end = strchr(dat + si + 2, ']');
-                                    if (nom_end) {
-                                        *nom_end = 0;
-                                        vars[var_count++] = dat + si + 2;
-                                        si += (uint32_t) strlen(dat + si + 2) + 2;
-                                    } else
-                                        break;
-                                }
-
-// Search strs beyond count for the appropriate LINE
-
-                                thetex = (char *) NULL;
-                                slot = count + 1;
-                                curr_line_num = 0;
-                                targ_line_num = ch - '1';
-                                while (slot < num_strs) {
-                                    if (strs[slot].is_line) {
-                                    	if (0) fprintf(stderr,"curr_line_num=%d, targ_line_num=%d\n", curr_line_num, targ_line_num);
-                                    	if (0) fprintf(stderr,"strs[slot].data=%s\n", strs[slot].data);
-                                        if (curr_line_num == targ_line_num) {
-                                            thetex = strs[slot].data;
-                                            break;
-                                        } else
-                                            curr_line_num++;
-                                    }
-                                    slot++;
-                                }
-
-                                if (thetex) {
-
-                                    char *var_nom = vars[1];
-                                    if (var_nom) {      // we have a variable leadin
-                                        char buf[128];
-                                        int zdl = GetProfileStr(Profile_VARIABLES, var_nom, buf, 128);
-                                        if (zdl > 0) {
-                                            char *head = buf;
-                                            char *comma = strchr(buf, ',');
-                                            uint32_t inc_len;
-                                            if (strs[slot].is_line == 2)        // it's a pile
-                                                head = comma + 1;
-                                            else
-                                                *comma = 0;
-                                            inc_len = (uint32_t) strlen(head);
-                                            strcpy(join + di, head);
-                                            di += inc_len;
-                                        }
-                                    }
-
-                                    strcpy(join + di, thetex);
-                                    di += (uint32_t) strlen(thetex);
-
-                                    var_nom = vars[2];
-                                    if (var_nom) {
-                                        char buf[128];
-                                        int zdl = GetProfileStr(Profile_VARIABLES, var_nom, buf, 128);
-                                        if (zdl > 0) {
-                                            char *tail = buf;
-                                            char *comma = strchr(tail, ',');
-                                            uint32_t inc_len;
-                                            if (strs[slot].is_line == 2)        // it's a pile
-                                                tail = comma + 1;
-                                            else
-                                                *comma = 0;
-                                            inc_len = (uint32_t) strlen(tail);
-                                            strcpy(join + di, tail);
-                                            di += inc_len;
-                                        }
-                                    }
-
-                                    strs[slot].log_level = 100; // cancel this node
-                                }
-                            } else
-                                break;
-
-                        } else
-                            join[di++] = ch;
-                        si++;
-                    }
-                    join[di] = 0;
-                } else
-                    strcat(join, dat);
-            }
-            if (strs[count].do_delete)
-                free(dat);
+    for (i=0; i<num_strs; i++)
+        if (strs[i].do_delete && strs[i].data) {
+        	free(strs[i].data);
+        	strs[i].data = NULL;
         }
-        count++;
-    }
-
-    return join;
+        	
+	thetex = (char *) malloc(strlen(join)+1);
+	strcpy(thetex, join);
+	if (DEBUG_JOIN) fprintf(stderr,"final join='%s'\n", thetex);
+    return thetex;
 }
 
 static
@@ -2326,6 +2271,8 @@ char *Eqn_TranslatePILE(MTEquation * eqn, MT_PILE * pile)
     EQ_STRREC strs[2];
     int num_strs = 0;
 
+//	fprintf(stderr, "PILE : Translating PILE\n");
+
     if (eqn->log_level >= 2) {
         char buf[128];
         sprintf(buf, "\n%sPILE\n", eqn->indent);
@@ -2339,6 +2286,8 @@ char *Eqn_TranslatePILE(MTEquation * eqn, MT_PILE * pile)
     strs[num_strs].do_delete = 1;
     strs[num_strs].ilk = Z_TEX;
     strs[num_strs].is_line = 0;
+
+	setMathMode(eqn, NULL, EQN_MODE_DISPLAY);	
 
     if (pile->halign == MT_PILE_OPERATOR)
         strs[num_strs].data = Eqn_TranslateEQNARRAY(eqn, pile);
@@ -2591,7 +2540,9 @@ uint32_t GetProfileStr(char **section, char *key, char *data, int datalen)
     char **rover;
     uint32_t keylen;
 
+	if (key == NULL) return 0;
     keylen = (uint32_t) strlen(key);
+    
     for (rover = &section[0]; *rover; ++rover) {
         if (strncmp(*rover, key, keylen) == 0) {
             strncpy(data, *rover + keylen + 1, datalen - 1);    // skip over = (no check for white space
@@ -2750,6 +2701,7 @@ char *Profile_FUNCTIONS[] = {
 };
 
 //[VARIABLES]
+//VARIABLE_NAME,MATH_VERSION,TEXT_VERSION
 char *Profile_VARIABLES[] = {
     "STARTSUB=_{,\\Sb ",
     "ENDSUB=}, \\endSb ",
@@ -2760,12 +2712,12 @@ char *Profile_VARIABLES[] = {
 
 //[PILEtranslation]
 char *Profile_PILEtranslation[] = {
-    "MATHDEFAULT=MathForce,\\begin{array}{l}, \\,\\end{array}",
-    "TEXTDEFAULT=TextOnly,\\begin{tabular}{l}, \\,\\end{tabular}",
+    "MATHDEFAULT=MathForce,\\begin{array}{l}, \\\\,\\end{array}",
+    "TEXTDEFAULT=TextOnly,\\begin{tabular}{l}, \\\\,\\end{tabular}",
     "L=,, \\ ,",
-    "M=MathForce,\\begin{array}{l}, \\,\\end{array}",
-    "X=TextForce,\\begin{texttest}, \\LINE_END,\\end{texttest}",
-    "Y=MathForce,\\begin{mathtest}, \\LINE_END,\\end{mathtest}",
+    "M=MathForce,\\begin{array}{l}, \\\\,\\end{array}",
+    "X=TextForce,\\begin{texttest}, \\\\LINE_END,\\end{texttest}",
+    "Y=MathForce,\\begin{mathtest}, \\\\LINE_END,\\end{mathtest}",
     0
 };
 

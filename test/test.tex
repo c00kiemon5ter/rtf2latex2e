@@ -1,7 +1,9 @@
 %&LaTeX
 \documentclass{article}
 \usepackage{multicol}
-                                                                              
+\usepackage{textgreek}
+\usepackage{ucs}
+                                      
                                                                                                     
                                                                                                     
                                                                                                     
@@ -27,7 +29,7 @@ One letter in this line is \textit{i}talic, one is \textbf{b}old.\\{}
 This line has a superscript$ ^{1} $  in it.\\{}
 This line has a subscript$ _{2} $  in it.\\{}
 This line has both a subscript and a superscript$ ^{(1)} $ $ _{(} $ $ _{\mathbf{2}} $ $ _{)} $ .\\{}
-How about \ensuremath{\alpha}$ _{\ensuremath{\lambda}} $  and b$ _{1} $ ?\\{}
+How about \unichar{61537}\unichar{61548} and b$ _{1} $ ?\\{}
 \textbf{\textit{(Partly italic)}} \textbf{and \{completely bold\}.}
 
 
@@ -123,7 +125,7 @@ Words in different colors.
 
 
 \section*{Footnote}
-This file contains a footnote\footnote{Footnote text\dots  \\{}
+This file contains a footnote\footnote{Footnote text... \\{}
 This on a separate line.}.
 
 

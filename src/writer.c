@@ -3970,7 +3970,9 @@ static void ReadWord97Object(void)
 
     while (!ReachedResult(&groupCount)) {
         if (groupCount == 0) {
-            RTFMsg("*Êunknown Word97 object...\n");
+            RTFMsg("* unknown Word97 object...\n");
+//            PutLitStr(" [ missing object here ] ");
+//            wrapCount += 25;
             RTFRouteToken();
             return;
         }

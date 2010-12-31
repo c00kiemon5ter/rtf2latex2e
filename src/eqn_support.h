@@ -138,6 +138,7 @@ typedef struct {
 #define PVA_CENTER    1
 #define PVA_BOTTOM    2
 #define PVA_CENTERING 3
+#define PVA_MATH      4
 
 // pile object
 typedef struct {
