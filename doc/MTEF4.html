@@ -1,0 +1,2003 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<style media="screen" type="text/css">
+body { margin-left: auto; margin-right: auto; padding:0px; width:700px;}
+</style>
+<title>MathType MTEF v.4</title>
+</head>
+<body>
+
+<h1>MathType MTEF v.4<br>
+(MathType 3.5)</h1>
+
+<p>Last Updated: August 6, 1999</p>
+
+<table bgcolor="#DDDDDD"><tr><td>
+<p> This file was originally located at http://www.mathtype.com/support/tech/MTEF4.htm
+and recovered using the <a href="http://web.archive.org">Wayback machine</a> from 
+<a href="http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF4.htm">here</a>.
+The MathType folks have more recent documentation, but the license restrictions are incompatible with the
+GPL.</p></td></tr></table>
+
+<h2>Abstract</h2>
+
+<p>This document is describes MTEF, the binary equation format used by MathType 3.5 (all
+platforms). MTEF is embedded in OLE equation objects produced by MathType, as well as in
+all the file formats in which MathType can save equations. The methods used by MathType to
+embed this information in such files is described in a separate document. See <a href="http://web.archive.org/web/20010304110403/http://mathtype.com/support/tech/MTEF_storage.htm">How MTEF is Stored
+in Files and Objects</a>.</p>
+
+<h2>Contents </h2>
+
+<ul>
+  <li><a href="#Introduction">Introduction</a></li>
+  <li><a href="#Header">Header</a><ul>
+      <li><a href="#versions">MTEF version history</a></li>
+      <li><a href="#header_v1">MTEF header (version 1):</a></li>
+      <li><a href="#header_v2+">MTEF header (version 2 and later)</a></li>
+    </ul>
+  </li>
+  <li><a href="#byte_stream">MTEF Byte Stream</a><ul>
+      <li><a href="#tag_bytes">Tag byte structure</a></li>
+      <li><a href="#options">Option values</a></li>
+      <li><a href="#nudges">Nudge values</a></li>
+      <li><a href="#typefaces">Typeface values</a></li>
+      <li><a href="#object_lists">Object lists</a></li>
+    </ul>
+  </li>
+  <li><a href="#records">Record Details</a><ul>
+      <li><a href="#END_record">END record (0)</a></li>
+      <li><a href="#LINE_record">LINE record (1)</a></li>
+      <li><a href="#CHAR_record">CHAR record (2)</a></li>
+      <li><a href="#TMPL_record">TMPL record (3)</a></li>
+      <li><a href="#PILE_record">PILE record (4)</a></li>
+      <li><a href="#MATRIX_record">MATRIX record (5)</a></li>
+      <li><a href="#EMBELL_record">EMBELL record (6)</a></li>
+      <li><a href="#RULER_record">RULER record (7)</a></li>
+      <li><a href="#FONT_record">FONT record (8)</a></li>
+      <li><a href="#SIZE_record">SIZE record (9)</a></li>
+      <li><a href="#TYPESIZE_records">TYPESIZE records (10-14)</a></li>
+    </ul>
+  </li>
+  <li><a href="#tmpl_sels_and_vars">Template Selectors and Variations</a></li>
+  <li><a href="#tmpl_subobj_order">Template Subobject Order</a></li>
+</ul>
+
+<h2><a name="Introduction">Introduction</a></h2>
+
+<p>This document is describes the binary equation format used by MathType 3.5 (all
+platforms). Although MTEF is not the most friendly medium for defining equations, there
+have been so many requests for this information, we decided to publish it anyway. We must
+warn the reader that it is not an easy format to understand and, more importantly,
+MathType is not at all forgiving in its processing of it. This means that if you send
+MathType MTEF with errors, it might crash. At a minimum, you will get an equation with
+formatting problems. Also, it is a binary format. This means that you can't use character
+strings to represent equations and it makes creating MTEF a little harder with programming
+languages like Visual Basic.</p>
+
+<p>How MathType stores an equation description in an OLE equation object, a file, or on
+the clipboard is not described here. Please see the document on MathType MTEF Storage for
+more information on this subject.</p>
+
+<h2><a name="Header">Header</a></h2>
+
+<h3><a name="versions">MTEF version history</a>:</h3>
+
+<p>MTEF data exists in the following versions: 
+
+</p>
+  <div align="left"><table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>0</td>
+      <td>MathType for the Mac 1.x (this format is not described here);</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>MathType for the Mac 2.x and MathType for Windows 1.x;</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>MathType 3.x and Equation Editor 1.x;</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Equation Editor 3.x (this format is not described here);</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>MathType 3.5.</td>
+    </tr>
+  </tbody></table>
+  </div>
+
+
+<p>Version 2 differs from version 1 only in the format of the header.</p>
+
+<h3><a name="header_v1">MTEF header (version 1):</a></h3>
+
+<p>The version 1 header consists of a single byte version number. This number is 1 if the
+MTEF was generated on the Mac or 101 if it was generated by the Windows version.</p>
+
+<h3><a name="header_v2+">MTEF header (version 2 and later):</a></h3>
+
+<p>The version 2 header consists of a 5-byte header: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>byte</td>
+      <td>description</td>
+      <td>value</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>MTEF version</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>generating platform</td>
+      <td>0 for Macintosh, 1 for Windows</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>generating product</td>
+      <td>0 for MathType, 1 for Equation Editor</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>product version</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>product subversion</td>
+      <td>0</td>
+    </tr>
+  </tbody></table>
+
+
+<h2><a name="byte_stream">MTEF Byte Stream</a></h2>
+
+<p>This section describes the actual MTEF data following the header. MTEF data consists of
+a series of records. Each record starts with a tag byte containing the record type and
+some flag bits. The overall structure is: 
+
+</p><ul>
+  <li>initial <a href="#SIZE_record">SIZE</a> record</li>
+  <li><a href="#PILE_record">PILE</a> or <a href="#LINE_record">LINE</a> record</li>
+  <li>contents of <a href="#PILE_record">PILE</a> or <a href="#LINE_record">LINE</a></li>
+  <li><a href="#END_record">END</a> record</li>
+</ul>
+
+<p>Most MTEF values are bytes. Word values (16-bit) are written low-order byte followed by
+high-order byte. All dimensional values are expressed in MathType&#8217;s internal units,
+32nds of a point (A point is 1/72 inch).</p>
+
+<h3><a name="tag_bytes">Tag byte structure:</a></h3>
+
+<p>Each tag byte consists of a record type in the low-order 4 bits and option flags in the
+high-order 4 bits. The following record types are used: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>value</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td><a href="#END_record">END</a></td>
+      <td>end of MTEF, pile, line, embellishment list, or template</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td><a href="#LINE_record">LINE</a></td>
+      <td>line (slot) record</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><a href="#CHAR_record">CHAR</a></td>
+      <td>character record</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><a href="#TMPL_record">TMPL</a></td>
+      <td>template record</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><a href="#PILE_record">PILE</a></td>
+      <td>pile (vertical stack of lines) record</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><a href="#MATRIX_record">MATRIX</a></td>
+      <td>matrix record</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><a href="#EMBELL_record">EMBELL</a></td>
+      <td>character embellishment (e.g. hat, prime) record</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><a href="#RULER_record">RULER</a></td>
+      <td>ruler (tab-stop location) record</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td><a href="#FONT_record">FONT</a></td>
+      <td>font name record</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td><a href="#SIZE_record">SIZE</a></td>
+      <td>general size record</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td><a href="#TYPESIZE_records">FULL</a></td>
+      <td>full size record</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td><a href="#TYPESIZE_records">SUB</a></td>
+      <td>subscript size record</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td><a href="#TYPESIZE_records">SUB2</a></td>
+      <td>sub-subscript size record</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td><a href="#TYPESIZE_records">SYM</a></td>
+      <td>symbol size record</td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td><a href="#TYPESIZE_records">SUBSYM</a></td>
+      <td>sub-symbol size record</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="options">Option values</a>:</h3>
+
+<p>The option flag values are record-dependent: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>value</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td colspan="3">Option flag values for all equation structure records:</td>
+    </tr>
+    <tr>
+      <td>0x8</td>
+      <td>xfLMOVE</td>
+      <td>nudge values follow tag</td>
+    </tr>
+    <tr>
+      <td colspan="3">Option flag values for <a href="#CHAR_record">CHAR</a> records:</td>
+    </tr>
+    <tr>
+      <td>0x1</td>
+      <td>xfAUTO</td>
+      <td>character is a candidate for function recognition</td>
+    </tr>
+    <tr>
+      <td>0x2</td>
+      <td>xfEMBELL</td>
+      <td>character is followed by an embellishment list</td>
+    </tr>
+    <tr>
+      <td colspan="3">Option flag values for <a href="#LINE_record">LINE</a> records:</td>
+    </tr>
+    <tr>
+      <td>0x1</td>
+      <td>xfNULL</td>
+      <td>line is a placeholder only</td>
+    </tr>
+    <tr>
+      <td>0x4</td>
+      <td>xfLSPACE</td>
+      <td>line spacing value follows tag</td>
+    </tr>
+    <tr>
+      <td colspan="3">Option flag values for <a href="#LINE_record">LINE</a> and <a href="#PILE_record">PILE</a> records:</td>
+    </tr>
+    <tr>
+      <td>0x2</td>
+      <td>xfRULER</td>
+      <td><a href="#RULER_record">RULER</a> record follows <a href="#LINE_record">LINE</a> or <a href="#PILE_record">PILE</a> record</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="nudges">Nudge values:</a></h3>
+
+<p><a href="#LINE_record">LINE</a>, <a href="#CHAR_record">CHAR</a>, <a href="#TMPL_record">TMPL</a>, <a href="#PILE_record">PILE</a>, <a href="#MATRIX_record">MATRIX</a>,
+and <a href="#EMBELL_record">EMBELL</a> records may store the result of nudging (small
+offsets applied by the user). A nudged record has the xfLMOVE flag (0x8) set in the tag
+byte and the tag byte is followed immediately by the nudge offset. The nudge offset
+consists of either two bytes or six, depending on the amount of offset. If <font face="Symbol">-</font>128 &lt; dx &lt; +128 and <font face="Symbol">-</font>128&nbsp;&lt;&nbsp;dy&nbsp;&lt;&nbsp;+128,
+then the offsets are stored as two bytes, dx followed by dy, where each value is biased by
+128. Otherwise, two bytes of 128 are stored, followed by the (unbiased) offsets, dx and
+dy, stored as 16-bit values.</p>
+
+<h3><a name="typefaces">Typeface values:</a></h3>
+
+<p><a href="#CHAR_record">CHAR</a> records contain a typeface value (biased by 128). If
+the value is positive, it represents one of MathType&#8217;s styles: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>value</td>
+      <td>symbol</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>fnTEXT</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>fnFUNCTION </td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>fnVARIABLE </td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>fnLCGREEK </td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>fnUCGREEK </td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>fnSYMBOL </td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>fnVECTOR </td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>fnNUMBER </td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>fnUSER1 </td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>fnUSER2 </td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>fnMTEXTRA </td>
+    </tr>
+  </tbody></table>
+
+
+<p>If the value is negative, it represents an explicit font as specified by a FONT record.</p>
+
+<h3><a name="object_lists">Object lists:</a></h3>
+
+<p><a href="#LINE_record">LINE</a>, <a href="#CHAR_record">CHAR</a>, <a href="#TMPL_record">TMPL</a>, <a href="#PILE_record">PILE</a>, <a href="#MATRIX_record">MATRIX</a>,
+and <a href="#RULER_record">RULER</a> records are followed by object lists that define
+contents of each equation structure. Each object list contains a sequence of records of
+any type and terminated by an <a href="#END_record">END</a> record. In a special case for <a href="#LINE_record">LINE</a> records, if there are no objects in the list, the xfNULL flag
+will be set in the tag byte and the object list is omitted entirely (i.e. no <a href="#END_record">END</a> record). Although there are no restrictions made by the MTEF
+format on what record types may occur in any particular list, the user interface prevents
+certain things from happening. For example, the object list defining the contents of a
+pile contains only <a href="#LINE_record">LINE</a> records.</p>
+
+<h2><a name="records">Record Details</a></h2>
+
+<h3><a name="END_record">END record</a> (0):</h3>
+
+<p>Contains just the tag byte. No flags are defined.</p>
+
+<h3><a name="LINE_record">LINE record</a> (1):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li>tag (1)</li>
+  <li>[<a href="#nudges">nudge</a>] if xfLMOVE is set</li>
+  <li>[line spacing] if xfLSPACE is set</li>
+  <li>[<a href="#RULER_record">RULER</a> record] if xfRULER is set</li>
+  <li><a href="#object_lists">object list</a> contents of line (a single pile, characters and
+    templates, or nothing)</li>
+</ul>
+
+<p>The line spacing value, if present, is the distance between the baseline of this line
+and the line above it.</p>
+
+<h3><a name="CHAR_record">CHAR record</a> (2):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li>tag (2)</li>
+  <li>[<a href="#nudges">nudge</a>] if xfLMOVE is set</li>
+  <li>[<a href="#typefaces">typeface</a>] typeface value (see <a href="#FONT_record">FONT</a>
+    below) + 128</li>
+  <li>[character] character value (encoding depends on typeface)</li>
+  <li>[embellishment list] if xfEMBELL is set (embellishments)</li>
+</ul>
+
+<p>Associated with every font is an encoding (a one-to-one mapping between character value
+and glyph; e.g. ASCII). The character represented by the character value is determined
+according to the encoding of the typeface value. The encodings used by MathType are
+documented by Design Science Tech Note #9.</p>
+
+<h3><a name="TMPL_record">TMPL record</a> (3):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li>tag (3)</li>
+  <li>[nudge] if xfLMOVE is set</li>
+  <li>[selector] template selector code</li>
+  <li>[variation] template variation code</li>
+  <li>[options] template-specific options</li>
+  <li>[subobject list] either a single character (e.g. sigma in a summation) and/or lines</li>
+</ul>
+
+<p>The template selector and variation codes determine the class of the template and
+various properties of the template, such as which subobjects can be deleted by the user
+(see <a href="#tmpl_sels_and_vars">Template Selectors and Variations</a> for a list). The
+class of a template determines the order and meaning of each of its subobjects (see <a href="#tmpl_subobj_order">Template Subobject Order</a>).</p>
+
+<p>The template-specific options field is only used for integrals and fence templates: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td colspan="2">Integral template option field values:</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>fixed-size integral;</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>the integral expands vertically to fit its contents.</td>
+    </tr>
+    <tr>
+      <td colspan="2">Fence template option field values (fence alignment): </td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>center fence on math axis, place math axis of contents on math axis of containing line
+      (default);</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>center fence on contents, place math axis of contents on math axis of containing line;</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>center fence on contents, center contents on math axis of containing line.</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="PILE_record">PILE record</a> (4):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li>tag (4)</li>
+  <li>[<a href="#nudges">nudge</a>] if xfLMOVE is set</li>
+  <li>[halign] horizontal alignment</li>
+  <li>[valign] vertical alignment</li>
+  <li>[[<a href="#RULER_record">RULER</a> record]] if xfRULER is set</li>
+  <li>[<a href="#object_lists">object list</a>] list of <a href="#LINE_record">lines</a>
+    contained by the pile</li>
+</ul>
+
+<p>Horizontal alignment: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>1</td>
+      <td>left justification</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>centered</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>right justification</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>relational operator alignment</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>decimal point alignment</td>
+    </tr>
+  </tbody></table>
+
+
+<p>Vertical alignment:
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>0</td>
+      <td>alignment with baseline of top line</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>alignment with baseline of center line</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>alignment with baseline of bottom line</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>vertical centering</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="MATRIX_record">MATRIX record</a> (5):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li>tag (5)</li>
+  <li>[<a href="#nudges">nudge</a>] if xfLMOVE is set</li>
+  <li>[valign] vertical alignment of matrix within container</li>
+  <li>[h_just] horizontal alignment within columns</li>
+  <li>[v_just] vertical alignment within columns</li>
+  <li>[rows] number of rows</li>
+  <li>[cols] number of columns</li>
+  <li>[row_parts] row partition line types</li>
+  <li>[col_parts] column partition line types</li>
+  <li>[<a href="#object_lists">object list</a>] list of <a href="#LINE_record">lines</a>, one
+    for each element of the matrix, in order from left-to-right and top-to-bottom</li>
+</ul>
+
+<p>The values for valign, h_just, and v_just are described in <a href="#PILE_record">PILE</a>
+above.</p>
+
+<p>The row partition line type list consists of two-bit values for each possible partition
+line (one more than the number of rows), rounded out to the nearest byte. Each value
+determines the line style of the corresponding partition line (0 for none, 1 for solid, 2
+for dashed, or 3 for dotted). Similarly for the column partition lines.</p>
+
+<h3><a name="EMBELL_record">EMBELL record</a> (6):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li>tag (6)</li>
+  <li>[<a href="#nudges">nudge</a>] if xfLMOVE is set</li>
+  <li>[embell] embellishment type</li>
+</ul>
+
+<p>The embellishment types are: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>value</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>embDOT</td>
+      <td>single dot</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>embDDOT</td>
+      <td>double dot</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>embTDOT</td>
+      <td>triple dot</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>embPRIME</td>
+      <td>single prime</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>embDPRIME</td>
+      <td>double prime</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>embBPRIME</td>
+      <td>backwards prime (left of character)</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>embTILDE</td>
+      <td>tilde</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>embHAT</td>
+      <td>hat (circumflex)</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>embNOT</td>
+      <td>diagonal slash through character</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>embRARROW</td>
+      <td>right arrow</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>embLARROW</td>
+      <td>left arrow</td>
+    </tr>
+    <tr>
+      <td>13 </td>
+      <td>embBARROW</td>
+      <td>double-headed arrow</td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td>embR1ARROW</td>
+      <td>right single-barbed arrow</td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td>embL1ARROW</td>
+      <td>left single-barbed arrow</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>embMBAR</td>
+      <td>mid-height horizontal bar</td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td>embOBAR</td>
+      <td>over-bar</td>
+    </tr>
+    <tr>
+      <td>18</td>
+      <td>embTPRIME</td>
+      <td>triple prime</td>
+    </tr>
+    <tr>
+      <td>19</td>
+      <td>embFROWN</td>
+      <td>over-arc, concave downward</td>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td>embSMILE</td>
+      <td>over-arc, concave upward</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="RULER_record">RULER record</a> (7):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li>tag (7)</li>
+  <li>[n_stops] number of tab-stops</li>
+  <li>[tab-stop list] tab-stops in order from left-to-right</li>
+</ul>
+
+<p>Each tab stop is described by a tab-stop type (0 for left, 1 for center, 2 for right, 3
+for equal, 4 for decimal), followed by a 16-bit offset from the left end of the slot or
+pile with which it is associated.</p>
+
+<h3><a name="FONT_record">FONT record</a> (8):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li>tag (8)</li>
+  <li>[<a href="#typefaces">tface</a>] typeface number</li>
+  <li>[style] 1 for italic and/or 2 for bold</li>
+  <li>[name] font name (null-terminated)</li>
+</ul>
+
+<p>This record associates a typeface number with an explicit font and style. The typeface
+number is the negative (which makes it positive) of the typeface value (unbiased) that
+appears in <a href="#CHAR_record">CHAR</a> records that might follow a given FONT record.
+For example, a 3 in the FONT record corresponds to 125 (<font face="Symbol">-</font>3 +
+128) in the <a href="#CHAR_record">CHAR</a> record.</p>
+
+<h3><a name="SIZE_record">SIZE record</a> (9):</h3>
+
+<p>Consists of one of the following cases:</p>
+
+<blockquote>
+  <p>if lsize &lt; 0 (explicit point size):</p><ul>
+    <li>tag (9)</li>
+    <li>101</li>
+    <li><font face="Symbol">-</font>lsize (16 bits)</li>
+  </ul>
+  <p>else if <font face="Symbol">-</font>128 &lt; dsize &lt; +128:</p><ul>
+    <li>tag (9)</li>
+    <li>lsize</li>
+    <li>dsize + 128</li>
+  </ul>
+  <p>else: (large delta)</p><ul>
+    <li>tag (9)</li>
+    <li>100</li>
+    <li>lsize</li>
+    <li>dsize (16 bits)</li>
+  </ul>
+</blockquote>
+
+<p>Sizes in MathType are represented as a pair of values, lsize and dsize. Lsize stands
+for "logical size", dsize for "delta size". If it is negative, it is
+an explicit point size (in 32nds of a point) negated and dsize is ignored. Otherwise,
+lsize is one of the following typesize values and dsize is a delta from that size: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>value</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>szFULL</td>
+      <td>full</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>szSUB</td>
+      <td>subscript</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>szSUB2</td>
+      <td>sub-subscript</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>szSYM</td>
+      <td>symbol</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>szSUBSYM</td>
+      <td>sub-symbol</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>szUSER1</td>
+      <td>user 1</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>szUSER2</td>
+      <td>user 2</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="TYPESIZE_records">TYPESIZE records</a> (10-14):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li>tag (10-14)</li>
+</ul>
+
+<p>These records are just short ways of specifying a simple typesize where dsize is zero.
+The tag value represents an lsize + 10. So if the tag value is 10, it means equation
+content following it will be Full size (szFULL), tag value 11 means szSUB, and so on.</p>
+
+<h2><a name="tmpl_sels_and_vars">Template Selectors and Variations</a></h2>
+
+<p>This section shows the selector and variation codes for all the templates. The symbols
+shown here are internal identifiers in MathType and are for reference only. The class
+names can be used to determine the order of subobjects in the list following the template
+tag (see <a href="#tmpl_subobj_order">Template Subobject Order</a>).
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>selector</td>
+      <td>symbol</td>
+      <td>description</td>
+      <td>class</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tmANGLE</td>
+      <td>angle brackets</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvBANGLE</td>
+      <td>both left and right</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLANGLE</td>
+      <td>left only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvRANGLE</td>
+      <td>right only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tmPAREN</td>
+      <td>parentheses</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvBPAREN</td>
+      <td>both left and right</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLPAREN</td>
+      <td>left only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvRPAREN</td>
+      <td>right only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tmBRACE</td>
+      <td>braces (curly brackets)</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvBBRACE</td>
+      <td>both left and right</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLBRACE</td>
+      <td>left only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvRBRACE</td>
+      <td>right only</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>tmBRACK</td>
+      <td>square brackets</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvBBRACK</td>
+      <td>both left and right</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLBRACK</td>
+      <td>left only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvRBRACK</td>
+      <td>right only</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>tmBAR</td>
+      <td>vertical bars</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvBBAR</td>
+      <td>both left and right</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLBAR</td>
+      <td>left only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvRBAR</td>
+      <td>right only</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>tmDBAR</td>
+      <td>double vertical bars</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvBDBAR</td>
+      <td>both left and right</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLDBAR</td>
+      <td>left only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvRDBAR</td>
+      <td>right only</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>tmFLOOR</td>
+      <td>floor brackets</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>tmCEILING</td>
+      <td>ceiling brackets</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>tmLBLB</td>
+      <td>left brace, left brace</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>tmRBRB</td>
+      <td>right brace, right brace</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>tmRBLB</td>
+      <td>right brace, left brace</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>tmLBRP</td>
+      <td>left brace, right parenthesis</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>tmLPRB</td>
+      <td>left parenthesis, right brace</td>
+      <td>ParBoxClass</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>tmROOT</td>
+      <td>radical</td>
+      <td>RootBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvSQROOT</td>
+      <td>square root</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvNTHROOT</td>
+      <td>nth root</td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td>tmFRACT</td>
+      <td>fractions</td>
+      <td>FracBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvFFRACT</td>
+      <td>full-size slots</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvPFRACT</td>
+      <td>subscript-size slots (piece fraction)</td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td>tmSCRIPT</td>
+      <td>subscript/superscript</td>
+      <td>ScrBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvSUPER</td>
+      <td>superscript</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvSUB</td>
+      <td>subscript</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvSUBSUP</td>
+      <td>both</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>tmUBAR</td>
+      <td>underbar</td>
+      <td>BarBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvSUBAR</td>
+      <td>single underbar</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvDUBAR</td>
+      <td>double underbar</td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td>tmOBAR</td>
+      <td>overbar</td>
+      <td>BarBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvSOBAR</td>
+      <td>single overbar</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvDOBAR</td>
+      <td>double overbar</td>
+    </tr>
+    <tr>
+      <td>18</td>
+      <td>tmLARROW</td>
+      <td>left-pointing arrow</td>
+      <td>ArroBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLTARROW</td>
+      <td>box on top</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLBARROW</td>
+      <td>box below</td>
+    </tr>
+    <tr>
+      <td>19</td>
+      <td>tmRARROW</td>
+      <td>right-pointing arrow</td>
+      <td>ArroBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvRTARROW</td>
+      <td>box on top</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvRBARROW</td>
+      <td>box below</td>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td>tmBARROW</td>
+      <td>left- and right-pointing arrow</td>
+      <td>ArroBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvBTARROW</td>
+      <td>box on top</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvBBARROW</td>
+      <td>box below</td>
+    </tr>
+    <tr>
+      <td>21</td>
+      <td>tmSINT</td>
+      <td>single integral</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="6">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvNSINT</td>
+      <td>no limits</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLSINT</td>
+      <td>lower limit only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvBSINT</td>
+      <td>both limits</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>tvNCINT</td>
+      <td>contour, no limits</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>tvLCINT</td>
+      <td>contour, lower limit only</td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td>tmDINT</td>
+      <td>double integral</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="5">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvNDINT</td>
+      <td>no limits</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLDINT</td>
+      <td>lower limit only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvNAINT</td>
+      <td>area, no limits</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>tvLAINT</td>
+      <td>area, lower limit only</td>
+    </tr>
+    <tr>
+      <td>23</td>
+      <td>tmTINT</td>
+      <td>triple integral</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="5">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvNTINT</td>
+      <td>no limits</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLTINT</td>
+      <td>lower limit only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvNVINT</td>
+      <td>volume, no limits</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>tvLVINT</td>
+      <td>volume, lower limit only</td>
+    </tr>
+    <tr>
+      <td>24</td>
+      <td>tmSSINT</td>
+      <td>single summation-style integral</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvBSSINT</td>
+      <td>both limits</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLSSINT</td>
+      <td>lower limit only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvLCSINT</td>
+      <td>contour, lower limit only</td>
+    </tr>
+    <tr>
+      <td>25</td>
+      <td>tmDSINT</td>
+      <td>double summation-style integral</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLASINT</td>
+      <td>area, lower limit only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLDSINT</td>
+      <td>lower limit only</td>
+    </tr>
+    <tr>
+      <td>26</td>
+      <td>tmTSINT</td>
+      <td>triple summation-style integral</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLVSINT</td>
+      <td>volume, lower limit only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLTSINT</td>
+      <td>lower limit only</td>
+    </tr>
+    <tr>
+      <td>27</td>
+      <td>tmUHBRACE</td>
+      <td>upper horizontal brace</td>
+      <td>HBrBoxClass</td>
+    </tr>
+    <tr>
+      <td>28</td>
+      <td>tmLHBRACE</td>
+      <td>lower horizontal brace</td>
+      <td>HBrBoxClass</td>
+    </tr>
+    <tr>
+      <td>29</td>
+      <td>tmSUM</td>
+      <td>summation</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLSUM</td>
+      <td>lower only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvBSUM</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvNSUM</td>
+      <td>no limits</td>
+    </tr>
+    <tr>
+      <td>30</td>
+      <td>tmISUM</td>
+      <td>summation (integral-style limits)</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLISUM</td>
+      <td>lower only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvBISUM</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>31</td>
+      <td>tmPROD</td>
+      <td>product</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLPROD</td>
+      <td>lower only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvBPROD</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvNPROD</td>
+      <td>no limits</td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>tmIPROD</td>
+      <td>product (integral-style limits)</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLIPROD</td>
+      <td>lower only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvBIPROD</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>33</td>
+      <td>tmCOPROD</td>
+      <td>coproduct</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLCOPROD</td>
+      <td>lower only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvBCOPROD</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvNCOPROD</td>
+      <td>no limits</td>
+    </tr>
+    <tr>
+      <td>34</td>
+      <td>tmICOPROD</td>
+      <td>coproduct (integral-style limits)</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLICOPROD</td>
+      <td>lower only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvBICOPROD</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>35</td>
+      <td>tmUNION</td>
+      <td>union</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLUNION</td>
+      <td>lower only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvBUNION</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvNUNION</td>
+      <td>no limits</td>
+    </tr>
+    <tr>
+      <td>36</td>
+      <td>tmIUNION</td>
+      <td>union (integral-style limits)</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLIUNION</td>
+      <td>lower only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvBIUNION</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>37</td>
+      <td>tmINTER</td>
+      <td>intersection</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLINTER</td>
+      <td>lower only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvBINTER</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvNINTER</td>
+      <td>no limits</td>
+    </tr>
+    <tr>
+      <td>38</td>
+      <td>tmIINTER</td>
+      <td>intersection (integral-style limits)</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLIINTER</td>
+      <td>lower only</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvBIINTER</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>39</td>
+      <td>tmLIM</td>
+      <td>limit</td>
+      <td>LimBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvULIM</td>
+      <td>upper limit</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLLIM</td>
+      <td>lower limit</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvBLIM</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>40</td>
+      <td>tmLDIV</td>
+      <td>long division</td>
+      <td>LDivBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="3">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLDIVW</td>
+      <td>with upper slot</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLDIVWO</td>
+      <td>without upper slot</td>
+    </tr>
+    <tr>
+      <td>41</td>
+      <td>tmSLFRACT</td>
+      <td>slash fractions</td>
+      <td>SlashBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvSLFNORM</td>
+      <td>normal</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvSLFBASE</td>
+      <td>slots on baseline</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvSLFSUB</td>
+      <td>subscript-sized slots</td>
+    </tr>
+    <tr>
+      <td>42</td>
+      <td>tmINTOP</td>
+      <td>big integral-style operators</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvUINTOP</td>
+      <td>upper limit</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLINTOP</td>
+      <td>lower limit</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvBINTOP</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>43</td>
+      <td>tmSUMOP</td>
+      <td>big summation-style operators</td>
+      <td>BigOpBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvUSUMOP</td>
+      <td>upper limit</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLSUMOP</td>
+      <td>lower limit</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvBSUMOP</td>
+      <td>both upper and lower limits</td>
+    </tr>
+    <tr>
+      <td>44</td>
+      <td>tmLSCRIPT</td>
+      <td>leading sub- and superscripts</td>
+      <td>ScrBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLSUPER</td>
+      <td>superscript</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLSUB</td>
+      <td>subscript</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvLSUBSUP</td>
+      <td>subscript and superscript</td>
+    </tr>
+    <tr>
+      <td>45</td>
+      <td>tmDIRAC</td>
+      <td>Dirac delta</td>
+      <td>DiracBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvBDIRAC</td>
+      <td>both left and right slots</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvLDIRAC</td>
+      <td>left slot only</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvRDIRAC</td>
+      <td>right slot only</td>
+    </tr>
+    <tr>
+      <td>46</td>
+      <td>tmUARROW</td>
+      <td>under arrow</td>
+      <td>VectorBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLUARROW</td>
+      <td>left-pointing</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvRUARROW</td>
+      <td>right-pointing</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvDUARROW</td>
+      <td>double-headed (left and right)</td>
+    </tr>
+    <tr>
+      <td>47</td>
+      <td>tmOARROW</td>
+      <td>over arrow</td>
+      <td>VectorBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4">&nbsp;</td>
+      <td>variation</td>
+      <td>symbol</td>
+      <td>description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>tvLOARROW</td>
+      <td>left-pointing</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>tvROARROW</td>
+      <td>right-pointing</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>tvDOARROW</td>
+      <td>double-headed (left and right)</td>
+    </tr>
+    <tr>
+      <td>48</td>
+      <td>tmOARC</td>
+      <td>over arc</td>
+      <td>ArcBoxClass</td>
+    </tr>
+  </tbody></table>
+
+
+<h2><a name="tmpl_subobj_order">Template Subobject Order</a></h2>
+
+<p>The following list shows the order of subobjects for each template class: </p>
+
+<p>ArcBoxClass vector notation 
+
+</p><ul>
+  <li>main slot</li>
+</ul>
+
+<p>ArroBoxClass expanding arrows 
+
+</p><ul>
+  <li>main slot</li>
+  <li>arrow character</li>
+</ul>
+
+<p>BarBoxClass over-bars and under-bars 
+
+</p><ul>
+  <li>main slot</li>
+</ul>
+
+<p>BigOpBoxClass integrals, summations, products, etc. 
+
+</p><ul>
+  <li>main slot (summand, integrand)</li>
+  <li>upper slot</li>
+  <li>lower slot</li>
+  <li>large operator character</li>
+</ul>
+
+<p>DiracBoxClass three-part bracket structure 
+
+</p><ul>
+  <li>left slot</li>
+  <li>right slot</li>
+  <li>left angle bracket (optional)</li>
+  <li>vertical bar</li>
+  <li>right angle bracket (optional)</li>
+</ul>
+
+<p>FracBoxClass fractions with a horizontal bar 
+
+</p><ul>
+  <li>numerator slot</li>
+  <li>denominator slot</li>
+</ul>
+
+<p>HBrBoxClass horizontal expanding braces 
+
+</p><ul>
+  <li>main slot</li>
+  <li>small slot</li>
+  <li>brace character</li>
+</ul>
+
+<p>LDivBoxClass long division 
+
+</p><ul>
+  <li>dividend slot</li>
+  <li>quotient slot</li>
+</ul>
+
+<p>LimBoxClass limits 
+
+</p><ul>
+  <li>main slot</li>
+  <li>lower slot</li>
+  <li>upper slot</li>
+</ul>
+
+<p>ParBoxClass parenthesized or bracketed slots 
+
+</p><ul>
+  <li>main slot</li>
+  <li>left fence character (optional)</li>
+  <li>right fence character (optional)</li>
+</ul>
+
+<p>RootBoxClass radical sign 
+
+</p><ul>
+  <li>main slot</li>
+  <li>radicand slot</li>
+</ul>
+
+<p>ScrBoxClass subscripts and superscripts 
+
+</p><ul>
+  <li>subscript slot</li>
+  <li>superscript slot</li>
+</ul>
+
+<p>SlashBoxClass fractions with a diagonal bar 
+
+</p><ul>
+  <li>numerator slot</li>
+  <li>denominator slot</li>
+</ul>
+
+<p>VectorBoxClass box with upper or lower arrow 
+
+</p><ul>
+  <li>main slot</li>
+</ul>
+</body></html>

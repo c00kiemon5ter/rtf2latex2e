@@ -1,0 +1,4167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<style media="screen" type="text/css">
+body { margin-left: auto; margin-right: auto; padding:0px; width:700px;}
+</style>
+<title>MathType MTEF v.5</title>
+</head>
+<body>
+
+<h1>MathType MTEF v.5<br>
+(MathType 4.0)</h1>
+
+<p>Last Updated: August 9, 1999</p>
+
+<table bgcolor="#DDDDDD"><tr><td>
+<p> This file was originally located at http://www.mathtype.com/support/tech/MTEF5.htm
+and recovered using the <a href="http://web.archive.org">Wayback machine</a> from 
+<a href="http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF5.htm">here</a>.
+The MathType folks have more recent documentation, but the license restrictions are incompatible with the
+GPL.</p></td></tr></table>
+
+<h2>Abstract</h2>
+
+<p>This document describes MTEF, the binary equation format used by MathType
+4.0 (all platforms). MTEF is embedded in OLE equation objects produced by MathType, as well as in
+all the file formats in which MathType can save equations. The methods used by MathType to
+embed this information in such files is described in a separate document. See <a href="http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF_storage.htm">How MTEF is Stored
+in Files and Objects</a>.</p>
+
+<h2>Contents </h2>
+
+<ul>
+  <li><a href="#Introduction">Introduction</a></li>
+  <li><a href="#Header">Header</a><ul>
+      <li><a href="#versions">MTEF version history</a></li>
+      <li><a href="#header_v2+">MTEF record</a></li>
+    </ul>
+  </li>
+  <li><a href="#byte_stream">MTEF Byte Stream</a><ul>
+      <li><a href="#records">Records</a></li>
+      <li><a href="#record_types">Record types</a></li>
+      <li><a href="#object_lists">Object lists</a></li>
+      <li><a href="#definition_records">Definition records</a></li>
+      <li><a href="#options">Option values</a></li>
+      <li><a href="#dim_units">Dimensional units</a></li>
+      <li><a href="#integer_values">Signed integer values</a></li>
+      <li><a href="#unsigned_integer">Unsigned integer values</a></li>
+      <li><a href="#16_bit_integer">Simple 16-bit integer values</a></li>
+      <li><a href="#nudges">Nudge values</a></li>
+      <li><a href="#typefaces">Typeface values</a></li>
+      <li><a href="#typesizes">Typesize values</a></li>
+      <li><a href="#char_styles">Character style values</a></li>
+      <li><a href="#horiz_align">Horizontal alignment values</a></li>
+      <li><a href="#vert_align">Vertical alignment values</a></li>
+      <li><a href="#dim_arrays">Dimension arrays</a></li>
+    </ul>
+  </li>
+  <li><a href="#records">Record Details</a><ul>
+      <li><a href="#END_record">END record (0)</a></li>
+      <li><a href="#LINE_record">LINE record (1)</a></li>
+      <li><a href="#CHAR_record">CHAR record (2)</a></li>
+      <li><a href="#TMPL_record">TMPL record (3)</a></li>
+      <li><a href="#PILE_record">PILE record (4)</a></li>
+      <li><a href="#MATRIX_record">MATRIX record (5)</a></li>
+      <li><a href="#EMBELL_record">EMBELL record (6)</a></li>
+      <li><a href="#RULER_record">RULER record (7)</a></li>
+      <li><a href="#FONT_record">FONT_STYLE_DEF record (8)</a></li>
+      <li><a href="#SIZE_record">SIZE record (9)</a></li>
+      <li><a href="#TYPESIZE_records">Typesize records (10-14)</a></li>
+      <li><a href="#COLOR_record">COLOR records (15)</a></li>
+      <li><a href="#COLOR_DEF_record">COLOR_DEF records (16)</a></li>
+      <li><a href="#FONT_DEF_record">FONT_DEF records (17)</a></li>
+      <li><a href="#EQN_PREFS_record">EQN_PREFS records (18)</a></li>
+      <li><a href="#ENCODING_DEF_record">ENCODING_DEF records (19)</a>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#templates">Templates</a>
+    <ul>
+      <li><a href="#limit_variations">Limit variations</a></li>
+      <li><a href="#tmpl_sels_and_vars">Template selectors and variations</a></li>
+      <li><a href="#tmpl_subobj_order">Template subobject order</a></li>
+    </ul>
+  </li>
+  <li><a href="#Example">Example</a></li>
+</ul>
+
+<h2><a name="Introduction">Introduction</a></h2>
+
+<p>This document is describes the binary equation format used by MathType 4.0 (all
+platforms). Although MTEF is not the most friendly medium for defining equations, there
+have been so many requests for this information, we decided to publish it anyway. We must
+warn the reader that it is not an easy format to understand and, more importantly,
+MathType is not at all forgiving in its processing of it. This means that if you send
+MathType MTEF with errors, it might crash. At a minimum, you will get an equation with
+formatting problems. Also, it is a binary format. This means that you can't use character
+strings to represent equations and it makes creating MTEF a little harder with programming
+languages like Visual Basic.</p>
+
+<p>How MathType stores an equation description in an OLE equation object, a file, or on
+the clipboard is not described here. Please see the document on <a href="http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF_storage.htm"> MathType MTEF Storage</a> for
+more information on this subject.</p>
+
+<p>This document sometimes refers to MathType's internal names for values (e.g. parmLINESPACE).
+These are given for reference purposes and are handy for reducing error when
+such values are communicated by humans.</p>
+
+<h2><a name="Header">Header</a></h2>
+
+<h3><a name="version_hist">MTEF version history</a>:</h3>
+
+<p>MTEF data exists in the following versions: </p>
+  <table border="1" cellpadding="6" cellspacing="0">
+
+    <tbody><tr>
+      <td>0</td>
+      <td>MathType for the Mac 1.x (this format is not described here)</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>MathType for the Mac 2.x and MathType for Windows 1.x</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>MathType 3.x and Equation Editor 1.x</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Equation Editor 3.x (this format is not described here)</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>MathType 3.5</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>MathType 4.0</td>
+    </tr>
+  </tbody></table>
+
+<p>Version 2 differs from version 1 only in the format of the header.</p>
+
+<h3><a name="header_record">Header record:</a></h3>
+
+<p>The MTEF version 5 header contains: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td bgcolor="#ffff00">length in bytes</td>
+      <td bgcolor="#ffff00">description</td>
+      <td bgcolor="#ffff00">value</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>MTEF version</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>generating platform</td>
+      <td>0 for Macintosh, 1 for Windows</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>generating product</td>
+      <td>0 for MathType, 1 for Equation Editor</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>product version</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>product subversion</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>length of app key</td>
+      <td>application key</td>
+      <td>null-terminated string identifying the writing application<br>
+        (e.g. "DSMT4" for the Design Science version of MathType)</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>equation options</td>
+      <td>if bit 0 is set, equation is inline, else display equation<br>
+        other bits are unused and must be 0</td>
+    </tr>
+  </tbody></table>
+
+
+<h2><a name="byte_stream">MTEF Byte Stream</a></h2>
+
+<p>This section describes the actual MTEF data following the header.
+
+</p><h3><a name="records">Records:</a></h3>
+
+<p>MTEF data consists of
+a series of records. Each record starts with a record type byte and an options
+byte, then is followed by data specific to the record.
+
+</p><p>The overall structure of an MTEF stream is: 
+
+</p><ul>
+  <li><a href="#Header">MTEF header</a></li>
+  <li>equation preferences (size, style, spacing), preceded by the definition
+    records to which they refer</li>
+  <li>initial <a href="#SIZE_record">SIZE</a> record</li>
+  <li><a href="#PILE_record">PILE</a> or <a href="#LINE_record">LINE</a> record</li>
+  <li>contents of <a href="#PILE_record">PILE</a> or <a href="#LINE_record">LINE</a></li>
+  <li><a href="#END_record">END</a> record</li>
+</ul>
+
+<p>Once the header has been read, reading of the MTEF stream should be driven by
+reading the next record type and then acting on it. If a given record depends on
+data that is not contained within the record itself, such data is defined by
+records that precede it.</p>
+
+<h3><a name="record_types">Record types:</a></h3>
+
+<p> The following record types are used: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td bgcolor="#ffff00">value</td>
+      <td bgcolor="#ffff00">symbol</td>
+      <td bgcolor="#ffff00">description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td><a href="#END_record">END</a></td>
+      <td>end of MTEF, pile, line, embellishment list, or template</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td><a href="#LINE_record">LINE</a></td>
+      <td>line (slot)</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><a href="#CHAR_record">CHAR</a></td>
+      <td>character</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><a href="#TMPL_record">TMPL</a></td>
+      <td>template</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><a href="#PILE_record">PILE</a></td>
+      <td>pile (vertical stack of lines)</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><a href="#MATRIX_record">MATRIX</a></td>
+      <td>matrix</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><a href="#EMBELL_record">EMBELL</a></td>
+      <td>character embellishment (e.g. hat, prime)</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><a href="#RULER_record">RULER</a></td>
+      <td>ruler (tab-stop location)</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td><a href="#FONT_STYLE_DEF_record">FONT_STYLE_DEF</a></td>
+      <td>font/char style definition</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td><a href="#SIZE_record">SIZE</a></td>
+      <td>general size</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td><a href="#TYPESIZE_records">FULL</a></td>
+      <td>full size</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td><a href="#TYPESIZE_records">SUB</a></td>
+      <td>subscript size</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td><a href="#TYPESIZE_records">SUB2</a></td>
+      <td>sub-subscript size</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td><a href="#TYPESIZE_records">SYM</a></td>
+      <td>symbol size</td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td><a href="#TYPESIZE_records">SUBSYM</a></td>
+      <td>sub-symbol size</td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td><a href="#COLOR_record">COLOR</a></td>
+      <td>color</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><a href="#COLOR_DEF_record">COLOR_DEF</a></td>
+      <td>color definition</td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td><a href="#FONT_DEF_record">FONT_DEF</a></td>
+      <td>font definition</td>
+    </tr>
+    <tr>
+      <td>18</td>
+      <td><a href="#EQN_PREFS_record">EQN_PREFS</a></td>
+      <td>equation preferences (sizes, styles, spacing)</td>
+    </tr>
+    <tr>
+      <td>19</td>
+      <td><a href="#ENCODING_DEF_record">ENCODING_DEF</a></td>
+      <td>encoding definition</td>
+    </tr>
+    <tr>
+      <td>&gt;= 100</td>
+      <td>FUTURE</td>
+      <td>for future expansion (see below)</td>
+    </tr>
+  </tbody></table>
+
+
+<p>If the record type is 100 or greater, it represents a record that will be
+defined in a future version of MTEF. For now, readers can assume that an <a href="#integer_values">unsigned
+integer</a> follows the record type and is the number of bytes following it in
+the record (i.e. it doesn't include the record type and length). This makes it
+easy for software that reads MTEF to skip these records. Although it might be
+handy if all records had such a length value, it will only be present on future
+expansion records (i.e. those with record types &gt;= 100).</p>
+
+<h3><a name="object_lists">Object lists:</a></h3>
+
+<p><a href="#LINE_record">LINE</a>, <a href="#CHAR_record">CHAR</a>, <a href="#TMPL_record">TMPL</a>, <a href="#PILE_record">PILE</a>, <a href="#MATRIX_record">MATRIX</a>,
+and <a href="#RULER_record">RULER</a> records are followed by object lists that define
+contents of each equation structure. Each object list contains a sequence of records of
+any type and terminated by an <a href="#END_record">END</a> record. In a special case for <a href="#LINE_record">LINE</a> records, if there are no objects in the list, the
+line record will have the <a href="#mtefOPT_LINE_NULL"> mtefOPT_LINE_NULL</a> option set, in which case the object list is omitted entirely (i.e. no <a href="#END_record">END</a> record). Although there are no restrictions made by the MTEF
+format on what record types may occur in any particular list, the user interface prevents
+certain things from happening. For example, the object list defining the contents of a
+pile contains only <a href="#LINE_record">LINE</a> records.</p>
+
+<h3><a name="definition_records">Definition records:</a></h3>
+
+<p>Some of MTEF's records (<a href="#FONT_STYLE_DEF_record">FONT_STYLE_DEF</a>, <a href="#FONT_DEF_record">FONT_DEF</a>,
+<a href="#COLOR_DEF_record">COLOR_DEF</a>, and <a href="#ENCODING_DEF_record">ENCODING_DEF</a>)
+do not represent equation structure themselves but are referred to by equation
+structure records. The definition records in an MTEF stream are assigned
+indices, starting at 1 (except for <a href="#ENCODING_DEF_record">ENCODING_DEF</a>s,
+which start at 5), in the order they appear in the stream. Records which refer
+to these definitions do so using the index value of the definition. Definition
+records always appear in the stream before their first reference.</p>
+
+<h3><a name="options">Option values</a>:</h3>
+
+<p>Each MTEF 5 record starts with a type byte followed by an option byte. This
+is different from earlier versions of MTEF where the option flags were stored in
+the upper 4 bits of the type byte.
+
+</p><p>The option flag values are record-dependent: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td bgcolor="#ffff00">value</td>
+      <td bgcolor="#ffff00">symbol</td>
+      <td bgcolor="#ffff00">description</td>
+    </tr>
+    <tr>
+      <td colspan="3" bgcolor="#ffff00">Option flag values for all equation structure records:</td>
+    </tr>
+    <tr>
+      <td>0x08</td>
+      <td><a name="mtefOPT_NUDGE">mtefOPT_NUDGE</a>&nbsp;</td>
+      <td><a href="#nudges">nudge values</a> follow tag</td>
+    </tr>
+    <tr>
+      <td colspan="3" bgcolor="#ffff00">Option flag values for <a href="#CHAR_record">CHAR</a> records:</td>
+    </tr>
+    <tr>
+      <td>0x01</td>
+      <td><a name="mtefOPT_CHAR_EMBELL">mtefOPT_CHAR_EMBELL</a></td>
+      <td>character is followed by an embellishment list</td>
+    </tr>
+    <tr>
+      <td>0x02</td>
+      <td>mtefOPT_CHAR_FUNC_START</td>
+      <td>character starts a function (sin, cos, etc.)</td>
+    </tr>
+    <tr>
+      <td>0x04</td>
+      <td><a name="mtefOPT_CHAR_ENC_CHAR_8">mtefOPT_CHAR_ENC_CHAR_8</a></td>
+      <td>character is written with an 8-bit encoded value</td>
+    </tr>
+    <tr>
+      <td>0x10</td>
+      <td><a name="mtefOPT_CHAR_ENC_CHAR_16">mtefOPT_CHAR_ENC_CHAR_16</a></td>
+      <td>character is written with an 16-bit encoded value</td>
+    </tr>
+    <tr>
+      <td>0x20</td>
+      <td>mtefOPT_CHAR_ENC_NO_MTCODE</td>
+      <td>character is written without an 16-bit MTCode value</td>
+    </tr>
+    <tr>
+      <td colspan="3" bgcolor="#ffff00">Option flag values for <a href="#LINE_record">LINE</a> records:</td>
+    </tr>
+    <tr>
+      <td>0x01</td>
+      <td><a name="mtefOPT_LINE_NULL">mtefOPT_LINE_NULL</a></td>
+      <td>line is a placeholder only (i.e. not displayed)</td>
+    </tr>
+    <tr>
+      <td>0x04</td>
+      <td>mtefOPT_LINE_LSPACE</td>
+      <td>line spacing value follows tag</td>
+    </tr>
+    <tr>
+      <td colspan="3" bgcolor="#ffff00">Option flag values for <a href="#LINE_record">LINE</a> and <a href="#PILE_record">PILE</a> records:</td>
+    </tr>
+    <tr>
+      <td>0x02</td>
+      <td>mtefOPT_LP_RULER</td>
+      <td><a href="#RULER_record">RULER</a> record follows <a href="#LINE_record">LINE</a> or <a href="#PILE_record">PILE</a> record</td>
+    </tr>
+    <tr>
+      <td colspan="3" bgcolor="#ffff00">Option flag values for <a href="#COLOR_DEF_record">COLOR_DEF</a>
+        records:</td>
+    </tr>
+    <tr>
+      <td>0x01</td>
+      <td>mtefCOLOR_CMYK</td>
+      <td>color model is CMYK, else RGB</td>
+    </tr>
+    <tr>
+      <td>0x02</td>
+      <td>mtefCOLOR_SPOT</td>
+      <td>color is a spot color, else a process color</td>
+    </tr>
+    <tr>
+      <td>0x04</td>
+      <td>mtefCOLOR_NAME</td>
+      <td>color has a name, else no name</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="dim_units">Dimensional units:</a></h3>
+
+<p>All dimensional values are expressed in MathType&#8217;s internal units,
+32nds of a printer's point (A point is 1/72 inch).</p>
+
+<h3><a name="signed_integer">Signed integer values:</a></h3>
+
+<p>Signed values are written as follows:</p>
+
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td bgcolor="#ffff00">range of value</td>
+      <td bgcolor="#ffff00">algorithm</td>
+    </tr>
+    <tr>
+      <td>-128 &lt;= value &lt; 127</td>
+      <td>value = value + 128<br>
+        written as a single byte</td>
+    </tr>
+    <tr>
+      <td>value &lt; -128 or<br>
+        value &gt;= 127</td>
+      <td>value = value + 32768<br>
+        written as 3 bytes:<br>
+        byte 1: 255<br>
+        byte 2: low byte of value<br>
+        byte 3: high byte of value</td>
+    </tr>
+  </tbody></table>
+
+<h3><a name="unsigned_integer">Unsigned integer values:</a></h3>
+
+<p>Unsigned values are written as follows:</p>
+
+#
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td bgcolor="#ffff00">range of value</td>
+      <td bgcolor="#ffff00">algorithm</td>
+    </tr>
+    <tr>
+      <td>value &lt; 255</td>
+      <td>written as a single byte</td>
+    </tr>
+    <tr>
+      <td>value &gt;= 255</td>
+      <td>written as 3 bytes:<br>
+        byte 1: 255<br>
+        byte 2: low byte of value<br>
+        byte 3: high byte of value</td>
+    </tr>
+  </tbody></table>
+
+<h3><a name="16_bit_integer">Simple 16-bit integer values:</a></h3>
+
+<p>Some values are written as 16-bits even if the value would fit in a byte. In
+this case, the value is written low byte followed by high byte.</p>
+
+<h3><a name="nudges">Nudge values:</a></h3>
+
+<p><a href="#LINE_record">LINE</a>, <a href="#CHAR_record">CHAR</a>, <a href="#TMPL_record">TMPL</a>, <a href="#PILE_record">PILE</a>, <a href="#MATRIX_record">MATRIX</a>,
+and <a href="#EMBELL_record">EMBELL</a> records may store the result of nudging (small
+offsets applied by the user). A nudged record has the mtefOPT_NUDGE option (0x8) and the
+option byte is followed immediately by the nudge offset. The nudge offset
+consists of either two bytes or six, depending on the amount of offset. If <font face="Symbol">-</font>128 &lt;= dx &lt; +128 and <font face="Symbol">-</font>128&nbsp;&lt;=&nbsp;dy&nbsp;&lt;&nbsp;+128,
+then the offsets are stored as two bytes, dx followed by dy, where each value
+has 128 added to it before it is written. Otherwise, two bytes of 128 are stored, followed by the offsets, dx and
+dy, stored as 16-bit values, low byte followed by high byte.</p>
+
+<h3><a name="typefaces">Typeface values:</a></h3>
+
+<p><a href="#CHAR_record">CHAR</a> records contain a typeface value (biased by
+128), written as a <a href="#signed_integer">signed integer</a>. If
+the value is positive, it represents one of MathType&#8217;s styles: 
+
+</p>#
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td bgcolor="#ffff00">value</td>
+      <td bgcolor="#ffff00">symbol</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>fnTEXT</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>fnFUNCTION </td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>fnVARIABLE </td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>fnLCGREEK </td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>fnUCGREEK </td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>fnSYMBOL </td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>fnVECTOR </td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>fnNUMBER </td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>fnUSER1 </td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>fnUSER2 </td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>fnMTEXTRA </td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>fnTEXT_FE </td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td> fnEXPAND&nbsp; </td>
+    </tr>
+    <tr>
+      <td>23</td>
+      <td> fnMARKER&nbsp; </td>
+    </tr>
+    <tr>
+      <td>24</td>
+      <td> fnSPACE&nbsp; </td>
+    </tr>
+  </tbody></table>
+
+
+<p>If the value is negative, it represents an explicit font as specified by a FONT record.</p>
+
+<h3><a name="typesizes">Typesize values:</a></h3>
+
+<p>Typesize values (sometimes referred to as lsizes) are used in several MTEF
+records. Not all values
+may be valid in a particular record. Their meaning is as follows:</p>
+<table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td bgcolor="#ffff00">value</td>
+      <td bgcolor="#ffff00">symbol</td>
+      <td bgcolor="#ffff00">description</td>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>szFULL</td>
+      <td>full</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>szSUB</td>
+      <td>subscript</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>szSUB2</td>
+      <td>sub-subscript</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>szSYM</td>
+      <td>symbol</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>szSUBSYM</td>
+      <td>sub-symbol</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>szUSER1</td>
+      <td>user 1</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>szUSER2</td>
+      <td>user 2</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>szDELTA</td>
+      <td>delta increment</td>
+    </tr>
+  </tbody></table>
+
+<h3><a name="char_styles">Character style values:</a></h3>
+
+<p>Character styles are represented by a single byte, bit 0 indicates bold and
+bit 1 indicates italic. In other words:</p>
+
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>0</td>
+      <td>plain</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>bold</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>italic</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>bold and italic</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="horiz_align">Horizontal alignment values:</a></h3>
+
+<p>Horizontal alignment values are used in several MTEF records. Not all values
+may be valid in a particular record. Their meaning is as follows: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>1</td>
+      <td>left justification</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>centered</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>right justification</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>relational operator alignment</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>decimal point alignment</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="vert_align">Vertical align</a>ment values:</h3>
+
+<p>Vertical alignment values are used in several MTEF records. Not all values
+may be valid in a particular record. Their meaning is as follows:
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>0</td>
+      <td>alignment with baseline of top line</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>alignment with baseline of center line</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>alignment with baseline of bottom line</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>vertical centering</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>alignment with the math axis (center of +,-, brace points, etc.)</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="dim_arrays">Dimension arrays:</a></h3>
+
+<p>In the <a href="#EQN_PREFS_record">EQN_PREFS</a> record, sizes and spacing
+values are both written as dimension arrays. These arrays are used to record the
+particular settings from the Define Sizes and Define Spacing dialogs used to
+define the equation. Instead of recording each value as a number, the dimension
+array captures each value as a character string. This ensures the user always
+sees the value just as entered, rather than possibly modified by rounding and/or
+truncation in conversion (e.g. so "2.0 inches" doesn't turn into
+"1.999 inches").</p>
+
+<p>Each array is written as a single byte count of dimensions in the array,
+followed by a "nibble stream" containing the dimensions. Each nibble
+is a 4-bit value, packed 2 per byte. The upper 4 bits of each byte precedes the
+lower 4 bits. If the array contains an odd number of nibbles, an additional 0
+nibble is written to round out the stream to whole bytes.</p>
+
+<p>Each dimension in the array consists of a units nibble (see first table
+below), followed by a nibble
+for each character in the value string (see second table below), terminated by a 0xF
+nibble. The following table shows how each units nibble is interpreted:</p>
+
+<table border="1" cellpadding="6" cellspacing="0">
+  <tbody><tr>
+    <td>0</td>
+    <td>inches</td>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>centimeters</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>points</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>picas</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>percentage</td>
+  </tr>
+</tbody></table>
+<p>The following table shows how each nibble in a value string is interpreted:</p>
+<div align="left">
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td>0x0-0x9</td>
+      <td>decimal digit</td>
+    </tr>
+    <tr>
+      <td>0xA</td>
+      <td>decimal point</td>
+    </tr>
+    <tr>
+      <td>0xB</td>
+      <td>minus sign</td>
+    </tr>
+    <tr>
+      <td>0xF</td>
+      <td>end of value string</td>
+    </tr>
+  </tbody></table>
+</div>
+
+<h2><a name="record_details">Record Details</a></h2>
+
+<p>The following details the individual records in MTEF. All values are single
+bytes unless indicated otherwise.</p>
+
+<h3><a name="END_record">END record</a> (0):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (0)</li>
+</ul>
+
+<p>There is no option byte.</p>
+
+<h3><a name="LINE_record">LINE record</a> (1):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (1)</li>
+  <li><a href="#options">options</a></li>
+  <li>[<a href="#nudges">nudge</a>] if mtefOPT_NUDGE is set</li>
+  <li>[line spacing] if mtefOPT_LINE_LSPACE is set (<a href="#16_bit_integer">16-bit
+    integer</a>)</li>
+  <li>[<a href="#RULER_record">RULER</a> record] if mtefOPT_LP_RULER is set</li>
+  <li><a href="#object_lists">object list</a> contents of line (a single <a href="#PILE_record">pile</a>,
+    <a href="#CHAR_record"> characters</a> and <a href="#TMPL_record">templates</a>, or nothing)</li>
+</ul>
+
+<p>The line spacing value, if present, is the distance between the baseline of this line
+and the line above it.</p>
+
+<h3><a name="CHAR_record">CHAR record</a> (2):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (2)</li>
+  <li><a href="#options">options</a></li>
+  <li>[<a href="#nudges">nudge</a>] if mtefOPT_NUDGE is set</li>
+  <li>[<a href="#typefaces">typeface</a>] typeface value (<a href="#signed_integer">signed
+    integer</a>; see <a href="#FONT_record">FONT</a>
+    below)</li>
+  <li>[character] character value (see below)</li>
+  <li>[embellishment list] if mtefOPT_CHAR_EMBELL is set (embellishments)</li>
+</ul>
+
+<p>The character value itself is represented by one or more values. The presence
+or absence of these value is indicated by options and appear in this order:</p>
+
+<div align="left">
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td><a href="#16_bit_integer">16-bit integer</a> MTCode value</td>
+      <td>present unless the mtefOPT_CHAR_ENC_NO_MTCODE option is set</td>
+    </tr>
+    <tr>
+      <td>8-bit font position</td>
+      <td>present if the mtefOPT_CHAR_ENC_CHAR_8 option is set</td>
+    </tr>
+    <tr>
+      <td><a href="#16_bit_integer">16-bit integer</a> font position</td>
+      <td>present if the mtefOPT_CHAR_ENC_CHAR_16 option is set</td>
+    </tr>
+  </tbody></table>
+</div>
+
+<p>		The MTCode value defines the character independent of its font. MTCode
+is a superset of Unicode and is described in <a href="http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/encodings/mtcode.stm">MTCode
+Encoding Tables</a>. The 8-bit and 16-bit font positions are mutually exclusive
+but may both be absent. This is the position of the character within its font.
+Some of the common font encodings are given in <a href="http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/encodings/font_enc.stm">Font
+Encoding Tables</a>.
+</p>
+
+<h3><a name="TMPL_record">TMPL record</a> (3):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (3)</li>
+  <li><a href="#options">options</a></li>
+  <li>[<a href="#nudges">nudge</a>] if mtefOPT_NUDGE is set</li>
+  <li>[<a href="#tmpl_sels_and_vars">selector</a>] template selector code</li>
+  <li>[<a href="#tmpl_sels_and_vars">variation</a>] template variation code (1 or 2 bytes; see below)</li>
+  <li>[options] template-specific options</li>
+  <li>[subobject list] either a single character (e.g. sigma in a summation) and/or lines</li>
+</ul>
+
+<p>The template selector and variation codes determine the class of the template and
+various properties of the template, such as which subobjects can be deleted by the user
+(see <a href="#templates">Templates</a>). The
+class of a template determines the order and meaning of each of its subobjects (see <a href="#tmpl_subobj_order">Template subobject order</a>).</p>
+
+<p>The variation code may be 1 or 2 bytes long. If the first byte value has the
+high bit set (0x80), the next byte is read and combined with the first according
+to this formula:</p>
+
+<p>&nbsp;&nbsp;&nbsp; variation code = (byte1 &amp; 0x7F)&nbsp; |&nbsp; (byte2
+&lt;&lt; 8)</p>
+
+<p>The template-specific options field is only used for integrals and fence templates: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td colspan="2" bgcolor="#ffff00" height="19">Fence template option field values (fence alignment): </td>
+    </tr>
+    <tr>
+      <td height="19">0</td>
+      <td height="19">center fence on math axis, place math axis of contents on math axis of containing line
+      (default);</td>
+    </tr>
+    <tr>
+      <td height="19">1</td>
+      <td height="19">center fence on contents, place math axis of contents on math axis of containing line;</td>
+    </tr>
+    <tr>
+      <td height="19">2</td>
+      <td height="19">center fence on contents, center contents on math axis of containing line.</td>
+    </tr>
+    <tr>
+      <td colspan="2" bgcolor="#ff9999" height="38"><b>Warning: the expanding
+        integral property is duplicated in the integral templates variation
+        codes (see Limit variations). On reading, MathType only looks at the
+        variation code.&nbsp;</b> </td>
+    </tr>
+    <tr>
+      <td colspan="2" bgcolor="#ffff00" height="19">Integral template option field values:</td>
+    </tr>
+    <tr>
+      <td height="19">0</td>
+      <td height="19">fixed-size integral;</td>
+    </tr>
+    <tr>
+      <td height="19">1</td>
+      <td height="19">the integral expands vertically to fit its contents.</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="PILE_record">PILE record</a> (4):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (4)</li>
+  <li><a href="#options">options</a></li>
+  <li>[<a href="#nudges">nudge</a>] if mtefOPT_NUDGE is set</li>
+  <li>[<a href="#horiz_align">halign</a>] horizontal alignment</li>
+  <li>[<a href="#vert_align">valign</a>] vertical alignment</li>
+  <li>[[<a href="#RULER_record">RULER</a> record]] if mtefOPT_LP_RULER is set</li>
+  <li>[<a href="#object_lists">object list</a>] list of <a href="#LINE_record">lines</a>
+    contained by the pile</li>
+</ul>
+
+<h3><a name="MATRIX_record">MATRIX record</a> (5):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (5)</li>
+  <li><a href="#options">options</a></li>
+  <li>[<a href="#nudges">nudge</a>] if mtefOPT_NUDGE is set</li>
+  <li>[<a href="#vert_align">valign</a>] vertical alignment of matrix within container</li>
+  <li>[<a href="#horiz_align">h_just</a>] horizontal alignment within columns</li>
+  <li>[<a href="#vert_align">v_just</a>] vertical alignment within columns</li>
+  <li>[rows] number of rows</li>
+  <li>[cols] number of columns</li>
+  <li>[row_parts] row partition line types (see below)</li>
+  <li>[col_parts] column partition line types (see below)</li>
+  <li>[<a href="#object_lists">object list</a>] list of <a href="#LINE_record">lines</a>, one
+    for each element of the matrix, in order from left-to-right and top-to-bottom</li>
+</ul>
+
+<p>The values for valign, h_just, and v_just are described in <a href="#PILE_record">PILE</a>
+above.</p>
+
+<p>The row partition line type list consists of two-bit values for each possible partition
+line (one more than the number of rows), rounded out to the nearest byte. Each value
+determines the line style of the corresponding partition line (0 for none, 1 for solid, 2
+for dashed, or 3 for dotted). Similarly for the column partition lines.</p>
+
+<h3><a name="EMBELL_record">EMBELL record</a> (6):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (6)</li>
+  <li><a href="#options">options</a></li>
+  <li>[<a href="#nudges">nudge</a>] if mtefOPT_NUDGE is set</li>
+  <li>[embell] embellishment type</li>
+</ul>
+
+<p>The embellishment types are: 
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td bgcolor="#ffff00">value</td>
+      <td bgcolor="#ffff00">symbol</td>
+      <td bgcolor="#ffff00">description</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>emb1DOT</td>
+      <td>over single dot</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>emb2DOT</td>
+      <td>over double dot</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>emb3DOT</td>
+      <td>over triple dot</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>emb1PRIME</td>
+      <td>single prime</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>emb2PRIME</td>
+      <td>double prime</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>embBPRIME</td>
+      <td>backwards prime (left of character)</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>embTILDE</td>
+      <td>tilde</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>embHAT</td>
+      <td>hat (circumflex)</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>embNOT</td>
+      <td>diagonal slash through character</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>embRARROW</td>
+      <td>over right arrow</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>embLARROW</td>
+      <td>over left arrow</td>
+    </tr>
+    <tr>
+      <td>13 </td>
+      <td>embBARROW</td>
+      <td>over both arrow (left and right)</td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td>embR1ARROW</td>
+      <td>over right single-barbed arrow</td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td>embL1ARROW</td>
+      <td>over left single-barbed arrow</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>embMBAR</td>
+      <td>mid-height horizontal bar</td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td>embOBAR</td>
+      <td>over-bar</td>
+    </tr>
+    <tr>
+      <td>18</td>
+      <td>emb3PRIME</td>
+      <td>triple prime</td>
+    </tr>
+    <tr>
+      <td>19</td>
+      <td>embFROWN</td>
+      <td>over-arc, concave downward</td>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td>embSMILE</td>
+      <td>over-arc, concave upward</td>
+    </tr>
+    <tr>
+      <td>21</td>
+      <td>embX_BARS</td>
+      <td>double diagonal bars</td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td>embUP_BAR</td>
+      <td>bottom-left to top-right diagonal bar</td>
+    </tr>
+    <tr>
+      <td>23</td>
+      <td>embDOWN_BAR</td>
+      <td>top-left to bottom-right diagonal bar</td>
+    </tr>
+    <tr>
+      <td>24</td>
+      <td>emb4DOT</td>
+      <td>over quad dot</td>
+    </tr>
+    <tr>
+      <td>25</td>
+      <td>embU_1DOT</td>
+      <td>under single dot</td>
+    </tr>
+    <tr>
+      <td>26</td>
+      <td>embU_2DOT</td>
+      <td>under double dot</td>
+    </tr>
+    <tr>
+      <td>27</td>
+      <td>embU_3DOT</td>
+      <td>under triple dot</td>
+    </tr>
+    <tr>
+      <td>28</td>
+      <td>embU_4DOT</td>
+      <td>under quad dot</td>
+    </tr>
+    <tr>
+      <td>29</td>
+      <td>embU_BAR</td>
+      <td>under bar</td>
+    </tr>
+    <tr>
+      <td>30</td>
+      <td>embU_TILDE</td>
+      <td>under tilde (~)</td>
+    </tr>
+    <tr>
+      <td>31</td>
+      <td>embU_FROWN</td>
+      <td>under arc (ends point down)</td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>embU_SMILE</td>
+      <td>under arc (ends point up)</td>
+    </tr>
+    <tr>
+      <td>33</td>
+      <td>embU_RARROW</td>
+      <td>under right arrow</td>
+    </tr>
+    <tr>
+      <td>34</td>
+      <td>embU_LARROW</td>
+      <td>under left arrow</td>
+    </tr>
+    <tr>
+      <td>35</td>
+      <td>embU_BARROW</td>
+      <td>under both arrow (left and right)</td>
+    </tr>
+    <tr>
+      <td>36</td>
+      <td>embU_R1ARROW</td>
+      <td>under right arrow (1 barb)</td>
+    </tr>
+    <tr>
+      <td>37</td>
+      <td>embU_L1ARROW</td>
+      <td>under left arrow (1 barb)</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="RULER_record">RULER record</a> (7):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (7)</li>
+  <li>[n_stops] number of tab-stops</li>
+  <li>[tab-stop list] tab-stops in order from left-to-right</li>
+</ul>
+
+<p>Each tab stop is described by a tab-stop type (0 for left, 1 for center, 2 for right, 3
+for equal, 4 for decimal), followed by a <a href="#16_bit_integer"> 16-bit
+integer</a> offset from the left end of the slot or
+pile with which it is associated.</p>
+
+<h3><a name="FONT_STYLE_DEF_record">FONT_STYLE_DEF record</a> (8):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (8)</li>
+  <li>[font_def_index] index of <a href="#FONT_DEF_record">mtefFONT_DEF</a>
+    record (<a href="#unsigned_integer">unsigned integer</a>)</li>
+  <li>[<a href="#char_styles">char_style</a>] character style bits</li>
+</ul>
+
+<p>This record associates a character style with a font. See <a href="#definition_records">Definition
+records</a>.</p>
+
+<h3><a name="SIZE_record">SIZE record</a> (9):</h3>
+
+<p>Consists of one of the following cases:</p>
+
+<blockquote>
+  <p>if lsize &lt; 0 (explicit point size):</p><ul>
+    <li><a href="#record_types">record type</a> (9)</li>
+    <li>101</li>
+    <li><font face="Symbol">-</font>point size (<a href="#16_bit_integer">16 bit
+      integer</a>)</li>
+  </ul>
+  <p>else if <font face="Symbol">-</font>128 &lt; dsize &lt; +128:</p><ul>
+    <li><a href="#record_types">record type</a> (9)</li>
+    <li>lsize (<a href="#typesizes">typesize</a>)</li>
+    <li>dsize + 128</li>
+  </ul>
+  <p>else: (large delta)</p><ul>
+    <li><a href="#record_types">record type</a> (9)</li>
+    <li>100</li>
+    <li>lsize (<a href="#typesizes">typesize</a>)</li>
+    <li>dsize (<a href="#16_bit_integer">16 bit integer</a>)</li>
+  </ul>
+</blockquote>
+
+<p>Sizes in MathType are represented as a pair of values, lsize and dsize. Lsize stands
+for "logical size", dsize for "delta size". If it is negative, it is
+an explicit point size (in 32nds of a point) negated and dsize is ignored. Otherwise,
+lsize is a <a href="#typesizes">typesize</a> value and dsize is a delta from that size: 
+
+</p><p>Simple typesizes, without a delta value, are written using the records
+described in the next section.</p>
+
+<h3><a name="TYPESIZE_records">Typesize records</a> (10-14):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (10-14)</li>
+</ul>
+
+<p>These records are just short ways of specifying a simple typesize where dsize is zero.
+The tag value represents an lsize + 10. So if the tag value is 10, it means equation
+content following it will be Full size (szFULL), tag value 11 means szSUB, and so on.
+See <a href="#typesizes">typesize</a>.</p>
+
+<h3><a name="COLOR_record">COLOR records (15):</a></h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (15)</li>
+  <li>[color_def_index] index of corresponding <a href="#COLOR_DEF_record">COLOR_DEF</a>
+    record (<a href="#unsigned_integer">unsigned integer</a>)</li>
+</ul>
+
+<p>The appearance of this record in the stream indicates that all following
+equation records (until the next COLOR record) have the color defined by the
+indicated <a href="#COLOR_DEF_record">COLOR_DEF</a> record.</p>
+
+<h3><a name="COLOR_DEF_record">COLOR_DEF record</a>s (16):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (16)</li>
+  <li>[<a href="#options">options</a>] model is RGB unless mtefCOLOR_CMYK bit is
+    set; type is process unless mtefCOLOR_SPOT bit is set; color is unnamed
+    unless mtefCOLOR_NAME bit is set</li>
+  <li>[color values] if RGB, 3 values (red, green, blue); if CMYK, 4 values
+    (cyan, magenta, yellow, black); see below for details</li>
+  <li>[name] null-terminated color name; appears only if mtefCOLOR_NAME option
+    is set</li>
+</ul>
+
+<p>This record defines a color (see <a href="#definition_records">Definition
+records</a>). Each color value is written as a <a href="#16_bit_integer">16-bit integer</a>
+that ranges between 0 and 1000 where 0 is the absence of the color and 1000 is a
+fully saturated color. So, an RGB color definition for black has all three
+components at 0.</p>
+
+<h3><a name="FONT_DEF_record">FONT_DEF record</a>s (17):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (17)</li>
+  <li>[enc_def_index] index of corresponding ENCODING_DEF record (<a href="#unsigned_integer">unsigned
+    integer</a>)</li>
+  <li>[name] null-terminated font name</li>
+</ul>
+
+<p>This record associates an font encoding with a font name. See <a href="#definition_records">Definition
+records</a>.</p>
+
+<h3><a name="EQN_PREFS_record">EQN_PREFS record</a>s (18):</h3>
+
+<p>Consists of: 
+
+</p><ul>
+  <li><a href="#record_types">record type</a> (18)</li>
+  <li>[<a href="#options">options</a>] none defined in this version of MTEF</li>
+  <li>[sizes] <a href="#dim_arrays"> dimension array</a> for <a href="#typesizes">typesize</a> definitions</li>
+  <li>[spaces] <a href="#dim_arrays"> dimension array</a> for spacing definitions (see below)</li>
+  <li>[styles] array of style definitions (see below)</li>
+</ul>
+
+<p>When reading arrays, the number of values may be less than or greater than
+expected. MTEF readers should be driven by the array count. If the array is
+shorter than expected, assume defaults for the missing values. If the array is
+longer than expected, the extra values must be skipped to stay in sync with the
+MTEF stream.</p>
+<p>Spacing values are written in the following order:</p>
+
+<table border="1" cellpadding="6" cellspacing="0">
+  <tbody><tr>
+    <td>0</td>
+    <td>parmLINESPACE</td>
+    <td>Line spacing</td>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>parmMATRIXROW</td>
+    <td>Matrix row spacing</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>parmMATRIXCOL</td>
+    <td>Matrix column spacing</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>parmSUPHEIGHT</td>
+    <td>Superscript height</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>parmSUBDEPTH</td>
+    <td>Subscript depth</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>parmSUBSUPGAP</td>
+    <td>Sub/superscript gap</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>parmLIMHEIGHT</td>
+    <td>Limit height</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>parmLIMDEPTH</td>
+    <td>Limit depth</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td>parmLIMSPACE</td>
+    <td>Limit line spacing</td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td>parmFRACTHEIGHT</td>
+    <td>Numerator height</td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td>parmFRACTDEPTH</td>
+    <td>Denominator depth</td>
+  </tr>
+  <tr>
+    <td>11</td>
+    <td>parmFRACTOVER</td>
+    <td>Fraction bar overhang</td>
+  </tr>
+  <tr>
+    <td>12</td>
+    <td>parmFRACTTHICK</td>
+    <td>Fraction bar thickness</td>
+  </tr>
+  <tr>
+    <td>13</td>
+    <td>parmFRACTTHICK2</td>
+    <td>Sub-fraction bar thickness</td>
+  </tr>
+  <tr>
+    <td>14</td>
+    <td>parmFRACTGAP</td>
+    <td>Slash/diagonal fraction gap</td>
+  </tr>
+  <tr>
+    <td>15</td>
+    <td>parmFENCEOVER</td>
+    <td>Fence overhang</td>
+  </tr>
+  <tr>
+    <td>16</td>
+    <td>parmOPERSPACING</td>
+    <td>Operator spacing (% of normal)</td>
+  </tr>
+  <tr>
+    <td>17</td>
+    <td>parmNONOPERSPACING</td>
+    <td>Non-operator spacing (% of normal)</td>
+  </tr>
+  <tr>
+    <td>18</td>
+    <td>parmCHARWIDTH</td>
+    <td>Character width adjustment</td>
+  </tr>
+  <tr>
+    <td>19</td>
+    <td>parmMINGAP</td>
+    <td>Minimum gap</td>
+  </tr>
+  <tr>
+    <td>20</td>
+    <td>parmVRADGAP</td>
+    <td>Radical gap (vertical)</td>
+  </tr>
+  <tr>
+    <td>21</td>
+    <td>parmHRADGAP</td>
+    <td>Radical gap (horizontal)</td>
+  </tr>
+  <tr>
+    <td>22</td>
+    <td>parmRADWIDTH</td>
+    <td>Radical width (% of normal)</td>
+  </tr>
+  <tr>
+    <td>23</td>
+    <td>parmEMBELLGAP</td>
+    <td>Embellishment gap</td>
+  </tr>
+  <tr>
+    <td>24</td>
+    <td>parmPRIMEHEIGHT</td>
+    <td>Prime Height</td>
+  </tr>
+  <tr>
+    <td>25</td>
+    <td>parmBOX_STROKE_THICK</td>
+    <td>Box stroke thickness</td>
+  </tr>
+  <tr>
+    <td>26</td>
+    <td>parmSTRIKE_THRU_THICK</td>
+    <td>Strike-through thickness</td>
+  </tr>
+  <tr>
+    <td>27</td>
+    <td>parmMATRIX_PART_THICK</td>
+    <td>Matrix partition line thickness</td>
+  </tr>
+  <tr>
+    <td>28</td>
+    <td>parmRAD_THICK</td>
+    <td>Radical stroke thickness</td>
+  </tr>
+  <tr>
+    <td>29</td>
+    <td>parmHORIZ_FENCE_GAP</td>
+    <td>Horizontal fence gap</td>
+  </tr>
+</tbody></table>
+
+<p>The style definition array is written as a single byte count followed by that
+number of style definitions. The order is defined by <a href="#typefaces">Typeface
+values</a>, however only fnTEXT through fnTEXT_FE are written. Each style
+definition is written as an unsigned integer that is 0 if the style is unused in
+the equation or is the index of the corresponding <a href="#FONT_DEF_record">FONT_DEF</a>
+record. If the style is used (not 0), it is followed by a single byte <a href="#char_styles">character
+style</a>.</p>
+
+<h3><a name="ENCODING_DEF_record">ENCODING_DEF record</a>s (19):</h3>
+
+<p>Consists of:</p>
+
+<ul>
+  <li><a href="#record_types">record type</a>  (19)</li>
+  <li>[name] null-terminated encoding name</li>
+</ul>
+
+<p>This record defines (see <a href="#definition_records">Definition records</a>)
+a font encoding and is referred to by a <a href="#FONT_DEF_record">FONT_DEF</a>
+record. In order to reduce the size of the MTEF stream, the following 4
+encodings are predefined:</p>
+
+<div align="left">
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td bgcolor="#ffff00">ENCODING_DEF index</td>
+      <td bgcolor="#ffff00">encoding name</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td><a href="http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/encodings/mtcode.stm">MTCode</a></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Unknown</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><a href="http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/encodings/symbol.htm">Symbol</a></td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><a href="http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/encodings/mtextra.htm">MTExtra</a></td>
+    </tr>
+  </tbody></table>
+</div>
+
+<p>This means that the first ENCODING_DEF record in the MTEF stream is
+considered to have an index of 5. See <a href="http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/font_info.htm">Expanding
+MathType's Font and Character Information</a> and <a href="http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/default.stm#encodings">MathType's
+Character Encodings</a> for more information on font encodings.</p>
+
+<h2><a name="templates">Templates</a></h2>
+
+<p>This section shows the selector and variation codes for all the templates. The class
+names can be used to determine the order of subobjects in the list following the template
+tag (see <a href="#tmpl_subobj_order">Template subobject order</a>).
+
+</p><h3><a name="limit_variations">Limit variations:</a></h3>
+
+<p>The following variation codes apply to all templates whose class is
+BigOpBoxClass or LimBoxClass:
+
+</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td align="left" valign="top" bgcolor="#ffff00">variation bits</td>
+      <td align="left" valign="top" bgcolor="#ffff00">symbol</td>
+      <td align="left" valign="top" bgcolor="#ffff00">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top">0x0001</td>
+      <td align="left" valign="top">tvBO_LOWER</td>
+      <td align="left" valign="top">lower limit is present</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top">0x0002</td>
+      <td align="left" valign="top">tvBO_UPPER</td>
+      <td align="left" valign="top">upper limit is present</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top">0x0040</td>
+      <td align="left" valign="top">tvBO_SUM</td>
+      <td align="left" valign="top">summation-style limit positions, else
+        integral-style</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="tmpl_sels_and_vars">Template selectors and variations</a>:</h3>
+
+
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tbody><tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Fences
+        (parentheses, etc.):</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#66ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#66ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#66ffff">description</td>
+      <td align="left" valign="top" bgcolor="#66ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">0</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmANGLE</td>
+      <td align="left" valign="top" bgcolor="#ccffff">angle brackets</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ParBoxClass">ParBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">1</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmPAREN</td>
+      <td align="left" valign="top" bgcolor="#ccffff">parentheses</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ParBoxClass">ParBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">2</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmBRACE</td>
+      <td align="left" valign="top" bgcolor="#ccffff">braces (curly brackets)</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ParBoxClass">ParBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">3</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmBRACK</td>
+      <td align="left" valign="top" bgcolor="#ccffff">square brackets</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ParBoxClass">ParBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">4</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmBAR</td>
+      <td align="left" valign="top" bgcolor="#ccffff">vertical bars</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ParBoxClass">ParBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">5</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmDBAR</td>
+      <td align="left" valign="top" bgcolor="#ccffff">double vertical bars</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ParBoxClass">ParBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">6</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmFLOOR</td>
+      <td align="left" valign="top" bgcolor="#ccffff">floor brackets</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ParBoxClass">ParBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">7</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmCEILING</td>
+      <td align="left" valign="top" bgcolor="#ccffff">ceiling brackets</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ParBoxClass">ParBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">8</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmOBRACK</td>
+      <td align="left" valign="top" bgcolor="#ccffff">open (white)
+        brackets</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ParBoxClass">ParBoxClass</a></td>
+    </tr>
+    <tr>
+      <td rowspan="3" align="left" valign="top" bgcolor="#ccff99">variations</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation bits</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvFENCE_L</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">left fence is
+        present</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0002</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvFENCE_R</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">right fence is
+        present</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Intervals:</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">9</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmINTERVAL</td>
+      <td align="left" valign="top" bgcolor="#ccffff">unmatched
+        brackets and parentheses</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ParBoxClass">ParBoxClass</a></td>
+    </tr>
+    <tr>
+      <td rowspan="9" align="left" valign="top" bgcolor="#ccff99">variations</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation bits</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0000</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINTV_LEFT_LP</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">left fence is
+        left parenthesis</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINTV_LEFT_RP</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">left fence is
+        right parenthesis</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0002</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINTV_LEFT_LB</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">left fence is
+        left bracket</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0003</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINTV_LEFT_RB</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">left fence is
+        right bracket</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0000</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINTV_RIGHT_LP</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">right fence is
+        left parenthesis</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0010</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINTV_RIGHT_RP</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">right fence is
+        right parenthesis</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0020</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINTV_RIGHT_LB</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">right fence is
+        left bracket</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0030</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINTV_RIGHT_RB</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">right fence is
+        right bracket</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Radicals
+        (square and nth roots):</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">10</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmROOT</td>
+      <td align="left" valign="top" bgcolor="#ccffff">radical</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#RootBoxClass">RootBoxClass</a></td>
+    </tr>
+    <tr>
+      <td rowspan="3" align="left" valign="top" bgcolor="#ccff99">variations</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvROOT_SQ</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">square root</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">1</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvROOT_NTH</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">nth root</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Fractions:</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">11</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmFRACT</td>
+      <td align="left" valign="top" bgcolor="#ccffff">fractions</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#FracBoxClass">FracBoxClass</a></td>
+    </tr>
+    <tr>
+      <td rowspan="4" align="left" valign="top" bgcolor="#ccff99">variations</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation bits</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvFR_SMALL</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">subscript-size slots (piece fraction)</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0002</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvFR_SLASH</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">fraction bar
+        is a slash</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0004</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvFR_BASE</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">num. and
+        denom. are baseline aligned</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Over
+        and Underbars:</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">12</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmUBAR</td>
+      <td align="left" valign="top" bgcolor="#ccffff">underbar</td>
+      <td align="left" valign="top" bgcolor="#ccffff">BarBoxClass</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">13</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmOBAR</td>
+      <td align="left" valign="top" bgcolor="#ccffff">overbar</td>
+      <td align="left" valign="top" bgcolor="#ccffff">BarBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="2" align="left" valign="top" bgcolor="#ccff99">variations</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation bits</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvBAR_DOUBLE</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">bar is
+        doubled, else single</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Arrows:</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">14</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmARROW</td>
+      <td align="left" valign="top" bgcolor="#ccffff"> arrow</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ArroBoxClass">ArroBoxClass</a></td>
+    </tr>
+    <tr>
+      <td rowspan="10" align="left" valign="top" bgcolor="#ccff99">variations</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0000</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvAR_SINGLE</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">single arrow</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvAR_DOUBLE</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">double arrow</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0002</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvAR_HARPOON</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">harpoon</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0004</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvAR_TOP</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">top slot is present</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0008</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvAR_BOTTOM</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">bottom slot is present</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0010</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvAR_LEFT</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">if single, arrow points left</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0020</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvAR_RIGHT</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">if single, arrow points right</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0010</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvAR_LOS</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">if double or harpoon, large over small</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0020</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvAR_SOL</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">if double or harpoon, small over large</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Integrals
+        (see <a href="#limit_variations">Limit Variations</a>):</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">15</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmINTEG</td>
+      <td align="left" valign="top" bgcolor="#ccffff">integral</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#BigOpBoxClass">BigOpBoxClass</a></td>
+    </tr>
+    <tr>
+      <td rowspan="8" align="left" valign="top" bgcolor="#ccff99">variations</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINT_1</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">single
+        integral sign</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0002</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINT_2</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">double
+        integral sign</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0003</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINT_3</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">triple
+        integral sign</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0004</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINT_LOOP</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">has loop w/o
+        arrows</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0008</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINT_CW_LOOP</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">has clockwise
+        loop</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x000C</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINT_CCW_LOOP</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">has
+        counter-clockwise loop</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0100</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvINT_EXPAND</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">integral signs
+        expand</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Sums,
+        products, coproducts, unions, intersections, etc. (see <a href="#limit_variations">Limit
+        Variations</a>):</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">16</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmSUM</td>
+      <td align="left" valign="top" bgcolor="#ccffff">sum</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#BigOpBoxClass">BigOpBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">17</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmPROD</td>
+      <td align="left" valign="top" bgcolor="#ccffff">product</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#BigOpBoxClass">BigOpBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">18</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmCOPROD</td>
+      <td align="left" valign="top" bgcolor="#ccffff">coproduct</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#BigOpBoxClass">BigOpBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">19</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmUNION</td>
+      <td align="left" valign="top" bgcolor="#ccffff">union</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#BigOpBoxClass">BigOpBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">20</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmINTER</td>
+      <td align="left" valign="top" bgcolor="#ccffff">intersection</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#BigOpBoxClass">BigOpBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">21</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmINTOP</td>
+      <td align="left" valign="top" bgcolor="#ccffff">integral-style
+        big operator</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#BigOpBoxClass">BigOpBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">22</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmSUMOP</td>
+      <td align="left" valign="top" bgcolor="#ccffff">summation-style
+        big operator</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#BigOpBoxClass">BigOpBoxClass</a></td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Limits
+        (see <a href="#limit_variations">Limit Variations</a>):</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">23</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmLIM</td>
+      <td align="left" valign="top" bgcolor="#ccffff">limits</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#LimBoxClass">LimBoxClass</a></td>
+    </tr>
+    <tr>
+      <td rowspan="3" align="left" valign="top" bgcolor="#ccff99">variations</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvSUBAR</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">single underbar</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">1</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvDUBAR</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">double underbar</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Horizontal
+        braces and brackets:</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">24</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmHBRACE</td>
+      <td align="left" valign="top" bgcolor="#ccffff">horizontal
+        brace</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#HFenceBoxClass">HFenceBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">25</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmHBRACK</td>
+      <td align="left" valign="top" bgcolor="#ccffff">horizontal
+        bracket</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#HFenceBoxClass">HFenceBoxClass</a></td>
+    </tr>
+    <tr>
+      <td rowspan="2" align="left" valign="top" bgcolor="#ccff99">&nbsp;</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvHB_TOP</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">slot is on the top,
+        else on the bottom</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Long
+        division:</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">26</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmLDIV</td>
+      <td align="left" valign="top" bgcolor="#ccffff">long division</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#LDivBoxClass">LDivBoxClass</a></td>
+    </tr>
+    <tr>
+      <td rowspan="2" align="left" valign="top" bgcolor="#ccff99">&nbsp;</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvLD_UPPER</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">upper slot is
+        present</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Subscripts
+        and superscripts:</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">27</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmSUB</td>
+      <td align="left" valign="top" bgcolor="#ccffff">subscript</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ScrBoxClass">ScrBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">28</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmSUP</td>
+      <td align="left" valign="top" bgcolor="#ccffff">superscript</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ScrBoxClass">ScrBoxClass</a></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">29</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmSUBSUP</td>
+      <td align="left" valign="top" bgcolor="#ccffff">subscript and
+        superscript</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#ScrBoxClass">ScrBoxClass</a></td>
+    </tr>
+    <tr>
+      <td rowspan="2" align="left" valign="top" bgcolor="#ccff99">&nbsp;</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvSU_PRECEDES</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">script precedes scripted item,<br>
+        else follows</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Dirac
+        bra-ket notation:</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">30</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmDIRAC</td>
+      <td align="left" valign="top" bgcolor="#ccffff">bra-ket
+        notation</td>
+      <td align="left" valign="top" bgcolor="#ccffff"><a href="#DiracBoxClass">DiracBoxClass</a></td>
+    </tr>
+    <tr>
+      <td rowspan="3" align="left" valign="top" bgcolor="#ccff99">&nbsp;</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvDI_LEFT</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">left part is present</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0002</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvDI_RIGHT</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">right part is present</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Vectors:</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">31</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmVEC</td>
+      <td align="left" valign="top" bgcolor="#ccffff">vector</td>
+      <td align="left" valign="top" bgcolor="#ccffff">HatBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="5" align="left" valign="top" bgcolor="#ccff99">&nbsp;</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvVE_LEFT</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">arrow points left</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0002</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvVE_RIGHT</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">arrow points right</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0004</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvVE_UNDER</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">arrow under slot, else over slot</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0008</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvVE_HARPOON</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">harpoon</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Hats,
+        arcs, tilde, joint status:</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">32</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmTILDE</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tilde over
+        characters</td>
+      <td align="left" valign="top" bgcolor="#ccffff">HatBoxClass</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">33</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmHAT</td>
+      <td align="left" valign="top" bgcolor="#ccffff">hat over
+        characters</td>
+      <td align="left" valign="top" bgcolor="#ccffff">HatBoxClass</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">34</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmARC</td>
+      <td align="left" valign="top" bgcolor="#ccffff">arc over
+        characters</td>
+      <td align="left" valign="top" bgcolor="#ccffff">HatBoxClass</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">35</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmJSTATUS</td>
+      <td align="left" valign="top" bgcolor="#ccffff">joint status
+        construct</td>
+      <td align="left" valign="top" bgcolor="#ccffff">HatBoxClass</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Overstrikes
+        (cross-outs):</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">36</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmSTRIKE</td>
+      <td align="left" valign="top" bgcolor="#ccffff">overstrike
+        (cross-out)</td>
+      <td align="left" valign="top" bgcolor="#ccffff">StrikeBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="4" align="left" valign="top" bgcolor="#ccff99">&nbsp;</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvST_HORIZ</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">line is horizontal, else slashes</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0002</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvST_UP</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">if slashes, slash from lower-left to upper-right is present</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0004</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvST_DOWN</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">if slashes, slash from upper-left to lower-right is present</td>
+    </tr>
+    <tr>
+      <td colspan="4" align="left" valign="top" bgcolor="#c0c0c0"><b>Boxes:</b></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#00ffff">selector</td>
+      <td align="left" valign="top" bgcolor="#00ffff">symbol</td>
+      <td align="left" valign="top" bgcolor="#00ffff">description</td>
+      <td align="left" valign="top" bgcolor="#00ffff">class</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffff">37</td>
+      <td align="left" valign="top" bgcolor="#ccffff">tmBOX</td>
+      <td align="left" valign="top" bgcolor="#ccffff">box</td>
+      <td align="left" valign="top" bgcolor="#ccffff">TBoxBoxClass</td>
+    </tr>
+    <tr>
+      <td rowspan="6" align="left" valign="top" bgcolor="#ccff99">&nbsp;</td>
+      <td align="left" valign="top" bgcolor="#ccff99">variation</td>
+      <td align="left" valign="top" bgcolor="#ccff99">symbol</td>
+      <td align="left" valign="top" bgcolor="#ccff99">description</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0001</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvBX_ROUND</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">corners are round, else square</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0002</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvBX_LEFT</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">left side is present</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0004</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvBX_RIGHT</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">right side is present</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0008</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvBX_TOP</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">top side is present</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top" bgcolor="#ccffcc">0x0010</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">tvBX_BOTTOM</td>
+      <td align="left" valign="top" bgcolor="#ccffcc">bottom side is present</td>
+    </tr>
+  </tbody></table>
+
+
+<h3><a name="tmpl_subobj_order">Template subobject order</a>:</h3>
+
+<p>Template subobjects appear in object lists in the order that matches the
+movement of the insertion point within a template in the MathType user
+interface. For template classes that have more than one slot, the following list shows the order of subobjects for
+all templates with that class: </p>
+
+<p><a name="ArroBoxClass">ArroBoxClass</a>: expanding arrows 
+
+</p><ul>
+  <li>main slot</li>
+  <li>arrow character</li>
+</ul>
+
+<p><a name="BigOpBoxClass">BigOpBoxClass</a>: integrals, summations, products, etc. 
+
+</p><ul>
+  <li>main slot (summand, integrand)</li>
+  <li>upper slot</li>
+  <li>lower slot</li>
+  <li>large operator character</li>
+</ul>
+
+<p><a name="DiracBoxClass">DiracBoxClass</a>: three-part bracket structure 
+
+</p><ul>
+  <li>left slot</li>
+  <li>right slot</li>
+  <li>left angle bracket (optional)</li>
+  <li>vertical bar</li>
+  <li>right angle bracket (optional)</li>
+</ul>
+
+<p><a name="FracBoxClass">FracBoxClass</a>: fractions with a horizontal bar 
+
+</p><ul>
+  <li>numerator slot</li>
+  <li>denominator slot</li>
+</ul>
+
+<p><a name="HFenceBoxClass">HFenceBoxClass</a> horizontal expanding braces 
+
+</p><ul>
+  <li>main slot</li>
+  <li>small slot</li>
+  <li>brace character</li>
+</ul>
+
+<p><a name="LDivBoxClass">LDivBoxClass</a> long division 
+
+</p><ul>
+  <li>dividend slot</li>
+  <li>quotient slot</li>
+</ul>
+
+<p><a name="LimBoxClass">LimBoxClass</a> limits 
+
+</p><ul>
+  <li>main slot</li>
+  <li>lower slot</li>
+  <li>upper slot</li>
+</ul>
+
+<p><a name="ParBoxClass">ParBoxClass</a> parenthesized or bracketed slots 
+
+</p><ul>
+  <li>main slot</li>
+  <li>left fence character (optional)</li>
+  <li>right fence character (optional)</li>
+</ul>
+
+<p><a name="RootBoxClass">RootBoxClass</a> radical sign 
+
+</p><ul>
+  <li>main slot</li>
+  <li>radicand slot</li>
+</ul>
+
+<p><a name="ScrBoxClass">ScrBoxClass</a> subscripts and superscripts 
+
+</p><ul>
+  <li>subscript slot</li>
+  <li>superscript slot</li>
+</ul>
+
+<p><a name="SlashBoxClass">SlashBoxClass</a> fractions with a diagonal bar 
+
+</p><ul>
+  <li>numerator slot</li>
+  <li>denominator slot</li>
+</ul>
+
+<h2><a name="Example">Example</a></h2>
+<p>In order to illustrate MTEF with a concrete example, in this section will
+examine the MTEF byte stream in detail for the quadratic formula:</p>
+<img src="quadratic2.gif" width="130" border="0" height="60" alt="quadratic equation">
+ <p>For this equation, MathType 4.0 for Windows generates the following MTEF:</p>
+
+<table border="1" cellpadding="6" cellspacing="0">
+  <tbody><tr>
+    <td colspan="2" valign="top" bgcolor="#ffff00" height="19">byte position</td>
+    <td valign="top" bgcolor="#ffff00" height="19">byte value</td>
+    <td valign="top" bgcolor="#ffff00" height="19">meaning</td>
+    <td valign="top" bgcolor="#ffff00" height="19">record</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">0</td>
+    <td valign="top" height="19">0x0000</td>
+    <td valign="top" height="19">5, 0x05</td>
+    <td valign="top" height="19">MTEF version</td>
+    <td rowspan="12" valign="top" height="382"><a href="#header_record">header</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">1</td>
+    <td valign="top" height="19">0x0001</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td valign="top" height="19">Windows</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">2</td>
+    <td valign="top" height="19">0x0002</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">MathType</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">3</td>
+    <td valign="top" height="19">0x0003</td>
+    <td valign="top" height="19">4, 0x04</td>
+    <td valign="top" height="19">MT major version</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">4</td>
+    <td valign="top" height="19">0x0004</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">MT minor version</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">5</td>
+    <td valign="top" height="19">0x0005</td>
+    <td valign="top" height="19">68, 0x44, 'D'</td>
+    <td rowspan="6" valign="top" height="184">application key</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">6</td>
+    <td valign="top" height="19">0x0006</td>
+    <td valign="top" height="19">83, 0x53, 'S'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">7</td>
+    <td valign="top" height="19">0x0007</td>
+    <td valign="top" height="19">77, 0x4D, 'M'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">8</td>
+    <td valign="top" height="19">0x0008</td>
+    <td valign="top" height="19">84, 0x54, 'T'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">9</td>
+    <td valign="top" height="19">0x0009</td>
+    <td valign="top" height="19">52, 0x34, '4'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">10</td>
+    <td valign="top" height="19">0x000A</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">11</td>
+    <td valign="top" height="19">0x000B</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">equation options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">12</td>
+    <td valign="top" height="19">0x000C</td>
+    <td valign="top" height="19">19, 0x13</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="22" valign="top" height="712"><a href="#ENCODING_DEF_record">ENCODING_DEF<br>
+      </a>encoding #5</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">13</td>
+    <td valign="top" height="19">0x000D</td>
+    <td valign="top" height="19">87, 0x57, 'W'</td>
+    <td rowspan="21" valign="top" height="679">encoding name<br>
+      "WinAllBasicCodePages"</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">14</td>
+    <td valign="top" height="19">0x000E</td>
+    <td valign="top" height="19">105, 0x69, 'i'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">15</td>
+    <td valign="top" height="19">0x000F</td>
+    <td valign="top" height="19">110, 0x6E, 'n'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">16</td>
+    <td valign="top" height="19">0x0010</td>
+    <td valign="top" height="19">65, 0x41, 'A'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">17</td>
+    <td valign="top" height="19">0x0011</td>
+    <td valign="top" height="19">108, 0x6C, 'l'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">18</td>
+    <td valign="top" height="19">0x0012</td>
+    <td valign="top" height="19">108, 0x6C, 'l'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">19</td>
+    <td valign="top" height="19">0x0013</td>
+    <td valign="top" height="19">66, 0x42, 'B'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">20</td>
+    <td valign="top" height="19">0x0014</td>
+    <td valign="top" height="19">97, 0x61, 'a'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">21</td>
+    <td valign="top" height="19">0x0015</td>
+    <td valign="top" height="19">115, 0x73, 's'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">22</td>
+    <td valign="top" height="19">0x0016</td>
+    <td valign="top" height="19">105, 0x69, 'i'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">23</td>
+    <td valign="top" height="19">0x0017</td>
+    <td valign="top" height="19">99, 0x63, 'c'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">24</td>
+    <td valign="top" height="19">0x0018</td>
+    <td valign="top" height="19">67, 0x43, 'C'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">25</td>
+    <td valign="top" height="19">0x0019</td>
+    <td valign="top" height="19">111, 0x6F, 'o'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">26</td>
+    <td valign="top" height="19">0x001A</td>
+    <td valign="top" height="19">100, 0x64, 'd'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">27</td>
+    <td valign="top" height="19">0x001B</td>
+    <td valign="top" height="19">101, 0x65, 'e'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">28</td>
+    <td valign="top" height="19">0x001C</td>
+    <td valign="top" height="19">80, 0x50, 'P'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">29</td>
+    <td valign="top" height="19">0x001D</td>
+    <td valign="top" height="19">97, 0x61, 'a'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">30</td>
+    <td valign="top" height="19">0x001E</td>
+    <td valign="top" height="19">103, 0x67, 'g'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">31</td>
+    <td valign="top" height="19">0x001F</td>
+    <td valign="top" height="19">101, 0x65, 'e'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">32</td>
+    <td valign="top" height="19">0x0020</td>
+    <td valign="top" height="19">115, 0x73, 's'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">33</td>
+    <td valign="top" height="19">0x0021</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">34</td>
+    <td valign="top" height="19">0x0022</td>
+    <td valign="top" height="19">17, 0x11</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="18" valign="top" height="580"><a href="#FONT_DEF_record">FONT_DEF<br>
+      </a>font def #1</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">35</td>
+    <td valign="top" height="19">0x0023</td>
+    <td valign="top" height="19">5, 0x05</td>
+    <td valign="top" height="19">index of encoding<br>
+      WinAllBasicCodePages</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">36</td>
+    <td valign="top" height="19">0x0024</td>
+    <td valign="top" height="19">84, 0x54, 'T'</td>
+    <td rowspan="16" valign="top" height="514">font name<br>
+      "Times New Roman"</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">37</td>
+    <td valign="top" height="19">0x0025</td>
+    <td valign="top" height="19">105, 0x69, 'i'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">38</td>
+    <td valign="top" height="19">0x0026</td>
+    <td valign="top" height="19">109, 0x6D, 'm'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">39</td>
+    <td valign="top" height="19">0x0027</td>
+    <td valign="top" height="19">101, 0x65, 'e'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">40</td>
+    <td valign="top" height="19">0x0028</td>
+    <td valign="top" height="19">115, 0x73, 's'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">41</td>
+    <td valign="top" height="19">0x0029</td>
+    <td valign="top" height="19">32, 0x20, ' '</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">42</td>
+    <td valign="top" height="19">0x002A</td>
+    <td valign="top" height="19">78, 0x4E, 'N'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">43</td>
+    <td valign="top" height="19">0x002B</td>
+    <td valign="top" height="19">101, 0x65, 'e'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">44</td>
+    <td valign="top" height="19">0x002C</td>
+    <td valign="top" height="19">119, 0x77, 'w'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">45</td>
+    <td valign="top" height="19">0x002D</td>
+    <td valign="top" height="19">32, 0x20, ' '</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">46</td>
+    <td valign="top" height="19">0x002E</td>
+    <td valign="top" height="19">82, 0x52, 'R'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">47</td>
+    <td valign="top" height="19">0x002F</td>
+    <td valign="top" height="19">111, 0x6F, 'o'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">48</td>
+    <td valign="top" height="19">0x0030</td>
+    <td valign="top" height="19">109, 0x6D, 'm'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">49</td>
+    <td valign="top" height="19">0x0031</td>
+    <td valign="top" height="19">97, 0x61, 'a'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">50</td>
+    <td valign="top" height="19">0x0032</td>
+    <td valign="top" height="19">110, 0x6E, 'n'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">51</td>
+    <td valign="top" height="19">0x0033</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="38">52</td>
+    <td valign="top" height="38">0x0034</td>
+    <td valign="top" height="38">17, 0x11</td>
+    <td valign="top" height="38">record type</td>
+    <td rowspan="9" valign="top" height="187"><a href="#FONT_DEF_record">FONT_DEF<br>
+      </a>font def #2</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="16">53</td>
+    <td valign="top" height="16">0x0035</td>
+    <td valign="top" height="16">3, 0x03</td>
+    <td valign="top" height="16">index of encoding<br>
+      Symbol</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">54</td>
+    <td valign="top" height="19">0x0036</td>
+    <td valign="top" height="19">83, 0x53, 'S'</td>
+    <td rowspan="7" valign="top" height="217">font name<br>
+      "Symbol"</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">55</td>
+    <td valign="top" height="19">0x0037</td>
+    <td valign="top" height="19">121, 0x79, 'y'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">56</td>
+    <td valign="top" height="19">0x0038</td>
+    <td valign="top" height="19">109, 0x6D, 'm'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">57</td>
+    <td valign="top" height="19">0x0039</td>
+    <td valign="top" height="19">98, 0x62, 'b'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">58</td>
+    <td valign="top" height="19">0x003A</td>
+    <td valign="top" height="19">111, 0x6F, 'o'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">59</td>
+    <td valign="top" height="19">0x003B</td>
+    <td valign="top" height="19">108, 0x6C, 'l'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">60</td>
+    <td valign="top" height="19">0x003C</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">61</td>
+    <td valign="top" height="19">0x003D</td>
+    <td valign="top" height="19">17, 0x11</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="14" valign="top" height="266"><a href="#FONT_DEF_record">FONT_DEF<br>
+      </a>font def #3</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">62</td>
+    <td valign="top" height="19">0x003E</td>
+    <td valign="top" height="19">5, 0x05</td>
+    <td valign="top" height="19">index of encoding<br>
+      WinAllBasicCodePages</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">63</td>
+    <td valign="top" height="19">0x003F</td>
+    <td valign="top" height="19">67, 0x43, 'C'</td>
+    <td rowspan="12" valign="top" height="228">font name<br>
+      "Courier New"</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">64</td>
+    <td valign="top" height="19">0x0040</td>
+    <td valign="top" height="19">111, 0x6F, 'o'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">65</td>
+    <td valign="top" height="19">0x0041</td>
+    <td valign="top" height="19">117, 0x75, 'u'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">66</td>
+    <td valign="top" height="19">0x0042</td>
+    <td valign="top" height="19">114, 0x72, 'r'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">67</td>
+    <td valign="top" height="19">0x0043</td>
+    <td valign="top" height="19">105, 0x69, 'i'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">68</td>
+    <td valign="top" height="19">0x0044</td>
+    <td valign="top" height="19">101, 0x65, 'e'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">69</td>
+    <td valign="top" height="19">0x0045</td>
+    <td valign="top" height="19">114, 0x72, 'r'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">70</td>
+    <td valign="top" height="19">0x0046</td>
+    <td valign="top" height="19">32, 0x20, ' '</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">71</td>
+    <td valign="top" height="19">0x0047</td>
+    <td valign="top" height="19">78, 0x4E, 'N'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">72</td>
+    <td valign="top" height="19">0x0048</td>
+    <td valign="top" height="19">101, 0x65, 'e'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">73</td>
+    <td valign="top" height="19">0x0049</td>
+    <td valign="top" height="19">119, 0x77, 'w'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">74</td>
+    <td valign="top" height="19">0x004A</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">75</td>
+    <td valign="top" height="19">0x004B</td>
+    <td valign="top" height="19">17, 0x11</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="11" valign="top" height="209"><a href="#FONT_DEF_record">FONT_DEF<br>
+      </a>font def #4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">76</td>
+    <td valign="top" height="19">0x004C</td>
+    <td valign="top" height="19">4, 0x04</td>
+    <td valign="top" height="19">index of encoding<br>
+      MTExtra</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">77</td>
+    <td valign="top" height="19">0x004D</td>
+    <td valign="top" height="19">77, 0x4D, 'M'</td>
+    <td rowspan="9" valign="top" height="171">font name<br>
+      "MT Extra"</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">78</td>
+    <td valign="top" height="19">0x004E</td>
+    <td valign="top" height="19">84, 0x54, 'T'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">79</td>
+    <td valign="top" height="19">0x004F</td>
+    <td valign="top" height="19">32, 0x20, ' '</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">80</td>
+    <td valign="top" height="19">0x0050</td>
+    <td valign="top" height="19">69, 0x45, 'E'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">81</td>
+    <td valign="top" height="19">0x0051</td>
+    <td valign="top" height="19">120, 0x78, 'x'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">82</td>
+    <td valign="top" height="19">0x0052</td>
+    <td valign="top" height="19">116, 0x74, 't'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">83</td>
+    <td valign="top" height="19">0x0053</td>
+    <td valign="top" height="19">114, 0x72, 'r'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">84</td>
+    <td valign="top" height="19">0x0054</td>
+    <td valign="top" height="19">97, 0x61, 'a'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">85</td>
+    <td valign="top" height="19">0x0055</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">86</td>
+    <td valign="top" height="19">0x0056</td>
+    <td valign="top" height="19">18, 0x12</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="105" valign="top" height="1995"><a href="#EQN_PREFS_record">EQN_PREFS</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">87</td>
+    <td valign="top" height="19">0x0057</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">88</td>
+    <td valign="top" height="19">0x0058</td>
+    <td valign="top" height="19">8, 0x08</td>
+    <td valign="top" height="19">size array count</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">89</td>
+    <td valign="top" height="19">0x0059</td>
+    <td valign="top" height="19">33, 0x21, '!'</td>
+    <td rowspan="17" valign="top" height="323">nibble array containing:<br>
+      size #1: "12 points"<br>
+      size #2: "58 %"<br>
+      size #3: "42 %"<br>
+      size #4: "150 %"<br>
+      size #5: "100 %"<br>
+      size #6: "75 %"<br>
+      size #7: "150 %"<br>
+      size #8: "1 point"</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">90</td>
+    <td valign="top" height="19">0x005A</td>
+    <td valign="top" height="19">47, 0x2F, '/'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">91</td>
+    <td valign="top" height="19">0x005B</td>
+    <td valign="top" height="19">69, 0x45, 'E'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">92</td>
+    <td valign="top" height="19">0x005C</td>
+    <td valign="top" height="19">143, 0x8F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">93</td>
+    <td valign="top" height="19">0x005D</td>
+    <td valign="top" height="19">68, 0x44, 'D'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">94</td>
+    <td valign="top" height="19">0x005E</td>
+    <td valign="top" height="19">47, 0x2F, '/'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">95</td>
+    <td valign="top" height="19">0x005F</td>
+    <td valign="top" height="19">65, 0x41, 'A'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">96</td>
+    <td valign="top" height="19">0x0060</td>
+    <td valign="top" height="19">80, 0x50, 'P'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">97</td>
+    <td valign="top" height="19">0x0061</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">98</td>
+    <td valign="top" height="19">0x0062</td>
+    <td valign="top" height="19">16, 0x10</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">99</td>
+    <td valign="top" height="19">0x0063</td>
+    <td valign="top" height="19">15, 0x0F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">100</td>
+    <td valign="top" height="19">0x0064</td>
+    <td valign="top" height="19">71, 0x47, 'G'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">101</td>
+    <td valign="top" height="19">0x0065</td>
+    <td valign="top" height="19">95, 0x5F, '_'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">102</td>
+    <td valign="top" height="19">0x0066</td>
+    <td valign="top" height="19">65, 0x41, 'A'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">103</td>
+    <td valign="top" height="19">0x0067</td>
+    <td valign="top" height="19">80, 0x50, 'P'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">104</td>
+    <td valign="top" height="19">0x0068</td>
+    <td valign="top" height="19">242, 0xF2</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">105</td>
+    <td valign="top" height="19">0x0069</td>
+    <td valign="top" height="19">31, 0x1F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">106</td>
+    <td valign="top" height="19">0x006A</td>
+    <td valign="top" height="19">30, 0x1E</td>
+    <td valign="top" height="19">spacing array count</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">107</td>
+    <td valign="top" height="19">0x006B</td>
+    <td valign="top" height="19">65, 0x41, 'A'</td>
+    <td rowspan="60" valign="top" height="1140">nibble array containing<br>
+      30 values</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">108</td>
+    <td valign="top" height="19">0x006C</td>
+    <td valign="top" height="19">80, 0x50, 'P'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">109</td>
+    <td valign="top" height="19">0x006D</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">110</td>
+    <td valign="top" height="19">0x006E</td>
+    <td valign="top" height="19">21, 0x15</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">111</td>
+    <td valign="top" height="19">0x006F</td>
+    <td valign="top" height="19">15, 0x0F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">112</td>
+    <td valign="top" height="19">0x0070</td>
+    <td valign="top" height="19">65, 0x41, 'A'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">113</td>
+    <td valign="top" height="19">0x0071</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">114</td>
+    <td valign="top" height="19">0x0072</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">115</td>
+    <td valign="top" height="19">0x0073</td>
+    <td valign="top" height="19">69, 0x45, 'E'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">116</td>
+    <td valign="top" height="19">0x0074</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">117</td>
+    <td valign="top" height="19">0x0075</td>
+    <td valign="top" height="19">37, 0x25, '%'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">118</td>
+    <td valign="top" height="19">0x0076</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">119</td>
+    <td valign="top" height="19">0x0077</td>
+    <td valign="top" height="19">143, 0x8F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">120</td>
+    <td valign="top" height="19">0x0078</td>
+    <td valign="top" height="19">66, 0x42, 'B'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">121</td>
+    <td valign="top" height="19">0x0079</td>
+    <td valign="top" height="19">95, 0x5F, '_'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">122</td>
+    <td valign="top" height="19">0x007A</td>
+    <td valign="top" height="19">65, 0x41, 'A'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">123</td>
+    <td valign="top" height="19">0x007B</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">124</td>
+    <td valign="top" height="19">0x007C</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">125</td>
+    <td valign="top" height="19">0x007D</td>
+    <td valign="top" height="19">16, 0x10</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">126</td>
+    <td valign="top" height="19">0x007E</td>
+    <td valign="top" height="19">15, 0x0F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">127</td>
+    <td valign="top" height="19">0x007F</td>
+    <td valign="top" height="19">67, 0x43, 'C'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">128</td>
+    <td valign="top" height="19">0x0080</td>
+    <td valign="top" height="19">95, 0x5F, '_'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">129</td>
+    <td valign="top" height="19">0x0081</td>
+    <td valign="top" height="19">65, 0x41, 'A'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">130</td>
+    <td valign="top" height="19">0x0082</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">131</td>
+    <td valign="top" height="19">0x0083</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">132</td>
+    <td valign="top" height="19">0x0084</td>
+    <td valign="top" height="19">143, 0x8F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">133</td>
+    <td valign="top" height="19">0x0085</td>
+    <td valign="top" height="19">69, 0x45, 'E'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">134</td>
+    <td valign="top" height="19">0x0086</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">135</td>
+    <td valign="top" height="19">0x0087</td>
+    <td valign="top" height="19">42, 0x2A, '*'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">136</td>
+    <td valign="top" height="19">0x0088</td>
+    <td valign="top" height="19">95, 0x5F, '_'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">137</td>
+    <td valign="top" height="19">0x0089</td>
+    <td valign="top" height="19">72, 0x48, 'H'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">138</td>
+    <td valign="top" height="19">0x008A</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">139</td>
+    <td valign="top" height="19">0x008B</td>
+    <td valign="top" height="19">143, 0x8F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">140</td>
+    <td valign="top" height="19">0x008C</td>
+    <td valign="top" height="19">65, 0x41, 'A'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">141</td>
+    <td valign="top" height="19">0x008D</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">142</td>
+    <td valign="top" height="19">0x008E</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">143</td>
+    <td valign="top" height="19">0x008F</td>
+    <td valign="top" height="19">16, 0x10</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">144</td>
+    <td valign="top" height="19">0x0090</td>
+    <td valign="top" height="19">15, 0x0F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">145</td>
+    <td valign="top" height="19">0x0091</td>
+    <td valign="top" height="19">64, 0x40, '@'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">146</td>
+    <td valign="top" height="19">0x0092</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">147</td>
+    <td valign="top" height="19">0x0093</td>
+    <td valign="top" height="19">143, 0x8F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">148</td>
+    <td valign="top" height="19">0x0094</td>
+    <td valign="top" height="19">65, 0x41, 'A'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">149</td>
+    <td valign="top" height="19">0x0095</td>
+    <td valign="top" height="19">127, 0x7F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">150</td>
+    <td valign="top" height="19">0x0096</td>
+    <td valign="top" height="19">72, 0x48, 'H'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">151</td>
+    <td valign="top" height="19">0x0097</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">152</td>
+    <td valign="top" height="19">0x0098</td>
+    <td valign="top" height="19">16, 0x10</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">153</td>
+    <td valign="top" height="19">0x0099</td>
+    <td valign="top" height="19">15, 0x0F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">154</td>
+    <td valign="top" height="19">0x009A</td>
+    <td valign="top" height="19">65, 0x41, 'A'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">155</td>
+    <td valign="top" height="19">0x009B</td>
+    <td valign="top" height="19">42, 0x2A, '*'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">156</td>
+    <td valign="top" height="19">0x009C</td>
+    <td valign="top" height="19">95, 0x5F, '_'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">157</td>
+    <td valign="top" height="19">0x009D</td>
+    <td valign="top" height="19">68, 0x44, 'D'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">158</td>
+    <td valign="top" height="19">0x009E</td>
+    <td valign="top" height="19">95, 0x5F, '_'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">159</td>
+    <td valign="top" height="19">0x009F</td>
+    <td valign="top" height="19">69, 0x45, 'E'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">160</td>
+    <td valign="top" height="19">0x00A0</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">161</td>
+    <td valign="top" height="19">0x00A1</td>
+    <td valign="top" height="19">95, 0x5F, '_'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">162</td>
+    <td valign="top" height="19">0x00A2</td>
+    <td valign="top" height="19">69, 0x45, 'E'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">163</td>
+    <td valign="top" height="19">0x00A3</td>
+    <td valign="top" height="19">244, 0xF4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">164</td>
+    <td valign="top" height="19">0x00A4</td>
+    <td valign="top" height="19">95, 0x5F, '_'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">165</td>
+    <td valign="top" height="19">0x00A5</td>
+    <td valign="top" height="19">65, 0x41, 'A'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">166</td>
+    <td valign="top" height="19">0x00A6</td>
+    <td valign="top" height="19">15, 0x0F</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">167</td>
+    <td valign="top" height="19">0x00A7</td>
+    <td valign="top" height="19">12, 0x0C</td>
+    <td valign="top" height="19">style array count</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">168</td>
+    <td valign="top" height="19">0x00A8</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td rowspan="2" valign="top" height="38">style #1:<br>
+      font def #1, plain</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">169</td>
+    <td valign="top" height="19">0x00A9</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">170</td>
+    <td valign="top" height="19">0x00AA</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td rowspan="2" valign="top" height="38">style #2:<br>
+      font def #1, plain</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">171</td>
+    <td valign="top" height="19">0x00AB</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">172</td>
+    <td valign="top" height="19">0x00AC</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td rowspan="2" valign="top" height="38">style #3:<br>
+      font def #1, italic</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">173</td>
+    <td valign="top" height="19">0x00AD</td>
+    <td valign="top" height="19">2, 0x02</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">174</td>
+    <td valign="top" height="19">0x00AE</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td rowspan="2" valign="top" height="38">style #4:<br>
+      font def #2, italic</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">175</td>
+    <td valign="top" height="19">0x00AF</td>
+    <td valign="top" height="19">2, 0x02</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">176</td>
+    <td valign="top" height="19">0x00B0</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td rowspan="2" valign="top" height="38">style #5:<br>
+      font def #2, plain</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">177</td>
+    <td valign="top" height="19">0x00B1</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">178</td>
+    <td valign="top" height="19">0x00B2</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td rowspan="2" valign="top" height="38">style #6:<br>
+      font def #2, plain</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">179</td>
+    <td valign="top" height="19">0x00B3</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">180</td>
+    <td valign="top" height="19">0x00B4</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td rowspan="2" valign="top" height="38">style #7:<br>
+      font def #1, bold</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">181</td>
+    <td valign="top" height="19">0x00B5</td>
+    <td valign="top" height="19">1, 0x01</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">182</td>
+    <td valign="top" height="19">0x00B6</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td rowspan="2" valign="top" height="38">style #8:<br>
+      font def #1, plain</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">183</td>
+    <td valign="top" height="19">0x00B7</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">184</td>
+    <td valign="top" height="19">0x00B8</td>
+    <td valign="top" height="19">3, 0x03</td>
+    <td rowspan="2" valign="top" height="38">style #9:<br>
+      font def #3, plain</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">185</td>
+    <td valign="top" height="19">0x00B9</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">186</td>
+    <td valign="top" height="19">0x00BA</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td rowspan="2" valign="top" height="38">style #10:<br>
+      font def #1, plain</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">187</td>
+    <td valign="top" height="19">0x00BB</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">188</td>
+    <td valign="top" height="19">0x00BC</td>
+    <td valign="top" height="19">4, 0x04</td>
+    <td rowspan="2" valign="top" height="38">style #11:<br>
+      font def #4, plain</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">189</td>
+    <td valign="top" height="19">0x00BD</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">190</td>
+    <td valign="top" height="19">0x00BE</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">style #12: (not used)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">191</td>
+    <td valign="top" height="19">0x00BF</td>
+    <td valign="top" height="19">10, 0x0A</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#TYPESIZE_records">SIZE_FULL</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">192</td>
+    <td valign="top" height="19">0x00C0</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="2" valign="top" height="38"><a href="#LINE_record">LINE</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">193</td>
+    <td valign="top" height="19">0x00C1</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">194</td>
+    <td valign="top" height="19">0x00C2</td>
+    <td valign="top" height="19">3, 0x03</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="5" valign="top" height="95"><a href="#TMPL_record">TMPL<br>
+      </a>fraction</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">195</td>
+    <td valign="top" height="19">0x00C3</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">196</td>
+    <td valign="top" height="19">0x00C4</td>
+    <td valign="top" height="19">11, 0x0B</td>
+    <td valign="top" height="19">selector: tmFRACT</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">197</td>
+    <td valign="top" height="19">0x00C5</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">variation: none</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">198</td>
+    <td valign="top" height="19">0x00C6</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">template-specific options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">199</td>
+    <td valign="top" height="19">0x00C7</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="2" valign="top" height="38"><a href="#LINE_record">LINE</a><br>
+      numerator</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">200</td>
+    <td valign="top" height="19">0x00C8</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">201</td>
+    <td valign="top" height="19">0x00C9</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="6" valign="top" height="114"><a href="#CHAR_record">CHAR<br>
+      </a>- (minus sign)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">202</td>
+    <td valign="top" height="19">0x00CA</td>
+    <td valign="top" height="19">4, 0x04</td>
+    <td valign="top" height="19">options: <a href="#mtefOPT_CHAR_ENC_CHAR_8">mtefOPT_CHAR_ENC_CHAR_8</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">203</td>
+    <td valign="top" height="19">0x00CB</td>
+    <td valign="top" height="19">134, 0x86</td>
+    <td valign="top" height="19">typeface: 134 - 128 = 6 (Symbol style)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">204</td>
+    <td valign="top" height="19">0x00CC</td>
+    <td valign="top" height="19">18, 0x12</td>
+    <td rowspan="2" valign="top" height="38">MTCode value: 0x2212 (minus sign)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">205</td>
+    <td valign="top" height="19">0x00CD</td>
+    <td valign="top" height="19">34, 0x22, '"'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">206</td>
+    <td valign="top" height="19">0x00CE</td>
+    <td valign="top" height="19">45, 0x2D, '-'</td>
+    <td valign="top" height="19">font-encoded value: 0x2D (minus sign)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">207</td>
+    <td valign="top" height="19">0x00CF</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="5" valign="top" height="95"><a href="#CHAR_record">CHAR<br>
+      </a>b</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">208</td>
+    <td valign="top" height="19">0x00D0</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">209</td>
+    <td valign="top" height="19">0x00D1</td>
+    <td valign="top" height="19">131, 0x83</td>
+    <td valign="top" height="19">typeface: 131 - 128 = 3 (Variable style)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">210</td>
+    <td valign="top" height="19">0x00D2</td>
+    <td valign="top" height="19">98, 0x62, 'b'</td>
+    <td rowspan="2" valign="top" height="38">MTCode value: 0x0062 ('b')</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">211</td>
+    <td valign="top" height="19">0x00D3</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">212</td>
+    <td valign="top" height="19">0x00D4</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="6" valign="top" height="114"><a href="#CHAR_record">CHAR<br>
+      </a>plus-minus sign</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">213</td>
+    <td valign="top" height="19">0x00D5</td>
+    <td valign="top" height="19">4, 0x04</td>
+    <td valign="top" height="19">options: <a href="#mtefOPT_CHAR_ENC_CHAR_8">mtefOPT_CHAR_ENC_CHAR_8</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">214</td>
+    <td valign="top" height="19">0x00D6</td>
+    <td valign="top" height="19">134, 0x86</td>
+    <td valign="top" height="19">typeface: 134 - 128 = 6 (Symbol style)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">215</td>
+    <td valign="top" height="19">0x00D7</td>
+    <td valign="top" height="19">177, 0xB1</td>
+    <td rowspan="2" valign="top" height="38">MTCode value: 0x00B1 (plus-minus
+      sign)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">216</td>
+    <td valign="top" height="19">0x00D8</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">217</td>
+    <td valign="top" height="19">0x00D9</td>
+    <td valign="top" height="19">177, 0xB1</td>
+    <td valign="top" height="19">font-encoded value: 0xB1 (plus-minus sign)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">218</td>
+    <td valign="top" height="19">0x00DA</td>
+    <td valign="top" height="19">3, 0x03</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="5" valign="top" height="97"><a href="#TMPL_record">TMPL<br>
+      </a>square root</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">219</td>
+    <td valign="top" height="19">0x00DB</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">220</td>
+    <td valign="top" height="19">0x00DC</td>
+    <td valign="top" height="19">10, 0x0A</td>
+    <td valign="top" height="19">selector: tmROOT</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="21">221</td>
+    <td valign="top" height="21">0x00DD</td>
+    <td valign="top" height="21">0, 0x00</td>
+    <td valign="top" height="21">variations: tvROOT_SQ (square root)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">222</td>
+    <td valign="top" height="19">0x00DE</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">template-specific options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">223</td>
+    <td valign="top" height="19">0x00DF</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="2" valign="top" height="38"><a href="#LINE_record">LINE</a><br>
+      radicand</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">224</td>
+    <td valign="top" height="19">0x00E0</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">225</td>
+    <td valign="top" height="19">0x00E1</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="5" valign="top" height="95"><a href="#CHAR_record">CHAR<br>
+      </a>b</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">226</td>
+    <td valign="top" height="19">0x00E2</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">227</td>
+    <td valign="top" height="19">0x00E3</td>
+    <td valign="top" height="19">131, 0x83</td>
+    <td valign="top" height="19">typeface: 131 - 128 = 3 (Variable style)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">228</td>
+    <td valign="top" height="19">0x00E4</td>
+    <td valign="top" height="19">98, 0x62, 'b'</td>
+    <td rowspan="2" valign="top" height="38">MTCode value: 0x0062 ('b')</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">229</td>
+    <td valign="top" height="19">0x00E5</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">230</td>
+    <td valign="top" height="19">0x00E6</td>
+    <td valign="top" height="19">3, 0x03</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="5" valign="top" height="95"><a href="#TMPL_record">TMPL<br>
+      </a>superscript</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">231</td>
+    <td valign="top" height="19">0x00E7</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">232</td>
+    <td valign="top" height="19">0x00E8</td>
+    <td valign="top" height="19">28, 0x1C</td>
+    <td valign="top" height="19">selector: tmSUP</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">233</td>
+    <td valign="top" height="19">0x00E9</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">variations: none</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">234</td>
+    <td valign="top" height="19">0x00EA</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">template-specific options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">235</td>
+    <td valign="top" height="19">0x00EB</td>
+    <td valign="top" height="19">11, 0x0B</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#TYPESIZE_records">SIZE_SUB</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">236</td>
+    <td valign="top" height="19">0x00EC</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="2" valign="top" height="38"><a href="#LINE_record">LINE</a><br>
+      missing superscript</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">237</td>
+    <td valign="top" height="19">0x00ED</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td valign="top" height="19">options: <a href="#mtefOPT_LINE_NULL"> mtefOPT_LINE_NULL</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">238</td>
+    <td valign="top" height="19">0x00EE</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="2" valign="top" height="38"><a href="#LINE_record">LINE</a><br>
+      subscript</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">239</td>
+    <td valign="top" height="19">0x00EF</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">240</td>
+    <td valign="top" height="19">0x00F0</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="5" valign="top" height="95"><a href="#CHAR_record">CHAR<br>
+      </a>2</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">241</td>
+    <td valign="top" height="19">0x00F1</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">242</td>
+    <td valign="top" height="19">0x00F2</td>
+    <td valign="top" height="19">136, 0x88</td>
+    <td valign="top" height="19">typeface: 136 - 128 = 8 (Number style)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">243</td>
+    <td valign="top" height="19">0x00F3</td>
+    <td valign="top" height="19">50, 0x32, '2'</td>
+    <td rowspan="2" valign="top" height="38">MTCode value: 0x0032 ('2')</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">244</td>
+    <td valign="top" height="19">0x00F4</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">245</td>
+    <td valign="top" height="19">0x00F5</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#END_record">END</a> of subscript line</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">246</td>
+    <td valign="top" height="19">0x00F6</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#END_record">END</a> of subscript
+      template</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">247</td>
+    <td valign="top" height="19">0x00F7</td>
+    <td valign="top" height="19">10, 0x0A</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#TYPESIZE_records">SIZE_FULL</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">248</td>
+    <td valign="top" height="19">0x00F8</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="6" valign="top" height="114"><a href="#CHAR_record">CHAR<br>
+      </a>- (minus sign)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">249</td>
+    <td valign="top" height="19">0x00F9</td>
+    <td valign="top" height="19">4, 0x04</td>
+    <td valign="top" height="19">
+      <p align="left">options: <a href="#mtefOPT_CHAR_ENC_CHAR_8">mtefOPT_CHAR_ENC_CHAR_8</a></p></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">250</td>
+    <td valign="top" height="19">0x00FA</td>
+    <td valign="top" height="19">134, 0x86</td>
+    <td valign="top" height="19">typeface: 134 - 128 = 6 (Symbol style)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">251</td>
+    <td valign="top" height="19">0x00FB</td>
+    <td valign="top" height="19">18, 0x12</td>
+    <td rowspan="2" valign="top" height="38">MTCode value: 0x2212 (minus sign)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">252</td>
+    <td valign="top" height="19">0x00FC</td>
+    <td valign="top" height="19">34, 0x22, '"'</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">253</td>
+    <td valign="top" height="19">0x00FD</td>
+    <td valign="top" height="19">45, 0x2D, '-'</td>
+    <td valign="top" height="19">font-encoded value: 0x2D (minus sign)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">254</td>
+    <td valign="top" height="19">0x00FE</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="5" valign="top" height="95"><a href="#CHAR_record">CHAR<br>
+      </a>4</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">255</td>
+    <td valign="top" height="19">0x00FF</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">256</td>
+    <td valign="top" height="19">0x0100</td>
+    <td valign="top" height="19">136, 0x88</td>
+    <td valign="top" height="19">typeface: 136 - 128 = 8 (Number style)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">257</td>
+    <td valign="top" height="19">0x0101</td>
+    <td valign="top" height="19">52, 0x34, '4'</td>
+    <td rowspan="2" valign="top" height="38">MTCode value: 0x0034 ('4')</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">258</td>
+    <td valign="top" height="19">0x0102</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">259</td>
+    <td valign="top" height="19">0x0103</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="5" valign="top" height="95"><a href="#CHAR_record">CHAR<br>
+      </a>a</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">260</td>
+    <td valign="top" height="19">0x0104</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">261</td>
+    <td valign="top" height="19">0x0105</td>
+    <td valign="top" height="19">131, 0x83</td>
+    <td valign="top" height="19">typeface: 131 - 128 = 3 (Variable style)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">262</td>
+    <td valign="top" height="19">0x0106</td>
+    <td valign="top" height="19">97, 0x61, 'a'</td>
+    <td rowspan="2" valign="top" height="38">MTCode value: 0x0061 ('a')</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">263</td>
+    <td valign="top" height="19">0x0107</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">264</td>
+    <td valign="top" height="19">0x0108</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="5" valign="top" height="95"><a href="#CHAR_record">CHAR<br>
+      </a>c</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">265</td>
+    <td valign="top" height="19">0x0109</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">266</td>
+    <td valign="top" height="19">0x010A</td>
+    <td valign="top" height="19">131, 0x83</td>
+    <td valign="top" height="19">typeface: 131 - 128 = 3 (Variable style)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">267</td>
+    <td valign="top" height="19">0x010B</td>
+    <td valign="top" height="19">99, 0x63, 'c'</td>
+    <td rowspan="2" valign="top" height="38">MTCode value: 0x0063 ('c')</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">268</td>
+    <td valign="top" height="19">0x010C</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">269</td>
+    <td valign="top" height="19">0x010D</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#END_record">END</a> of radicand line</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">270</td>
+    <td valign="top" height="19">0x010E</td>
+    <td valign="top" height="19">11, 0x0B</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#TYPESIZE_records">SIZE_SUB</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">271</td>
+    <td valign="top" height="19">0x010F</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="2" valign="top" height="38"><a href="#LINE_record">LINE</a><br>
+      missing radicand</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">272</td>
+    <td valign="top" height="19">0x0110</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td valign="top" height="19">options: <a href="#mtefOPT_LINE_NULL"> mtefOPT_LINE_NULL</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">273</td>
+    <td valign="top" height="19">0x0111</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#END_record">END</a> of radical
+      template</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">274</td>
+    <td valign="top" height="19">0x0112</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#END_record">END</a> of numerator line
+    </td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">275</td>
+    <td valign="top" height="19">0x0113</td>
+    <td valign="top" height="19">10, 0x0A</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#TYPESIZE_records">SIZE_FULL</a></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">276</td>
+    <td valign="top" height="19">0x0114</td>
+    <td valign="top" height="19">1, 0x01</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="2" valign="top" height="38"><a href="#LINE_record">LINE</a><br>
+      denominator</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">277</td>
+    <td valign="top" height="19">0x0115</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">278</td>
+    <td valign="top" height="19">0x0116</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="5" valign="top" height="95"><a href="#CHAR_record">CHAR<br>
+      </a>2</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">279</td>
+    <td valign="top" height="19">0x0117</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">280</td>
+    <td valign="top" height="19">0x0118</td>
+    <td valign="top" height="19">136, 0x88</td>
+    <td valign="top" height="19">typeface: 136 - 128 = 8 (Number style)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">281</td>
+    <td valign="top" height="19">0x0119</td>
+    <td valign="top" height="19">50, 0x32, '2'</td>
+    <td rowspan="2" valign="top" height="38">MTCode value: 0x0032 ('2')</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">282</td>
+    <td valign="top" height="19">0x011A</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">283</td>
+    <td valign="top" height="19">0x011B</td>
+    <td valign="top" height="19">2, 0x02</td>
+    <td valign="top" height="19">record type</td>
+    <td rowspan="5" valign="top" height="95"><a href="#CHAR_record">CHAR<br>
+      </a>a</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">284</td>
+    <td valign="top" height="19">0x011C</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">options</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">285</td>
+    <td valign="top" height="19">0x011D</td>
+    <td valign="top" height="19">131, 0x83</td>
+    <td valign="top" height="19">typeface: 131 - 128 = 3 (Variable style)</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">286</td>
+    <td valign="top" height="19">0x011E</td>
+    <td valign="top" height="19">97, 0x61, 'a'</td>
+    <td rowspan="2" valign="top" height="38">MTCode value: 0x0061 ('a')</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">287</td>
+    <td valign="top" height="19">0x011F</td>
+    <td valign="top" height="19">0, 0x00</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">288</td>
+    <td valign="top" height="19">0x0120</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#END_record">END</a> of denominator
+      line</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">289</td>
+    <td valign="top" height="19">0x0121</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#END_record">END</a> of fraction
+      template</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">290</td>
+    <td valign="top" height="19">0x0122</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#END_record">END</a> of equation line</td>
+  </tr>
+  <tr>
+    <td align="right" valign="top" height="19">291</td>
+    <td valign="top" height="19">0x0123</td>
+    <td valign="top" height="19">0, 0x00</td>
+    <td valign="top" height="19">record type</td>
+    <td valign="top" height="19"><a href="#END_record">END</a> of equation</td>
+  </tr>
+</tbody></table>
+</body></html>
