@@ -1,4 +1,4 @@
-VERSION = 1-3-0
+VERSION = 1-4-0
 
 CC?=gcc
 TAR?=gnutar
@@ -33,15 +33,14 @@ CFLAGS:=$(CFLAGS) $(PLATFORM)
 
 LIBS= 
 
-SRCS         = src/cole.c                 src/cole_decode.c         src/cole_encode.c       \
-               src/cole_internal.c        src/cole_support.c        src/cole_version.c      \
-               src/eqn.c                  src/figure2eps.c          src/jpeg2eps.c          \
+SRCS         = src/cole.c                 src/cole_decode.c         src/cole_internal.c     \
+               src/cole_support.c         src/cole_version.c        src/eqn.c               \
                src/main.c                 src/mygetopt.c            src/reader.c            \
                src/writer.c
 
-HDRS         = src/cole.h                 src/cole_internal.h       src/rtf.h               \
-               src/eqn.h                  src/jpeg2eps.h            src/rtf2latex2e.h       \
-               src/cole_support.h         src/mygetopt.h
+HDRS         = src/cole.h                 src/cole_internal.h       src/cole_support.h      \
+               src/eqn.h                  src/mygetopt.h            src/rtf2latex2e.h       \
+               src/rtf.h
 
 RTFPREP_SRCS = src/rtfprep/Makefile       src/rtfprep/rtf-controls  src/rtfprep/rtfprep.c   \
                src/rtfprep/standard-names src/rtfprep/tokenscan.c   src/rtfprep/tokenscan.h  
@@ -161,15 +160,11 @@ splint:
 # created using "make depend"
 cole.o:          src/cole.c src/cole.h src/cole_internal.h src/cole_support.h
 cole_decode.o:   src/cole_decode.c src/cole.h src/cole_support.h src/cole_internal.h
-cole_encode.o:   src/cole_encode.c src/cole.h src/cole_support.h src/cole_internal.h
 cole_internal.o: src/cole_internal.c src/cole_internal.h src/cole_support.h
 cole_support.o:  src/cole_support.c src/cole_support.h
 cole_version.o:  src/cole_version.c
 eqn.o:           src/eqn.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
                  src/rtf2latex2e.h src/cole_support.h src/eqn.h src/eqn_support.h
-figure2eps.o: src/figure2eps.c
-jpeg2eps.o: src/jpeg2eps.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
-            src/rtfprep/tokenscan.h src/rtf2latex2e.h src/jpeg2eps.h
 main.o: src/main.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h src/mygetopt.h src/rtf2latex2e.h
 mygetopt.o: src/mygetopt.c src/mygetopt.h
 reader.o: src/reader.c src/rtfprep/tokenscan.h src/rtf.h src/rtfprep/rtf-ctrldef.h \
