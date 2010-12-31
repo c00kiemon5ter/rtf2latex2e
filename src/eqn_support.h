@@ -24,7 +24,7 @@
 #define embFROWN      19
 #define embSMILE      20
 
-// embellishment object
+/*  embellishment object */
 typedef struct {
     struct MT_EMBELL *next;
     int nudge_x;
@@ -50,7 +50,7 @@ typedef struct {
 #define TAB_EQUAL     3
 #define TAB_DECIMAL   4
 
-// tabstop object
+/*  tabstop object */
 typedef struct {
     struct MT_TABSTOP *next;
     int type;
@@ -89,14 +89,14 @@ typedef struct {
 #define xfLSPACE    0x04
 
 
-// ruler object
+/*  ruler object */
 typedef struct {
     int n_stops;
     MT_TABSTOP *tabstop_list;
 } MT_RULER;
 
 
-// line (of math) object
+/*  line (of math) object */
 typedef struct {
     int nudge_x;
     int nudge_y;
@@ -106,7 +106,7 @@ typedef struct {
 } MT_LINE;
 
 
-// character object
+/*  character object */
 typedef struct {
     int nudge_x;
     int nudge_y;
@@ -118,7 +118,7 @@ typedef struct {
     MT_EMBELL *embellishment_list;
 } MT_CHAR;
 
-// template object
+/*  template object */
 typedef struct {
     int nudge_x;
     int nudge_y;
@@ -140,7 +140,7 @@ typedef struct {
 #define PVA_CENTERING 3
 #define PVA_MATH      4
 
-// pile object
+/*  pile object */
 typedef struct {
     int nudge_x;
     int nudge_y;
@@ -152,7 +152,7 @@ typedef struct {
 
 #define MATR_MAX  16
 
-// matrix object
+/*  matrix object */
 typedef struct {
     int nudge_x;
     int nudge_y;
@@ -167,7 +167,7 @@ typedef struct {
 } MT_MATRIX;
 
 
-// font object
+/*  font object */
 typedef struct {
     int tface;
     int style;
@@ -182,7 +182,7 @@ typedef struct {
 #define szUSER1         5
 #define szUSER2         6
 
-// size object
+/*  size object */
 typedef struct {
     int type;
     int lsize;
@@ -190,7 +190,7 @@ typedef struct {
 } MT_SIZE;
 
 
-// our equation object
+/*  our equation object */
 typedef struct {
     int log_level;
     int do_delete;

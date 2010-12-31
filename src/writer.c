@@ -25,8 +25,8 @@
 
 # include "rtf.h"
 # include "rtfprep/tokenscan.h"
-# include "cole/cole.h"
-# include "cole/support.h"
+# include "cole.h"
+# include "cole_support.h"
 # include "rtf2latex2e.h"
 # include "eqn.h"
 
@@ -741,14 +741,14 @@ void CheckForCharAttr(void)
     int italicGL, noItalicGL;
     int boldGL, noBoldGL;
     int underlinedGL;
-//	int noUnderlinedGL;
+/* 	int noUnderlinedGL; */
     int dbUnderlinedGL;
-//	int noDbUnderlinedGL;
+/* 	int noDbUnderlinedGL; */
     int foreColorGL, backColorGL;
     int subScriptGL, superScriptGL;
-//    int noSubScriptGL, noSuperScriptGL;
+/*     int noSubScriptGL, noSuperScriptGL; */
     int fontSizeGL;
-//	int allCapsGL;
+/* 	int allCapsGL; */
 	int smallCapsGL;
     int i;
 
@@ -757,17 +757,17 @@ void CheckForCharAttr(void)
     boldGL           = textStyle.boldGroupLevel;
     noBoldGL         = textStyle.noBoldGroupLevel;
     underlinedGL     = textStyle.underlinedGroupLevel;
-//    noUnderlinedGL   = textStyle.noUnderlinedGroupLevel;
+/*     noUnderlinedGL   = textStyle.noUnderlinedGroupLevel; */
     dbUnderlinedGL   = textStyle.dbUnderlinedGroupLevel;
-//    noDbUnderlinedGL = textStyle.noDbUnderlinedGroupLevel;
+/*     noDbUnderlinedGL = textStyle.noDbUnderlinedGroupLevel; */
     foreColorGL      = textStyle.foreColorGroupLevel;
     backColorGL      = textStyle.backColorGroupLevel;
     subScriptGL      = textStyle.subScriptGroupLevel;
-//    noSubScriptGL    = textStyle.noSubScriptGroupLevel;
+/*     noSubScriptGL    = textStyle.noSubScriptGroupLevel; */
     superScriptGL    = textStyle.superScriptGroupLevel;
-//    noSuperScriptGL  = textStyle.noSuperScriptGroupLevel;
+/*     noSuperScriptGL  = textStyle.noSuperScriptGroupLevel; */
     fontSizeGL       = textStyle.fontSizeGroupLevel;
- //   allCapsGL        = textStyle.allCapsGroupLevel;
+ /*    allCapsGL        = textStyle.allCapsGroupLevel; */
     smallCapsGL      = textStyle.smallCapsGroupLevel;
 
     if (smallCapsGL == groupLevel && smallCapsGL > 0) {
@@ -1087,7 +1087,7 @@ static void SetTextStyle(void)
                 textStyle.subScriptGroupLevel = 0;
             }
         }
-//                      textStyle.subScriptGroupLevel = groupLevel;
+/*                       textStyle.subScriptGroupLevel = groupLevel; */
         break;
     case rtfSuperScript:
         if (rtfParam != 0) {
@@ -1159,15 +1159,15 @@ static void WriteTextStyle(void)
     int italicGL, noItalicGL;
     int boldGL, noBoldGL;
     int underlinedGL;
-//	int noUnderlinedGL;
+/* 	int noUnderlinedGL; */
     int dbUnderlinedGL;
-//	int noDbUnderlinedGL;
+/* 	int noDbUnderlinedGL; */
     int foreColorGL;
-//	int backColorGL;
+/* 	int backColorGL; */
     int subScriptGL, superScriptGL;
-//    int fontSizeGL;
+/*     int fontSizeGL; */
 	int smallCapsGL;
-//	int allCapsGL;
+/* 	int allCapsGL; */
 
     if (writingHeading1 || writingHeading2 || writingHeading3
         || insideHyperlink)
@@ -1178,15 +1178,15 @@ static void WriteTextStyle(void)
     boldGL = textStyle.boldGroupLevel;
     noBoldGL = textStyle.noBoldGroupLevel;
     underlinedGL = textStyle.underlinedGroupLevel;
-//    noUnderlinedGL = textStyle.noUnderlinedGroupLevel;
+/*     noUnderlinedGL = textStyle.noUnderlinedGroupLevel; */
     dbUnderlinedGL = textStyle.dbUnderlinedGroupLevel;
-//    noDbUnderlinedGL = textStyle.noDbUnderlinedGroupLevel;
+/*     noDbUnderlinedGL = textStyle.noDbUnderlinedGroupLevel; */
     foreColorGL = textStyle.foreColorGroupLevel;
-//    backColorGL = textStyle.backColorGroupLevel;
+/*     backColorGL = textStyle.backColorGroupLevel; */
     subScriptGL = textStyle.subScriptGroupLevel;
     superScriptGL = textStyle.superScriptGroupLevel;
-//    fontSizeGL = textStyle.fontSizeGroupLevel;
-//    allCapsGL = textStyle.allCapsGroupLevel;
+/*     fontSizeGL = textStyle.fontSizeGroupLevel; */
+/*     allCapsGL = textStyle.allCapsGroupLevel; */
     smallCapsGL = textStyle.smallCapsGroupLevel;
 
     CheckForBeginDocument();
@@ -1257,7 +1257,7 @@ static void WriteTextStyle(void)
             charAttrCount++;
         }
         textStyle.wroteBold = true;
-//              textStyle.open = true;
+/*               textStyle.open = true; */
     }
     
     if (noBoldGL <= groupLevel && noBoldGL > 0 && !(textStyle.wroteNoBold)
@@ -1279,7 +1279,7 @@ static void WriteTextStyle(void)
             charAttrCount++;
         }
         textStyle.wroteItalic = true;
-//              textStyle.open = true;
+/*               textStyle.open = true; */
     }
     if (noItalicGL <= groupLevel && noItalicGL > 0
         && !(textStyle.wroteNoItalic)
@@ -1405,7 +1405,7 @@ static void DoParagraphCleanUp(void)
     int i;
 
     CheckForBeginDocument();
-//      ExamineToken();
+/*       ExamineToken(); */
 
     if (charAttrCount > 0)
         CheckForCharAttr();
@@ -3023,7 +3023,7 @@ static void SectAttr(void)
         DoParagraphCleanUp();
         DoSectionCleanUp();
         section.cols = 1;
-//                      section.newStyle = true;
+/*                       section.newStyle = true; */
         break;
     }
 
@@ -3409,7 +3409,7 @@ static void IncludeGraphics(char *pictureType)
 /* This function reads in a picture */
 static void ReadPicture(void)
 {
-//    char *fn = "ReadPicture";
+/*     char *fn = "ReadPicture"; */
     requireGraphicxPackage = true;
     picture.type = unknownPict;
     picture.width = 0;
@@ -3419,7 +3419,7 @@ static void ReadPicture(void)
     picture.scaleX = 100;
     picture.scaleY = 100;
 
-//    RTFMsg("%s: Starting ...\n",fn);
+/*     RTFMsg("%s: Starting ...\n",fn); */
 
     /* skip everything until we reach hex data */
     while (!HexData());
@@ -3430,25 +3430,25 @@ static void ReadPicture(void)
     /* Process picture */
     switch (picture.type) {
     case pict:
-//        RTFMsg("* Warning: PICT format image encountered.\n");
+/*         RTFMsg("* Warning: PICT format image encountered.\n"); */
         ConvertHexPicture("pict");
         IncludeGraphics("pict");
         suppressLineBreak = true;
         break;
     case wmf:
-//        RTFMsg("* Warning: WMF format image encountered.\n");
+/*         RTFMsg("* Warning: WMF format image encountered.\n"); */
         ConvertHexPicture("wmf");
         IncludeGraphics("wmf");
         suppressLineBreak = true;
         break;
     case png:
-//        RTFMsg("* Warning: PNG format image encountered.\n");
+/*         RTFMsg("* Warning: PNG format image encountered.\n"); */
         ConvertHexPicture("png");
         IncludeGraphics("png");
         suppressLineBreak = true;
         break;
     case jpeg:
-//        RTFMsg("* Warning: JPEG format image encountered.\n");
+/*         RTFMsg("* Warning: JPEG format image encountered.\n"); */
         ConvertHexPicture("jpg");
         IncludeGraphics("jpg");
         suppressLineBreak = true;
@@ -3586,7 +3586,7 @@ DecodeOLE(char *objectFileName, char *streamType,
 
     /* cole_print_tree (cfs, &colerrno);  */
     
-    if ((coleFile = cole_fopen(cfs, streamType, NULL, &colerrno)) == NULL) {
+    if ((coleFile = cole_fopen(cfs, streamType, &colerrno)) == NULL) {
         cole_perror("DecodeOLE cole_fopen", colerrno);
         cole_umount(cfs, NULL);
         return 1;
@@ -3637,8 +3637,8 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     int i;
     uint8_t hexNumber;
     uint8_t hexEvenOdd = 0;       /* should be even at the end */
-//    char *fn = "ReadObjectData";
-//    RTFMsg("%s: * starting ...\n", fn);
+/*     char *fn = "ReadObjectData"; */
+/*     RTFMsg("%s: * starting ...\n", fn); */
 
     if (type == EquationClass) {
         (oleEquation.count)++;
@@ -3808,20 +3808,20 @@ static void ReadObject(void)
     int groupCounter = 1;       /* one opening brace has been counted */
     int temp;
     boolean res;
-    //char *fn = "ReadObject";
-    // RTFMsg("%s: * starting ...\n", fn);
+    /* char *fn = "ReadObject"; */
+    /*  RTFMsg("%s: * starting ...\n", fn); */
 
     GetObjectClass(&groupCounter);
 
     switch (object.class) {
     case unknownObjClass:
     default:
-        //RTFMsg("%s: * unsupported object '%s', skipping...\n", fn, object.className);
+        /* RTFMsg("%s: * unsupported object '%s', skipping...\n", fn, object.className); */
         RTFSkipGroup();
         break;
 
     case EquationClass:
-        //RTFMsg("%s: * equation object '%s', processing...\n", fn, object.className);
+        /* RTFMsg("%s: * equation object '%s', processing...\n", fn, object.className); */
 
         if ((int) preferenceValue[GetPreferenceNum("convertEquations")])
             res = ReadEquation(&groupCounter);
@@ -3879,8 +3879,8 @@ static void ReadWord97Result(void)
 {
     int i;
     int groupCount = 1;         /* one opening brace has been counted */
-//    char *fn = "ReadWord97Result";
-//    RTFMsg("%s: starting ...\n",fn);
+/*     char *fn = "ReadWord97Result"; */
+/*     RTFMsg("%s: starting ...\n",fn); */
 
     /* scan until object or picture is reached */
     while (groupCount != 0) {
@@ -3922,8 +3922,8 @@ static void ReadWord97Object(void)
     int groupCount = 1;         /* one opening brace has been counted */
     int word97ObjTextGL = 1;
     short prevChar;
-//    char *fn = "ReadWord97Object";
-//    RTFMsg("%s: starting ...\n",fn);
+/*     char *fn = "ReadWord97Object"; */
+/*     RTFMsg("%s: starting ...\n",fn); */
 
     word97ObjectType = unknownWord97Object;
 
@@ -3971,8 +3971,8 @@ static void ReadWord97Object(void)
     while (!ReachedResult(&groupCount)) {
         if (groupCount == 0) {
             RTFMsg("* unknown Word97 object...\n");
-//            PutLitStr(" [ missing object here ] ");
-//            wrapCount += 25;
+/*             PutLitStr(" [ missing object here ] "); */
+/*             wrapCount += 25; */
             RTFRouteToken();
             return;
         }
