@@ -26,7 +26,7 @@
 
 # include       "rtf.h"
 # include       "rtf2latex2e.h"
-# include       "cole/support.h"
+# include       "cole_support.h"
 # include       "eqn.h"
 # include       "eqn_support.h"
 

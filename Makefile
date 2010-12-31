@@ -17,7 +17,7 @@ PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
 PREFIX?=/opt/local
 #Uncomment next line for DOS/Windows
 #PREFIX_DRIVE=C:
-#PREFIX?=$(PREFIX_DRIVE)/PROGRA~1/latex2rtf
+#PREFIX?=$(PREFIX_DRIVE)/PROGRA~1/rtf2latex
 
 #Name of executable binary --- beware of 8.3 restriction under DOS
 BINARY_NAME=rtf2latex2e
