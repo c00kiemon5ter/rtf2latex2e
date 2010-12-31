@@ -1,21 +1,19 @@
 Security
    Incorporate all the SafeBuf stuff
 
-Graphics
-   Produce native format graphics files
-   Eliminate SetDollar from eqns.c
-   Improve how equations handle symbols
-
-OLE 
-   Add OLE test cases
-   Fix broken OLE code
-   Fix handling of OLE equations
-
-Misc
-   Fix cross-referencing 
+Features
+   command line option to process eqn files
+   automatically create directory for entire translation
+   automatically convert pict files to pdf files
+   CLI option to toggle debug level?
+   document CLI options
+   automatically append .rtf?
    
 Packaging
    Revise README
-   Revise INSTALL
-   Revert default directory name
-   figure out which files in PREF folder can be removed
+   Get windows binary working
+   eliminate cole_version.c
+   consider placing all cole code in two files
+   move rtfprep to parent directory?
+   bump version to 2.0
+   
