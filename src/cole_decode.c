@@ -1,6 +1,6 @@
 /*
    OLEdecode - Decode Microsoft OLE files into its components.
-   Copyright (C) 1998, 1999  Andrew Scriven
+   Copyright (C) 1998, 1999  Andrew Scriven <andy.scriven@research.natpower.co.uk>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,23 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
-/*
-   Released under GPL, written by 
-   Andrew Scriven <andy.scriven@research.natpower.co.uk>
 
-   Copyright (C) 1998, 1999
-   Andrew Scriven
- */
-/*
-   -----------------------------------------------------------------------
-   Andrew Scriven
-   Research and Engineering
-   Electron Building, Windmill Hill, Whitehill Way, Swindon, SN5 6PB, UK
-   Phone (44) 1793 896206, Fax (44) 1793 896251
-   -----------------------------------------------------------------------
- */
-/*
    *Extremely* modified by Arturo Tena <arturo@directmail.org>
    Modified by Ujwal S. Sathyam for rtf2latex2e <setlur@bigfoot.com>
  */
@@ -601,7 +585,8 @@ void verbosePPSTree(pps_entry * pps_list, U32 start_entry, int level)
         if (pps_list[entry].type == 2) {
             for (i = 0; i < level * 3; i++)
                 printf(" ");
-            printf("FILE %02x %8ul '%c%s'\n", pps_list[entry].ppsnumber,
+            printf("FILE %02x %8ul '%c%s'\n", 
+                   (unsigned int) pps_list[entry].ppsnumber,
                    pps_list[entry].size,
                    !isprint(pps_list[entry].
                             name[0]) ? ' ' : pps_list[entry].name[0],
@@ -609,9 +594,9 @@ void verbosePPSTree(pps_entry * pps_list, U32 start_entry, int level)
         } else {
             for (i = 0; i < level * 3; i++)
                 printf(" ");
-            printf("DIR  %02x '%c%s'\n", pps_list[entry].ppsnumber,
-                   !isprint(pps_list[entry].
-                            name[0]) ? ' ' : pps_list[entry].name[0],
+            printf("DIR  %02x '%c%s'\n", 
+                   (unsigned int) pps_list[entry].ppsnumber,
+                   !isprint(pps_list[entry].name[0]) ? ' ' : pps_list[entry].name[0],
                    pps_list[entry].name + 1);
             verbosePPSTree(pps_list, pps_list[entry].dir, level + 1);
         }

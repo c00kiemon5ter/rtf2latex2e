@@ -258,9 +258,10 @@ int __cole_print_tree_inroot(COLEDIR * cd, void *info, COLERRNO * colerrno)
     printf("DIR ");
     printf(" %7lu", cole_dir_getsize(cd));
     printf(" %08x-%08x %08x-%08x",
-           cole_dir_getdays1(cd),
-           cole_dir_getsec1(cd),
-           cole_dir_getdays2(cd), cole_dir_getsec2(cd));
+           (unsigned int)cole_dir_getdays1(cd),
+           (unsigned int)cole_dir_getsec1(cd),
+           (unsigned int)cole_dir_getdays2(cd), 
+           (unsigned int)cole_dir_getsec2(cd));
     entry_name = cole_dir_getname(cd);
     if (!isprint(entry_name[0]))
         printf(" '\\x%02x%s'\n", entry_name[0], entry_name + 1);
@@ -299,9 +300,10 @@ __cole_print_tree_indirentry(COLEDIRENT * cde, void *info,
         printf("????");
     printf(" %7lu", cole_direntry_getsize(cde));
     printf(" %08x-%08x %08x-%08x",
-           cole_direntry_getdays1(cde),
-           cole_direntry_getsec1(cde),
-           cole_direntry_getdays2(cde), cole_direntry_getsec2(cde));
+           (unsigned int)cole_direntry_getdays1(cde),
+           (unsigned int)cole_direntry_getsec1(cde),
+           (unsigned int)cole_direntry_getdays2(cde), 
+           (unsigned int)cole_direntry_getsec2(cde));
     entry_name = cole_direntry_getname(cde);
     if (!isprint(entry_name[0]))
         printf(" '\\x%02x%s'\n", entry_name[0], entry_name + 1);

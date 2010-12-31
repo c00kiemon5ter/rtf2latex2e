@@ -281,4 +281,4 @@ static void PrintNibble(unsigned char n);
 static void PrintNibbleDimension(unsigned char n);
 static int SkipNibbles(unsigned char *p, int num);
 
-#endif _EQN_SUPPORT_H
+#endif

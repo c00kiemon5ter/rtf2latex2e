@@ -28,7 +28,7 @@ SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex2e
 
 # Nothing to change below this line
 
-CFLAGS:=$(CFLAGS) $(PLATFORM) 
+CFLAGS:=$(CFLAGS) $(PLATFORM) -pedantic -DCOLE_VERBOSE
 # CFLAGS:=$(CFLAGS) $(PLATFORM) -DCOLE_VERBOSE
 
 LIBS= 
@@ -64,9 +64,9 @@ TEST         = test/Makefile              test/arch.rtf             test/arch-ma
                test/mapping.rtf           test/rtf-misc.rtf         test/rtf.rtf            \
                test/table.rtf             test/test.rtf             test/moreEqns.rtf
 
-OBJS         = src/cole.o                 src/cole_decode.o         src/cole_encode.o       \
+OBJS         = src/cole.o                 src/cole_decode.o                                 \
                src/cole_internal.o        src/cole_support.o        src/cole_version.o      \
-               src/eqn.o                  src/figure2eps.o          src/jpeg2eps.o          \
+               src/eqn.o                                                                    \
                src/main.o                 src/mygetopt.o            src/reader.o            \
                src/rtfprep/tokenscan.o    src/writer.o
 
