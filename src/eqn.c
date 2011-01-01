@@ -1446,6 +1446,11 @@ char *Eqn_TranslateTEXTRUN(MTEquation * eqn, MT_OBJLIST * curr_node,
     return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
+#if 0
+/*  Line positions are stored in a 2-bit pieces in the bits
+ *  array.  This extracts the right one and returns true if
+ *  a dashed, dotted, or solid line is present.
+ */
 static
 int HasHVLine(int line_num, unsigned char *bits)
 {
@@ -1460,10 +1465,12 @@ int HasHVLine(int line_num, unsigned char *bits)
 
     return rv;
 }
-
+#endif
 
 /*  The current implementation ignores the vertical and
- *  horizontal lines
+ *  horizontal lines ... it is not clear if it makes any
+ *  sense to use the tabular environment to include this
+ *  feature
  */
 static
 char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
