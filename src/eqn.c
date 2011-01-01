@@ -39,9 +39,7 @@
 # define        DEBUG_SIZE        0
 # define        DEBUG_JOIN        0
 
-# if (DEBUG_PARSING)
 void __cole_dump (void *_m, void *_start, uint32_t length, char *msg);
-# endif
 
 # define EQN_MODE_TEXT     0
 # define EQN_MODE_INLINE   1
@@ -54,11 +52,26 @@ char *Profile_VARIABLES[];
 char *Profile_PILEtranslation[];
 char *Profile_MT_CHARSET_ATTS[];
 char *Profile_MT_CHARSET_ATTS3[];
-char *Profile_CHARTABLE3[];
 char *Profile_CHARTABLE[];
 char *Profile_TEMPLATES[];
 char *Profile_TEMPLATES5[];
 char *Template_EMBELLS[];
+
+char * typeFaceName[12] =
+{
+	"ZERO",
+	"TEXT",
+	"FUNCTION",
+	"VARIABLE",
+	"LCGREEK",
+	"UCGREEK",
+	"SYMBOL",
+	"VECTOR",
+	"NUMBER",
+	"USER1",
+	"USER2",
+	"MTEXTRA"
+};
 
 /* MathType Equation converter */
 
@@ -131,15 +144,9 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream,
     RTFMsg("* Type     = %s\n", eqn->m_inline ? "inline" : "display");
     }
     
-    if (eqn->m_mtef_ver == 3) {
-        eqn->m_atts_table = Profile_MT_CHARSET_ATTS3;
-        Eqn_LoadCharSetAtts(eqn, Profile_MT_CHARSET_ATTS3);
-        eqn->m_char_table = Profile_CHARTABLE3;
-    } else {
-        eqn->m_atts_table = Profile_MT_CHARSET_ATTS;
-        Eqn_LoadCharSetAtts(eqn, Profile_MT_CHARSET_ATTS);
-        eqn->m_char_table = Profile_CHARTABLE;
-    }
+	eqn->m_atts_table = Profile_MT_CHARSET_ATTS;
+	Eqn_LoadCharSetAtts(eqn, Profile_MT_CHARSET_ATTS);
+	eqn->m_char_table = Profile_CHARTABLE;
 
     /*  We expect a SIZE then a LINE or PILE */
     eqn->o_list = Eqn_GetObjectList(eqn, eqn_stream, &src_index, 2);
@@ -163,7 +170,7 @@ static void setMathMode(MTEquation * eqn, char * buff, int mode)
 {
     char s[50];
     *s = '\0';
-    if (DEBUG_MODE) fprintf(stderr,"old=%d, new=%d\n",eqn->m_mode,mode);
+    if (DEBUG_MODE || g_equation_file) fprintf(stderr,"old=%d, new=%d\n",eqn->m_mode,mode);
     
     switch (mode) {
     case EQN_MODE_TEXT:
@@ -252,7 +259,7 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
     if (eqn->log_level == 2)
         fputs("%Begin Equation\n", eqn->out_file);
 
-    if (DEBUG_TRANSLATION) fprintf(stderr,"new equation\n");
+    if (DEBUG_TRANSLATION || g_equation_file) fprintf(stderr,"new equation\n");
 
     ztex = Eqn_TranslateObjects(eqn, eqn->o_list);
 
@@ -391,10 +398,10 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
 
         new_obj = (void *) NULL;
 
-# if (DEBUG_PARSING)
+if (DEBUG_PARSING || g_equation_file) {
 		print_tag(curr_tag, *src_index);
 		__cole_dump(src+*src_index, src+*src_index, 16, NULL);
-# endif
+}
 
         switch (curr_tag) {
         case END:
@@ -701,7 +708,7 @@ MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_index)
     new_tmpl->options = *(src + *src_index);
     (*src_index)++;
 
-    if (DEBUG_TEMPLATE) 
+    if (DEBUG_TEMPLATE || g_equation_file) 
         fprintf(stderr, "TMPL : read sel=%2d var=0x%04x (%d.%d)\n", 
         new_tmpl->selector, new_tmpl->variation, new_tmpl->selector, new_tmpl->variation);
 
@@ -806,7 +813,7 @@ MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
             *src_index += GetNudge(src + *src_index, &new_embell->nudge_x, &new_embell->nudge_y);
         
         new_embell->embell = *(src + *src_index);
-        if (DEBUG_EMBELLS) fprintf(stderr, "[%-3d] EMBELL --- embell=%d\n", *src_index, new_embell->embell);
+        if (DEBUG_EMBELLS  || g_equation_file) fprintf(stderr, "[%-3d] EMBELL --- embell=%d\n", *src_index, new_embell->embell);
         (*src_index)++;
 
         if (head)
@@ -1127,7 +1134,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
     MT_OBJLIST *curr_node;
     *rv = 0;
 
-    if (DEBUG_TRANSLATION) fprintf(stderr,"new object list\n");
+    if (DEBUG_TRANSLATION || g_equation_file) fprintf(stderr,"new object list\n");
     while (the_list) {
 
         curr_node = the_list;
@@ -1135,7 +1142,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
 
         zcurr = (char *) NULL;
 
-        if (DEBUG_TRANSLATION) print_tag(curr_node->tag, 0);
+        if (DEBUG_TRANSLATION || g_equation_file) print_tag(curr_node->tag, 0);
         switch (curr_node->tag) {
 
         case LINE:{
@@ -1288,10 +1295,10 @@ char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar)
         SetComment(strs, 2, buf);
         num_strs++;
     }
-    if (DEBUG_CHAR) 
-        fprintf(stderr, "\n%sCHAR : atts=%d,typeface=%d,char=%c,%d\n",
-                eqn->indent, thechar->atts, thechar->typeface,
-                (char) thechar->character, thechar->character);
+    if (DEBUG_CHAR || g_equation_file) 
+        fprintf(stderr, "CHAR : atts=%d,typeface=%3d=%10s, char='%c' = 0x%04x = %d\n",
+                thechar->atts, thechar->typeface, typeFaceName[thechar->typeface-128],
+                (char) thechar->character, thechar->character, thechar->character);
 /*
     SetComment(strs + num_strs, 100, (char *) NULL);
     num_strs++;
@@ -2160,10 +2167,10 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
         setMathMode(eqn, strs[0].data, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
     }
 
-    if (eqn->m_mtef_ver == 5 && tmpl->selector == 15)
+    if (eqn->m_mtef_ver == 5 && (tmpl->selector > 14 && tmpl->selector < 23))
         tmpl->variation &= 0x000f;
-    
-    if (DEBUG_TEMPLATE) fprintf(stderr,"TMPL : Processing (%d.%d)\n", tmpl->selector, tmpl->variation);
+
+    if (DEBUG_TEMPLATE || g_equation_file) fprintf(stderr,"TMPL : Processing (%d.%d)\n", tmpl->selector, tmpl->variation);
 
     num_strs = Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation, strs);
 
@@ -2688,24 +2695,16 @@ char *Profile_PILEtranslation[] = {
 /* ;math_att 0=MA_NONE, 1 = MA_FORCE_MATH, 2 = MA_FORCE_TEXT, 3 = 2 translations */
 char *Profile_MT_CHARSET_ATTS[] = {
 /* ;fnTEXT */
-    "129=2,0,1",
-/* ;fnFUNCTION */
-    "130=1,1,1",
-/* ;fnVARIABLE */
-    "131=1,0,1",
-/* ;fnLCGREEK */
-    "132=1,1,0",
-/* ;fnUCGREEK */
-    "133=1,1,0",
-/* ;fnSYMBOL */
-    "134=1,1,1",
-/* ;fnVECTOR */
-    "135=1,0,1",
-/* ;fnNUMBER */
+    "129=2,0,1", /* fnFUNCTION */
+    "130=1,1,1", /* fnVARIABLE */
+    "131=1,0,1", /* fnLCGREEK */
+    "132=1,1,0", /* fnUCGREEK */
+    "133=1,1,0", /* fnSYMBOL */
+    "134=1,1,1", /* fnVECTOR */
+    "135=1,0,1", /* fnNUMBER */
     "136=1,0,1",
     "137=1,1,0",
-    "138=1,1,0",
-/* ;fnMTEXTRA */
+    "138=1,1,0", /* fnMTEXTRA */
     "139=1,1,1",
     "140=1,1,0",
     "141=1,1,0",
@@ -2716,12 +2715,9 @@ char *Profile_MT_CHARSET_ATTS[] = {
     "146=1,1,0",
     "147=1,1,0",
     "148=1,1,0",
-    "149=1,1,0",
-/* ;fnEXPAND */
-    "150=1,1,0",
-/* ;fnMARKER */
-    "151=1,1,0",
-/* ;fnSPACE */
+    "149=1,1,0", /* fnEXPAND */
+    "150=1,1,0", /* fnMARKER */
+    "151=1,1,0", /* fnSPACE */
     "152=3,1,0",
     "153=1,1,0",
     0
@@ -2730,24 +2726,16 @@ char *Profile_MT_CHARSET_ATTS[] = {
 /* [MT_CHARSET_ATTS3] */
 char *Profile_MT_CHARSET_ATTS3[] = {
 /* ;fnTEXT */
-    "129=2,0,1",
-/* ;fnFUNCTION */
-    "130=1,1,1",
-/* ;fnVARIABLE */
-    "131=1,0,1",
-/* ;fnLCGREEK */
-    "132=1,1,0",
-/* ;fnUCGREEK */
-    "133=1,1,0",
-/* ;fnSYMBOL */
-    "134=1,1,1",
-/* ;fnVECTOR */
-    "135=1,0,1",
-/* ;fnNUMBER */
+    "129=2,0,1", /* fnFUNCTION */
+    "130=1,1,1", /* fnVARIABLE */
+    "131=1,0,1", /* fnLCGREEK */
+    "132=1,1,0", /* fnUCGREEK */
+    "133=1,1,0", /* fnSYMBOL */
+    "134=1,1,1", /* fnVECTOR */
+    "135=1,0,1", /* fnNUMBER */
     "136=1,0,1",
     "137=1,1,0",
-    "138=1,1,0",
-/* ;fnMTEXTRA */
+    "138=1,1,0", /* fnMTEXTRA */
     "139=1,1,1",
     "140=1,1,0",
     "141=1,1,0",
@@ -2758,22 +2746,18 @@ char *Profile_MT_CHARSET_ATTS3[] = {
     "146=1,1,0",
     "147=1,1,0",
     "148=1,1,0",
-    "149=1,1,0",
-/* ;fnEXPAND */
-    "150=1,1,0",
-/* ;fnMARKER */
-    "151=1,1,0",
-/* ;fnSPACE */
+    "149=1,1,0", /* fnEXPAND */
+    "150=1,1,0", /* fnMARKER */
+    "151=1,1,0", /* fnSPACE */
     "152=3,1,0",
     "153=1,1,0",
     0
 };
 
 /* [CHARTABLE] */
-/*  careful with trailing spaces! */
 char *Profile_CHARTABLE[] = {
     "130.91=\\lbrack ",
-    "132.74=\\vartheta ",
+    "132.74=\\vartheta ", /* encoding for lowercase greek */
     "132.86=\\varsigma ",
     "132.97=\\alpha ",
     "132.98=\\beta ",
@@ -2802,7 +2786,35 @@ char *Profile_CHARTABLE[] = {
     "132.121=\\psi ",
     "132.122=\\zeta ",
     "132.182=\\partial ",
-    "133.65=A",
+    "132.945=\\alpha ",
+    "132.946=\\beta ",
+    "132.967=\\chi ",
+    "132.948=\\delta ",
+    "132.949=\\epsilon ",
+    "132.966=\\phi ",
+    "132.947=\\gamma ",
+    "132.951=\\eta ",
+    "132.953=\\iota ",
+    "132.981=\\varphi ",
+    "132.954=\\kappa ",
+    "132.955=\\lambda ",
+    "132.956=\\mu ",
+    "132.957=\\nu ",
+    "132.959=\\o ",
+    "132.960=\\pi ",
+    "132.952=\\theta ",
+    "132.961=\\rho ",
+    "132.963=\\sigma ",
+    "132.964=\\tau ",
+    "132.965=\\upsilon ",
+    "132.969=\\omega ",
+    "132.958=\\xi ",
+    "132.968=\\psi ",
+    "132.950=\\zeta ",
+    "132.977=\\vartheta ",
+    "132.962=\\varsigma ",
+    "132.982=\\varpi ",
+    "133.65=A",            /* encoding for upper case greek */
     "133.66=B",
     "133.67=X",
     "133.68=\\Delta ",
@@ -2826,7 +2838,31 @@ char *Profile_CHARTABLE[] = {
     "133.88=\\Xi ",
     "133.89=\\Psi ",
     "133.90=Z",
-    "134.34=\\forall ",
+    "133.913=A",
+    "133.914=B",
+    "133.935=X",
+    "133.916=\\Delta ",
+    "133.917=E",
+    "133.934=\\Phi ",
+    "133.915=\\Gamma ",
+    "133.919=H",
+    "133.921=I",
+    "133.922=K",
+    "133.923=\\Lambda ",
+    "133.924=M",
+    "133.925=N",
+    "133.927=O",
+    "133.928=\\Pi ",
+    "133.920=\\Theta ",
+    "133.929=P",
+    "133.931=\\Sigma ",
+    "133.932=T",
+    "133.933=Y",
+    "133.937=\\Omega ",
+    "133.926=\\Xi ",
+    "133.936=\\Psi ",
+    "133.918=Z",
+    "134.34=\\forall ",    /* symbol font encoding */
     "134.36=\\exists ",
     "134.39=\\ni ",
     "134.42=*",
@@ -2900,6 +2936,7 @@ char *Profile_CHARTABLE[] = {
     "134.209=\\nabla ",
     "134.213=\\prod ",
     "134.215=\\cdot ",
+/*    "134.215=\\times ", */
     "134.216=\\neg ",
     "134.217=\\wedge ",
     "134.218=\\vee ",
@@ -2913,99 +2950,8 @@ char *Profile_CHARTABLE[] = {
     "134.229=\\Sigma ",
     "134.241=\\rangle ",
     "134.242=\\smallint ",
-    "139.60=\\vartriangleleft ",
-    "139.62=\\vartriangleright ",
-    "139.67=\\coprod ",
-    "139.68=\\lambdabar ",
-    "139.73=\\bigcap ",
-    "139.75=\\ldots ",
-    "139.76=\\cdots ",
-    "139.77=\\vdots ",
-    "139.78=\\ddots ",
-    "139.79=\\ddots ",
-    "139.81=\\because ",
-    "139.85=\\bigcup ",
-    "139.97=\\longmapsto ",
-    "139.98=\\updownarrow ",
-    "139.99=\\Updownarrow ",
-    "139.102=\\succ ",
-    "139.104=\\hbar ",
-    "139.108=\\ell ",
-    "139.109=\\mp ",
-    "139.111=\\circ ",
-    "139.112=\\prec ",
-    "152.1m={}",
-    "152.1t={}",
-    "152.8m=\\/",
-    "152.8t=\\/",
-    "152.2m=\\,",
-    "152.2t=\\thinspace ",
-    "152.4m=\\;",
-    "152.4t=\\ ",
-    "152.5m=\\quad ",
-    "152.5t=\\quad ",
-    0
-};
-
-/* [CHARTABLE3] */
-char *Profile_CHARTABLE3[] = {
-    "130.91=\\lbrack ",
-    "132.945=\\alpha ",
-    "132.946=\\beta ",
-    "132.967=\\chi ",
-    "132.948=\\delta ",
-    "132.949=\\epsilon ",
-    "132.966=\\phi ",
-    "132.947=\\gamma ",
-    "132.951=\\eta ",
-    "132.953=\\iota ",
-    "132.981=\\varphi ",
-    "132.954=\\kappa ",
-    "132.955=\\lambda ",
-    "132.956=\\mu ",
-    "132.957=\\nu ",
-    "132.959=\\o ",
-    "132.960=\\pi ",
-    "132.952=\\theta ",
-    "132.961=\\rho ",
-    "132.963=\\sigma ",
-    "132.964=\\tau ",
-    "132.965=\\upsilon ",
-    "132.969=\\omega ",
-    "132.958=\\xi ",
-    "132.968=\\psi ",
-    "132.950=\\zeta ",
-    "132.977=\\vartheta ",
-    "132.962=\\varsigma ",
-    "132.982=\\varpi ",
-    "133.913=A",
-    "133.914=B",
-    "133.935=X",
-    "133.916=\\Delta ",
-    "133.917=E",
-    "133.934=\\Phi ",
-    "133.915=\\Gamma ",
-    "133.919=H",
-    "133.921=I",
-    "133.922=K",
-    "133.923=\\Lambda ",
-    "133.924=M",
-    "133.925=N",
-    "133.927=O",
-    "133.928=\\Pi ",
-    "133.920=\\Theta ",
-    "133.929=P",
-    "133.931=\\Sigma ",
-    "133.932=T",
-    "133.933=Y",
-    "133.937=\\Omega ",
-    "133.926=\\Xi ",
-    "133.936=\\Psi ",
-    "133.918=Z",
-    "134.42=*",
-    "134.43=+",
+    "134.247=\\div ",
     "134.8722=-",
-    "134.61==",
     "134.8804=\\leq ",
     "134.8805=\\geq ",
     "134.8800=\\neq ",
@@ -3013,9 +2959,6 @@ char *Profile_CHARTABLE3[] = {
     "134.8776=\\approx ",
     "134.8773=\\cong ",
     "134.8733=\\propto ",
-    "134.177=\\pm ",
-    "134.215=\\times ",
-    "134.247=\\div ",
     "134.8727=\\ast ",
     "134.8901=\\cdot ",
     "134.8226=\\bullet ",
@@ -3065,6 +3008,32 @@ char *Profile_CHARTABLE3[] = {
     "134.8747=\\smallint",
     "134.8721=\\sum ",
     "134.8719=\\prod ",
+    "139.58=\\sim ",              /* MT Extra encoding */
+    "139.59=\\simeq ",
+    "139.60=\\vartriangleleft ",
+    "139.61=\\ll ",
+    "139.62=\\vartriangleright ",
+    "139.63=\\gg ",
+    "139.66=\\doteq ",
+    "139.67=\\coprod ",
+    "139.68=\\lambdabar ",
+    "139.73=\\bigcap ",
+    "139.75=\\ldots ",
+    "139.76=\\cdots ",
+    "139.77=\\vdots ",
+    "139.78=\\ddots ",
+    "139.79=\\ddots ",
+    "139.81=\\because ",
+    "139.85=\\bigcup ",
+    "139.97=\\longmapsto ",
+    "139.98=\\updownarrow ",
+    "139.99=\\Updownarrow ",
+    "139.102=\\succ ",
+    "139.104=\\hbar ",
+    "139.108=\\ell ",
+    "139.109=\\mp ",
+    "139.111=\\circ ",
+    "139.112=\\prec ",
     "139.8230=\\ldots ",
     "139.8943=\\cdots ",
     "139.8942=\\vdots ",
@@ -3088,6 +3057,16 @@ char *Profile_CHARTABLE3[] = {
     "139.8720=\\coprod ",
     "151.60160m={}",
     "151.60160t={}",
+    "152.1m={}",
+    "152.1t={}",
+    "152.8m=\\/",
+    "152.8t=\\/",
+    "152.2m=\\,",
+    "152.2t=\\thinspace ",
+    "152.4m=\\;",
+    "152.4t=\\ ",
+    "152.5m=\\quad ",
+    "152.5t=\\quad ",
     "152.60161m=\\/",
     "152.60161t=\\/",
     "152.61168m=@,",
@@ -3098,6 +3077,8 @@ char *Profile_CHARTABLE3[] = {
     "152.60164t=\\ ",
     "152.60165m=\\quad ",
     "152.60165t=\\quad ",
+    "152.61186m=\\, ",
+    "152.61186t=\\thinspace ",
     0
 };
 

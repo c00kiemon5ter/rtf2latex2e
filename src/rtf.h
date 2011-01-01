@@ -383,5 +383,8 @@ FILE 		*RTFOpenLibFile(char *file, char *mode);
 
 extern int g_debug_level;
 extern int g_include_both;
+extern int g_delete_eqn_file;
+extern int g_insert_eqn_name;
+extern int g_equation_file;
 
 #endif /* _RTF_H */

@@ -28,8 +28,6 @@
 # include "cole.h"
 # include "rtf2latex2e.h"
 # include "eqn.h"
-void __cole_dump (void *_m, void *_start, uint32_t length, char *msg);
-uint16_t fil_sreadU16 (uint8_t * in);
 
 char outputMapName[255];
 # define        prefFileName    "r2l-pref"
@@ -3714,6 +3712,67 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
         printf ("* Warning! Odd number of hex characters read for object!\n");
 }
 
+/* 
+ * Convert OLE file containing equation 
+ */
+ 
+boolean ConvertEquationFile(char *objectFileName)
+{
+    unsigned char *nativeStream;
+    MTEquation *theEquation;
+    uint32_t equationSize;    
+
+    nativeStream = NULL;
+    theEquation = NULL;
+       	
+    /* Decode the OLE and extract the equation stream into buffer nativeStream */
+    if (DecodeOLE(objectFileName, "/Equation Native", &nativeStream, &equationSize)) {
+        RTFMsg("* error decoding OLE equation object!\n");
+        return (false);
+    }    
+
+    theEquation = (MTEquation *) malloc(sizeof(MTEquation));
+    if (theEquation == NULL) {
+        RTFMsg("* error allocating memory for equation!\n");
+        free(nativeStream);
+        return (false);
+    }
+
+    /* the first two bytes should contain 0x1c 0x00 */
+    if (*nativeStream == 0x1c && *(nativeStream+1) == 0x00) {
+        equationSize -= MTEF_HEADER_SIZE;
+
+        if (!Eqn_Create(theEquation, nativeStream+MTEF_HEADER_SIZE, equationSize)) {
+            RTFMsg("* could not create equation structure!\n");
+            free(nativeStream);
+            free(theEquation);
+            return (false);
+        }
+
+        DoParagraphCleanUp();
+        DoSectionCleanUp();
+        
+        if (g_insert_eqn_name) {
+        	PutLitStr("\\url{file://");
+        	PutLitStr(objectFileName);
+        	PutLitStr("}");
+        	wrapCount += strlen(objectFileName) + strlen("\\url{file://}");
+        	requireHyperrefPackage = true;
+        }
+
+        Eqn_TranslateObjectList(theEquation, ostream, 0);
+        Eqn_Destroy(theEquation);
+    }
+
+    if (theEquation != NULL)
+        free(theEquation);
+
+    if (nativeStream != NULL)
+        free(nativeStream);
+
+    requireAmsMathPackage = true;
+    return true;
+}
 
 /* 
  * Translate an object containing a MathType equation
@@ -3721,14 +3780,9 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 static boolean ReadEquation(int *groupCount)
 {
     FILE *in, *out;
+    boolean result;
     char objectFileName[rtfBufSiz];
     char objectFileNameX[rtfBufSiz];
-    unsigned char *nativeStream;
-    MTEquation *theEquation;
-    uint32_t equationSize;    
-
-    nativeStream = NULL;
-    theEquation = NULL;
 
     /* look for start of \objdata  group */
     while (!RTFCheckMM(rtfDestination, rtfObjData)) {
@@ -3773,50 +3827,13 @@ static boolean ReadEquation(int *groupCount)
 		fclose(in);
 		rename(objectFileNameX,objectFileName);
 	} 
-       	
-    /* Decode the OLE and extract the equation stream into buffer nativeStream */
-    if (DecodeOLE(objectFileName, "/Equation Native", &nativeStream, &equationSize)) {
-        RTFMsg("* error decoding OLE equation object!\n");
-        return (false);
-    }
 
-    /* remove(objectFileName); */
-
-    theEquation = (MTEquation *) malloc(sizeof(MTEquation));
-    if (theEquation == NULL) {
-        RTFMsg("* error allocating memory for equation!\n");
-        free(nativeStream);
-        return (false);
-    }
-
-    /* the first two bytes should contain 0x1c 0x00 */
-    if (fil_sreadU16(nativeStream) == MTEF_HEADER_SIZE) {
-        equationSize -= MTEF_HEADER_SIZE;
-
-        if (0) __cole_dump(nativeStream+MTEF_HEADER_SIZE, nativeStream+MTEF_HEADER_SIZE, equationSize, "equation");
-
-        if (!Eqn_Create(theEquation, nativeStream+MTEF_HEADER_SIZE, equationSize)) {
-            RTFMsg("* could not create equation structure!\n");
-            free(nativeStream);
-            free(theEquation);
-            return (false);
-        }
-
-        DoParagraphCleanUp();
-        DoSectionCleanUp();
-
-        Eqn_TranslateObjectList(theEquation, ostream, 0);
-        Eqn_Destroy(theEquation);
-    }
-
-    if (theEquation != NULL)
-        free(theEquation);
-
-    if (nativeStream != NULL)
-        free(nativeStream);
-
-    requireAmsMathPackage = true;
-    return (true);
+    result = ConvertEquationFile(objectFileName);
+    
+    if (g_delete_eqn_file)
+        remove(objectFileName);
+        
+	return result;
 }
 
 

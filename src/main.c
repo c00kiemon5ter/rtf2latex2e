@@ -27,6 +27,7 @@
 #include     "rtf.h"
 #include     "mygetopt.h"
 #include     "rtf2latex2e.h"
+#include     "eqn.h"
 
 extern long  groupLevel;
 extern char  outputMapName[];
@@ -40,10 +41,13 @@ extern long  groupLevel;
 #include <Windows.h>
 #endif
 
-char         *g_library_path = NULL;
-int          g_little_endian = 0;
-int          g_debug_level   = 0;
-int          g_include_both  = 0;
+char         *g_library_path   = NULL;
+int          g_little_endian   = 0;
+int          g_debug_level     = 0;
+int          g_include_both    = 0;
+int          g_delete_eqn_file = 1;
+int          g_insert_eqn_name = 0;
+int          g_equation_file   = 0;
 
 /* Figure out endianness of machine.  Needed for OLE & graphics support */
 static void 
@@ -190,6 +194,7 @@ print_usage(void)
     fprintf(stdout, "Options:\n");
     fprintf(stdout, "  -h               display help\n");
     fprintf(stdout, "  -b               include latex & picts for equations\n");
+    fprintf(stdout, "  -E               save intermediate .eqn files\n");
     fprintf(stdout, "  -o outputfile    file for RTF output\n");
     fprintf(stdout, "  -P path          paths to *.cfg & latex2png\n");
     fprintf(stdout, "  -t /path/to/tmp  temporary directory\n");
@@ -220,11 +225,20 @@ main(int argc, char **argv)
     extern int      optind;
 
 
-    while ((c = my_getopt(argc, argv, "bhvVt:P:")) != EOF) {
+    while ((c = my_getopt(argc, argv, "bheEvVt:P:")) != EOF) {
         switch (c) {
 
         case 'b':
             g_include_both = 1;
+            break;
+
+        case 'e':
+            g_delete_eqn_file = 0;
+            break;
+
+        case 'E':
+        	g_insert_eqn_name = 1;
+            g_delete_eqn_file = 0;
             break;
 
         case 'v':
@@ -253,13 +267,10 @@ main(int argc, char **argv)
 
     /* Initialize stuff */
     if (argc > 0) {
-        SetEndianness();/* needed for cole routines */
-        strcpy(outputMapName, "");  /* assume that special
-                         * TeX-Map is not used */
-        RTFSetOpenLibFileProc(OpenLibFile); /* install new routine
-                             * for opening library
-                             * files */
-        WriterInit();   /* one time writer initialization */
+        SetEndianness();                    /* needed for cole routines */
+        strcpy(outputMapName, "");          /* assume special TeX-Map is not used */
+        RTFSetOpenLibFileProc(OpenLibFile); /* install routine for opening library files */
+        WriterInit();                       /* one time writer initialization */
     } else {
         print_usage();
     }
@@ -273,7 +284,7 @@ main(int argc, char **argv)
          * open first file, set it as the input file, and enable
          * global access to input file name
          */
-        /* strip .rtf from file name if found */
+
 		ifp = fopen(argv[fileCounter], "r");
         if (!ifp) {
             RTFPanic("* Cannot open input file %s\n", argv[fileCounter]);
@@ -281,19 +292,8 @@ main(int argc, char **argv)
         }
         RTFSetStream(ifp);
 
-        /* look at second token to check if input file is of type rtf */
-        cursorPos = ftell(ifp);
-        RTFGetToken();
-        RTFGetToken();
-        if (rtfMajor != rtfVersion) {
-            RTFMsg("* Oops! %s is not an rtf file!\n", argv[fileCounter]);
-            if (fclose(ifp) != 0)
-                printf("* error closing input file %s\n", argv[fileCounter]);
-            continue;
-        }
-        fseek(ifp, cursorPos, 0);
-        RTFInit();
-
+        /* strip extension and determine if the input file is a .eqn file */
+        g_equation_file = 0;
         strcpy(buf2, argv[fileCounter]);
         buf1 = buf2;
         bufLength = strlen(buf1);
@@ -302,8 +302,27 @@ main(int argc, char **argv)
             /* strip .rtf by terminating string */
             if (strcmp(buf1, ".rtf") == 0 || strcmp(buf1, ".RTF") == 0)
                 buf2[bufLength - 4] = '\0';
-
+            else if (strcmp(buf1, ".eqn") == 0 || strcmp(buf1, ".EQN") == 0) {
+                buf2[bufLength - 4] = '\0';
+                g_equation_file = 1;
+            }
         }
+
+        /* look at second token to check if input file is of type rtf */
+        if (!g_equation_file) {
+			cursorPos = ftell(ifp);
+			RTFGetToken();
+			RTFGetToken();
+			if (rtfMajor != rtfVersion) {
+				RTFMsg("* Oops! %s is not an rtf file!\n", argv[fileCounter]);
+				if (fclose(ifp) != 0)
+					printf("* error closing input file %s\n", argv[fileCounter]);
+				continue;
+			}
+			fseek(ifp, cursorPos, 0);
+        }
+        RTFInit();
+        
         /* replace any spaces in input file name by a dash - */
         buf1 = strrchr(buf2, PATH_SEP); /* strip away path info */
         if (buf1 == (char *) NULL)
@@ -315,7 +334,8 @@ main(int argc, char **argv)
         }
 
         /* set input name to modified name of input file */
-        RTFSetInputName(buf2);
+        if (!g_equation_file) 
+        	RTFSetInputName(buf2);
 
         /*
          * open output file, set it as the output file, and enable
@@ -331,7 +351,10 @@ main(int argc, char **argv)
         RTFSetOutputName(buf);
 
         if (BeginLaTeXFile()) {
-            RTFRead();
+        	if (g_equation_file) 
+                ConvertEquationFile(argv[fileCounter]);
+            else
+            	RTFRead();
             EndLaTeXFile();
         }
         

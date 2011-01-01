@@ -40,5 +40,6 @@ typedef struct {
 int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size);
 void Eqn_Destroy(MTEquation * eqn);
 void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile, int loglevel);
+boolean ConvertEquationFile(char *objectFileName);
 
 #endif
