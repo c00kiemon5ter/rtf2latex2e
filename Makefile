@@ -33,38 +33,38 @@ CFLAGS:=$(CFLAGS) $(PLATFORM)
 
 LIBS= 
 
-SRCS         = src/cole.c                 src/cole_decode.c         src/cole_support.c      \
-               src/cole_version.c         src/eqn.c                 src/main.c              \
-               src/mygetopt.c             src/reader.c              src/writer.c
+SRCS         = src/cole.c                 src/cole_decode.c          src/cole_support.c      \
+               src/eqn.c                  src/main.c                 src/mygetopt.c          \
+               src/reader.c               src/writer.c
 
-HDRS         = src/cole.h                 src/cole_support.h        src/eqn.h               \
-               src/eqn_support.h          src/mygetopt.h            src/rtf2latex2e.h       \
+HDRS         = src/cole.h                 src/cole_support.h         src/eqn.h               \
+               src/eqn_support.h          src/mygetopt.h             src/rtf2latex2e.h       \
                src/rtf.h
 
-RTFPREP_SRCS = src/rtfprep/Makefile       src/rtfprep/rtf-controls  src/rtfprep/rtfprep.c   \
-               src/rtfprep/standard-names src/rtfprep/tokenscan.c   src/rtfprep/tokenscan.h  
+RTFPREP_SRCS = src/rtfprep/Makefile       src/rtfprep/rtf-controls   src/rtfprep/rtfprep.c   \
+               src/rtfprep/standard-names src/rtfprep/tokenscan.c    src/rtfprep/tokenscan.h  
 
-PREFS        = pref/TeX-map               pref/TeX-map.latin1       pref/cp437.map          \
-               pref/TeX-map.applemac      pref/ansi-sym             pref/cp850.map          \
-               pref/TeX-map.cp1250        pref/applemac.map         pref/mac-sym            \
-               pref/TeX-map.cp1252        pref/cp1250.map           pref/pc-sym             \
-               pref/TeX-map.default       pref/cp1252.map           pref/pca-sym            \
-               pref/TeX-map.german        pref/cp1254.map           pref/r2l-head           \
-               pref/r2l-map               pref/r2l-pref             pref/rtf-ctrl
+PREFS        = pref/TeX-map               pref/TeX-map.latin1        pref/cp437.map          \
+               pref/TeX-map.applemac      pref/ansi-sym              pref/cp850.map          \
+               pref/TeX-map.cp1250        pref/applemac.map          pref/mac-sym            \
+               pref/TeX-map.cp1252        pref/cp1250.map            pref/pc-sym             \
+               pref/TeX-map.default       pref/cp1252.map            pref/pca-sym            \
+               pref/TeX-map.german        pref/cp1254.map            pref/r2l-head           \
+               pref/r2l-map               pref/r2l-pref              pref/rtf-ctrl
 
-DOCS         = doc/GPL_license            doc/Release-notes.txt     README                  \
-               doc/rtf2latex2eSWP.tex     doc/rtfReader.tex         doc/rtf2latex2eDoc.tex
+DOCS         = doc/GPL_license            doc/Release-notes.txt      README                  \
+               doc/rtf2latex2eSWP.tex     doc/rtfReader.tex          doc/rtf2latex2eDoc.tex
                
-PDFS         = doc/rtf2latex2eSWP.pdf     doc/rtfReader.pdf         doc/rtf2latex2eDoc.pdf  
+PDFS         = doc/rtf2latex2eSWP.pdf     doc/rtfReader.pdf          doc/rtf2latex2eDoc.pdf  
 
-TEST         = test/Makefile              test/arch.rtf             test/arch-mac.rtf       \
-               test/equation.rtf          test/fig-jpeg.rtf         test/multiline.rtf      \
-               test/mapping.rtf           test/rtf-misc.rtf         test/rtf.rtf            \
-               test/table.rtf             test/test.rtf             test/moreEqns.rtf
+TEST         = test/Makefile              test/arch.rtf              test/arch-mac.rtf       \
+               test/equation.rtf          test/fig-jpeg.rtf          test/multiline.rtf      \
+               test/mapping.rtf           test/rtf-misc.rtf          test/rtf.rtf            \
+               test/table.rtf             test/test.rtf              test/moreEqns.rtf
 
-OBJS         = src/cole.o                 src/cole_decode.o         src/cole_support.o      \
-               src/eqn.o                  src/main.o                src/mygetopt.o          \
-               src/reader.o               src/rtfprep/tokenscan.o   src/writer.o
+OBJS         = src/cole.o                 src/cole_decode.o          src/cole_support.o      \
+               src/eqn.o                  src/main.o                 src/mygetopt.o          \
+               src/reader.o               src/rtfprep/tokenscan.o    src/writer.o
 
 all : checkdir rtfprep rtf2latex2e
 
