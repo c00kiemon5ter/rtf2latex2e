@@ -30,8 +30,8 @@
 # include       "eqn.h"
 # include       "eqn_support.h"
 
-# define        DEBUG_PARSING     1
-# define        DEBUG_TRANSLATION 1
+# define        DEBUG_PARSING     0
+# define        DEBUG_TRANSLATION 0
 # define        DEBUG_TEMPLATE    0
 # define        DEBUG_FONT        0
 # define        DEBUG_EMBELLS     0
@@ -367,7 +367,8 @@ void print_tag(unsigned char tag, int src_index)
 /*
  * Convert MT equation into internal form
  * at each Eqn_inputXXX call, the src_index is set to the XXX tag
- * so that the hi nibble can be used to obtain the options
+ * so that the hi nibble can be used to obtain the options in 
+ * versions 1-4 of MTEF
 */
 MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_index, int num_objs)
 {
@@ -738,9 +739,8 @@ MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
                            int *src_index)
 {
     unsigned char attrs;
-    int row_bytes;
-    int col_bytes;
-    int idx = 0;
+    int i, bytes;
+
     MT_MATRIX *new_matrix = (MT_MATRIX *) malloc(sizeof(MT_MATRIX));
     new_matrix->nudge_x = 0;
     new_matrix->nudge_y = 0;
@@ -761,21 +761,18 @@ MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
     new_matrix->cols = *(src + *src_index);
     (*src_index)++;
 
-    row_bytes = (2 * (new_matrix->rows + 1) + 7) / 8;
-    while (idx < row_bytes) {
-        if (idx < MATR_MAX)
-            new_matrix->row_parts[idx] = *(src + *src_index);
+	/* row partition consists of (rows+1) two-bit values */
+    bytes = (2 * (new_matrix->rows + 1) + 7) / 8;
+    for (i=0; i<bytes; i++) {
+        new_matrix->row_parts[i] = *(src + *src_index);
         (*src_index)++;
-        idx++;
     }
 
-    col_bytes = (2 * (new_matrix->cols + 1) + 7) / 8;
-    idx = 0;
-    while (idx < col_bytes) {
-        if (idx < MATR_MAX)
-            new_matrix->col_parts[idx] = *(src + *src_index);
+	/* col partition consists of (cols+1) two-bit values */
+    bytes = (2 * (new_matrix->cols + 1) + 7) / 8;
+    for (i=0; i<bytes; i++) {
+        new_matrix->col_parts[i] = *(src + *src_index);
         (*src_index)++;
-        idx++;
     }
 
     new_matrix->element_list = Eqn_GetObjectList(eqn, src, src_index, 0);
@@ -1231,7 +1228,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
 static
 char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line)
 {
-
+	char *thetex;
     EQ_STRREC strs[3];
 
     int num_strs = 0;
@@ -1264,7 +1261,10 @@ char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line)
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-    return Eqn_JoinStrings(eqn, strs, num_strs);
+	thetex = Eqn_JoinStrings(eqn, strs, num_strs);
+
+	if (0) fprintf(stderr,"LINE='%s'\n",thetex);
+    return thetex;
 }
 
 
@@ -1462,133 +1462,86 @@ int HasHVLine(int line_num, unsigned char *bits)
 }
 
 
-/*  WARNING: hard coded translation */
+/*  The current implementation ignores the vertical and
+ *  horizontal lines
+ */
 static
 char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
 {
-
     int buf_limit = 8192;
-    char *rv = malloc(buf_limit);
-    int is_tabular;
-    char *matv_align = "{";     /*  default is vertical centering */
+    char *thetex, *cell;
     char *col_align = "c";
-    int i = 0;
+    int j,col,row;
     MT_OBJLIST *obj_list;
-    int curr_row = 0;
-    int curr_col = 0;
 
-    *rv = 0;
+    thetex = malloc(buf_limit);
+    *thetex = 0;
 
     if (eqn->log_level >= 2) {
         char buf[128];
         sprintf(buf, "\n%sStart MATRIX\n", eqn->indent);
-        strcat(rv, buf);
+        strcat(thetex, buf);
     }
 
     strcat(eqn->indent, "  ");
 
-    /*  start matrix */
-    is_tabular = (eqn->m_mode == EQN_MODE_TEXT) ? 1 : 0;
-
-    strcat(rv, "*there*");
-    if (is_tabular) 
-        strcat(rv, "\n\\begin{tabular}");
-    else
-        strcat(rv, "\n\\begin{array}");
+    strcat(thetex, "\n\\begin{array}");
 
     /*  set the vertical alignment of the matrix */
     if (matrix->valign == 0)
-        matv_align = "[t]{";
+        strcat(thetex, "[t]");
     else if (matrix->valign == 2)
-        matv_align = "[b]{";
-    strcat(rv, matv_align);
-
-    /*  set the horizontal column alignment char */
+        strcat(thetex, "[b]");
+        
+    /*  set alignment for all columns */
     if (matrix->h_just == MT_LEFT)
         col_align = "l";
     else if (matrix->h_just == MT_RIGHT)
         col_align = "r";
 
-    /*  script the LaTeX "cols" */
-    while (i <= matrix->cols) {
-        if (HasHVLine(i, matrix->col_parts))
-            strcat(rv, "|");
-        if (i < matrix->cols)
-            strcat(rv, col_align);
-        i++;
-    }
-    strcat(rv, "}\n");
+    strcat(thetex, "{");
+    for (col=0; col<matrix->cols; col++)
+        strcat(thetex, col_align);
+    strcat(thetex, "}\n");
 
     obj_list = matrix->element_list;
+    for (row = 0; row < matrix->rows; row++) {
 
-    while (obj_list && curr_row < matrix->rows) {       /*   loop down rows */
-        int new_line = 0;
-
-        if (curr_row) {
-/*             if (is_tabular) */
-/*              setMathMode(eqn, rv, EQN_MODE_TEXT); */
-            strcat(rv, " \\\\");
-            new_line = 1;
-        }
+        if (row > 0) 
+            strcat(thetex, " \\\\\n");
         
-        if (HasHVLine(curr_row, matrix->row_parts)) {
-            strcat(rv, " \\hline");
-            new_line = 1;
-        }
-        if (new_line)
-            strcat(rv, "\n");
+        for (col=0; col<matrix->cols; col++) {
+        
+            if (col>0) strcat(thetex, " & ");
 
-        while (curr_col < matrix->cols) {       /*  loop thru columns in one row */
-
-            if (curr_col) {
-/*              if (is_tabular) */
-/*                  setMathMode(eqn, rv, EQN_MODE_TEXT); */
-                strcat(rv, " & ");
-            }
-
-            while (obj_list && obj_list->tag != LINE) { /*  could be a SIZE */
+            while (obj_list && obj_list->tag != LINE) 
                 obj_list = (MT_OBJLIST *) obj_list->next;
-            }
 
-            if (obj_list && obj_list->tag == LINE) {
-                uint32_t b_off;
-                char *data = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
-
-                b_off = (uint32_t) strlen(rv);
-                rv = ToBuffer(data, rv, &b_off, &buf_limit);    /*  strcat( rv,data ); */
-
-                curr_col++;
-                obj_list = (MT_OBJLIST *) obj_list->next;
-            } else
+            /* no column element found ... finish the line and exit */
+            if (!obj_list || obj_list->tag != LINE) {
+                for (j=col; j<matrix->cols; j++)
+                    strcat(thetex, " & ");
                 break;
+            }
+                
+            cell = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
+            strcat(thetex, cell);
+            free(cell);
 
-        }                       /*  loop thru columns in one row */
-
-        curr_row++;
-
+            obj_list = (MT_OBJLIST *) obj_list->next;
+        }
     }                           /*  loop down rows */
 
-/*  if (is_tabular) */
-/*      setMathMode(eqn, rv, EQN_MODE_TEXT); */
-
-    if (HasHVLine(curr_row, matrix->row_parts))
-        strcat(rv, " \\\\ \\hline\n");
-
-    if (is_tabular)
-        strcat(rv, "\n\\end{tabular}\n");
-    else
-        strcat(rv, "\n\\end{array}\n");
+    strcat(thetex, "\n\\end{array}\n");
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
     if (eqn->log_level >= 2) {
         char buf[128];
         sprintf(buf, "\n%sEnd MATRIX\n", eqn->indent);
-        strcat(rv, buf);
+        strcat(thetex, buf);
     }
-
-fprintf(stderr,"xxx\n%s\n",rv);
-    return rv;
+    return thetex;
 }
 
 static

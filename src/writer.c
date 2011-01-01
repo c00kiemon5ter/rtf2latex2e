@@ -40,8 +40,6 @@ char outputMapName[255];
 char texMapQualifier[rtfBufSiz];
 
 void RTFSetOutputStream(FILE * stream);
-int Figure2eps(char *inFile, char *outFile);
-void JPEGtoEPS(pictureStruct * picturePtr);
 static void ReadObject(void);
 
 int groupLevel = 0;            /* a counter for keeping track of opening and closing braces */
@@ -1527,6 +1525,7 @@ static void WriteLaTeXFooter(void)
         PutLitStr("\\usepackage{hyperref}\n");
         PutLitStr("\\def\\R2Lurl#1#2{\\mbox{\\href{#1}{\\tt #2}}}");
     }
+    PutLitStr("\\def\\degree{\\ensuremath{^\\circ}}\n");
     fseek(ofp, 0L, 2);          /* go back to end of stream */
 }
 
