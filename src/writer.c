@@ -554,7 +554,7 @@ void ExamineToken(void)
 {
     printf("* Token is %s\n", rtfTextBuf);
     printf("* Class is %d\n", rtfClass);
-    printf("* Major is %d\n", rtfMajor);
+    printf("* Major is %d\n", (int) rtfMajor);
     printf("* Minor is %d\n", rtfMinor);
     printf("* Param is %d\n\n", rtfParam);
 }
@@ -3473,10 +3473,31 @@ static void ReadPicture(void)
     strcpy(picture.name, "");
 }
 
+/*
+ * slow simplistic reimplementation of strcasestr for systems that
+ * don't include it in their library
+ *
+ * based on a GPL implementation in OpenTTD found under GPL v2
+ */
+
+char *my_strcasestr(const char *haystack, const char *needle)
+{
+	size_t hay_len = strlen(haystack);
+	size_t needle_len = strlen(needle);
+	while (hay_len >= needle_len) {
+		if (strncasecmp(haystack, needle, needle_len) == 0) 
+		    return (char *) haystack;
+
+		haystack++;
+		hay_len--;
+	}
+
+	return NULL;
+}
 
 /* 
- * parses \objectclass and adds the class type to the global variable 'object'
- */
+* parses \objectclass and adds the class type to the global variable 'object'
+*/
 static void GetObjectClass(int *groupCounter)
 {
     int reachedObjectClass = 0;
@@ -3514,7 +3535,7 @@ static void GetObjectClass(int *groupCounter)
 
 /* do we recognize this object class? */
     for (i = 0; objectClassList[i] != (char *) NULL; i++) {
-        if (strcasestr(object.className, objectClassList[i]) != (char *) NULL) {
+        if (my_strcasestr(object.className, objectClassList[i]) != (char *) NULL) {
             object.class = i;
             break;
         }
@@ -4070,13 +4091,15 @@ static void ReadUnicode(void)
 	char unitext[20];
 
     if (rtfParam == 8220) {
-        PutStdChar(rtfSC_quotedblleft);
+    	PutLitStr("``");
+    	wrapCount+=2;
    	    RTFGetToken();
         return;
     }
 
     if (rtfParam == 8221) {
-        PutStdChar(rtfSC_quotedblright);
+    	PutLitStr("''");
+    	wrapCount+=2;
    	    RTFGetToken();
         return;
     }

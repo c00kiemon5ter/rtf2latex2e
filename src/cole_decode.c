@@ -37,27 +37,13 @@
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 
 
-        /* reorder pps tree, from tree structure to a linear one,
-           and write the level numbers, returns zero if OLE format fails,
-           returns no zero if success */
 static int reorder_pps_tree(pps_entry * root_pps, U16 level);
         /* free memory used (except the pps tree) */
 static void ends(void);
-        /* close and remove files in the tree */
-/* closeOLEtreefiles --- outdated because not to generate the
-   real files by now --- cole 2.0.0 */
-/*
-  static void closeOLEtreefiles (pps_entry * tree, U32 root);
- */
-/*
-   verbose pps tree.
-   Input: pps_list: stream list.
-          root_pps: root pps.
-          level:    how much levels will be extracted.
-   Output: none.
- */
-static void verbosePPSTree(pps_entry * pps_list, U32 root_pps, int level);
 
+#ifdef COLE_VERBOSE
+static void verbosePPSTree(pps_entry * pps_list, U32 root_pps, int level);
+#endif
 
 static FILE *input;
 static U8 *Block;
@@ -530,9 +516,13 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
 }
 
 
-/* reorder pps tree and write levels */
-/* not sure if it is safe declare last_next_link_visited
-   inside reorder_pps_tree function */
+/* reorder pps tree, from tree structure to a linear one,
+ * and write the level numbers, returns zero if OLE format fails,
+ * returns no zero if success 
+ *
+ * not sure if it is safe declare last_next_link_visited
+ * inside reorder_pps_tree function 
+ */
 static U32 *last_next_link_visited;
 int reorder_pps_tree(pps_entry * node, U16 level)
 {
@@ -573,8 +563,14 @@ int reorder_pps_tree(pps_entry * node, U16 level)
     return 1;
 }
 
-
-/* verbose pps tree */
+#ifdef COLE_VERBOSE
+/*
+   verbose pps tree.
+   Input: pps_list: stream list.
+          root_pps: root pps.
+          level:    how much levels will be extracted.
+   Output: none.
+ */
 void verbosePPSTree(pps_entry * pps_list, U32 start_entry, int level)
 {
     U32 entry;
@@ -602,7 +598,7 @@ void verbosePPSTree(pps_entry * pps_list, U32 start_entry, int level)
         }
     }
 }
-
+#endif
 
 /* closeOLEtreefiles --- outdated because not to generate the
    real files by now --- cole 2.0.0 */

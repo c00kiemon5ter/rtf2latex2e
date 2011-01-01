@@ -886,7 +886,7 @@ void RTFSetToken(short class, short major, short minor, int32_t param, char *tex
     if (param == rtfNoParam)
         (void) strcpy(rtfTextBuf, text);
     else
-        sprintf(rtfTextBuf, "%s%d", text, param);
+        sprintf(rtfTextBuf, "%s%d", text, (int) param);
     rtfTextLen = strlen(rtfTextBuf);
 }
 
@@ -2225,7 +2225,7 @@ void RTFPanic(char *fmt, ...)
     if (prevChar != EOF && rtfTextBuf != (char *) NULL) {
         sprintf(buf + strlen(buf),
                 "Last token read was \"%s\" near line %d, position %hd.\n",
-                rtfTextBuf, rtfLineNum, rtfLinePos);
+                rtfTextBuf, (int)rtfLineNum, (int)rtfLinePos);
     }
     (*panicProc) (buf);
 }

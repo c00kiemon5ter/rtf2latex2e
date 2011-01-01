@@ -256,7 +256,7 @@ int __cole_print_tree_inroot(COLEDIR * cd, void *info, COLERRNO * colerrno)
     char *entry_name;
 
     printf("DIR ");
-    printf(" %7lu", cole_dir_getsize(cd));
+    printf(" %7lu", (unsigned long) cole_dir_getsize(cd));
     printf(" %08x-%08x %08x-%08x",
            (unsigned int)cole_dir_getdays1(cd),
            (unsigned int)cole_dir_getsec1(cd),
@@ -298,7 +298,7 @@ __cole_print_tree_indirentry(COLEDIRENT * cde, void *info,
         printf("FILE");
     else
         printf("????");
-    printf(" %7lu", cole_direntry_getsize(cde));
+    printf(" %7lu", (unsigned long) cole_direntry_getsize(cde));
     printf(" %08x-%08x %08x-%08x",
            (unsigned int)cole_direntry_getdays1(cde),
            (unsigned int)cole_direntry_getsec1(cde),
