@@ -16,9 +16,10 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include <stdlib.h>
+ 
+#include "cole_support.h"
 #include "cole.h"
-#include "cole_internal.h"
+#include <stdlib.h>
 
 /**
  * cole_perror:
@@ -497,25 +498,25 @@ size_t cole_dir_getsize(COLEDIR * coledir)
 }
 
 
-U32 cole_dir_getsec1(COLEDIR * coledir)
+uint32_t cole_dir_getsec1(COLEDIR * coledir)
 {
     return coledir->fs->tree[coledir->entry].seconds1;
 }
 
 
-U32 cole_dir_getsec2(COLEDIR * coledir)
+uint32_t cole_dir_getsec2(COLEDIR * coledir)
 {
     return coledir->fs->tree[coledir->entry].seconds2;
 }
 
 
-U32 cole_dir_getdays1(COLEDIR * coledir)
+uint32_t cole_dir_getdays1(COLEDIR * coledir)
 {
     return coledir->fs->tree[coledir->entry].days1;
 }
 
 
-U32 cole_dir_getdays2(COLEDIR * coledir)
+uint32_t cole_dir_getdays2(COLEDIR * coledir)
 {
     return coledir->fs->tree[coledir->entry].days2;
 }

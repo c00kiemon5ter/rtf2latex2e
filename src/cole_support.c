@@ -20,50 +20,54 @@
   Some code was from Caolan, but I have replaced all the code,
   now all code here is mine, so I changed copyright announce in cole-1.0.0.
      Arturo Tena
+     
+  Merged with internal.c 
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include "cole_support.h"
 
-U16 fil_sreadU16(U8 * in)
+uint16_t fil_sreadU16(uint8_t * in)
 {
 #ifdef WORDS_BIGENDIAN
-    U16 ret;
-    *((U8 *) (&ret)) = *(in + 1);
-    *(((U8 *) (&ret)) + 1) = *in;
+    uint16_t ret;
+    *((uint8_t *) (&ret)) = *(in + 1);
+    *(((uint8_t *) (&ret)) + 1) = *in;
     return ret;
 #else                           /* !WORDS_BIGENDIAN */
-    return *((U16 *) in);
+    return *((uint16_t *) in);
 #endif
 }
 
 
-U32 fil_sreadU32(U8 * in)
+uint32_t fil_sreadU32(uint8_t * in)
 {
 #ifdef WORDS_BIGENDIAN
-    U32 ret;
-    *(((U8 *) (&ret)) + 3) = *in;
-    *(((U8 *) (&ret)) + 2) = *(in + 1);
-    *(((U8 *) (&ret)) + 1) = *(in + 2);
-    *((U8 *) (&ret)) = *(in + 3);
+    uint32_t ret;
+    *(((uint8_t *) (&ret)) + 3) = *in;
+    *(((uint8_t *) (&ret)) + 2) = *(in + 1);
+    *(((uint8_t *) (&ret)) + 1) = *(in + 2);
+    *((uint8_t *) (&ret)) = *(in + 3);
     return ret;
 #else                           /* !WORDS_BIGENDIAN */
-    return *((U32 *) in);
+    return *((uint32_t *) in);
 #endif
 }
 
 
-F64 fil_sreadF64(U8 * in)
+F64 fil_sreadF64(uint8_t * in)
 {
 #ifdef WORDS_BIGENDIAN
     F64 ret;
-    *(((U8 *) (&ret)) + 7) = *in;
-    *(((U8 *) (&ret)) + 6) = *(in + 1);
-    *(((U8 *) (&ret)) + 5) = *(in + 2);
-    *(((U8 *) (&ret)) + 4) = *(in + 3);
-    *(((U8 *) (&ret)) + 3) = *(in + 4);
-    *(((U8 *) (&ret)) + 2) = *(in + 5);
-    *(((U8 *) (&ret)) + 1) = *(in + 6);
-    *((U8 *) (&ret)) = *(in + 7);
+    *(((uint8_t *) (&ret)) + 7) = *in;
+    *(((uint8_t *) (&ret)) + 6) = *(in + 1);
+    *(((uint8_t *) (&ret)) + 5) = *(in + 2);
+    *(((uint8_t *) (&ret)) + 4) = *(in + 3);
+    *(((uint8_t *) (&ret)) + 3) = *(in + 4);
+    *(((uint8_t *) (&ret)) + 2) = *(in + 5);
+    *(((uint8_t *) (&ret)) + 1) = *(in + 6);
+    *((uint8_t *) (&ret)) = *(in + 7);
     return ret;
 #else                           /* !WORDS_BIGENDIAN */
     return *((F64 *) in);
@@ -71,26 +75,26 @@ F64 fil_sreadF64(U8 * in)
 }
 
 
-void fil_swriteU16(U8 * dest, U16 * src)
+void fil_swriteU16(uint8_t * dest, uint16_t * src)
 {
 #ifdef WORDS_BIGENDIAN
-    *(dest) = *(((U8 *) src) + 1);
-    *(dest + 1) = *((U8 *) src);
+    *(dest) = *(((uint8_t *) src) + 1);
+    *(dest + 1) = *((uint8_t *) src);
 #else                           /* !WORDS_BIGENDIAN */
-    *(dest) = *((U8 *) src);
-    *(dest + 1) = *(((U8 *) src) + 1);
+    *(dest) = *((uint8_t *) src);
+    *(dest + 1) = *(((uint8_t *) src) + 1);
 #endif
 }
 
 
-void fil_swriteU32(U8 * dest, U32 * src)
+void fil_swriteU32(uint8_t * dest, uint32_t * src)
 {
 #ifdef WORDS_BIGENDIAN
-    fil_swriteU16(dest, (U16 *) (((U8 *) src) + 2));
-    fil_swriteU16(dest + 2, (U16 *) src);
+    fil_swriteU16(dest, (uint16_t *) (((uint8_t *) src) + 2));
+    fil_swriteU16(dest + 2, (uint16_t *) src);
 #else                           /* !WORDS_BIGENDIAN */
-    fil_swriteU16(dest, (U16 *) src);
-    fil_swriteU16(dest + 2, (U16 *) (((U8 *) src) + 2));
+    fil_swriteU16(dest, (uint16_t *) src);
+    fil_swriteU16(dest + 2, (uint16_t *) (((uint8_t *) src) + 2));
 #endif
 }
 
@@ -100,10 +104,10 @@ void fil_swriteU32(U8 * dest, U32 * src)
         @param (void *) m memory position which content will be dumped
         @param (void *) start memory position from where calculate
                                 offset
-        @param (U32) length size in bytes of the dumped memory
+        @param (uint32_t) length size in bytes of the dumped memory
         @param (char *) msg optional message, can be NULL
  *-*/
-void __cole_dump(void *_m, void *_start, U32 length, char *msg)
+void __cole_dump(void *_m, void *_start, uint32_t length, char *msg)
 {
     unsigned char *pm;
     char buff[18];
@@ -151,4 +155,90 @@ void __cole_dump(void *_m, void *_start, U32 length, char *msg)
             buff[achar] = 0;
         printf("  %s\n", buff);
     }
+}
+
+
+#define MIN(a,b) ((a)<(b) ? (a) : (b))
+
+
+int
+__cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_start,
+                    uint8_t * BDepot, uint8_t * SDepot, FILE * sbfile,
+                    FILE * inputfile)
+{
+    /* FIXME rewrite this cleaner */
+
+    FILE *ret;
+    uint16_t BlockSize, Offset;
+    uint8_t *Depot;
+    FILE *infile;
+    long FilePos;
+    size_t bytes_to_copy;
+    uint8_t Block[0x0200];
+
+    *filename = malloc(L_tmpnam);       /* It must be L_tmpnam + 1? */
+    if (*filename == NULL)
+        return 1;
+
+    if (tmpnam(*filename) == NULL) {
+        free(*filename);
+        return 2;
+    }
+	
+    ret = fopen(*filename, "w+b");
+    *file = ret;
+    if (ret == NULL) {
+        free(*filename);
+        return 3;
+    }
+	
+    if (size >= 0x1000) {
+        /* read from big block depot */
+        Offset = 1;
+        BlockSize = 0x0200;
+        infile = inputfile;
+        Depot = BDepot;
+    } else {
+        /* read from small block file */
+        Offset = 0;
+        BlockSize = 0x40;
+        infile = sbfile;
+        Depot = SDepot;
+    }
+    while (pps_start < 0xfffffffd) {
+        FilePos = (long) ((pps_start + Offset) * BlockSize);
+        if (FilePos < 0) {
+            fclose(ret);
+            remove(*filename);
+            free(*filename);
+            return 4;
+        }
+        bytes_to_copy = MIN(BlockSize, size);
+        if (fseek(infile, FilePos, SEEK_SET)) {
+            fclose(ret);
+            remove(*filename);
+            free(*filename);
+            return 4;
+        }
+        fread(Block, bytes_to_copy, 1, infile);
+        if (ferror(infile)) {
+            fclose(ret);
+            remove(*filename);
+            free(*filename);
+            return 5;
+        }
+        fwrite(Block, bytes_to_copy, 1, ret);
+        if (ferror(ret)) {
+            fclose(ret);
+            remove(*filename);
+            free(*filename);
+            return 6;
+        }
+        pps_start = fil_sreadU32(Depot + (pps_start * 4));
+        size -= MIN(BlockSize, size);
+        if (size == 0)
+            break;
+    }
+
+    return 0;
 }

@@ -26,7 +26,6 @@
 
 # include       "rtf.h"
 # include       "rtf2latex2e.h"
-# include       "cole_support.h"
 # include       "eqn.h"
 # include       "eqn_support.h"
 
@@ -39,6 +38,10 @@
 # define        DEBUG_MODE        0
 # define        DEBUG_SIZE        0
 # define        DEBUG_JOIN        0
+
+# if (DEBUG_PARSING)
+void __cole_dump (void *_m, void *_start, uint32_t length, char *msg);
+# endif
 
 # define EQN_MODE_TEXT     0
 # define EQN_MODE_INLINE   1
@@ -388,8 +391,10 @@ MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_ind
 
         new_obj = (void *) NULL;
 
-        if (DEBUG_PARSING) print_tag(curr_tag, *src_index);
-        if (DEBUG_PARSING) __cole_dump(src+*src_index, src+*src_index, 16, NULL);
+# if (DEBUG_PARSING)
+		print_tag(curr_tag, *src_index);
+		__cole_dump(src+*src_index, src+*src_index, 16, NULL);
+# endif
 
         switch (curr_tag) {
         case END:

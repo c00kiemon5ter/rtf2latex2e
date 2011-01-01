@@ -29,7 +29,6 @@
 
 #include "cole.h"
 #include "cole_support.h"
-#include "cole_internal.h"
 
 #define ENTRYCHUNK 20           /* number of entries in root_list and sbd_list
                                    will be added each time. must be at least 1 */
@@ -37,40 +36,40 @@
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 
 
-static int reorder_pps_tree(pps_entry * root_pps, U16 level);
+static int reorder_pps_tree(pps_entry * root_pps, uint16_t level);
         /* free memory used (except the pps tree) */
 static void ends(void);
 
 #ifdef COLE_VERBOSE
-static void verbosePPSTree(pps_entry * pps_list, U32 root_pps, int level);
+static void verbosePPSTree(pps_entry * pps_list, uint32_t root_pps, int level);
 #endif
 
 static FILE *input;
-static U8 *Block;
-static U8 *Blockx;
-static U8 *BDepot, *SDepot, *Root;
+static uint8_t *Block;
+static uint8_t *Blockx;
+static uint8_t *BDepot, *SDepot, *Root;
 static pps_entry *pps_list;
-static U32 num_of_pps;
+static uint32_t num_of_pps;
 static FILE *sbfile;
 /* sbfilename is stored in *_sbfilename instead -- cole 2.0.0 */
 /* static char sbfilename[L_tmpnam]; */
-static U32 *sbd_list;
-static U32 *root_list;
+static uint32_t *sbd_list;
+static uint32_t *root_list;
 
 
 int
 __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
-            U8 ** _BDepot, U8 ** _SDepot, FILE ** _sbfile,
-            char **_sbfilename, FILE ** _input, U16 max_level)
+            uint8_t ** _BDepot, uint8_t ** _SDepot, FILE ** _sbfile,
+            char **_sbfilename, FILE ** _input, uint16_t max_level)
 {
     int c;
-    U32 num_bbd_blocks;
-    U32 num_xbbd_blocks;
-    U32 bl;
-    U32 i, j, len,offset;
-    U8 *s, *p, *t;
+    uint32_t num_bbd_blocks;
+    uint32_t num_xbbd_blocks;
+    uint32_t bl;
+    uint32_t i, j, len,offset;
+    uint8_t *s, *p, *t;
     long FilePos;
-    /* FilePos is long, not U32, because second argument of fseek is long */
+    /* FilePos is long, not uint32_t, because second argument of fseek is long */
 
     /* initialize static variables */
     input = sbfile = NULL;
@@ -100,7 +99,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
 
     /* read header block */
     verbose("read header block");
-    Block = (U8 *) malloc(0x0200);
+    Block = (uint8_t *) malloc(0x0200);
     test_exitf(Block != NULL, 10, ends());
     fread(Block, 0x0200, 1, input);
     test_exitf(!ferror(input), 5, ends());
@@ -134,7 +133,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
     
     assert(num_bbd_blocks <= (0x0200 / 4 - 1) * num_xbbd_blocks + (0x0200 / 4) - 19);
     
-    /* the first 19 U32 in header does not belong to bbd_list */
+    /* the first 19 uint32_t in header does not belong to bbd_list */
     for (i = 0; i < MIN(num_bbd_blocks, 0x0200 / 4 - 19); i++) {
         /* note: next line may be needed to be cast to long in right side */
         FilePos = 0x0200 * (1 + fil_sreadU32(Block + offset + 0x4c + (i * 4))) + offset;
@@ -145,7 +144,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
         s += 0x0200;
     }
 
-    Blockx = (U8 *) malloc(0x0200);
+    Blockx = (uint8_t *) malloc(0x0200);
     test_exitf(Blockx != NULL, 10, ends());
     bl = fil_sreadU32(Block + offset + 0x44);
     for (i = 0; i < num_xbbd_blocks; i++) {
@@ -156,7 +155,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
         test_exitf(!ferror(input), 5, ends());
 
         for (j = 0; j < 0x0200 / 4 - 1; j++)
-            /* last U32 is for the next bl */
+            /* last uint32_t is for the next bl */
         {
             if (fil_sreadU32(Blockx + (j * 4)) == 0xfffffffe ||
                 fil_sreadU32(Blockx + (j * 4)) == 0xfffffffd ||
@@ -186,7 +185,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
         test_exitf(len != 0, 5, ends());        /* means file is too big */
         /* if memory allocated in sbd_list is all used, allocate more memory */
         if (!(len % ENTRYCHUNK)) {
-            U32 *newspace;
+            uint32_t *newspace;
             newspace = realloc(sbd_list,
                                (1 + len / ENTRYCHUNK) * ENTRYCHUNK * 4);
             test_exitf(newspace != NULL, 10, ends());
@@ -236,7 +235,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
         test_exitf(len != 0, 5, ends());        /* means file is too long */
         /* if memory allocated in root_list is all used, allocate more memory */
         if (!(len % ENTRYCHUNK)) {
-            U32 *newspace;
+            uint32_t *newspace;
             newspace = realloc(root_list, (1 + len / ENTRYCHUNK) * ENTRYCHUNK * 4);
             test_exitf(newspace != NULL, 10, ends());
             root_list = newspace;
@@ -271,7 +270,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
     /* read pss entry details and look out for "Root Entry" */
     verbose("read pps entry details");
     for (i = 0; i < num_of_pps; i++) {
-        U16 size_of_name;
+        uint16_t size_of_name;
 
         s = Root + (i * 0x80);
 
@@ -283,7 +282,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
         pps_list[i].name[0] = 0;
         if (size_of_name == 0)
             continue;
-        for (p = (U8 *) pps_list[i].name, t = s; t < s + size_of_name; t++)
+        for (p = (uint8_t *) pps_list[i].name, t = s; t < s + size_of_name; t++)
             *p++ = *t++;
         /* makes visible the non printable first character */
         /* if (!isprint (pps_list[i].name[0]) && pps_list[i].name[0])
@@ -310,7 +309,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
 
 #ifdef COLE_VERBOSE
     {
-        U32 i;
+        uint32_t i;
         printf("before reorder pps tree\n");
         printf
             ("pps    type    prev     next      dir start   level size     name\n");
@@ -342,7 +341,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
 
 #ifdef COLE_VERBOSE
     {
-        U32 i;
+        uint32_t i;
         printf("after reorder pps tree\n");
         printf
             ("pps    type    prev     next      dir start   level size     name\n");
@@ -376,11 +375,11 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
        wich is made with pps_list entries, is reordered */
     verbose("create pps files");
     {
-        U8 *Depot;
+        uint8_t *Depot;
         FILE *OLEfile, *infile;
-        U16 BlockSize, Offset;
+        uint16_t BlockSize, Offset;
         size_t bytes_to_read;
-        U32 pps_size, pps_start;
+        uint32_t pps_size, pps_start;
 
         assert(num_of_pps >= 1);
         /* i < 1 --- before i < num_of_pps --- changed so not to generate the
@@ -523,8 +522,8 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
  * not sure if it is safe declare last_next_link_visited
  * inside reorder_pps_tree function 
  */
-static U32 *last_next_link_visited;
-int reorder_pps_tree(pps_entry * node, U16 level)
+static uint32_t *last_next_link_visited;
+int reorder_pps_tree(pps_entry * node, uint16_t level)
 {
     /* NOTE: in next, previous and dir link,
        0xffffffff means point to nowhere (NULL) */
@@ -571,9 +570,9 @@ int reorder_pps_tree(pps_entry * node, U16 level)
           level:    how much levels will be extracted.
    Output: none.
  */
-void verbosePPSTree(pps_entry * pps_list, U32 start_entry, int level)
+void verbosePPSTree(pps_entry * pps_list, uint32_t start_entry, int level)
 {
-    U32 entry;
+    uint32_t entry;
     int i;
 
     for (entry = start_entry; entry != 0xffffffff;
@@ -606,7 +605,7 @@ void verbosePPSTree(pps_entry * pps_list, U32 start_entry, int level)
 #define freeNoNULL(x) { if ((x) != NULL) free (x); }
 static int errorClosingTreeFiles;
 void
-closeOLEtreefiles (pps_entry * tree, U32 root)
+closeOLEtreefiles (pps_entry * tree, uint32_t root)
 {
 #ifdef COLE_VERBOSE
   printf ("Visiting entry 0x%08lx to erase file\n",

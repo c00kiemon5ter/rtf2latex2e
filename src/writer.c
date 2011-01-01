@@ -26,9 +26,10 @@
 # include "rtf.h"
 # include "rtfprep/tokenscan.h"
 # include "cole.h"
-# include "cole_support.h"
 # include "rtf2latex2e.h"
 # include "eqn.h"
+void __cole_dump (void *_m, void *_start, uint32_t length, char *msg);
+uint16_t fil_sreadU16 (uint8_t * in);
 
 char outputMapName[255];
 # define        prefFileName    "r2l-pref"

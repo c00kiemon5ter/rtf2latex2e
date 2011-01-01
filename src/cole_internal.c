@@ -30,19 +30,19 @@
 
 
 int
-__cole_extract_file(FILE ** file, char **filename, U32 size, U32 pps_start,
-                    U8 * BDepot, U8 * SDepot, FILE * sbfile,
+__cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_start,
+                    uint8_t * BDepot, uint8_t * SDepot, FILE * sbfile,
                     FILE * inputfile)
 {
     /* FIXME rewrite this cleaner */
 
     FILE *ret;
-    U16 BlockSize, Offset;
-    U8 *Depot;
+    uint16_t BlockSize, Offset;
+    uint8_t *Depot;
     FILE *infile;
     long FilePos;
     size_t bytes_to_copy;
-    U8 Block[0x0200];
+    uint8_t Block[0x0200];
 
     *filename = malloc(L_tmpnam);       /* It must be L_tmpnam + 1? */
     if (*filename == NULL)

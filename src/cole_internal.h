@@ -31,23 +31,23 @@ struct pps_block
   {
     char name[0x20];
     char filename[L_tmpnam];	/* valid only if type == 2 */
-    U8 type;			/* 5 == root, 1 == dir, 2 == file */
-    U32 size;			/* the size of the file,
+    uint8_t type;			/* 5 == root, 1 == dir, 2 == file */
+    uint32_t size;			/* the size of the file,
 				           valid only if type == 2 */
-    U32 next;			/* next entry in this level,
+    uint32_t next;			/* next entry in this level,
 				           this directory */
-    U32 dir;			/* valid only if type != 2 */
-    U16 level;			/* level in the ole tree */
-    U32 seconds1;
-    U32 seconds2;
-    U32 days1;
-    U32 days2;
-    U32 start;			/* start block */
+    uint32_t dir;			/* valid only if type != 2 */
+    uint16_t level;			/* level in the ole tree */
+    uint32_t seconds1;
+    uint32_t seconds2;
+    uint32_t days1;
+    uint32_t days2;
+    uint32_t start;			/* start block */
 
     /* private fields, used only inside OLEdecode and OLEcode,
        don't modify them if you want to use OLEcode */
-    U32 previous;		/* previous pps, valid before reordering */
-    U32 ppsnumber;		/* pps number */
+    uint32_t previous;		/* previous pps, valid before reordering */
+    uint32_t ppsnumber;		/* pps number */
   };
 typedef struct pps_block pps_entry;
 
@@ -56,11 +56,11 @@ typedef struct pps_block pps_entry;
    Create a OLE stream tree from a file.
    Input: char *Olefilename        = File to be decoded (ie. .xsl, .doc, .ppt).
    .      pps_entry ** stream_list = The stream tree.
-   .      U32 * root               = The number of root dir in stream_list.
-   .      U8 **_BDepot, U8 **_SDepot, FILE **_sbfile, char **_sbfilename,
+   .      uint32_t * root               = The number of root dir in stream_list.
+   .      uint8_t **_BDepot, uint8_t **_SDepot, FILE **_sbfile, char **_sbfilename,
    .      FILE **_input,
    .                               = Exposes internals, read only.
-   .      U16 max_level            = The maximum level on stream tree in which
+   .      uint16_t max_level            = The maximum level on stream tree in which
    .                                 streams will be actually extracted
    .                                 to a file. 0 (zero) means extract all.
    Output: 0 = Sucess.
@@ -74,8 +74,8 @@ typedef struct pps_block pps_entry;
    .       10 = Error allocating memory, there's no more memory.
  */
 int __OLEdecode (char *OLEfilename, pps_entry ** stream_list, size_t * root,
-		 U8 **_BDepot, U8 **_SDepot, FILE **_sbfile, char **_sbfilename,
-		 FILE **_input, U16 max_level);
+		 uint8_t **_BDepot, uint8_t **_SDepot, FILE **_sbfile, char **_sbfilename,
+		 FILE **_input, uint16_t max_level);
 
 
 
@@ -91,8 +91,8 @@ struct _COLEFS {
 	/* This structure is for internal use only, not for the public API */
 	pps_entry *tree;
 	size_t root;			/* entry root, root pps_entry */
-	U8 *BDepot;
-	U8 *SDepot;
+	uint8_t *BDepot;
+	uint8_t *SDepot;
 	FILE *sbfile;
 	char *sbfilename;
 	FILE *file;			/* actual file (the filesystem) */
@@ -113,12 +113,12 @@ struct _COLEFILE {
 	size_t entry;
 	FILE *file;			/* actual extracted file */
 	char *filename;			/* actual extracted file's name */
-	U32 filesize;			/* actual extracted file size */
+	uint32_t filesize;			/* actual extracted file size */
 	struct _COLEFS *fs;		/* father */
 	size_t pos;			/* file pointer position */
 };
-int __cole_extract_file (FILE **file, char **filename, U32 size,
-			 U32 pps_start, U8 *BDepot, U8 *SDepot, FILE *sbfile,
+int __cole_extract_file (FILE **file, char **filename, uint32_t size,
+			 uint32_t pps_start, uint8_t *BDepot, uint8_t *SDepot, FILE *sbfile,
 			 FILE *inputfile);
 #define _COLE_TYPE_DIR 1
 #define _COLE_TYPE_FILE 2

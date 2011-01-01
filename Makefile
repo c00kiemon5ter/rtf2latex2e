@@ -33,13 +33,12 @@ CFLAGS:=$(CFLAGS) $(PLATFORM)
 
 LIBS= 
 
-SRCS         = src/cole.c                 src/cole_decode.c         src/cole_internal.c     \
-               src/cole_support.c         src/cole_version.c        src/eqn.c               \
-               src/main.c                 src/mygetopt.c            src/reader.c            \
-               src/writer.c
+SRCS         = src/cole.c                 src/cole_decode.c         src/cole_support.c      \
+               src/cole_version.c         src/eqn.c                 src/main.c              \
+               src/mygetopt.c             src/reader.c              src/writer.c
 
-HDRS         = src/cole.h                 src/cole_internal.h       src/cole_support.h      \
-               src/eqn.h                  src/mygetopt.h            src/rtf2latex2e.h       \
+HDRS         = src/cole.h                 src/cole_support.h        src/eqn.h               \
+               src/eqn_support.h          src/mygetopt.h            src/rtf2latex2e.h       \
                src/rtf.h
 
 RTFPREP_SRCS = src/rtfprep/Makefile       src/rtfprep/rtf-controls  src/rtfprep/rtfprep.c   \
@@ -63,10 +62,9 @@ TEST         = test/Makefile              test/arch.rtf             test/arch-ma
                test/mapping.rtf           test/rtf-misc.rtf         test/rtf.rtf            \
                test/table.rtf             test/test.rtf             test/moreEqns.rtf
 
-OBJS         = src/cole.o                 src/cole_decode.o         src/cole_internal.o     \
-               src/cole_support.o         src/cole_version.o        src/eqn.o               \
-               src/main.o                 src/mygetopt.o            src/reader.o            \
-               src/rtfprep/tokenscan.o    src/writer.o
+OBJS         = src/cole.o                 src/cole_decode.o         src/cole_support.o      \
+               src/eqn.o                  src/main.o                src/mygetopt.o          \
+               src/reader.o               src/rtfprep/tokenscan.o   src/writer.o
 
 all : checkdir rtfprep rtf2latex2e
 
