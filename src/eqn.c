@@ -51,13 +51,12 @@ char *Profile_FUNCTIONS[];
 char *Profile_VARIABLES[];
 char *Profile_PILEtranslation[];
 char *Profile_MT_CHARSET_ATTS[];
-char *Profile_MT_CHARSET_ATTS3[];
 char *Profile_CHARTABLE[];
 char *Profile_TEMPLATES[];
 char *Profile_TEMPLATES5[];
 char *Template_EMBELLS[];
 
-char * typeFaceName[12] =
+char * typeFaceName[NUM_TYPEFACE_SLOTS] =
 {
 	"ZERO",
 	"TEXT",
@@ -70,7 +69,20 @@ char * typeFaceName[12] =
 	"NUMBER",
 	"USER1",
 	"USER2",
-	"MTEXTRA"
+	"MTEXTRA",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN",
+	"TEXT_FE",
+	"EXPAND",
+	"MARKER",
+	"SPACE"
 };
 
 /* MathType Equation converter */
@@ -2167,7 +2179,7 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
         setMathMode(eqn, strs[0].data, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
     }
 
-    if (eqn->m_mtef_ver == 5 && (tmpl->selector > 14 && tmpl->selector < 23))
+    if (eqn->m_mtef_ver == 5 && (tmpl->selector != 9))
         tmpl->variation &= 0x000f;
 
     if (DEBUG_TEMPLATE || g_equation_file) fprintf(stderr,"TMPL : Processing (%d.%d)\n", tmpl->selector, tmpl->variation);
@@ -2690,22 +2702,20 @@ char *Profile_PILEtranslation[] = {
 };
 
 
-/* [MT_CHARSET_ATTS] */
-/* ;tf#=math_att,do_lookup,use_codepoint */
-/* ;math_att 0=MA_NONE, 1 = MA_FORCE_MATH, 2 = MA_FORCE_TEXT, 3 = 2 translations */
+/* typeface=attributes,do_lookup,use_codepoint */
+/* attributes --> 0=MA_NONE, 1=MA_FORCE_MATH, 2=MA_FORCE_TEXT, 3=2 translations */
 char *Profile_MT_CHARSET_ATTS[] = {
-/* ;fnTEXT */
-    "129=2,0,1", /* fnFUNCTION */
-    "130=1,1,1", /* fnVARIABLE */
-    "131=1,0,1", /* fnLCGREEK */
-    "132=1,1,0", /* fnUCGREEK */
-    "133=1,1,0", /* fnSYMBOL */
-    "134=1,1,1", /* fnVECTOR */
-    "135=1,0,1", /* fnNUMBER */
-    "136=1,0,1",
+    "129=2,0,1", /* TEXT     */
+    "130=1,1,1", /* FUNCTION */
+    "131=1,0,1", /* VARIABLE */
+    "132=1,1,0", /* LCGREEK  */
+    "133=1,1,0", /* UCGREEK  */
+    "134=1,1,1", /* SYMBOL   */
+    "135=1,0,1", /* VECTOR   */
+    "136=1,0,1", /* NUMBER   */
     "137=1,1,0",
-    "138=1,1,0", /* fnMTEXTRA */
-    "139=1,1,1",
+    "138=1,1,0",
+    "139=1,1,1", /* MTEXTRA */
     "140=1,1,0",
     "141=1,1,0",
     "142=1,1,0",
@@ -2715,41 +2725,10 @@ char *Profile_MT_CHARSET_ATTS[] = {
     "146=1,1,0",
     "147=1,1,0",
     "148=1,1,0",
-    "149=1,1,0", /* fnEXPAND */
-    "150=1,1,0", /* fnMARKER */
-    "151=1,1,0", /* fnSPACE */
-    "152=3,1,0",
-    "153=1,1,0",
-    0
-};
-
-/* [MT_CHARSET_ATTS3] */
-char *Profile_MT_CHARSET_ATTS3[] = {
-/* ;fnTEXT */
-    "129=2,0,1", /* fnFUNCTION */
-    "130=1,1,1", /* fnVARIABLE */
-    "131=1,0,1", /* fnLCGREEK */
-    "132=1,1,0", /* fnUCGREEK */
-    "133=1,1,0", /* fnSYMBOL */
-    "134=1,1,1", /* fnVECTOR */
-    "135=1,0,1", /* fnNUMBER */
-    "136=1,0,1",
-    "137=1,1,0",
-    "138=1,1,0", /* fnMTEXTRA */
-    "139=1,1,1",
-    "140=1,1,0",
-    "141=1,1,0",
-    "142=1,1,0",
-    "143=1,1,0",
-    "144=1,1,0",
-    "145=1,1,0",
-    "146=1,1,0",
-    "147=1,1,0",
-    "148=1,1,0",
-    "149=1,1,0", /* fnEXPAND */
-    "150=1,1,0", /* fnMARKER */
-    "151=1,1,0", /* fnSPACE */
-    "152=3,1,0",
+    "149=1,1,0", 
+    "150=1,1,0", /* EXPAND */
+    "151=1,1,0", /* MARKER */
+    "152=3,1,0", /* SPACE  */
     "153=1,1,0",
     0
 };
@@ -3288,7 +3267,9 @@ char *Profile_TEMPLATES5[] = {
     "25.0=hbracket,",
     "26.0=limi",
     "27.0=script: sub,#1[L][STARTSUB][ENDSUB] ",
+    "27.1=script: sub,#1[L][STARTSUB][ENDSUB] ",
     "28.0=script: super,#2[L][STARTSUP][ENDSUP] ",
+    "28.1=script: super,#2[L][STARTSUP][ENDSUP] ",
     "29.0=script: subsup,#1[L][STARTSUB][ENDSUB]#2[L][STARTSUP][ENDSUP] ",
     "30.0=limi",
     "31.0=limi",

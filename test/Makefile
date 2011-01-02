@@ -15,6 +15,14 @@ clean:
 	rm -rf *.tex *.eps
 	
 realclean: clean
+	mv testeqn01.eqn testeqn01.eqnx
+	mv testeqn02.eqn testeqn02.eqnx
+	mv testeqn03.eqn testeqn03.eqnx
+	mv testeqn04.eqn testeqn04.eqnx
 	rm -rf *.log *.aux *.pdf *.dvi *.pict *.eps *.ps *.eqn *.jpg *.png
+	mv testeqn01.eqnx testeqn01.eqn
+	mv testeqn02.eqnx testeqn02.eqn
+	mv testeqn03.eqnx testeqn03.eqn
+	mv testeqn04.eqnx testeqn04.eqn
 
 .PHONY: clean all realclean
