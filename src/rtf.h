@@ -386,5 +386,6 @@ extern int g_include_both;
 extern int g_delete_eqn_file;
 extern int g_insert_eqn_name;
 extern int g_equation_file;
+extern int g_object_width;
 
 #endif /* _RTF_H */

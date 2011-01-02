@@ -100,8 +100,6 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream,
     eqn->m_inline = 0;
     eqn->m_mtef_ver = eqn_stream[src_index++];
 
-    if (0) RTFMsg("MTEF Version = 0x%08x\n", eqn->m_mtef_ver);
-
     switch (eqn->m_mtef_ver) {
     case 1:
     case 101:
@@ -147,13 +145,12 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream,
         return (false);
     }
 
-    if (0) {
-    RTFMsg("* Platform = %s\n", (eqn->m_platform) ? "Win" : "Mac",
-           eqn->m_platform);
-    RTFMsg("* Product  = %s\n",
-           (eqn->m_product) ? "MathType" : "EqnEditor", eqn->m_product);
-    RTFMsg("* Version  = %d.%d\n", eqn->m_version, eqn->m_version_sub);
-    RTFMsg("* Type     = %s\n", eqn->m_inline ? "inline" : "display");
+    if (g_equation_file) {
+    	fprintf(stderr,"* MTEF Version = 0x%08x\n", eqn->m_mtef_ver);
+    	fprintf(stderr,"* Platform = %s\n", (eqn->m_platform) ? "Win" : "Mac");
+    	fprintf(stderr,"* Product  = %s\n", (eqn->m_product) ? "MathType" : "EqnEditor");
+    	fprintf(stderr,"* Version  = %d.%d\n", eqn->m_version, eqn->m_version_sub);
+    	fprintf(stderr,"* Type     = %s (ignored because it is unreliable)\n", eqn->m_inline ? "inline" : "display");
     }
     
 	eqn->m_atts_table = Profile_MT_CHARSET_ATTS;
@@ -272,7 +269,7 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
         fputs("%Begin Equation\n", eqn->out_file);
 
     if (DEBUG_TRANSLATION || g_equation_file) fprintf(stderr,"new equation\n");
-
+    
     ztex = Eqn_TranslateObjects(eqn, eqn->o_list);
 
     if (ztex) {
@@ -1321,11 +1318,6 @@ char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar)
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-    if (math_attr == MA_FORCE_MATH && eqn->m_mode == EQN_MODE_TEXT) 
-        setMathMode(eqn, NULL, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
-    else if (math_attr == MA_FORCE_TEXT)
-        setMathMode(eqn, NULL, EQN_MODE_TEXT);
-
     return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
@@ -2346,6 +2338,11 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
             strcpy(ztex, buff);
         }
     }
+
+    if (*math_attr == MA_FORCE_MATH && eqn->m_mode == EQN_MODE_TEXT) 
+        setMathMode(eqn, NULL, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
+    else if (*math_attr == MA_FORCE_TEXT)
+        setMathMode(eqn, NULL, EQN_MODE_TEXT);
 
     if (!ztex && set_atts.use_codepoint)
         if (code_point >= 32 && code_point <= 127)

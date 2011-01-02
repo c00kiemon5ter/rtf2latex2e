@@ -1522,7 +1522,6 @@ static void WriteLaTeXFooter(void)
     }
     if (requireHyperrefPackage) {
         PutLitStr("\\usepackage{hyperref}\n");
-        PutLitStr("\\def\\R2Lurl#1#2{\\mbox{\\href{#1}{\\tt #2}}}");
     }
     PutLitStr("\\def\\degree{\\ensuremath{^\\circ}}\n");
     fseek(ofp, 0L, 2);          /* go back to end of stream */
@@ -3494,6 +3493,12 @@ char *my_strcasestr(const char *haystack, const char *needle)
 	return NULL;
 }
 
+static void ReadObjWidth(void)
+{
+	g_object_width = rtfParam;
+}
+
+
 /* 
 * parses \objectclass and adds the class type to the global variable 'object'
 */
@@ -3506,6 +3511,8 @@ static void GetObjectClass(int *groupCounter)
 /* keep scanning until \objectclass is found */
     while (!reachedObjectClass) {
         RTFGetToken();
+		if (RTFCheckMM(rtfObjAttr, rtfObjWid)!=0)
+			ReadObjWidth();
         if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0)
             (*groupCounter)++;
         else if (RTFCheckCM(rtfGroup, rtfEndGroup) != 0)
@@ -3749,6 +3756,11 @@ boolean ConvertEquationFile(char *objectFileName)
             return (false);
         }
 
+        if (lastCharWasLineBreak) 
+        	theEquation->m_inline = 0;
+        else
+        	theEquation->m_inline = 1;
+        	
         DoParagraphCleanUp();
         DoSectionCleanUp();
         
@@ -4405,6 +4417,7 @@ int BeginLaTeXFile(void)
 
     /* install destination callbacks */
     RTFSetDestinationCallback(rtfUnicode, ReadUnicode);
+    RTFSetDestinationCallback(rtfObjWid, ReadObjWidth);
     RTFSetDestinationCallback(rtfColorTbl, WriteColors);
     RTFSetDestinationCallback(rtfParNumTextAfter, SkipGroup);
     RTFSetDestinationCallback(rtfParNumTextBefore, SkipGroup);

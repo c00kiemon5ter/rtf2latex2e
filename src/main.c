@@ -48,6 +48,7 @@ int          g_include_both    = 0;
 int          g_delete_eqn_file = 1;
 int          g_insert_eqn_name = 0;
 int          g_equation_file   = 0;
+int          g_object_width    = 0;
 
 /* Figure out endianness of machine.  Needed for OLE & graphics support */
 static void 
