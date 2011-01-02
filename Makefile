@@ -1,4 +1,4 @@
-VERSION = 1-4-0
+VERSION = 1-5-0
 
 CC?=gcc
 TAR?=gnutar
@@ -60,8 +60,14 @@ PDFS         = doc/rtf2latex2eSWP.pdf     doc/rtfReader.pdf          doc/rtf2lat
 TEST         = test/Makefile              test/arch.rtf              test/arch-mac.rtf       \
                test/equation.rtf          test/fig-jpeg.rtf          test/multiline.rtf      \
                test/mapping.rtf           test/rtf-misc.rtf          test/rtf.rtf            \
-               test/table.rtf             test/test.rtf              test/moreEqns.rtf
+               test/table.rtf             test/test.rtf              test/moreEqns.rtf       \
+               test/twoEqn.rtf
 
+EQNS         = test/testeqn01.eqn         test/testeqn02.eqn         test/testeqn03.eqn      \
+               test/testeqn04.eqn         test/testeqn05.eqn         test/testeqn06.eqn      \
+               test/testeqn07.eqn         test/testeqn08.eqn         test/testeqn09.eqn      \
+               test/testeqn10.eqn
+               
 OBJS         = src/cole.o                 src/cole_decode.o          src/cole_support.o      \
                src/eqn.o                  src/main.o                 src/mygetopt.o          \
                src/reader.o               src/rtfprep/tokenscan.o    src/writer.o
@@ -108,6 +114,7 @@ dist: checkdir doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $(D
 	ln $(DOCS)         rtf2latex2e-$(VERSION)/doc
 	ln $(PDFS)         rtf2latex2e-$(VERSION)/doc
 	ln $(TEST)         rtf2latex2e-$(VERSION)/test
+	ln $(EQNS)         rtf2latex2e-$(VERSION)/test
 #	tar cvf - rtf2latex2e-$(VERSION) | gzip > rtf2latex2e-$(VERSION).tar.gz
 	zip -r rtf2latex2e-$(VERSION) rtf2latex2e-$(VERSION)
 	rm -rf rtf2latex2e-$(VERSION)

@@ -2,7 +2,7 @@ Security
    Incorporate all the SafeBuf stuff
 
 Features
-   command line option to process eqn files
+   use two linefeeds instead of bizarre \\{} construct
    automatically create directory for entire translation
    automatically convert pict files to pdf files
    CLI option to toggle debug level?
@@ -12,8 +12,6 @@ Features
 Packaging
    Revise README
    Get windows binary working
-   eliminate cole_version.c
-   consider placing all cole code in two files
    move rtfprep to parent directory?
    bump version to 2.0
    
