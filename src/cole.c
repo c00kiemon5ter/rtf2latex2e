@@ -92,11 +92,11 @@ void cole_perror(const char *s, COLERRNO colerrno, char *filename)
 
 /**
  * cole_mount:
- * @filename: name of the file with the filesystem.
- * @colerrno: error value (COLE_EMEMORY, COLE_EOPENFILE, COLE_ENOFILESYSTEM, 
+ * filename: name of the file with the filesystem.
+ * colerrno: error value (COLE_EMEMORY, COLE_EOPENFILE, COLE_ENOFILESYSTEM, 
  *                         COLE_EINVALIDFILESYSTEM, COLE_EUNKNOWN).
  *
- * Mounts the filesystem which is in @filename.
+ * Mounts the filesystem which is in filename.
  *
  * Returns: a filesystem in success, or NULL in other case.
  */
@@ -194,35 +194,27 @@ int cole_umount(COLEFS * colefilesystem, COLERRNO * colerrno)
 }
 
 
-/**
- * cole_print_tree:
- * @colefilesystem: filesystem of which the tree will be printed.
- * @colerrno: error value (errors from call cole_recurse_tree()).
- *
- * Prints on the standard output the tree of files and directories contained
- * in @colefilesystem.
- * Currently this call always succeeds.
- *
- * Returns: zero in success, non-zero in other case.
+/*
+ * Prints on to stdout a listing of files and directories
+ * in colefilesystem.
  */
-static COLE_RECURSE_DIR_FUNC __cole_print_tree_indir;
-static COLE_RECURSE_DIR_FUNC __cole_print_tree_outdir;
 static COLE_RECURSE_DIR_FUNC __cole_print_tree_inroot;
 static COLE_RECURSE_DIRENT_FUNC __cole_print_tree_indirentry;
-int cole_print_tree(COLEFS * colefilesystem, COLERRNO * colerrno)
-{
-    int32_t level;
+static COLE_RECURSE_DIR_FUNC __cole_print_tree_indir;
+static COLE_RECURSE_DIR_FUNC __cole_print_tree_outdir;
 
-    level = 1;
-    if (cole_recurse_tree(colefilesystem, &level,
+void cole_print_tree(COLEFS * colefilesystem, COLERRNO * colerrno)
+{
+    int32_t level = 1;
+
+    (void) cole_recurse_tree(colefilesystem, 
+                          &level,
                           __cole_print_tree_inroot,
                           __cole_print_tree_indirentry,
                           __cole_print_tree_indir,
-                          __cole_print_tree_outdir, NULL, colerrno)) {
-        return 1;
-    }
-
-    return 0;
+                          __cole_print_tree_outdir, 
+                          NULL, 
+                          colerrno);
 }
 
 int __cole_print_tree_indir(COLEDIR * cd, void *info, COLERRNO * colerrno)

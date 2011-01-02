@@ -20,28 +20,8 @@
 #ifndef __COLE_H
 #define __COLE_H
 
-/*
- * Attention: this API is documented in the `doc' subdirectory
- */
-
 #include <stdint.h>
 #include <stdio.h>
-
-
-/*
- * **********************************************************************
- * version info
- * **********************************************************************
- */
-#define COLE_MAJOR_VERSION 2
-#define COLE_MINOR_VERSION 0
-#define COLE_MICRO_VERSION 1
-extern int cole_major_version;
-extern int cole_minor_version;
-extern int cole_micro_version;
-extern char *cole_version;
-extern char *cole_host_info;
-
 
 
 /*
@@ -109,8 +89,6 @@ typedef		struct _COLEDIR		COLEDIR;
 typedef		struct _COLEDIRENT	COLEDIRENT;
 typedef		struct _COLEFILE	COLEFILE;
 
-
-
 /*
  * **********************************************************************
  * functions types
@@ -139,12 +117,10 @@ typedef		void (COLE_LOCATE_ACTION_FUNC)	(COLEDIRENT *coledirentry,
 /* ***********
  * filesystem
  * ***********/
-COLEFS *	cole_mount		(char *filename,
-					COLERRNO *colerrno);
-int		cole_umount		(COLEFS *colefilesystem,
-					COLERRNO *colerrno);
-int		cole_print_tree		(COLEFS *colefilesystem,
-					COLERRNO *colerrno);
+COLEFS * cole_mount (char *filename, COLERRNO *colerrno);
+int		 cole_umount (COLEFS *colefilesystem, COLERRNO *colerrno);
+void	 cole_print_tree (COLEFS *colefilesystem, COLERRNO *colerrno);
+
 int		cole_locate_filename	(COLEFS *colefilesystem,
 					char *filename,
 					void *info,

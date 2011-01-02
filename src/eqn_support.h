@@ -2,8 +2,6 @@
 
 #define _EQN_SUPPORT_H
 
-/* MathType Equation converter, see comments in C file */
-
 #define embDOT        2
 #define embDDOT       3
 #define embTDOT       4
@@ -199,65 +197,6 @@ typedef struct {
     char *data;
 } EQ_STRREC;
 
-static MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn,
-                                     unsigned char *eqn_stream, int *index,
-                                     int count);
-static MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
-                              int *delta);
-static MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src,
-                              int *delta);
-static MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src,
-                              int *delta);
-static MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
-                              int *delta);
-static MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
-                                  int *delta);
-static MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
-                                  int *delta);
-static MT_RULER *Eqn_inputRULER(MTEquation * eqn, unsigned char *src,
-                                int *delta);
-static MT_FONT *Eqn_inputFONT(MTEquation * eqn, unsigned char *src,
-                              int *delta);
-static MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
-                              int *delta);
-
-static int GetNudge(unsigned char *src, int *x, int *y);
-
-static void DeleteObjectList(MT_OBJLIST * the_list);
-static void DeleteTabstops(MT_TABSTOP * the_list);
-static void DeleteEmbells(MT_EMBELL * the_list);
-
-static char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list);
-static char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line);
-static char *Eqn_TranslateFUNCTION(MTEquation * eqn,
-                                   MT_OBJLIST * curr_node, int *advance);
-static char *Eqn_TranslateTEXTRUN(MTEquation * eqn, MT_OBJLIST * curr_node,
-                                  int *advance);
-static char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar);
-static char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl);
-static char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line);
-static char *Eqn_TranslatePILE(MTEquation * eqn, MT_PILE * pile);
-static char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix);
-static char *Eqn_TranslateFONT(MTEquation * eqn, MT_FONT * font);
-static char *Eqn_TranslateRULER(MTEquation * eqn, MT_RULER * ruler);
-static char *Eqn_TranslateSIZE(MTEquation * eqn, MT_SIZE * size);
-static char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile);
-
-static int Eqn_GetTmplStr(MTEquation * eqn, int selector, int variation,
-                          EQ_STRREC * strs);
-static int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs,
-                          MT_CHAR * thechar, int *math_attr);
-static void Eqn_LoadCharSetAtts(MTEquation * eqn, char **table);
-static void GetPileType(char *the_template, int arg_num, char *targ_nom);
-
-static uint32_t GetProfileStr(char **section, char *key, char *data, int datalen);
-
-static void BreakTeX(char *ztex, FILE * outfile);
-static char *ToBuffer(char *src, char *buffer, uint32_t *off, int *lim);
-static void SetComment(EQ_STRREC * strs, int lev, char *src);
-static char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs);
-
-
 #define NUM_TYPEFACE_SLOTS    32
 
 #define Z_TEX         1
@@ -274,11 +213,5 @@ static char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs);
 #define CHAR_NUDGE          0x08
 #define CHAR_ENC_CHAR_16    0x10
 #define CHAR_ENC_NO_MTCODE  0x20
-
-static unsigned char HiNibble(unsigned char x);
-static unsigned char LoNibble(unsigned char x);
-static void PrintNibble(unsigned char n);
-static void PrintNibbleDimension(unsigned char n);
-static int SkipNibbles(unsigned char *p, int num);
 
 #endif

@@ -33,7 +33,7 @@
 uint16_t fil_sreadU16 (uint8_t * in);
 uint32_t fil_sreadU32 (uint8_t * in);
 
-void __cole_dump (void *_m, void *_start, uint32_t length, char *msg);
+void hexdump(void *ptr, void *zero, uint32_t length, char *msg);
 
 #define verbose_return()               \
   {                                    \
@@ -139,7 +139,7 @@ void __cole_dump (void *_m, void *_start, uint32_t length, char *msg);
 
 
 #define verboseU8Array_force(rec,len,reclen)			\
-	__cole_dump ((rec), (rec), ((len)*(reclen)), "");
+	hexdump ((rec), (rec), ((len)*(reclen)), "");
 
 
 #ifdef COLE_VERBOSE
@@ -148,11 +148,11 @@ void __cole_dump (void *_m, void *_start, uint32_t length, char *msg);
 #define verboseU8Array(rec,len,reclen)
 #endif
 
-/* This structure describe one stream. */
+/* This structure describes one stream. */
 struct pps_block
   {
     char name[0x20];
-    char filename[L_tmpnam]; /* valid only if type == 2 */
+    char filename[L_tmpnam+1]; /* valid only if type == 2 */
     uint8_t type;			 /* 5 == root, 1 == dir, 2 == file */
     uint32_t size;	 		 /* the size of the file, valid only if type == 2 */
     uint32_t next;	 		 /* next entry in this level, this directory */
@@ -174,7 +174,6 @@ int __OLEdecode (char *OLEfilename, pps_entry ** stream_list, size_t * root,
 		 FILE **_input, uint16_t max_level);
 
 struct _COLEFS {
-	/* This structure is for internal use only, not for the public API */
 	pps_entry *tree;
 	size_t root;			/* entry root, root pps_entry */
 	uint8_t *BDepot;
@@ -183,19 +182,19 @@ struct _COLEFS {
 	char *sbfilename;
 	FILE *file;			/* actual file (the filesystem) */
 };
+
 struct _COLEDIRENT {
-	/* This structure is for internal use only, not for the public API */
 	size_t entry;
 	struct _COLEDIR *dir;		/* father */
 };
+
 struct _COLEDIR {
-	/* This structure is for internal use only, not for the public API */
 	size_t entry;
 	struct _COLEDIRENT visited_entry;
 	struct _COLEFS *fs;		/* father */
 };
+
 struct _COLEFILE {
-	/* This structure is for internal use only, not for the public API */
 	size_t entry;
 	FILE *file;			/* actual extracted file */
 	char *filename;			/* actual extracted file's name */
@@ -203,6 +202,7 @@ struct _COLEFILE {
 	struct _COLEFS *fs;		/* father */
 	size_t pos;			/* file pointer position */
 };
+
 int __cole_extract_file (FILE **file, char **filename, uint32_t size,
 			 uint32_t pps_start, uint8_t *BDepot, uint8_t *SDepot, FILE *sbfile,
 			 FILE *inputfile);

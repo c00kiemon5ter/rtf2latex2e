@@ -42,8 +42,9 @@
 # define        DEBUG_FUNCTION    0
 
 
-
-void __cole_dump (void *_m, void *_start, uint32_t length, char *msg);
+static MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_index, int num_objs);
+static char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list);
+void hexdump (void *ptr, void *zero, uint32_t length, char *msg);
 
 # define EQN_MODE_TEXT     0
 # define EQN_MODE_INLINE   1
@@ -89,82 +90,534 @@ char * typeFaceName[NUM_TYPEFACE_SLOTS] =
 	"SPACE"
 };
 
-/* MathType Equation converter */
-
-int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream,
-                   int eqn_size)
+static
+char *ToBuffer(char *src, char *buffer, uint32_t *off, int *lim)
 {
-    int src_index = 0;
 
-    eqn->indent[0] = '%';
-    eqn->indent[1] = 0;
-    eqn->o_list = NULL;
-    eqn->atts_table = NULL;
-    eqn->m_mode = EQN_MODE_TEXT;
-    eqn->m_inline = 0;
-    eqn->m_mtef_ver = eqn_stream[src_index++];
+    int zln = (uint32_t) strlen(src) + 1;
 
-    switch (eqn->m_mtef_ver) {
-    case 1:
-    case 101:
-        eqn->m_platform = (eqn->m_mtef_ver == 101) ? 1 : 0;
-        eqn->m_product = 0;
-        eqn->m_version = 1;
-        eqn->m_version_sub = 0;
-        break;
-
-    case 2:
-    case 3:
-    case 4:
-        eqn->m_platform = eqn_stream[src_index++];
-        eqn->m_product = eqn_stream[src_index++];
-        eqn->m_version = eqn_stream[src_index++];
-        eqn->m_version_sub = eqn_stream[src_index++];
-        break;
-
-    case 5:
-        eqn->m_platform = eqn_stream[src_index++];
-        eqn->m_product = eqn_stream[src_index++];
-        eqn->m_version = eqn_stream[src_index++];
-        eqn->m_version_sub = eqn_stream[src_index++];
-
-        /* the application key is a null terminated string */
-        while (eqn_stream[src_index]) {
-            /*  fprintf(stderr, "%c", eqn_stream[src_index]); */
-            src_index++;
-            if (src_index == eqn_size) {
-                RTFMsg("The Application Key for the Equation is screwy!");
-                return (false);
-            }
-        }
-        /*  fprintf(stderr, "\n"); */
-        src_index++;
-
-        eqn->m_inline = eqn_stream[src_index++];
-        break;
-
-    default:
-        RTFMsg("* Unsupported MathType Equation Binary Format (MTEF=%d)\n",
-               eqn->m_mtef_ver);
-        return (false);
+    if (*off + zln + 256 >= *lim) {
+        char *newbuf;
+        *lim = *off + zln + 1024;
+        newbuf = (char *) malloc(*lim);
+        strcpy(newbuf, buffer);
+        free(buffer);
+        buffer = newbuf;
     }
 
-    if (g_equation_file) {
-    	fprintf(stderr,"* MTEF ver = %d\n", eqn->m_mtef_ver);
-    	fprintf(stderr,"* Platform = %s\n", (eqn->m_platform) ? "Win" : "Mac");
-    	fprintf(stderr,"* Product  = %s\n", (eqn->m_product) ? "MathType" : "EqnEditor");
-    	fprintf(stderr,"* Version  = %d.%d\n", eqn->m_version, eqn->m_version_sub);
-    	fprintf(stderr,"* Type     = %s (ignored because it is unreliable)\n", eqn->m_inline ? "inline" : "display");
+    strcpy(buffer + *off, src);
+    *off += zln - 1;
+    free(src);
+
+    return buffer;
+}
+
+static
+void SetComment(EQ_STRREC * strs, int lev, char *src)
+{
+    strs[0].log_level = lev;
+    strs[0].do_delete = 1;
+    strs[0].ilk = Z_COMMENT;
+    strs[0].is_line = 0;
+
+    if (src) {
+        int zln = (uint32_t) strlen(src) + 1;
+        char *newbuf = (char *) malloc(zln);
+        strcpy(newbuf, src);
+        strs[0].data = newbuf;
+    } else
+        strs[0].data = (char *) NULL;
+}
+
+/* avoid blank lines in equation 
+   perhaps add logic to break lines but so far that is unneedd
+*/
+static
+void BreakTeX(char *ztex, FILE * outfile)
+{
+    char *p;    
+    int line_is_empty = 1;
+    
+    p = ztex;
+    while (*p) {
+
+        if (*p == '\r' || *p == '\n') {
+            if (!line_is_empty) {
+                fputc('\n', outfile);
+                line_is_empty = 1;
+            }
+        } else {
+            fputc(*p, outfile);
+            if (line_is_empty && *p != ' ')
+                line_is_empty = 0;
+        }
+
+        p++;
+    }
+}
+
+void print_tag(unsigned char tag, int src_index)
+{
+    switch (tag) {
+    case 0:
+        RTFMsg("[%03d] %-14s\n", src_index, "END");
+        break;
+    case 1:
+        RTFMsg("[%03d] %-14s\n", src_index, "LINE");
+        break;
+    case 2:
+        RTFMsg("[%03d] %-14s\n", src_index, "CHAR");
+        break;
+    case 3:
+        RTFMsg("[%03d] %-14s\n", src_index, "TMPL");
+        break;
+    case 4:
+        RTFMsg("[%03d] %-14s\n", src_index, "PILE");
+        break;
+    case 5:
+        RTFMsg("[%03d] %-14s\n", src_index, "MATRIX");
+        break;
+    case 6:
+        RTFMsg("[%03d] %-14s\n", src_index, "EMBELL");
+        break;
+    case 7:
+        RTFMsg("[%03d] %-14s\n", src_index, "RULER");
+        break;
+    case 8:
+        RTFMsg("[%03d] %-14s\n", src_index, "FONT_STYLE_DEF");
+        break;
+    case 9:
+        RTFMsg("[%03d] %-14s\n", src_index, "SIZE");
+        break;
+    case 10:
+        RTFMsg("[%03d] %-14s\n", src_index, "FULL");
+        break;
+    case 11:
+        RTFMsg("[%03d] %-14s\n", src_index, "SUB");
+        break;
+    case 12:
+        RTFMsg("[%03d] %-14s\n", src_index, "SUB2");
+        break;
+    case 13:
+        RTFMsg("[%03d] %-14s\n", src_index, "SYM");
+        break;
+    case 14:
+        RTFMsg("[%03d] %-14s\n", src_index, "SUBSYM");
+        break;
+    case 15:
+        RTFMsg("[%03d] %-14s\n", src_index, "COLOR");
+        break;
+    case 16:
+        RTFMsg("[%03d] %-14s\n", src_index, "COLOR_DEF");
+        break;
+    case 17:
+        RTFMsg("[%03d] %-14s\n", src_index, "FONT_DEF");
+        break;
+    case 18:
+        RTFMsg("[%03d] %-14s\n", src_index, "EQN_PREFS");
+        break;
+    case 19:
+        RTFMsg("[%03d] %-14s\n", src_index, "ENCODING_DEF");
+        break;
+    default:
+        RTFMsg("[%03d] %-14s\n", src_index, "FUTURE");
+        break;
+    }
+}
+
+/*
+ * Nibble routines
+ */
+static unsigned char HiNibble(unsigned char x)
+{
+//    fprintf(stderr, "x=%d, high=%d, shifted=%d\n",x,(x & 0xF0),(x & 0xF0)/16);
+    return (x & 0xF0)/16;
+}
+
+static unsigned char LoNibble(unsigned char x)
+{
+    return (x & 0x0F);
+}
+
+static void PrintNibble(unsigned char n)
+{
+    if (1)
+        return;
+
+    if (n <= 9)
+        fprintf(stderr, "%d", n);
+    else if (n == 0x0A)
+        fprintf(stderr, ".");
+    else if (n == 0x0B)
+        fprintf(stderr, "-");
+    else if (n == 0x0F)
+        fprintf(stderr, " ");
+    else
+        RTFPanic("Bad nibble\n");
+}
+
+static void PrintNibbleDimension(unsigned char n)
+{
+    if (1)
+        return;
+    switch (n) {
+    case 0:
+        fprintf(stderr, "in ");
+        break;
+    case 1:
+        fprintf(stderr, "cm ");
+        break;
+    case 2:
+        fprintf(stderr, "pt ");
+        break;
+    case 3:
+        fprintf(stderr, "pc ");
+        break;
+    case 4:
+        fprintf(stderr, " %% ");
+        break;
+    default:
+        RTFPanic("Bad nibble\n");
+    }
+}
+
+
+static int SkipNibbles(unsigned char *p, int num)
+{
+    unsigned char hi, lo;
+    int nbytes = 0;
+    int count = 1;
+    int new_str = 1;
+
+    if (0) fprintf(stderr, " #%02d -- ", count);
+    while (count <= num) {
+
+        hi = HiNibble(*(p + nbytes));
+        lo = LoNibble(*(p + nbytes));
+        nbytes++;
+
+        if (new_str)
+            PrintNibbleDimension(hi);
+        else
+            PrintNibble(hi);
+
+        new_str = 0;
+        if (hi == 0x0F) {
+            new_str = 1;
+            count++;
+            if (0) fprintf(stderr, " ---> total of %d bytes\n #%02d -- ", nbytes, count);
+        }
+
+        if (new_str)
+            PrintNibbleDimension(lo);
+        else
+            PrintNibble(lo);
+
+        new_str = 0;
+        if (lo == 0x0F) {
+            new_str = 1;
+            count++;
+            if (0) fprintf(stderr, " ---> total of %d bytes\n #%02d -- ", nbytes, count);
+        }
+    }
+    if (0) fprintf(stderr, "\n");
+
+    return nbytes;
+}
+
+
+/*  section contains strings of the form */
+/*     key=data */
+static
+uint32_t GetProfileStr(char **section, char *key, char *data, int datalen)
+{
+    char **rover;
+    uint32_t keylen;
+
+    if (key == NULL) return 0;
+    keylen = (uint32_t) strlen(key);
+    
+    for (rover = &section[0]; *rover; ++rover) {
+        if (strncmp(*rover, key, keylen) == 0) {
+            strncpy(data, *rover + keylen + 1, datalen - 1);    /*  skip over = (no check for white space */
+            data[datalen - 1] = 0;      /*  null terminate */
+            return ((uint32_t) strlen(data));
+        }
+    }
+    return 0;
+}
+
+
+/*  this mangles the contents of strs[].data, so just call once! */
+static
+char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
+{
+    char join[8192], buf[128];
+    char *p, *substition_text, *marker, *thetex;
+    char *vars[3];
+    int i, j, id, is_pile;
+
+    if (DEBUG_JOIN) {
+        for (i=0; i<num_strs; i++)
+            fprintf(stderr,"   is_line=%d, strs[%d].data=%s\n", strs[i].is_line, i, strs[i].data);
     }
     
-	eqn->m_atts_table = Profile_MT_CHARSET_ATTS;
-	Eqn_LoadCharSetAtts(eqn, Profile_MT_CHARSET_ATTS);
-	eqn->m_char_table = Profile_CHARTABLE;
+    *join = '\0';
 
-    /*  We expect a SIZE then a LINE or PILE */
-    eqn->o_list = Eqn_GetObjectList(eqn, eqn_stream, &src_index, 2);
+    for (i=0; i<num_strs; i++) {
+    
+        if (!strs[i].data) continue;
+            
+        if (strs[i].log_level > eqn->log_level) continue;
+        
+        if (strs[i].ilk != Z_TMPL) { 
+            strcat(join, strs[i].data);
+            continue;
+        }
 
-    return (true);
+        /*  the current string is a TMPL and needs to be filled and added */
+        /*  e.g., dat = "\sqrt[#2]{#1}" */
+        
+        p = strs[i].data;
+        
+        while (*p) {
+
+            marker = strchr(p, '#');
+            if (!marker) {
+                strcat(join, p);
+                break;
+            }
+            
+            *marker = '\0';
+            strcat(join, p);
+            p = marker + 1;
+                
+/*  #1[L][STARTSUB][ENDSUB]  ... substitute text according to byzantine scheme */
+            
+            /* only #1, #2, and #3 are used */  
+            id = *p - '1';
+            if (id < 0 || id > 3) break;
+            p++;
+            
+            /* Extract the bracketed items */
+            /* vars[0]="L", vars[1]="STARTSUB", vars[2]="ENDSUB" */
+            /* only vars[1] and vars[2] are used */
+            
+            vars[1] = NULL;
+            vars[2] = NULL;
+            j = 0;
+            while (*p == '[') {     
+                p++;
+                marker = strchr(p, ']');
+                if (!marker) break;
+                *marker = '\0';
+                vars[j++] = p;
+                p = marker+1;
+            }
+
+            /*  This is pretty confusing. All the strs[] have an is_line flag */
+            /*  only strs[] entries that have this flag set may be used for replacement */
+            /*  The replacement text for #1 or #2 or #3 is the first, second, or third */
+            /*  strs[] entry that has its flag set. */
+            
+            thetex = NULL;
+            for (j=i+1; j<num_strs; j++) {
+                if (strs[j].is_line == 0) continue;
+                            
+                if (id == 0) {
+                    thetex = strs[j].data;
+                    strs[j].log_level = 100; /*  mark this entry as used */
+                    is_pile = (strs[j].is_line == 2) ? 1 : 0;
+                    break;
+                }
+                id--;  /*  one string closer to our goal */
+            }
+
+            /*  this should not happen, but if it does, just go on to the next character */
+            if (!thetex) continue;
+
+            if (GetProfileStr(Profile_VARIABLES, vars[1], buf, 128)) {
+                
+                substition_text = buf;
+                marker = strchr(buf, ',');
+
+                if (is_pile)
+                    substition_text = marker + 1;
+                else
+                    *marker = '\0';
+
+                strcat(join, substition_text);
+            }
+
+            strcat(join, thetex);
+
+            if (GetProfileStr(Profile_VARIABLES, vars[2], buf, 128)) {
+                
+                substition_text = buf;
+                marker = strchr(buf, ',');
+
+                if (is_pile)
+                    substition_text = marker + 1;
+                else
+                    *marker = 0;
+
+                strcat(join, substition_text);
+            }
+        }
+    }
+
+    for (i=0; i<num_strs; i++)
+        if (strs[i].do_delete && strs[i].data) {
+            free(strs[i].data);
+            strs[i].data = NULL;
+        }
+            
+    thetex = (char *) malloc(strlen(join)+1);
+    strcpy(thetex, join);
+    if (DEBUG_JOIN) fprintf(stderr,"final join='%s'\n", thetex);
+    return thetex;
+}
+
+/*  delete routines */
+
+
+
+static
+void DeleteTabstops(MT_TABSTOP * the_list)
+{
+    MT_TABSTOP *del_node;
+
+    while (the_list) {
+        del_node = the_list;
+        the_list = (MT_TABSTOP *) (the_list->next);
+        free(del_node);
+    }
+}
+
+
+static
+void DeleteEmbells(MT_EMBELL * the_list)
+{
+    MT_EMBELL *del_node;
+    while (the_list) {
+        del_node = the_list;
+        the_list = (MT_EMBELL *) the_list->next;
+        free(del_node);
+    }
+}
+
+
+static
+void DeleteObjectList(MT_OBJLIST * the_list)
+{
+    MT_OBJLIST *del_node;
+    MT_LINE *line;
+    MT_CHAR *charptr;
+
+    while (the_list) {
+
+        del_node = the_list;
+        the_list = (void *) the_list->next;
+
+        switch (del_node->tag) {
+
+        case LINE:{
+                line = (MT_LINE *) del_node->obj_ptr;
+                if (line) {
+                    if (line->ruler) {
+                        DeleteTabstops(line->ruler->tabstop_list);
+                        free(line->ruler);
+                    }
+
+                    if (line->object_list)
+                        DeleteObjectList(line->object_list);
+                    free(line);
+                }
+            }
+            break;
+
+        case CHAR:{
+                charptr = (MT_CHAR *) del_node->obj_ptr;
+                if (charptr) {
+                    if (charptr->embellishment_list)
+                        DeleteEmbells(charptr->embellishment_list);
+                    free(charptr);
+                }
+            }
+            break;
+
+        case TMPL:{
+                MT_TMPL *tmpl = (MT_TMPL *) del_node->obj_ptr;
+                if (tmpl) {
+                    if (tmpl->subobject_list)
+                        DeleteObjectList(tmpl->subobject_list);
+                    free(tmpl);
+                }
+            }
+            break;
+
+        case PILE:{
+                MT_PILE *pile = (MT_PILE *) del_node->obj_ptr;
+                if (pile) {
+                    if (pile->line_list)
+                        DeleteObjectList(pile->line_list);
+                    free(pile);
+                }
+            }
+            break;
+
+        case MATRIX:{
+                MT_MATRIX *matrix = (MT_MATRIX *) del_node->obj_ptr;
+                if (matrix) {
+                    if (matrix->element_list)
+                        DeleteObjectList(matrix->element_list);
+                    free(matrix);
+                }
+            }
+            break;
+
+        case EMBELL:
+            break;
+
+        case RULER:{
+                MT_RULER *ruler = (MT_RULER *) del_node->obj_ptr;
+                if (ruler) {
+                    if (ruler->tabstop_list)
+                        DeleteTabstops(ruler->tabstop_list);
+                    free(ruler);
+                }
+            }
+            break;
+
+        case FONT:{
+                MT_FONT *font = (MT_FONT *) del_node->obj_ptr;
+                if (font) {
+                    if (font->zname)
+                        free(font->zname);
+                    free(font);
+                }
+            }
+            break;
+
+        case SIZE:
+        case FULL:
+        case SUB:
+        case SUB2:
+        case SYM:
+        case SUBSYM:{
+                MT_SIZE *size = (MT_SIZE *) del_node->obj_ptr;
+                if (size) {
+                    free(size);
+                }
+            }
+            break;
+
+        default:
+            break;
+        }
+
+        free(del_node);
+    }                           /*   while ( the_list ) */
 }
 
 void Eqn_Destroy(MTEquation * eqn)
@@ -261,300 +714,6 @@ static void setMathMode(MTEquation * eqn, char * buff, int mode)
     }
 }
 
-void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
-                             int loglevel)
-{
-    char *ztex;
-
-    eqn->out_file = outfile;
-    eqn->log_level = loglevel;
-
-    if (eqn->log_level == 2)
-        fputs("%Begin Equation\n", eqn->out_file);
-
-    if (DEBUG_TRANSLATION || g_equation_file) fprintf(stderr,"new equation\n");
-    
-    ztex = Eqn_TranslateObjects(eqn, eqn->o_list);
-
-    if (ztex) {
-        BreakTeX(ztex, eqn->out_file);
-        free(ztex);
-    }
-
-    setMathMode(eqn, NULL, EQN_MODE_TEXT);
-
-    if (eqn->log_level == 2)
-        fputs(" %End Equation\n", eqn->out_file);
-}
-
-#define zLINE_MAX   75
-
-/* avoid blank lines in equation */
-static
-void BreakTeX(char *ztex, FILE * outfile)
-{
-    char *p;    
-    int line_is_empty = 1;
-    
-    p = ztex;
-    while (*p) {
-
-        if (*p == '\r' || *p == '\n') {
-            if (!line_is_empty) {
-                fputc('\n', outfile);
-                line_is_empty = 1;
-            }
-        } else {
-            fputc(*p, outfile);
-            if (line_is_empty && *p != ' ')
-                line_is_empty = 0;
-        }
-
-        p++;
-    }
-}
-
-void print_tag(unsigned char tag, int src_index)
-{
-    switch (tag) {
-    case 0:
-        RTFMsg("[%03d] %-14s\n", src_index, "END");
-        break;
-    case 1:
-        RTFMsg("[%03d] %-14s\n", src_index, "LINE");
-        break;
-    case 2:
-        RTFMsg("[%03d] %-14s\n", src_index, "CHAR");
-        break;
-    case 3:
-        RTFMsg("[%03d] %-14s\n", src_index, "TMPL");
-        break;
-    case 4:
-        RTFMsg("[%03d] %-14s\n", src_index, "PILE");
-        break;
-    case 5:
-        RTFMsg("[%03d] %-14s\n", src_index, "MATRIX");
-        break;
-    case 6:
-        RTFMsg("[%03d] %-14s\n", src_index, "EMBELL");
-        break;
-    case 7:
-        RTFMsg("[%03d] %-14s\n", src_index, "RULER");
-        break;
-    case 8:
-        RTFMsg("[%03d] %-14s\n", src_index, "FONT_STYLE_DEF");
-        break;
-    case 9:
-        RTFMsg("[%03d] %-14s\n", src_index, "SIZE");
-        break;
-    case 10:
-        RTFMsg("[%03d] %-14s\n", src_index, "FULL");
-        break;
-    case 11:
-        RTFMsg("[%03d] %-14s\n", src_index, "SUB");
-        break;
-    case 12:
-        RTFMsg("[%03d] %-14s\n", src_index, "SUB2");
-        break;
-    case 13:
-        RTFMsg("[%03d] %-14s\n", src_index, "SYM");
-        break;
-    case 14:
-        RTFMsg("[%03d] %-14s\n", src_index, "SUBSYM");
-        break;
-    case 15:
-        RTFMsg("[%03d] %-14s\n", src_index, "COLOR");
-        break;
-    case 16:
-        RTFMsg("[%03d] %-14s\n", src_index, "COLOR_DEF");
-        break;
-    case 17:
-        RTFMsg("[%03d] %-14s\n", src_index, "FONT_DEF");
-        break;
-    case 18:
-        RTFMsg("[%03d] %-14s\n", src_index, "EQN_PREFS");
-        break;
-    case 19:
-        RTFMsg("[%03d] %-14s\n", src_index, "ENCODING_DEF");
-        break;
-    default:
-        RTFMsg("[%03d] %-14s\n", src_index, "FUTURE");
-        break;
-    }
-}
-
-/* /////////////////////////////////////////////////////////////////////////// */
-/*  static, local, Private...whatever */
-/* /////////////////////////////////////////////////////////////////////////// */
-
-/*
- * Convert MT equation into internal form
- * at each Eqn_inputXXX call, the src_index is set to the XXX tag
- * so that the hi nibble can be used to obtain the options in 
- * versions 1-4 of MTEF
-*/
-MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_index, int num_objs)
-{
-    unsigned char c, size, curr_tag;
-    int i,id;
-    int tally = 0;
-    MT_OBJLIST *head = (MT_OBJLIST *) NULL;
-    MT_OBJLIST *curr;
-    void *new_obj;
-
-    if (eqn->m_mtef_ver == 5)
-        curr_tag = *(src + *src_index);
-    else
-        curr_tag = LoNibble(*(src + *src_index));
-
-    while (curr_tag != 0xFF) {
-
-        new_obj = (void *) NULL;
-
-if (DEBUG_PARSING || g_equation_file) {
-		print_tag(curr_tag, *src_index);
-		__cole_dump(src+*src_index, src+*src_index, 16, NULL);
-}
-
-        switch (curr_tag) {
-        case END:
-            (*src_index)++;
-            return head;
-            break;
-
-        case LINE:
-            new_obj = (void *) Eqn_inputLINE(eqn, src, src_index);
-            break;
-        case CHAR:
-            new_obj = (void *) Eqn_inputCHAR(eqn, src, src_index);
-            break;
-        case TMPL:
-            new_obj = (void *) Eqn_inputTMPL(eqn, src, src_index);
-            break;
-        case PILE:
-            new_obj = (void *) Eqn_inputPILE(eqn, src, src_index);
-            break;
-        case MATRIX:
-            new_obj = (void *) Eqn_inputMATRIX(eqn, src, src_index);
-            break;
-
-        case EMBELL:
-            new_obj = (void *) Eqn_inputEMBELL(eqn, src, src_index);
-            break;
-
-        case RULER:
-            new_obj = (void *) Eqn_inputRULER(eqn, src, src_index);
-            break;
-        case FONT:
-            new_obj = (void *) Eqn_inputFONT(eqn, src, src_index);
-            break;
-
-        case SIZE:
-        case FULL:
-        case SUB:
-        case SUB2:
-        case SYM:
-        case SUBSYM:
-            new_obj = (void *) Eqn_inputSIZE(eqn, src, src_index);
-            break;
-
-        case COLOR_DEF:
-            break;
-
-        case FONT_DEF:
-            (*src_index)++;
-            id = *(src + *src_index);
-            (*src_index)++;
-            if (DEBUG_FONT) fprintf(stderr,"          ");
-            while ((c = *(src + *src_index))) { 
-                if (DEBUG_FONT) fprintf(stderr,"%c",c);
-                (*src_index)++;
-            }
-            if (DEBUG_FONT) fprintf(stderr," ==> %d\n",id);
-            (*src_index)++;
-            tally--;
-            break;
-
-        case EQN_PREFS:
-            (*src_index)++;     /* skip tag */
-            (*src_index)++;     /* options */
-
-            size = *(src + *src_index); /* sizes[] */
-            if (0) fprintf(stderr, " size array has %d entries\n", size);
-            (*src_index)++;
-            (*src_index) += SkipNibbles(src + *src_index, size);
-
-            size = *(src + *src_index); /* spaces[] */
-            (*src_index)++;
-            (*src_index) += SkipNibbles(src + *src_index, size);
-
-            size = *(src + *src_index); /* styles[] */
-            (*src_index)++;
-            if (0) fprintf(stderr, " style array has %d entries\n", size);
-            for (i = 0; i < size; i++) {
-                c = *(src + *src_index);
-                (*src_index)++;
-                if (c) {
-                   /* c = *(src + *src_index); */
-                    (*src_index)++;
-                }
-            }
-            tally--;
-            break;
-
-        case ENCODING_DEF:
-            (*src_index)++;     /* skip tag */
-            while ((c = *(src + *src_index))) {
-                if (0) fprintf(stderr, "%c", c);
-                (*src_index)++;
-            }
-            if (0) fprintf(stderr, "\n");
-            (*src_index)++;     /* skip NULL */
-            tally--;
-            break;
-
-        default:
-            (*src_index)++;     /* skip tag */
-            size = *(src + *src_index);
-            (*src_index)++;
-            size |= *(src + *src_index) << 8;
-            (*src_index) += size + 1;
-
-            fprintf(stderr, "Future tag = 0x%02x with size %d\n",curr_tag,size);
-            exit(1);
-            break;
-        }
-
-        if (new_obj) {
-            MT_OBJLIST *new_node =
-                (MT_OBJLIST *) malloc(sizeof(MT_OBJLIST));
-            new_node->next = NULL;
-            new_node->tag = curr_tag;
-            new_node->obj_ptr = new_obj;
-
-            if (head)
-                curr->next = (void *) new_node;
-            else
-                head = new_node;
-            curr = new_node;
-        }
-
-        if (eqn->m_mtef_ver == 5)
-            curr_tag = *(src + *src_index);
-        else
-            curr_tag = LoNibble(*(src + *src_index));
-
-        tally++;
-        if (tally == num_objs)
-            return head;
-
-    }                           /*  while loop thru MathType Objects */
-
-    (*src_index)++;             /*  step over end byte */
-
-    return head;
-}
-
 static int GetAttribute(MTEquation * eqn, unsigned char *src, unsigned char *attrs)
 {
     if (eqn->m_mtef_ver < 5) {
@@ -564,6 +723,75 @@ static int GetAttribute(MTEquation * eqn, unsigned char *src, unsigned char *att
 
     *attrs = *(src + 1);
     return 2;
+}
+
+static
+int GetNudge(unsigned char *src, int *x, int *y)
+{
+
+    int nudge_length;
+    short tmp;
+
+    unsigned char b1 = *src;
+    unsigned char b2 = *(src + 1);
+
+
+    if (b1 == 128 && b2 == 128) {
+        tmp = *(src + 2) | *(src + 3) << 8;     /*  high byte last */
+        *x = tmp;
+        tmp = *(src + 4) | *(src + 5) << 8;     /*  high byte last */
+        *y = tmp;
+        nudge_length = 6;
+    } else {
+        *x = b1;
+        *y = b2;
+        nudge_length = 2;
+    }
+
+    if (g_equation_file) fprintf(stderr, "nudge gotten size=%d",nudge_length);
+
+    return nudge_length;
+}
+MT_RULER *Eqn_inputRULER(MTEquation * eqn, unsigned char *src,
+                         int *src_index)
+{
+    MT_RULER *new_ruler;
+    MT_TABSTOP *head, *curr, *new_stop;
+    int i, num_stops, tag;
+
+    /* if we arrived here from LINE, then there does not seem to be
+       a proper RULER tag.  Skip the tag only if it is a RULER */
+    tag = *(src + *src_index) & 0x0F;
+    if (tag == 7)
+        (*src_index)++;             /*  step over ruler tag */
+
+    head = NULL;
+    num_stops = *(src + *src_index);
+    (*src_index)++;
+    
+    for (i=0; i < num_stops; i++) {
+        new_stop = (MT_TABSTOP *) malloc(sizeof(MT_TABSTOP));
+        new_stop->next = NULL;
+        new_stop->type = *(src + *src_index);
+        (*src_index)++;
+        
+        new_stop->offset = *(src + *src_index);
+        (*src_index)++;
+        new_stop->offset |= *(src + *src_index) << 8;
+        (*src_index)++;
+
+        if (head)
+            curr->next = (struct MT_TABSTOP *) new_stop;
+        else
+            head = new_stop;
+        curr = new_stop;
+    }
+
+    new_ruler = (MT_RULER *) malloc(sizeof(MT_RULER));
+    new_ruler->n_stops = num_stops;
+    new_ruler->tabstop_list = head;
+
+    return new_ruler;
 }
 
 
@@ -607,6 +835,49 @@ MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
 
     return new_line;
 }
+
+
+MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
+                           int *src_index)
+{
+    unsigned char attrs, tag;
+    MT_EMBELL *head = NULL;
+    MT_EMBELL *new_embell = NULL;
+    MT_EMBELL *curr = NULL;
+    tag = EMBELL;
+
+    while (tag == EMBELL) {
+        new_embell = (MT_EMBELL *) malloc(sizeof(MT_EMBELL));
+        new_embell->next = NULL;
+        new_embell->nudge_x = 0;
+        new_embell->nudge_y = 0;
+
+        *src_index += GetAttribute(eqn, src+*src_index, &attrs);
+		
+        if (attrs & xfLMOVE)
+            *src_index += GetNudge(src + *src_index, &new_embell->nudge_x, &new_embell->nudge_y);
+        
+        new_embell->embell = *(src + *src_index);
+        if (DEBUG_EMBELLS  || g_equation_file) fprintf(stderr, "[%-3d] EMBELL --- embell=%d\n", *src_index, new_embell->embell);
+        (*src_index)++;
+
+        if (head)
+            curr->next = (struct MT_EMBELL *) new_embell;
+        else
+            head = new_embell;
+        curr = new_embell;
+
+        if (eqn->m_mtef_ver == 5)
+            tag = *(src + *src_index);
+        else
+            tag = LoNibble(*(src + *src_index));
+    }
+
+    (*src_index)++;             /*  advance over end byte */
+
+    return head;
+}
+
 
 /*
     * attributes
@@ -793,92 +1064,6 @@ MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
     return new_matrix;
 }
 
-
-MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
-                           int *src_index)
-{
-    unsigned char attrs, tag;
-    MT_EMBELL *head = NULL;
-    MT_EMBELL *new_embell = NULL;
-    MT_EMBELL *curr = NULL;
-    tag = EMBELL;
-
-    while (tag == EMBELL) {
-        new_embell = (MT_EMBELL *) malloc(sizeof(MT_EMBELL));
-        new_embell->next = NULL;
-        new_embell->nudge_x = 0;
-        new_embell->nudge_y = 0;
-
-        *src_index += GetAttribute(eqn, src+*src_index, &attrs);
-		
-        if (attrs & xfLMOVE)
-            *src_index += GetNudge(src + *src_index, &new_embell->nudge_x, &new_embell->nudge_y);
-        
-        new_embell->embell = *(src + *src_index);
-        if (DEBUG_EMBELLS  || g_equation_file) fprintf(stderr, "[%-3d] EMBELL --- embell=%d\n", *src_index, new_embell->embell);
-        (*src_index)++;
-
-        if (head)
-            curr->next = (struct MT_EMBELL *) new_embell;
-        else
-            head = new_embell;
-        curr = new_embell;
-
-        if (eqn->m_mtef_ver == 5)
-            tag = *(src + *src_index);
-        else
-            tag = LoNibble(*(src + *src_index));
-    }
-
-    (*src_index)++;             /*  advance over end byte */
-
-    return head;
-}
-
-
-MT_RULER *Eqn_inputRULER(MTEquation * eqn, unsigned char *src,
-                         int *src_index)
-{
-    MT_RULER *new_ruler;
-    MT_TABSTOP *head, *curr, *new_stop;
-    int i, num_stops, tag;
-
-    /* if we arrived here from LINE, then there does not seem to be
-       a proper RULER tag.  Skip the tag only if it is a RULER */
-    tag = *(src + *src_index) & 0x0F;
-    if (tag == 7)
-        (*src_index)++;             /*  step over ruler tag */
-
-    head = NULL;
-    num_stops = *(src + *src_index);
-    (*src_index)++;
-    
-    for (i=0; i < num_stops; i++) {
-        new_stop = (MT_TABSTOP *) malloc(sizeof(MT_TABSTOP));
-        new_stop->next = NULL;
-        new_stop->type = *(src + *src_index);
-        (*src_index)++;
-        
-        new_stop->offset = *(src + *src_index);
-        (*src_index)++;
-        new_stop->offset |= *(src + *src_index) << 8;
-        (*src_index)++;
-
-        if (head)
-            curr->next = (struct MT_TABSTOP *) new_stop;
-        else
-            head = new_stop;
-        curr = new_stop;
-    }
-
-    new_ruler = (MT_RULER *) malloc(sizeof(MT_RULER));
-    new_ruler->n_stops = num_stops;
-    new_ruler->tabstop_list = head;
-
-    return new_ruler;
-}
-
-
 MT_FONT *Eqn_inputFONT(MTEquation * eqn, unsigned char *src,
                        int *src_index)
 {
@@ -952,127 +1137,66 @@ MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
 }
 
 
-static
-int GetNudge(unsigned char *src, int *x, int *y)
+/*
+ * Convert MT equation into internal form
+ * at each Eqn_inputXXX call, the src_index is set to the XXX tag
+ * so that the hi nibble can be used to obtain the options in 
+ * versions 1-4 of MTEF
+*/
+static MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_index, int num_objs)
 {
+    unsigned char c, size, curr_tag;
+    int i,id;
+    int tally = 0;
+    MT_OBJLIST *head = (MT_OBJLIST *) NULL;
+    MT_OBJLIST *curr;
+    void *new_obj;
 
-    int nudge_length;
-    short tmp;
+    if (eqn->m_mtef_ver == 5)
+        curr_tag = *(src + *src_index);
+    else
+        curr_tag = LoNibble(*(src + *src_index));
 
-    unsigned char b1 = *src;
-    unsigned char b2 = *(src + 1);
+    while (curr_tag != 0xFF) {
 
+        new_obj = (void *) NULL;
 
-    if (b1 == 128 && b2 == 128) {
-        tmp = *(src + 2) | *(src + 3) << 8;     /*  high byte last */
-        *x = tmp;
-        tmp = *(src + 4) | *(src + 5) << 8;     /*  high byte last */
-        *y = tmp;
-        nudge_length = 6;
-    } else {
-        *x = b1;
-        *y = b2;
-        nudge_length = 2;
-    }
-
-    if (g_equation_file) fprintf(stderr, "nudge gotten size=%d",nudge_length);
-
-    return nudge_length;
+if (DEBUG_PARSING || g_equation_file) {
+		print_tag(curr_tag, *src_index);
+		hexdump(src+*src_index, src+*src_index, 16, NULL);
 }
 
-
-/*  delete routines */
-
-static
-void DeleteObjectList(MT_OBJLIST * the_list)
-{
-    MT_OBJLIST *del_node;
-    MT_LINE *line;
-    MT_CHAR *charptr;
-
-    while (the_list) {
-
-        del_node = the_list;
-        the_list = (void *) the_list->next;
-
-        switch (del_node->tag) {
-
-        case LINE:{
-                line = (MT_LINE *) del_node->obj_ptr;
-                if (line) {
-                    if (line->ruler) {
-                        DeleteTabstops(line->ruler->tabstop_list);
-                        free(line->ruler);
-                    }
-
-                    if (line->object_list)
-                        DeleteObjectList(line->object_list);
-                    free(line);
-                }
-            }
+        switch (curr_tag) {
+        case END:
+            (*src_index)++;
+            return head;
             break;
 
-        case CHAR:{
-                charptr = (MT_CHAR *) del_node->obj_ptr;
-                if (charptr) {
-                    if (charptr->embellishment_list)
-                        DeleteEmbells(charptr->embellishment_list);
-                    free(charptr);
-                }
-            }
+        case LINE:
+            new_obj = (void *) Eqn_inputLINE(eqn, src, src_index);
             break;
-
-        case TMPL:{
-                MT_TMPL *tmpl = (MT_TMPL *) del_node->obj_ptr;
-                if (tmpl) {
-                    if (tmpl->subobject_list)
-                        DeleteObjectList(tmpl->subobject_list);
-                    free(tmpl);
-                }
-            }
+        case CHAR:
+            new_obj = (void *) Eqn_inputCHAR(eqn, src, src_index);
             break;
-
-        case PILE:{
-                MT_PILE *pile = (MT_PILE *) del_node->obj_ptr;
-                if (pile) {
-                    if (pile->line_list)
-                        DeleteObjectList(pile->line_list);
-                    free(pile);
-                }
-            }
+        case TMPL:
+            new_obj = (void *) Eqn_inputTMPL(eqn, src, src_index);
             break;
-
-        case MATRIX:{
-                MT_MATRIX *matrix = (MT_MATRIX *) del_node->obj_ptr;
-                if (matrix) {
-                    if (matrix->element_list)
-                        DeleteObjectList(matrix->element_list);
-                    free(matrix);
-                }
-            }
+        case PILE:
+            new_obj = (void *) Eqn_inputPILE(eqn, src, src_index);
+            break;
+        case MATRIX:
+            new_obj = (void *) Eqn_inputMATRIX(eqn, src, src_index);
             break;
 
         case EMBELL:
+            new_obj = (void *) Eqn_inputEMBELL(eqn, src, src_index);
             break;
 
-        case RULER:{
-                MT_RULER *ruler = (MT_RULER *) del_node->obj_ptr;
-                if (ruler) {
-                    if (ruler->tabstop_list)
-                        DeleteTabstops(ruler->tabstop_list);
-                    free(ruler);
-                }
-            }
+        case RULER:
+            new_obj = (void *) Eqn_inputRULER(eqn, src, src_index);
             break;
-
-        case FONT:{
-                MT_FONT *font = (MT_FONT *) del_node->obj_ptr;
-                if (font) {
-                    if (font->zname)
-                        free(font->zname);
-                    free(font);
-                }
-            }
+        case FONT:
+            new_obj = (void *) Eqn_inputFONT(eqn, src, src_index);
             break;
 
         case SIZE:
@@ -1080,162 +1204,235 @@ void DeleteObjectList(MT_OBJLIST * the_list)
         case SUB:
         case SUB2:
         case SYM:
-        case SUBSYM:{
-                MT_SIZE *size = (MT_SIZE *) del_node->obj_ptr;
-                if (size) {
-                    free(size);
+        case SUBSYM:
+            new_obj = (void *) Eqn_inputSIZE(eqn, src, src_index);
+            break;
+
+        case COLOR_DEF:
+            break;
+
+        case FONT_DEF:
+            (*src_index)++;
+            id = *(src + *src_index);
+            (*src_index)++;
+            if (DEBUG_FONT) fprintf(stderr,"          ");
+            while ((c = *(src + *src_index))) { 
+                if (DEBUG_FONT) fprintf(stderr,"%c",c);
+                (*src_index)++;
+            }
+            if (DEBUG_FONT) fprintf(stderr," ==> %d\n",id);
+            (*src_index)++;
+            tally--;
+            break;
+
+        case EQN_PREFS:
+            (*src_index)++;     /* skip tag */
+            (*src_index)++;     /* options */
+
+            size = *(src + *src_index); /* sizes[] */
+            if (0) fprintf(stderr, " size array has %d entries\n", size);
+            (*src_index)++;
+            (*src_index) += SkipNibbles(src + *src_index, size);
+
+            size = *(src + *src_index); /* spaces[] */
+            (*src_index)++;
+            (*src_index) += SkipNibbles(src + *src_index, size);
+
+            size = *(src + *src_index); /* styles[] */
+            (*src_index)++;
+            if (0) fprintf(stderr, " style array has %d entries\n", size);
+            for (i = 0; i < size; i++) {
+                c = *(src + *src_index);
+                (*src_index)++;
+                if (c) {
+                   /* c = *(src + *src_index); */
+                    (*src_index)++;
                 }
             }
+            tally--;
+            break;
+
+        case ENCODING_DEF:
+            (*src_index)++;     /* skip tag */
+            while ((c = *(src + *src_index))) {
+                if (0) fprintf(stderr, "%c", c);
+                (*src_index)++;
+            }
+            if (0) fprintf(stderr, "\n");
+            (*src_index)++;     /* skip NULL */
+            tally--;
             break;
 
         default:
+            (*src_index)++;     /* skip tag */
+            size = *(src + *src_index);
+            (*src_index)++;
+            size |= *(src + *src_index) << 8;
+            (*src_index) += size + 1;
+
+            fprintf(stderr, "Future tag = 0x%02x with size %d\n",curr_tag,size);
+            exit(1);
             break;
         }
 
-        free(del_node);
-    }                           /*   while ( the_list ) */
+        if (new_obj) {
+            MT_OBJLIST *new_node =
+                (MT_OBJLIST *) malloc(sizeof(MT_OBJLIST));
+            new_node->next = NULL;
+            new_node->tag = curr_tag;
+            new_node->obj_ptr = new_obj;
+
+            if (head)
+                curr->next = (void *) new_node;
+            else
+                head = new_node;
+            curr = new_node;
+        }
+
+        if (eqn->m_mtef_ver == 5)
+            curr_tag = *(src + *src_index);
+        else
+            curr_tag = LoNibble(*(src + *src_index));
+
+        tally++;
+        if (tally == num_objs)
+            return head;
+
+    }                           /*  while loop thru MathType Objects */
+
+    (*src_index)++;             /*  step over end byte */
+
+    return head;
 }
 
-
 static
-void DeleteTabstops(MT_TABSTOP * the_list)
+void Eqn_LoadCharSetAtts(MTEquation * eqn, char **table)
 {
-    MT_TABSTOP *del_node;
+    char key[16];
+    char buff[16];
+    int slot = 1;
+    int zln;
 
-    while (the_list) {
-        del_node = the_list;
-        the_list = (MT_TABSTOP *) (the_list->next);
-        free(del_node);
+    eqn->atts_table = malloc(sizeof(MT_CHARSET_ATTS) * NUM_TYPEFACE_SLOTS);
+
+    while (slot <= NUM_TYPEFACE_SLOTS) {
+        sprintf(key, "%d", slot + 128);
+        zln = GetProfileStr(table, key, buff, 16);
+        if (zln) {
+            eqn->atts_table[slot - 1].mathattr = buff[0] - '0';
+            eqn->atts_table[slot - 1].do_lookup = buff[2] - '0';
+            eqn->atts_table[slot - 1].use_codepoint = buff[4] - '0';
+        } else {
+            eqn->atts_table[slot - 1].mathattr = 1;
+            eqn->atts_table[slot - 1].do_lookup = 0;
+            eqn->atts_table[slot - 1].use_codepoint = 1;
+        }
+
+        slot++;
     }
 }
 
-
-static
-void DeleteEmbells(MT_EMBELL * the_list)
+/* parse the equation header and fill the fields of eqn */
+int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
 {
-    MT_EMBELL *del_node;
-    while (the_list) {
-        del_node = the_list;
-        the_list = (MT_EMBELL *) the_list->next;
-        free(del_node);
-    }
-}
+    int src_index = 0;
 
+    eqn->indent[0] = '%';
+    eqn->indent[1] = 0;
+    eqn->o_list = NULL;
+    eqn->atts_table = NULL;
+    eqn->m_mode = EQN_MODE_TEXT;
+    eqn->m_inline = 0;
+    eqn->m_mtef_ver = eqn_stream[src_index++];
+
+    switch (eqn->m_mtef_ver) {
+    case 1:
+    case 101:
+        eqn->m_platform = (eqn->m_mtef_ver == 101) ? 1 : 0;
+        eqn->m_product = 0;
+        eqn->m_version = 1;
+        eqn->m_version_sub = 0;
+        break;
+
+    case 2:
+    case 3:
+    case 4:
+        eqn->m_platform = eqn_stream[src_index++];
+        eqn->m_product = eqn_stream[src_index++];
+        eqn->m_version = eqn_stream[src_index++];
+        eqn->m_version_sub = eqn_stream[src_index++];
+        break;
+
+    case 5:
+        eqn->m_platform = eqn_stream[src_index++];
+        eqn->m_product = eqn_stream[src_index++];
+        eqn->m_version = eqn_stream[src_index++];
+        eqn->m_version_sub = eqn_stream[src_index++];
+
+        /* the application key is a null terminated string */
+        while (eqn_stream[src_index]) {
+            /*  fprintf(stderr, "%c", eqn_stream[src_index]); */
+            src_index++;
+            if (src_index == eqn_size) {
+                RTFMsg("The Application Key for the Equation is screwy!");
+                return (false);
+            }
+        }
+        /*  fprintf(stderr, "\n"); */
+        src_index++;
+
+        eqn->m_inline = eqn_stream[src_index++];
+        break;
+
+    default:
+        RTFMsg("* Unsupported MathType Equation Binary Format (MTEF=%d)\n",
+               eqn->m_mtef_ver);
+        return (false);
+    }
+
+    if (g_equation_file) {
+    	fprintf(stderr,"* MTEF ver = %d\n", eqn->m_mtef_ver);
+    	fprintf(stderr,"* Platform = %s\n", (eqn->m_platform) ? "Win" : "Mac");
+    	fprintf(stderr,"* Product  = %s\n", (eqn->m_product) ? "MathType" : "EqnEditor");
+    	fprintf(stderr,"* Version  = %d.%d\n", eqn->m_version, eqn->m_version_sub);
+    	fprintf(stderr,"* Type     = %s (ignored because it is unreliable)\n", eqn->m_inline ? "inline" : "display");
+    }
+    
+	eqn->m_atts_table = Profile_MT_CHARSET_ATTS;
+	Eqn_LoadCharSetAtts(eqn, Profile_MT_CHARSET_ATTS);
+	eqn->m_char_table = Profile_CHARTABLE;
+
+    /*  We expect a SIZE then a LINE or PILE */
+    eqn->o_list = Eqn_GetObjectList(eqn, eqn_stream, &src_index, 2);
+
+    return (true);
+}
 
 /*  formatting routines.  convert internal form to LaTeX */
+
+
+
 static
-char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
+char *Eqn_TranslateRULER(MTEquation * eqn, MT_RULER * ruler)
 {
 
-    char *zcurr;
-    char *rv = (char *) malloc(1024);
-    uint32_t di = 0;
-    int lim = 1024;
+    EQ_STRREC strs[2];
+    int num_strs = 0;
 
-    MT_OBJLIST *curr_node;
-    *rv = 0;
+    if (eqn->log_level >= 2) {
+        char buf[128];
+        sprintf(buf, "\n%sRULER\n", eqn->indent);
+        SetComment(strs, 2, buf);
+        num_strs++;
+    }
 
-    if (DEBUG_TRANSLATION || g_equation_file) fprintf(stderr,"new object list\n");
-    while (the_list) {
+    strcat(eqn->indent, "  ");
 
-        curr_node = the_list;
-        the_list = (void *) the_list->next;
+    /*  no translation implemented yet */
 
-        zcurr = (char *) NULL;
+    eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-        if (DEBUG_TRANSLATION || g_equation_file) print_tag(curr_node->tag, 0);
-        switch (curr_node->tag) {
-
-        case LINE:{
-                MT_LINE *line = (MT_LINE *) curr_node->obj_ptr;
-                if (line)
-                    zcurr = Eqn_TranslateLINE(eqn, line);
-            }
-            break;
-
-        case CHAR:{
-                int advance = 0;
-                MT_CHAR *charptr = (MT_CHAR *) curr_node->obj_ptr;
-                if (!charptr) break;
-            
-                if (charptr->typeface == 130) {     /*  auto_recognize functions */
-                    zcurr = Eqn_TranslateFUNCTION(eqn, curr_node, &advance);
-                    while (advance > 1) {
-                        the_list = (MT_OBJLIST *) the_list->next;
-                        advance--;
-                    }
-                } else if (charptr->typeface == 129 && eqn->m_mode != EQN_MODE_TEXT) {    /*  text in math */
-                    zcurr = Eqn_TranslateTEXTRUN(eqn, curr_node, &advance);
-                    while (advance > 1) {
-                        the_list = (MT_OBJLIST *) the_list->next;
-                        advance--;
-                    }
-                }
-                if (!advance)
-                    zcurr = Eqn_TranslateCHAR(eqn, charptr);
-            }
-            break;
-
-        case TMPL:{
-                MT_TMPL *tmpl = (MT_TMPL *) curr_node->obj_ptr;
-                if (tmpl)
-                    zcurr = Eqn_TranslateTMPL(eqn, tmpl);
-            }
-            break;
-
-        case PILE:{
-                MT_PILE *pile = (MT_PILE *) curr_node->obj_ptr;
-                if (pile)
-                    zcurr = Eqn_TranslatePILE(eqn, pile);
-            }
-            break;
-
-        case MATRIX:{
-                MT_MATRIX *matrix = (MT_MATRIX *) curr_node->obj_ptr;
-                if (matrix)
-                    zcurr = Eqn_TranslateMATRIX(eqn, matrix);
-            }
-            break;
-
-        case EMBELL:
-            break;
-
-        case RULER:{
-                MT_RULER *ruler = (MT_RULER *) curr_node->obj_ptr;
-                if (ruler)
-                    zcurr = Eqn_TranslateRULER(eqn, ruler);
-            }
-            break;
-
-        case FONT:{
-                MT_FONT *font = (MT_FONT *) curr_node->obj_ptr;
-                if (font)
-                    zcurr = Eqn_TranslateFONT(eqn, font);
-            }
-            break;
-
-        case SIZE:
-        case FULL:
-        case SUB:
-        case SUB2:
-        case SYM:
-        case SUBSYM:{
-                MT_SIZE *size = (MT_SIZE *) curr_node->obj_ptr;
-                if (size)
-                    zcurr = Eqn_TranslateSIZE(eqn, size);
-            }
-            break;
-
-        default:
-            break;
-        }
-
-        if (zcurr)
-            rv = ToBuffer(zcurr, rv, &di, &lim);
-
-    }                           /*   while ( the_list ) */
-
-    return rv;
+    return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
 static
@@ -1280,6 +1477,157 @@ char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line)
     return thetex;
 }
 
+/*  Character translation, MathType to TeX, using inifile data */
+
+static
+int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *math_attr)
+{
+    MT_EMBELL *embells;
+    char buff[256];
+    int num_strs = 0;           /*  this holds the returned value */
+
+    int set = thechar->typeface;
+    int code_point = thechar->character;
+
+    char *ztex = (char *) NULL;
+    char zch = 0;
+    char *zdata = (char *) NULL;
+
+    MT_CHARSET_ATTS set_atts;
+    if (DEBUG_CHAR) fprintf(stderr,"in GetTeXChar seeking eqn->atts_table[%d]\n",set - 129);
+
+    strs[0].log_level = 0;
+    strs[0].do_delete = 1;
+    strs[0].ilk = Z_TEX;
+    strs[0].is_line = 0;
+    strs[0].data = NULL;
+
+    if (set >= 129 && set < 129 + NUM_TYPEFACE_SLOTS) {
+        set_atts = eqn->atts_table[set - 129];
+    } else {                    /*  unexpected charset */
+        char buff[16];
+        char key[16];
+        int zln;
+        sprintf(key, "%d", set);
+        zln = GetProfileStr(eqn->m_atts_table, key, buff, 16);
+        if (zln) {
+            set_atts.mathattr = buff[0] - '0';
+            set_atts.do_lookup = buff[2] - '0';
+            set_atts.use_codepoint = buff[4] - '0';
+        } else {
+            set_atts.mathattr = 1;
+            set_atts.do_lookup = 1;
+            set_atts.use_codepoint = 1;
+        }
+    }
+
+    *math_attr = set_atts.mathattr;
+    if (set_atts.do_lookup) {
+        uint32_t zln;
+        char key[16];           /*  132.65m */
+
+        sprintf(key, "%d.%d", set, code_point);
+        if (DEBUG_CHAR) fprintf(stderr, "looking up char in table[%d] as %d.%d\n", set - 129, set, code_point);
+
+        if (*math_attr == 3) {
+            if (eqn->m_mode == EQN_MODE_TEXT)
+                strcat(key, "t");
+            else
+                strcat(key, "m");
+            *math_attr = 0;
+        }
+
+        zln = GetProfileStr(eqn->m_char_table, key, buff, 256);
+        if (zln) {
+            ztex = (char *) malloc(zln + 1);
+            strcpy(ztex, buff);
+        }
+    }
+
+    if (*math_attr == MA_FORCE_MATH && eqn->m_mode == EQN_MODE_TEXT) 
+        setMathMode(eqn, NULL, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
+    else if (*math_attr == MA_FORCE_TEXT)
+        setMathMode(eqn, NULL, EQN_MODE_TEXT);
+
+    if (!ztex && set_atts.use_codepoint) {
+        if (code_point >= 32 && code_point <= 127) {
+            zch = code_point;
+			if (thechar->typeface == 135) {
+				sprintf(buff,"\\mathbf{%c}", zch);
+				ztex = (char *) malloc(strlen(buff) + 1);
+				strcpy(ztex, buff);
+			}
+        }
+    }
+
+    if (ztex) {
+        zdata = ztex;
+    } else if (zch) {
+        zdata = (char *) malloc(2);
+        zdata[0] = zch;
+        zdata[1] = 0;
+    }
+
+    if (!zdata) 
+        return num_strs;
+
+    embells = thechar->embellishment_list;
+    
+    while (embells) {
+        char template[128];
+        *template = '\0';
+        
+        /* template will in the form "math template,text template" */
+        if (embells->embell>1 && embells->embell<37)
+            strcpy(template, Template_EMBELLS[embells->embell]);
+        
+        if (DEBUG_EMBELLS || g_equation_file) 
+        	fprintf(stderr,"Yikes --- Template_EMBELLS[%d]='%s'!\n",embells->embell,template);
+
+        if (strlen(template)) {     /*  only bother if there is a character */
+            char *join, *t_ptr, *j_ptr;
+
+            t_ptr = strchr(template, ',');
+            
+            if (!t_ptr) RTFPanic("Malformed EMBELL Template!\n");
+            
+            /* set string to first or second half of template depending on mode */
+            if (eqn->m_mode != EQN_MODE_TEXT) {
+                *t_ptr = '\0';
+                t_ptr = template;
+            } else 
+                t_ptr++;
+
+            join = (char *) malloc(strlen(t_ptr) + strlen(zdata) + 16);
+            j_ptr = join;
+
+            if (DEBUG_EMBELLS || g_equation_file) fprintf(stderr,"Yikes --- replacement template is '%s'!\n",t_ptr);
+            
+            /* replace %1 in template with zdata */
+            while (*t_ptr) {        
+                if (*t_ptr == '%') {
+                    t_ptr+=2;             /* skip over %1 */
+                    strcpy(j_ptr, zdata);
+                    j_ptr += strlen(zdata);
+                } else {
+                    *j_ptr = *t_ptr;
+                    j_ptr++;
+                    t_ptr++;
+                }
+            }
+            *j_ptr = '\0';
+            free(zdata);
+            zdata = join;
+        }
+        if (DEBUG_EMBELLS || g_equation_file) fprintf(stderr,"Yikes --- after replacement strs[0].data is '%s'!\n",zdata);
+
+        embells = (MT_EMBELL *) embells->next;
+    }
+
+    strs[0].data = zdata;
+    num_strs++;
+    return num_strs;
+}
 
 static
 char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar)
@@ -1356,9 +1704,10 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
         num_strs++;
     }
 
-//    SetComment(strs + num_strs, 100, (char *) NULL);    /*  place_holder for $ if needed */
-//    num_strs++;
-
+/*  place_holder for $ if needed
+    SetComment(strs + num_strs, 100, (char *) NULL);    
+    num_strs++;
+*/
     strs[num_strs].log_level = 0;
     strs[num_strs].do_delete = 1;
     strs[num_strs].ilk = Z_TEX;
@@ -1923,30 +2272,6 @@ char *Eqn_TranslateSIZE(MTEquation * eqn, MT_SIZE * size)
 
 
 static
-char *Eqn_TranslateRULER(MTEquation * eqn, MT_RULER * ruler)
-{
-
-    EQ_STRREC strs[2];
-    int num_strs = 0;
-
-    if (eqn->log_level >= 2) {
-        char buf[128];
-        sprintf(buf, "\n%sRULER\n", eqn->indent);
-        SetComment(strs, 2, buf);
-        num_strs++;
-    }
-
-    strcat(eqn->indent, "  ");
-
-    /*  no translation implemented yet */
-
-    eqn->indent[strlen(eqn->indent) - 2] = 0;
-
-    return Eqn_JoinStrings(eqn, strs, num_strs);
-}
-
-
-static
 char *Eqn_TranslateFONT(MTEquation * eqn, MT_FONT * font)
 {
 
@@ -1969,175 +2294,68 @@ char *Eqn_TranslateFONT(MTEquation * eqn, MT_FONT * font)
     return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
-
 static
-char *ToBuffer(char *src, char *buffer, uint32_t *off, int *lim)
+void GetPileType(char *the_template, int arg_num, char *targ_nom)
 {
+    int di = 0;
+    char *ptr;
+    char tok[4];
+    sprintf(tok, "#%d", arg_num);       /* #2 */
 
-    int zln = (uint32_t) strlen(src) + 1;
-
-    if (*off + zln + 256 >= *lim) {
-        char *newbuf;
-        *lim = *off + zln + 1024;
-        newbuf = (char *) malloc(*lim);
-        strcpy(newbuf, buffer);
-        free(buffer);
-        buffer = newbuf;
+    ptr = strstr(the_template, tok);
+    if (ptr && *(ptr + 2) == '[') {
+        ptr += 3;
+        while (*ptr != ']' && di < 32)
+            targ_nom[di++] = *ptr++;
     }
 
-    strcpy(buffer + *off, src);
-    *off += zln - 1;
-    free(src);
-
-    return buffer;
+    targ_nom[di] = 0;
 }
+
 
 static
-void SetComment(EQ_STRREC * strs, int lev, char *src)
+int Eqn_GetTmplStr(MTEquation * eqn, int selector, int variation, EQ_STRREC * strs)
 {
-    strs[0].log_level = lev;
-    strs[0].do_delete = 1;
-    strs[0].ilk = Z_COMMENT;
-    strs[0].is_line = 0;
+    char key[8];                /*  key = "20.1" */
+    char ini_line[256];
+    char *tmpl_ptr;
+    int num_strs = 0;           /*  this becomes the return value */
 
-    if (src) {
-        int zln = (uint32_t) strlen(src) + 1;
-        char *newbuf = (char *) malloc(zln);
-        strcpy(newbuf, src);
-        strs[0].data = newbuf;
-    } else
-        strs[0].data = (char *) NULL;
-}
+    sprintf(key, "%d.%d", selector, variation); /*  ini_line = "msg,template" */
 
-/*  this mangles the contents of strs[].data, so just call once! */
-static
-char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
-{
-    char join[8192], buf[128];
-    char *p, *substition_text, *marker, *thetex;
-    char *vars[3];
-    int i, j, id, is_pile;
+    if (eqn->m_mtef_ver==5)
+        GetProfileStr(Profile_TEMPLATES5, key, ini_line, 256);
+    else
+        GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
 
-    if (DEBUG_JOIN) {
-        for (i=0; i<num_strs; i++)
-            fprintf(stderr,"   is_line=%d, strs[%d].data=%s\n", strs[i].is_line, i, strs[i].data);
+    tmpl_ptr = strchr(ini_line, ',');
+
+    if (eqn->log_level >= 2) {
+        char buf[512];
+        sprintf(buf, "\n%sTMPL : %s=!%s!\n", eqn->indent, key, ini_line);
+        SetComment(strs, 2, buf);
+        num_strs++;
     }
-    
-    *join = '\0';
+    if (0) fprintf(stderr, "\n%sTMPL : %s=!%s!\n", eqn->indent, key, ini_line);
 
-    for (i=0; i<num_strs; i++) {
-    
-        if (!strs[i].data) continue;
-            
-        if (strs[i].log_level > eqn->log_level) continue;
-        
-        if (strs[i].ilk != Z_TMPL) { 
-            strcat(join, strs[i].data);
-            continue;
-        }
+    if (tmpl_ptr)
+        *tmpl_ptr++ = 0;
 
-        /*  the current string is a TMPL and needs to be filled and added */
-        /*  e.g., dat = "\sqrt[#2]{#1}" */
-        
-        p = strs[i].data;
-        
-        while (*p) {
-
-            marker = strchr(p, '#');
-            if (!marker) {
-                strcat(join, p);
-                break;
-            }
-            
-            *marker = '\0';
-            strcat(join, p);
-            p = marker + 1;
-                
-/*  #1[L][STARTSUB][ENDSUB]  ... substitute text according to byzantine scheme */
-            
-            /* only #1, #2, and #3 are used */  
-            id = *p - '1';
-            if (id < 0 || id > 3) break;
-            p++;
-            
-            /* Extract the bracketed items */
-            /* vars[0]="L", vars[1]="STARTSUB", vars[2]="ENDSUB" */
-            /* only vars[1] and vars[2] are used */
-            
-            vars[1] = NULL;
-            vars[2] = NULL;
-            j = 0;
-            while (*p == '[') {     
-                p++;
-                marker = strchr(p, ']');
-                if (!marker) break;
-                *marker = '\0';
-                vars[j++] = p;
-                p = marker+1;
-            }
-
-            /*  This is pretty confusing. All the strs[] have an is_line flag */
-            /*  only strs[] entries that have this flag set may be used for replacement */
-            /*  The replacement text for #1 or #2 or #3 is the first, second, or third */
-            /*  strs[] entry that has its flag set. */
-            
-            thetex = NULL;
-            for (j=i+1; j<num_strs; j++) {
-                if (strs[j].is_line == 0) continue;
-                            
-                if (id == 0) {
-                    thetex = strs[j].data;
-                    strs[j].log_level = 100; /*  mark this entry as used */
-                    is_pile = (strs[j].is_line == 2) ? 1 : 0;
-                    break;
-                }
-                id--;  /*  one string closer to our goal */
-            }
-
-            /*  this should not happen, but if it does, just go on to the next character */
-            if (!thetex) continue;
-
-            if (GetProfileStr(Profile_VARIABLES, vars[1], buf, 128)) {
-                
-                substition_text = buf;
-                marker = strchr(buf, ',');
-
-                if (is_pile)
-                    substition_text = marker + 1;
-                else
-                    *marker = '\0';
-
-                strcat(join, substition_text);
-            }
-
-            strcat(join, thetex);
-
-            if (GetProfileStr(Profile_VARIABLES, vars[2], buf, 128)) {
-                
-                substition_text = buf;
-                marker = strchr(buf, ',');
-
-                if (is_pile)
-                    substition_text = marker + 1;
-                else
-                    *marker = 0;
-
-                strcat(join, substition_text);
-            }
-        }
+    if (tmpl_ptr && *tmpl_ptr) {
+        char *ztmpl;
+        strs[num_strs].log_level = 0;
+        strs[num_strs].do_delete = 1;
+        strs[num_strs].ilk = Z_TMPL;
+        strs[num_strs].is_line = 0;
+        ztmpl = (char *) malloc(strlen(tmpl_ptr) + 1);
+        strcpy(ztmpl, tmpl_ptr);
+        strs[num_strs].data = ztmpl;
+        num_strs++;
     }
 
-    for (i=0; i<num_strs; i++)
-        if (strs[i].do_delete && strs[i].data) {
-            free(strs[i].data);
-            strs[i].data = NULL;
-        }
-            
-    thetex = (char *) malloc(strlen(join)+1);
-    strcpy(thetex, join);
-    if (DEBUG_JOIN) fprintf(stderr,"final join='%s'\n", thetex);
-    return thetex;
+    return num_strs;
 }
+
 
 static
 char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
@@ -2254,373 +2472,146 @@ char *Eqn_TranslatePILE(MTEquation * eqn, MT_PILE * pile)
     return Eqn_JoinStrings(eqn, strs, num_strs);
 }
 
-/*  Character translation, MathType to TeX, using inifile data */
-
 static
-int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *math_attr)
+char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
 {
-    MT_EMBELL *embells;
-    char buff[256];
-    int num_strs = 0;           /*  this holds the returned value */
 
-    int set = thechar->typeface;
-    int code_point = thechar->character;
+    char *zcurr;
+    char *rv = (char *) malloc(1024);
+    uint32_t di = 0;
+    int lim = 1024;
 
-    char *ztex = (char *) NULL;
-    char zch = 0;
-    char *zdata = (char *) NULL;
+    MT_OBJLIST *curr_node;
+    *rv = 0;
 
-    MT_CHARSET_ATTS set_atts;
-    if (DEBUG_CHAR) fprintf(stderr,"in GetTeXChar seeking eqn->atts_table[%d]\n",set - 129);
+    if (DEBUG_TRANSLATION || g_equation_file) fprintf(stderr,"new object list\n");
+    while (the_list) {
 
-    strs[0].log_level = 0;
-    strs[0].do_delete = 1;
-    strs[0].ilk = Z_TEX;
-    strs[0].is_line = 0;
-    strs[0].data = NULL;
+        curr_node = the_list;
+        the_list = (void *) the_list->next;
 
-    if (set >= 129 && set < 129 + NUM_TYPEFACE_SLOTS) {
-        set_atts = eqn->atts_table[set - 129];
-    } else {                    /*  unexpected charset */
-        char buff[16];
-        char key[16];
-        int zln;
-        sprintf(key, "%d", set);
-        zln = GetProfileStr(eqn->m_atts_table, key, buff, 16);
-        if (zln) {
-            set_atts.mathattr = buff[0] - '0';
-            set_atts.do_lookup = buff[2] - '0';
-            set_atts.use_codepoint = buff[4] - '0';
-        } else {
-            set_atts.mathattr = 1;
-            set_atts.do_lookup = 1;
-            set_atts.use_codepoint = 1;
+        zcurr = (char *) NULL;
+
+        if (DEBUG_TRANSLATION || g_equation_file) print_tag(curr_node->tag, 0);
+        switch (curr_node->tag) {
+
+        case LINE:{
+                MT_LINE *line = (MT_LINE *) curr_node->obj_ptr;
+                if (line)
+                    zcurr = Eqn_TranslateLINE(eqn, line);
+            }
+            break;
+
+        case CHAR:{
+                int advance = 0;
+                MT_CHAR *charptr = (MT_CHAR *) curr_node->obj_ptr;
+                if (!charptr) break;
+            
+                if (charptr->typeface == 130) {     /*  auto_recognize functions */
+                    zcurr = Eqn_TranslateFUNCTION(eqn, curr_node, &advance);
+                    while (advance > 1) {
+                        the_list = (MT_OBJLIST *) the_list->next;
+                        advance--;
+                    }
+                } else if (charptr->typeface == 129 && eqn->m_mode != EQN_MODE_TEXT) {    /*  text in math */
+                    zcurr = Eqn_TranslateTEXTRUN(eqn, curr_node, &advance);
+                    while (advance > 1) {
+                        the_list = (MT_OBJLIST *) the_list->next;
+                        advance--;
+                    }
+                }
+                if (!advance)
+                    zcurr = Eqn_TranslateCHAR(eqn, charptr);
+            }
+            break;
+
+        case TMPL:{
+                MT_TMPL *tmpl = (MT_TMPL *) curr_node->obj_ptr;
+                if (tmpl)
+                    zcurr = Eqn_TranslateTMPL(eqn, tmpl);
+            }
+            break;
+
+        case PILE:{
+                MT_PILE *pile = (MT_PILE *) curr_node->obj_ptr;
+                if (pile)
+                    zcurr = Eqn_TranslatePILE(eqn, pile);
+            }
+            break;
+
+        case MATRIX:{
+                MT_MATRIX *matrix = (MT_MATRIX *) curr_node->obj_ptr;
+                if (matrix)
+                    zcurr = Eqn_TranslateMATRIX(eqn, matrix);
+            }
+            break;
+
+        case EMBELL:
+            break;
+
+        case RULER:{
+                MT_RULER *ruler = (MT_RULER *) curr_node->obj_ptr;
+                if (ruler)
+                    zcurr = Eqn_TranslateRULER(eqn, ruler);
+            }
+            break;
+
+        case FONT:{
+                MT_FONT *font = (MT_FONT *) curr_node->obj_ptr;
+                if (font)
+                    zcurr = Eqn_TranslateFONT(eqn, font);
+            }
+            break;
+
+        case SIZE:
+        case FULL:
+        case SUB:
+        case SUB2:
+        case SYM:
+        case SUBSYM:{
+                MT_SIZE *size = (MT_SIZE *) curr_node->obj_ptr;
+                if (size)
+                    zcurr = Eqn_TranslateSIZE(eqn, size);
+            }
+            break;
+
+        default:
+            break;
         }
-    }
 
-    *math_attr = set_atts.mathattr;
-    if (set_atts.do_lookup) {
-        uint32_t zln;
-        char key[16];           /*  132.65m */
+        if (zcurr)
+            rv = ToBuffer(zcurr, rv, &di, &lim);
 
-        sprintf(key, "%d.%d", set, code_point);
-        if (DEBUG_CHAR) fprintf(stderr, "looking up char in table[%d] as %d.%d\n", set - 129, set, code_point);
+    }                           /*   while ( the_list ) */
 
-        if (*math_attr == 3) {
-            if (eqn->m_mode == EQN_MODE_TEXT)
-                strcat(key, "t");
-            else
-                strcat(key, "m");
-            *math_attr = 0;
-        }
+    return rv;
+}
 
-        zln = GetProfileStr(eqn->m_char_table, key, buff, 256);
-        if (zln) {
-            ztex = (char *) malloc(zln + 1);
-            strcpy(ztex, buff);
-        }
-    }
+void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
+                             int loglevel)
+{
+    char *ztex;
 
-    if (*math_attr == MA_FORCE_MATH && eqn->m_mode == EQN_MODE_TEXT) 
-        setMathMode(eqn, NULL, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
-    else if (*math_attr == MA_FORCE_TEXT)
-        setMathMode(eqn, NULL, EQN_MODE_TEXT);
+    eqn->out_file = outfile;
+    eqn->log_level = loglevel;
 
-    if (!ztex && set_atts.use_codepoint) {
-        if (code_point >= 32 && code_point <= 127) {
-            zch = code_point;
-			if (thechar->typeface == 135) {
-				sprintf(buff,"\\mathbf{%c}", zch);
-				ztex = (char *) malloc(strlen(buff) + 1);
-				strcpy(ztex, buff);
-			}
-        }
-    }
+    if (eqn->log_level == 2)
+        fputs("%Begin Equation\n", eqn->out_file);
+
+    if (DEBUG_TRANSLATION || g_equation_file) fprintf(stderr,"new equation\n");
+    
+    ztex = Eqn_TranslateObjects(eqn, eqn->o_list);
 
     if (ztex) {
-        zdata = ztex;
-    } else if (zch) {
-        zdata = (char *) malloc(2);
-        zdata[0] = zch;
-        zdata[1] = 0;
+        BreakTeX(ztex, eqn->out_file);
+        free(ztex);
     }
 
-    if (!zdata) 
-        return num_strs;
+    setMathMode(eqn, NULL, EQN_MODE_TEXT);
 
-    embells = thechar->embellishment_list;
-    
-    while (embells) {
-        char template[128];
-        *template = '\0';
-        
-        /* template will in the form "math template,text template" */
-        if (embells->embell>1 && embells->embell<37)
-            strcpy(template, Template_EMBELLS[embells->embell]);
-        
-        if (DEBUG_EMBELLS || g_equation_file) 
-        	fprintf(stderr,"Yikes --- Template_EMBELLS[%d]='%s'!\n",embells->embell,template);
-
-        if (strlen(template)) {     /*  only bother if there is a character */
-            char *join, *t_ptr, *j_ptr;
-
-            t_ptr = strchr(template, ',');
-            
-            if (!t_ptr) RTFPanic("Malformed EMBELL Template!\n");
-            
-            /* set string to first or second half of template depending on mode */
-            if (eqn->m_mode != EQN_MODE_TEXT) {
-                *t_ptr = '\0';
-                t_ptr = template;
-            } else 
-                t_ptr++;
-
-            join = (char *) malloc(strlen(t_ptr) + strlen(zdata) + 16);
-            j_ptr = join;
-
-            if (DEBUG_EMBELLS || g_equation_file) fprintf(stderr,"Yikes --- replacement template is '%s'!\n",t_ptr);
-            
-            /* replace %1 in template with zdata */
-            while (*t_ptr) {        
-                if (*t_ptr == '%') {
-                    t_ptr+=2;             /* skip over %1 */
-                    strcpy(j_ptr, zdata);
-                    j_ptr += strlen(zdata);
-                } else {
-                    *j_ptr = *t_ptr;
-                    j_ptr++;
-                    t_ptr++;
-                }
-            }
-            *j_ptr = '\0';
-            free(zdata);
-            zdata = join;
-        }
-        if (DEBUG_EMBELLS || g_equation_file) fprintf(stderr,"Yikes --- after replacement strs[0].data is '%s'!\n",zdata);
-
-        embells = (MT_EMBELL *) embells->next;
-    }
-
-    strs[0].data = zdata;
-    num_strs++;
-    return num_strs;
+    if (eqn->log_level == 2)
+        fputs(" %End Equation\n", eqn->out_file);
 }
-
-
-static
-int Eqn_GetTmplStr(MTEquation * eqn, int selector, int variation, EQ_STRREC * strs)
-{
-    char key[8];                /*  key = "20.1" */
-    char ini_line[256];
-    char *tmpl_ptr;
-    int num_strs = 0;           /*  this becomes the return value */
-
-    sprintf(key, "%d.%d", selector, variation); /*  ini_line = "msg,template" */
-
-    if (eqn->m_mtef_ver==5)
-        GetProfileStr(Profile_TEMPLATES5, key, ini_line, 256);
-    else
-        GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
-
-    tmpl_ptr = strchr(ini_line, ',');
-
-    if (eqn->log_level >= 2) {
-        char buf[512];
-        sprintf(buf, "\n%sTMPL : %s=!%s!\n", eqn->indent, key, ini_line);
-        SetComment(strs, 2, buf);
-        num_strs++;
-    }
-    if (0) fprintf(stderr, "\n%sTMPL : %s=!%s!\n", eqn->indent, key, ini_line);
-
-    if (tmpl_ptr)
-        *tmpl_ptr++ = 0;
-
-    if (tmpl_ptr && *tmpl_ptr) {
-        char *ztmpl;
-        strs[num_strs].log_level = 0;
-        strs[num_strs].do_delete = 1;
-        strs[num_strs].ilk = Z_TMPL;
-        strs[num_strs].is_line = 0;
-        ztmpl = (char *) malloc(strlen(tmpl_ptr) + 1);
-        strcpy(ztmpl, tmpl_ptr);
-        strs[num_strs].data = ztmpl;
-        num_strs++;
-    }
-
-    return num_strs;
-}
-
-static
-void GetPileType(char *the_template, int arg_num, char *targ_nom)
-{
-    int di = 0;
-    char *ptr;
-    char tok[4];
-    sprintf(tok, "#%d", arg_num);       /* #2 */
-
-    ptr = strstr(the_template, tok);
-    if (ptr && *(ptr + 2) == '[') {
-        ptr += 3;
-        while (*ptr != ']' && di < 32)
-            targ_nom[di++] = *ptr++;
-    }
-
-    targ_nom[di] = 0;
-}
-
-
-
-/*  utility routines */
-static
-void Eqn_LoadCharSetAtts(MTEquation * eqn, char **table)
-{
-    char key[16];
-    char buff[16];
-    int slot = 1;
-    int zln;
-
-    eqn->atts_table = malloc(sizeof(MT_CHARSET_ATTS) * NUM_TYPEFACE_SLOTS);
-
-    while (slot <= NUM_TYPEFACE_SLOTS) {
-        sprintf(key, "%d", slot + 128);
-        zln = GetProfileStr(table, key, buff, 16);
-        if (zln) {
-            eqn->atts_table[slot - 1].mathattr = buff[0] - '0';
-            eqn->atts_table[slot - 1].do_lookup = buff[2] - '0';
-            eqn->atts_table[slot - 1].use_codepoint = buff[4] - '0';
-        } else {
-            eqn->atts_table[slot - 1].mathattr = 1;
-            eqn->atts_table[slot - 1].do_lookup = 0;
-            eqn->atts_table[slot - 1].use_codepoint = 1;
-        }
-
-        slot++;
-    }
-}
-
-
-/*  section contains strings of the form */
-/*     key=data */
-static
-uint32_t GetProfileStr(char **section, char *key, char *data, int datalen)
-{
-    char **rover;
-    uint32_t keylen;
-
-    if (key == NULL) return 0;
-    keylen = (uint32_t) strlen(key);
-    
-    for (rover = &section[0]; *rover; ++rover) {
-        if (strncmp(*rover, key, keylen) == 0) {
-            strncpy(data, *rover + keylen + 1, datalen - 1);    /*  skip over = (no check for white space */
-            data[datalen - 1] = 0;      /*  null terminate */
-            return ((uint32_t) strlen(data));
-        }
-    }
-    return 0;
-}
-
-/*
- * Nibble routines
- */
-static unsigned char HiNibble(unsigned char x)
-{
-//    fprintf(stderr, "x=%d, high=%d, shifted=%d\n",x,(x & 0xF0),(x & 0xF0)/16);
-    return (x & 0xF0)/16;
-}
-
-static unsigned char LoNibble(unsigned char x)
-{
-    return (x & 0x0F);
-}
-
-static void PrintNibble(unsigned char n)
-{
-    if (1)
-        return;
-
-    if (n <= 9)
-        fprintf(stderr, "%d", n);
-    else if (n == 0x0A)
-        fprintf(stderr, ".");
-    else if (n == 0x0B)
-        fprintf(stderr, "-");
-    else if (n == 0x0F)
-        fprintf(stderr, " ");
-    else
-        RTFPanic("Bad nibble\n");
-}
-
-static void PrintNibbleDimension(unsigned char n)
-{
-    if (1)
-        return;
-    switch (n) {
-    case 0:
-        fprintf(stderr, "in ");
-        break;
-    case 1:
-        fprintf(stderr, "cm ");
-        break;
-    case 2:
-        fprintf(stderr, "pt ");
-        break;
-    case 3:
-        fprintf(stderr, "pc ");
-        break;
-    case 4:
-        fprintf(stderr, " %% ");
-        break;
-    default:
-        RTFPanic("Bad nibble\n");
-    }
-}
-
-
-static int SkipNibbles(unsigned char *p, int num)
-{
-    unsigned char hi, lo;
-    int nbytes = 0;
-    int count = 1;
-    int new_str = 1;
-
-    if (0) fprintf(stderr, " #%02d -- ", count);
-    while (count <= num) {
-
-        hi = HiNibble(*(p + nbytes));
-        lo = LoNibble(*(p + nbytes));
-        nbytes++;
-
-        if (new_str)
-            PrintNibbleDimension(hi);
-        else
-            PrintNibble(hi);
-
-        new_str = 0;
-        if (hi == 0x0F) {
-            new_str = 1;
-            count++;
-            if (0) fprintf(stderr, " ---> total of %d bytes\n #%02d -- ", nbytes, count);
-        }
-
-        if (new_str)
-            PrintNibbleDimension(lo);
-        else
-            PrintNibble(lo);
-
-        new_str = 0;
-        if (lo == 0x0F) {
-            new_str = 1;
-            count++;
-            if (0) fprintf(stderr, " ---> total of %d bytes\n #%02d -- ", nbytes, count);
-        }
-    }
-    if (0) fprintf(stderr, "\n");
-
-    return nbytes;
-}
-
-
 
 /* data */
 

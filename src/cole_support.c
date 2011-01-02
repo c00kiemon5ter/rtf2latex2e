@@ -20,110 +20,46 @@
   Some code was from Caolan, but I have replaced all the code,
   now all code here is mine, so I changed copyright announce in cole-1.0.0.
      Arturo Tena
-     
-  Merged with internal.c 
- */
+*/
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "cole_support.h"
+#include <ctype.h>
 
 uint16_t fil_sreadU16(uint8_t * in)
 {
-#ifdef WORDS_BIGENDIAN
     uint16_t ret;
+#ifdef WORDS_BIGENDIAN
     *((uint8_t *) (&ret)) = *(in + 1);
     *(((uint8_t *) (&ret)) + 1) = *in;
-    return ret;
-#else                           /* !WORDS_BIGENDIAN */
-    return *((uint16_t *) in);
+#else
+    ret = *((uint16_t *) in);
 #endif
+    return ret;
 }
-
 
 uint32_t fil_sreadU32(uint8_t * in)
 {
-#ifdef WORDS_BIGENDIAN
     uint32_t ret;
+#ifdef WORDS_BIGENDIAN
     *(((uint8_t *) (&ret)) + 3) = *in;
     *(((uint8_t *) (&ret)) + 2) = *(in + 1);
     *(((uint8_t *) (&ret)) + 1) = *(in + 2);
     *((uint8_t *) (&ret)) = *(in + 3);
-    return ret;
-#else                           /* !WORDS_BIGENDIAN */
-    return *((uint32_t *) in);
+#else
+    ret = *((uint32_t *) in);
 #endif
+    return ret;
 }
-
-/*-*
-        @func (void) __cole_dump dump the content of memory
-        @param (void *) m memory position which content will be dumped
-        @param (void *) start memory position from where calculate
-                                offset
-        @param (uint32_t) length size in bytes of the dumped memory
-        @param (char *) msg optional message, can be NULL
- *-*/
-void __cole_dump(void *_m, void *_start, uint32_t length, char *msg)
-{
-    unsigned char *pm;
-    char buff[18];
-    long achar;
-    unsigned char *m;
-    unsigned char *start;
-
-    if (_m == NULL) {
-        printf("VERBOSE: can't dump because m is NULL\n");
-        return;
-    }
-    if (_start == NULL) {
-        printf("VERBOSE: can't dump because start is NULL\n");
-        return;
-    }
-
-    m = (unsigned char *) _m;
-    start = (unsigned char *) _start;
-    buff[8] = ' ';
-    buff[17] = 0;
-    if (msg != NULL)
-        printf("VERBOSE: %s (from 0x%p length 0x%08x (%d)):\n", msg, m, (unsigned int) length, (int) length);
-    for (pm = m; pm - m < length; pm++) {
-        achar = (pm - m) % 16;
-        /* print offset */
-        if (achar == 0)
-            printf("%08lx  ", (unsigned long) ((pm - m) + (m - start)));
-        /* write char in the right column buffer */
-        buff[achar + (achar < 8 ? 0 : 1)] = (isprint(*pm) ? *pm : '.');
-        /* print next char */
-        if (!((pm - m + 1) % 16))
-            /* print right column */
-            printf("%02x  %s\n", *pm, buff);
-        else if (!((pm - m + 1) % 8))
-            printf("%02x  ", *pm);
-        else
-            printf("%02x ", *pm);
-    }
-    achar = (pm - m) % 16;
-    if (achar) {
-        int i;
-        for (i = 0; i < (16 - achar) * 3 - 1; i++)
-            printf(" ");
-        if (achar != 8)
-            buff[achar] = 0;
-        printf("  %s\n", buff);
-    }
-}
-
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
-
 
 int
 __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_start,
                     uint8_t * BDepot, uint8_t * SDepot, FILE * sbfile,
                     FILE * inputfile)
 {
-    /* FIXME rewrite this cleaner */
-
     FILE *ret;
     uint16_t BlockSize, Offset;
     uint8_t *Depot;
@@ -132,7 +68,7 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
     size_t bytes_to_copy;
     uint8_t Block[0x0200];
 
-    *filename = malloc(L_tmpnam);       /* It must be L_tmpnam + 1? */
+    *filename = malloc(L_tmpnam+1);
     if (*filename == NULL)
         return 1;
 
@@ -140,14 +76,14 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
         free(*filename);
         return 2;
     }
-	
+    
     ret = fopen(*filename, "w+b");
     *file = ret;
     if (ret == NULL) {
         free(*filename);
         return 3;
     }
-	
+    
     if (size >= 0x1000) {
         /* read from big block depot */
         Offset = 1;
@@ -161,6 +97,7 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
         infile = sbfile;
         Depot = SDepot;
     }
+
     while (pps_start < 0xfffffffd) {
         FilePos = (long) ((pps_start + Offset) * BlockSize);
         if (FilePos < 0) {
@@ -198,3 +135,64 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
 
     return 0;
 }
+
+/*
+ * hex dump memory
+ *
+ * ptr    : location in memory to be shown
+ * zero   : zero location ... only affects offsets shown in left column
+ * length : number of bytes to display
+ * msg    : optional message, can be NULL
+ */
+void hexdump(void *ptr, void *zero, uint32_t length, char *msg)
+{
+    unsigned char *pm, *m, *start;
+    char buff[18];
+    long offset;
+
+    if (!ptr) {
+        fprintf(stderr,"Cannot show memory because pointer is NULL\n");
+        return;
+    }
+
+    m = (unsigned char *) ptr;
+    start = (zero) ? (unsigned char *) zero : m;
+
+    buff[8]  = ' ';
+    buff[17] = '\0';
+
+    if (msg)
+        printf("%s from 0x%p length 0x%08x (%d bytes)\n", msg, m, (unsigned int) length, (int) length);
+
+    for (pm = m; pm - m < length; pm++) {
+
+        /* print offset every 16 bytes */
+        offset = (pm - m) % 16;
+        if (offset == 0)
+            printf("%08lx  ", (unsigned long) ((pm - m) + (m - start)));
+
+        /* write char in the right column buffer */
+        buff[offset + (offset < 8 ? 0 : 1)] = (isprint(*pm) ? *pm : '.');
+
+        /* print next char */
+        if (!((pm - m + 1) % 16))
+            /* print right column */
+            printf("%02x  %s\n", *pm, buff);
+        else if (!((pm - m + 1) % 8))
+            printf("%02x  ", *pm);
+        else
+            printf("%02x ", *pm);
+    }
+
+    offset = (pm - m) % 16;
+    if (offset) {
+        int i;
+        for (i = 0; i < (16 - offset) * 3 - 1; i++)
+            printf(" ");
+        if (offset != 8)
+            buff[offset] = 0;
+        printf("  %s\n", buff);
+    }
+}
+
+
