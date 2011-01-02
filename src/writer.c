@@ -28,6 +28,7 @@
 # include "cole.h"
 # include "rtf2latex2e.h"
 # include "eqn.h"
+void __cole_dump(void *_m, void *_start, uint32_t length, char *msg);
 
 char outputMapName[255];
 # define        prefFileName    "r2l-pref"
@@ -3610,8 +3611,10 @@ DecodeOLE(char *objectFileName, char *streamType,
         return (1);
     }
 
-    /* cole_print_tree (cfs, &colerrno);  */
-    
+#ifdef COLE_VERBOSE
+	cole_print_tree (cfs, &colerrno); 
+#endif
+
     if ((coleFile = cole_fopen(cfs, streamType, &colerrno)) == NULL) {
         cole_perror("DecodeOLE cole_fopen", colerrno, objectFileName);
         cole_umount(cfs, NULL);
@@ -3727,7 +3730,7 @@ boolean ConvertEquationFile(char *objectFileName)
 {
     unsigned char *nativeStream;
     MTEquation *theEquation;
-    uint32_t equationSize;    
+    uint32_t equationSize, slop;   
 
     nativeStream = NULL;
     theEquation = NULL;
@@ -3746,10 +3749,14 @@ boolean ConvertEquationFile(char *objectFileName)
     }
 
     /* the first two bytes should contain 0x1c 0x00 */
-    if (*nativeStream == 0x1c && *(nativeStream+1) == 0x00) {
-        equationSize -= MTEF_HEADER_SIZE;
+    slop = 0;
+    if (*nativeStream != 0x1c) slop++;
+    
+   /* __cole_dump(nativeStream+slop, nativeStream+slop, 64, NULL); */
+    if (*(nativeStream+slop) == 0x1c && *(nativeStream+1+slop) == 0x00) {
+        equationSize -= MTEF_HEADER_SIZE+slop;
 
-        if (!Eqn_Create(theEquation, nativeStream+MTEF_HEADER_SIZE, equationSize)) {
+        if (!Eqn_Create(theEquation, nativeStream+MTEF_HEADER_SIZE+slop, equationSize)) {
             RTFMsg("* could not create equation structure!\n");
             free(nativeStream);
             free(theEquation);
@@ -3782,6 +3789,7 @@ boolean ConvertEquationFile(char *objectFileName)
     if (nativeStream != NULL)
         free(nativeStream);
 
+    requireAmsSymbPackage = true;
     requireAmsMathPackage = true;
     return true;
 }

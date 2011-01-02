@@ -29,7 +29,7 @@ SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex2e
 # Nothing to change below this line
 
 CFLAGS:=$(CFLAGS) $(PLATFORM) 
-# CFLAGS:=$(CFLAGS) $(PLATFORM) -DCOLE_VERBOSE
+#CFLAGS:=$(CFLAGS) $(PLATFORM) -DCOLE_VERBOSE
 
 LIBS= 
 

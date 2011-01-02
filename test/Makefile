@@ -1,32 +1,36 @@
 RTF2LATEX= ../rtf2latex2e
 OPTIONS  = -P ../pref
 
-TEX= arch-mac.tex arch.tex Equation.tex fig-jpeg.tex mapping.tex \
-     rtf-misc.tex rtf.tex table.tex test.tex moreEqns.tex twoEqn.tex
+TEX     = arch-mac.tex arch.tex Equation.tex fig-jpeg.tex mapping.tex \
+          rtf-misc.tex rtf.tex table.tex test.tex moreEqns.tex twoEqn.tex \
+          multiline.tex
 
-HARDTEX = multiline.tex 
+EQN     = testeqn01.eqn  testeqn02.eqn  testeqn03.eqn  testeqn04.eqn  \
+          testeqn05.eqn  testeqn06.eqn  testeqn07.eqn  testeqn08.eqn  \
+          testeqn09.eqn  testeqn10.eqn
+
+TEX_EQN = testeqn01.tex  testeqn02.tex  testeqn03.tex  testeqn04.tex  \
+          testeqn05.tex  testeqn06.tex  testeqn07.tex  testeqn08.tex  \
+          testeqn09.tex  testeqn10.tex
 
 all: $(TEX)
 
+eqn: $(TEX_EQN)
+
 %.tex:	%.rtf
+	$(RTF2LATEX) $(OPTIONS) $<
+
+%.tex:	%.eqn
 	$(RTF2LATEX) $(OPTIONS) $<
 	
 clean:
 	rm -rf *.tex *.eps
 	
 realclean: clean
-	mv testeqn01.eqn testeqn01.eqnx
-	mv testeqn02.eqn testeqn02.eqnx
-	mv testeqn03.eqn testeqn03.eqnx
-	mv testeqn04.eqn testeqn04.eqnx
-	mv testeqn05.eqn testeqn05.eqnx
-	mv testeqn06.eqn testeqn06.eqnx
+	mkdir -p hide
+	mv $(TEX_EQN) hide
 	rm -rf *.log *.aux *.pdf *.dvi *.pict *.eps *.ps *.eqn *.jpg *.png
-	mv testeqn01.eqnx testeqn01.eqn
-	mv testeqn02.eqnx testeqn02.eqn
-	mv testeqn03.eqnx testeqn03.eqn
-	mv testeqn04.eqnx testeqn04.eqn
-	mv testeqn05.eqnx testeqn05.eqn
-	mv testeqn06.eqnx testeqn06.eqn
+	mv hide/* .
+	rmdir hide
 
 .PHONY: clean all realclean
