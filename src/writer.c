@@ -3606,14 +3606,14 @@ DecodeOLE(char *objectFileName, char *streamType,
 
     cfs = cole_mount(objectFileName, &colerrno);
     if (cfs == NULL) {
-        cole_perror("DecodeOLE cole_mount", colerrno);
+        cole_perror("DecodeOLE cole_mount", colerrno, objectFileName);
         return (1);
     }
 
     /* cole_print_tree (cfs, &colerrno);  */
     
     if ((coleFile = cole_fopen(cfs, streamType, &colerrno)) == NULL) {
-        cole_perror("DecodeOLE cole_fopen", colerrno);
+        cole_perror("DecodeOLE cole_fopen", colerrno, objectFileName);
         cole_umount(cfs, NULL);
         return 1;
     }
@@ -3630,7 +3630,7 @@ DecodeOLE(char *objectFileName, char *streamType,
     }
 
     if (cole_fread(coleFile, *nativeStream, *size, &colerrno) == 0) {
-        cole_perror("DecodeOLE cole_fread", colerrno);
+        cole_perror("DecodeOLE cole_fread", colerrno, objectFileName);
         cole_fclose(coleFile, &colerrno);
         cole_umount(cfs, NULL);
         free(nativeStream);
@@ -3638,14 +3638,14 @@ DecodeOLE(char *objectFileName, char *streamType,
     }
 
     if (cole_fclose(coleFile, &colerrno) != 0) {
-        cole_perror("DecodeOLE cole_fclose", colerrno);
+        cole_perror("DecodeOLE cole_fclose", colerrno, objectFileName);
         cole_umount(cfs, NULL);
         free(nativeStream);
         return 1;
     }
 
     if (cole_umount(cfs, &colerrno)) {
-        cole_perror("DecodeOLE cole_umount", colerrno);
+        cole_perror("DecodeOLE cole_umount", colerrno, objectFileName);
         free(nativeStream);
         return (1);
     }

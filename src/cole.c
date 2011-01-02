@@ -30,10 +30,10 @@
  * @colerrno, preceding it with the string @s, a semicolon and a space.
  * It handles COLE_EERRNO value too, calling perror(3).
  */
-void cole_perror(const char *s, COLERRNO colerrno)
+void cole_perror(const char *s, COLERRNO colerrno, char *filename)
 {
     if (s != NULL)
-        fprintf(stderr, "%s: ", s);
+        fprintf(stderr, "%s (%s) (%d):", s, filename, colerrno);
     switch (colerrno) {
     case COLE_EMEMORY:
     case COLE_EOPENFILE:

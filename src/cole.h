@@ -79,7 +79,7 @@ enum _COLERRNO {
 };
 typedef enum _COLERRNO COLERRNO;
 
-void		cole_perror		(const char *s, COLERRNO colerrno);
+void		cole_perror		(const char *s, COLERRNO colerrno, char *filename);
  
 
 /*
