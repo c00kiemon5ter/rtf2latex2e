@@ -28,7 +28,7 @@ clean:
 	
 realclean: clean
 	mkdir -p hide
-	mv $(TEX_EQN) hide
+	mv $(EQN) hide
 	rm -rf *.log *.aux *.pdf *.dvi *.pict *.eps *.ps *.eqn *.jpg *.png
 	mv hide/* .
 	rmdir hide

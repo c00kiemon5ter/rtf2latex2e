@@ -66,7 +66,7 @@ OBJS         = src/cole.o                 src/cole_decode.o          src/cole_su
                src/eqn.o                  src/main.o                 src/mygetopt.o          \
                src/reader.o               src/rtfprep/tokenscan.o    src/writer.o
 
-all : checkdir rtfprep rtf2latex2e
+all : checkdir rtf2latex2e
 
 rtfprep:
 	cd src/rtfprep && $(MAKE)
@@ -156,16 +156,16 @@ splint:
 .PHONY: all check checkdir clean depend dist doc install realclean rtfprep test
 
 # created using "make depend"
-cole.o:          src/cole.c src/cole.h src/cole_internal.h src/cole_support.h
-cole_decode.o:   src/cole_decode.c src/cole.h src/cole_support.h src/cole_internal.h
-cole_internal.o: src/cole_internal.c src/cole_internal.h src/cole_support.h
-cole_support.o:  src/cole_support.c src/cole_support.h
-cole_version.o:  src/cole_version.c
-eqn.o:           src/eqn.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
-                 src/rtf2latex2e.h src/cole_support.h src/eqn.h src/eqn_support.h
-main.o: src/main.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h src/mygetopt.h src/rtf2latex2e.h
-mygetopt.o: src/mygetopt.c src/mygetopt.h
-reader.o: src/reader.c src/rtfprep/tokenscan.h src/rtf.h src/rtfprep/rtf-ctrldef.h \
-          src/rtfprep/rtf-namedef.h src/rtf2latex2e.h src/rtfprep/stdcharnames.h
-writer.o: src/writer.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
-          src/rtfprep/tokenscan.h src/cole.h src/cole_support.h src/rtf2latex2e.h src/eqn.h
+src/cole.o:          src/cole.c src/cole.h src/cole_support.h
+src/cole_decode.o:   src/cole_decode.c src/cole.h src/cole_support.h
+src/cole_support.o:  src/cole_support.c src/cole_support.h
+src/eqn.o:           src/eqn.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
+                     src/rtf2latex2e.h src/cole_support.h src/eqn.h src/eqn_support.h
+src/main.o:          src/main.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h src/mygetopt.h src/rtf2latex2e.h
+src/mygetopt.o:      src/mygetopt.c src/mygetopt.h
+src/reader.o:        src/reader.c src/rtfprep/tokenscan.h src/rtf.h src/rtfprep/rtf-ctrldef.h \
+                     src/rtfprep/rtf-namedef.h src/rtf2latex2e.h src/rtfprep/stdcharnames.h
+src/writer.o:        src/writer.c src/rtf.h src/rtfprep/rtf-ctrldef.h src/rtfprep/rtf-namedef.h \
+                     src/rtfprep/tokenscan.h src/cole.h src/cole_support.h src/rtf2latex2e.h src/eqn.h
+src/rtfprep/rtf-namedef.h : rtfprep
+src/rtfprep/rtf-ctrldef.h : rtfprep

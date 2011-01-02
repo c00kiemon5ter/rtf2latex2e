@@ -55,50 +55,6 @@ uint32_t fil_sreadU32(uint8_t * in)
 #endif
 }
 
-
-F64 fil_sreadF64(uint8_t * in)
-{
-#ifdef WORDS_BIGENDIAN
-    F64 ret;
-    *(((uint8_t *) (&ret)) + 7) = *in;
-    *(((uint8_t *) (&ret)) + 6) = *(in + 1);
-    *(((uint8_t *) (&ret)) + 5) = *(in + 2);
-    *(((uint8_t *) (&ret)) + 4) = *(in + 3);
-    *(((uint8_t *) (&ret)) + 3) = *(in + 4);
-    *(((uint8_t *) (&ret)) + 2) = *(in + 5);
-    *(((uint8_t *) (&ret)) + 1) = *(in + 6);
-    *((uint8_t *) (&ret)) = *(in + 7);
-    return ret;
-#else                           /* !WORDS_BIGENDIAN */
-    return *((F64 *) in);
-#endif
-}
-
-
-void fil_swriteU16(uint8_t * dest, uint16_t * src)
-{
-#ifdef WORDS_BIGENDIAN
-    *(dest) = *(((uint8_t *) src) + 1);
-    *(dest + 1) = *((uint8_t *) src);
-#else                           /* !WORDS_BIGENDIAN */
-    *(dest) = *((uint8_t *) src);
-    *(dest + 1) = *(((uint8_t *) src) + 1);
-#endif
-}
-
-
-void fil_swriteU32(uint8_t * dest, uint32_t * src)
-{
-#ifdef WORDS_BIGENDIAN
-    fil_swriteU16(dest, (uint16_t *) (((uint8_t *) src) + 2));
-    fil_swriteU16(dest + 2, (uint16_t *) src);
-#else                           /* !WORDS_BIGENDIAN */
-    fil_swriteU16(dest, (uint16_t *) src);
-    fil_swriteU16(dest + 2, (uint16_t *) (((uint8_t *) src) + 2));
-#endif
-}
-
-
 /*-*
         @func (void) __cole_dump dump the content of memory
         @param (void *) m memory position which content will be dumped

@@ -3662,6 +3662,7 @@ DecodeOLE(char *objectFileName, char *streamType,
 static void ReadObjectData(char *objectFileName, int type, int offset)
 {
     char dummyBuf[20];
+    char *OLE_MARK = "d0cf11e0";
     FILE *objFile;
     int i;
     uint8_t hexNumber;
@@ -3684,9 +3685,36 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     if (!objFile)
         RTFPanic("Cannot open input file %s\n", objectFileName);
 
-    /* skip offset header (2 hex characters for each byte) */
-    for (i = 0; i < offset * 2; i++)
-        RTFGetToken();
+/* skip offset header (2 hex characters for each byte) 
+   for (i = 0; i < offset * 2; i++)
+       RTFGetToken();
+*/
+
+/* 
+ * The offset to the data should be a constant, but it seems to
+ * vary from one RTF file to the next.  Perhaps there is some 
+ * Microsoft documentation that explains how many bytes exactly
+ * there is before we get to the chewy nuguat.  After adding
+ * several hacks to shift and squirm, the simplest thing is just
+ * to skip to a sequence of bytes that should start each OLE
+ * object.  This is what is done now.
+ */
+       
+    i = 0;
+    while (i < 8) {
+    	RTFGetToken();
+    	if (rtfTextBuf[0] == OLE_MARK[i])
+    		i++;
+    	else if (rtfTextBuf[0] == OLE_MARK[0])
+    		i = 1;
+    	else
+    		i = 0;
+    }
+    fputc(0xd0, objFile);
+    fputc(0xcf, objFile);
+    fputc(0x11, objFile);
+    fputc(0xe0, objFile);
+    	
 
     /* each byte is encoded as two hex chars ... ff, a1, 4c, ...*/
     while (1) {
@@ -3730,7 +3758,7 @@ boolean ConvertEquationFile(char *objectFileName)
 {
     unsigned char *nativeStream;
     MTEquation *theEquation;
-    uint32_t equationSize, slop;   
+    uint32_t equationSize;   
 
     nativeStream = NULL;
     theEquation = NULL;
@@ -3748,15 +3776,11 @@ boolean ConvertEquationFile(char *objectFileName)
         return (false);
     }
 
-    /* the first two bytes should contain 0x1c 0x00 */
-    slop = 0;
-    if (*nativeStream != 0x1c) slop++;
-    
    /* __cole_dump(nativeStream+slop, nativeStream+slop, 64, NULL); */
-    if (*(nativeStream+slop) == 0x1c && *(nativeStream+1+slop) == 0x00) {
-        equationSize -= MTEF_HEADER_SIZE+slop;
+    if (*(nativeStream) == 0x1c && *(nativeStream+1) == 0x00) {
+        equationSize -= MTEF_HEADER_SIZE;
 
-        if (!Eqn_Create(theEquation, nativeStream+MTEF_HEADER_SIZE+slop, equationSize)) {
+        if (!Eqn_Create(theEquation, nativeStream+MTEF_HEADER_SIZE, equationSize)) {
             RTFMsg("* could not create equation structure!\n");
             free(nativeStream);
             free(theEquation);
