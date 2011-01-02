@@ -2369,10 +2369,11 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
         *template = '\0';
         
         /* template will in the form "math template,text template" */
-        if (embells->embell<37-2)
+        if (embells->embell>1 && embells->embell<37)
             strcpy(template, Template_EMBELLS[embells->embell]);
         
-        if (DEBUG_EMBELLS) fprintf(stderr,"Yikes --- embell template is '%s'!\n",template);
+        if (DEBUG_EMBELLS || g_equation_file) 
+        	fprintf(stderr,"Yikes --- Template_EMBELLS[%d]='%s'!\n",embells->embell,template);
 
         if (strlen(template)) {     /*  only bother if there is a character */
             char *join, *t_ptr, *j_ptr;
@@ -2382,7 +2383,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
             if (!t_ptr) RTFPanic("Malformed EMBELL Template!\n");
             
             /* set string to first or second half of template depending on mode */
-            if (eqn->m_mode == EQN_MODE_TEXT) {
+            if (eqn->m_mode != EQN_MODE_TEXT) {
                 *t_ptr = '\0';
                 t_ptr = template;
             } else 
@@ -2391,7 +2392,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
             join = (char *) malloc(strlen(t_ptr) + strlen(zdata) + 16);
             j_ptr = join;
 
-            if (DEBUG_EMBELLS) fprintf(stderr,"Yikes --- replacement template is '%s'!\n",t_ptr);
+            if (DEBUG_EMBELLS || g_equation_file) fprintf(stderr,"Yikes --- replacement template is '%s'!\n",t_ptr);
             
             /* replace %1 in template with zdata */
             while (*t_ptr) {        
@@ -2409,7 +2410,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
             free(zdata);
             zdata = join;
         }
-        if (DEBUG_EMBELLS) fprintf(stderr,"Yikes --- after replacement strs[0].data is '%s'!\n",zdata);
+        if (DEBUG_EMBELLS || g_equation_file) fprintf(stderr,"Yikes --- after replacement strs[0].data is '%s'!\n",zdata);
 
         embells = (MT_EMBELL *) embells->next;
     }
@@ -3184,30 +3185,30 @@ char *Profile_TEMPLATES[] = {
 
 /* [TEMPLATES] */
 char *Profile_TEMPLATES5[] = {
-    "0.3=fence: angle-both,\\left\\langle #1[M]\\right\\rangle ",
     "0.1=fence: angle-left only,\\left\\langle #1[M]\\right. ",
     "0.2=fence: angle-right only,\\left. #1[M]\\right\\rangle ",
-    "1.3=fence: paren-both,\\left( #1[M]\\right) ",
+    "0.3=fence: angle-both,\\left\\langle #1[M]\\right\\rangle ",
     "1.1=fence: paren-left only,\\left( #1[M]\\right. ",
     "1.2=fence: paren-right only,\\left. #1[M]\\right) ",
-    "2.3=fence: brace-both,\\left\\{ #1[M]\\right\\} ",
+    "1.3=fence: paren-both,\\left( #1[M]\\right) ",
     "2.1=fence: brace-left only,\\left\\{ #1[M]\\right. ",
     "2.2=fence: brace-right only,\\left. #1[M]\\right\\} ",
-    "3.3=fence: brack-both,\\left[ #1[M]\\right] ",
+    "2.3=fence: brace-both,\\left\\{ #1[M]\\right\\} ",
     "3.1=fence: brack-left only,\\lef]t[ #1[M]\\right. ",
     "3.2=fence: brack-right only,\\left. #1[M]\\right] ",
-    "4.3=fence: bar-both,\\left| #1[M]\\right| ",
+    "3.3=fence: brack-both,\\left[ #1[M]\\right] ",
     "4.1=fence: bar-left only,\\left| #1[M]\\right. ",
     "4.2=fence: bar-right only,\\left. #1[M]\\right| ",
-    "5.3=fence: dbar-both,\\left\\| #1[M]\\right\\| ",
+    "4.3=fence: bar-both,\\left| #1[M]\\right| ",
     "5.1=fence: dbar-left only,\\left\\| #1[M]\\right. ",
     "5.2=fence: dbar-right only,\\left. #1[M]\\right\\| ",
-    "6.3=fence: floor,\\left\\lfloor #1[M]\\right\\rfloor ",
+    "5.3=fence: dbar-both,\\left\\| #1[M]\\right\\| ",
     "6.1=fence: floor,\\left\\lfloor #1[M]\\right. ",
     "6.2=fence: floor,\\left. #1[M]\\right\\rfloor ",
-    "7.3=fence: ceiling,\\left\\lceil #1[M]\\right\\rceil ",
+    "6.3=fence: floor,\\left\\lfloor #1[M]\\right\\rfloor ",
     "7.1=fence: ceiling,\\left\\lceil #1[M]\\right. ",
     "7.2=fence: ceiling,\\left. #1[M]\\right\\rceil ",
+    "7.3=fence: ceiling,\\left\\lceil #1[M]\\right\\rceil ",
     "8.0=fence: LBLB,\\left[ #1[M]\\right[ ",
     "9.0=fence: LPLP,\\left( #1[M]\\right( ",
     "9.1=fence: RPLP,\\left) #1[M]\\right( ",
@@ -3286,6 +3287,8 @@ char *Profile_TEMPLATES5[] = {
 /* [EMBELLS] */
 /* ;format is "math template,text template" (different from all the above) */
 char *Template_EMBELLS[] = {
+                "",
+                "",
 /* embDOT     */ "\\dot{%1} ,\\.%1 ",
 /* embDDOT    */ "\\ddot{%1} ,\\\"%1 ",
 /* embTDOT    */ "\\dddot{%1} ,%1 ",
@@ -3297,9 +3300,9 @@ char *Template_EMBELLS[] = {
 /* embNOT     */ "\\not %1 ,\\NEG %1 ",
 /* embRARROW  */ "\\vec{%1} ,%1 ",
 /* embLARROW  */ "\\overleftarrow1{%1} ,%1 ",
-/* embBARROW  */ "\\vec{%1} ,%1 ",
-/* embR1ARROW */ "\\overleftarrow{%1} ,%1 ",
-/* embL1ARROW */ "\\overleftrightarrow{%1} ,%1 ",
+/* embBARROW  */ "\\overleftrightarrow{%1} ,%1 ",
+/* embR1ARROW */ "\\overrightarrow{%1} ,%1 ",
+/* embL1ARROW */ "\\overleftarrow{%1} ,%1 ",
 /* embMBAR    */ "\\underline{%1} ,%1 ",
 /* embOBAR    */ "\\bar{%1} ,\\=%1 ",
 /* embTPRIME  */ "%1\\prime \\prime \\prime ,",
@@ -3309,7 +3312,7 @@ char *Template_EMBELLS[] = {
 /* embUP_BAR    */ "{%1} ,%1 ",
 /* embDOWN_BAR  */ "{%1} ,%1 ",
 /* emb4DOT      */ "{%1} ,%1 ",
-/* embU_1DOT    */ "{%1} ,%1 ",
+/* embU_1DOT    */ "\\d{%1} ,\\d{%1} ",
 /* embU_2DOT    */ "{%1} ,%1 ",
 /* embU_3DOT    */ "{%1} ,%1 ",
 /* embU_4DOT    */ "{%1} ,%1 ",
