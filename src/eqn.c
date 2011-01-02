@@ -44,7 +44,7 @@
 
 static MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_index, int num_objs);
 static char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list);
-void hexdump (void *ptr, void *zero, uint32_t length, char *msg);
+extern void hexdump (void *ptr, void *zero, uint32_t length, char *msg);
 
 # define EQN_MODE_TEXT     0
 # define EQN_MODE_INLINE   1
@@ -87,14 +87,21 @@ char * typeFaceName[NUM_TYPEFACE_SLOTS] =
 	"TEXT_FE",
 	"EXPAND",
 	"MARKER",
-	"SPACE"
+	"SPACE",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN",
+	"UNKNOWN"
 };
 
 static
-char *ToBuffer(char *src, char *buffer, uint32_t *off, int *lim)
+char *ToBuffer(char *src, char *buffer, uint32_t *off, uint32_t *lim)
 {
 
-    int zln = (uint32_t) strlen(src) + 1;
+    uint32_t zln = (uint32_t) strlen(src) + 1;
 
     if (*off + zln + 256 >= *lim) {
         char *newbuf;
@@ -121,8 +128,8 @@ void SetComment(EQ_STRREC * strs, int lev, char *src)
     strs[0].is_line = 0;
 
     if (src) {
-        int zln = (uint32_t) strlen(src) + 1;
-        char *newbuf = (char *) malloc(zln);
+        uint32_t zln = (uint32_t) strlen(src) + 1;
+        char *newbuf = (char *) malloc( (size_t) zln);
         strcpy(newbuf, src);
         strs[0].data = newbuf;
     } else
@@ -231,7 +238,7 @@ void print_tag(unsigned char tag, int src_index)
 static unsigned char HiNibble(unsigned char x)
 {
 //    fprintf(stderr, "x=%d, high=%d, shifted=%d\n",x,(x & 0xF0),(x & 0xF0)/16);
-    return (x & 0xF0)/16;
+    return (unsigned char) ((x & 0xF0)/16);
 }
 
 static unsigned char LoNibble(unsigned char x)
@@ -332,14 +339,14 @@ static
 uint32_t GetProfileStr(char **section, char *key, char *data, int datalen)
 {
     char **rover;
-    uint32_t keylen;
+    size_t keylen;
 
     if (key == NULL) return 0;
-    keylen = (uint32_t) strlen(key);
+    keylen = strlen(key);
     
     for (rover = &section[0]; *rover; ++rover) {
         if (strncmp(*rover, key, keylen) == 0) {
-            strncpy(data, *rover + keylen + 1, datalen - 1);    /*  skip over = (no check for white space */
+            strncpy(data, *rover + keylen + 1, (size_t) (datalen - 1));    /*  skip over = (no check for white space */
             data[datalen - 1] = 0;      /*  null terminate */
             return ((uint32_t) strlen(data));
         }
@@ -1927,7 +1934,7 @@ static
 char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 {
 
-    int buf_limit = 8192;
+    uint32_t buf_limit = 8192;
     char *rv = (char *) malloc(buf_limit);
     MT_OBJLIST *obj_list;
     int curr_row = 0;
@@ -2132,7 +2139,7 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom
     char *head = "";
     char *line_sep = " \\\\ ";
     char *tail = "";
-    int buf_limit = 8192;
+    uint32_t buf_limit = 8192;
     int save_math_mode;
     int curr_row = 0;
 
@@ -2479,7 +2486,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
     char *zcurr;
     char *rv = (char *) malloc(1024);
     uint32_t di = 0;
-    int lim = 1024;
+    uint32_t lim = 1024;
 
     MT_OBJLIST *curr_node;
     *rv = 0;

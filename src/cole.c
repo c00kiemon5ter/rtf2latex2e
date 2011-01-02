@@ -89,7 +89,6 @@ void cole_perror(const char *s, COLERRNO colerrno, char *filename)
     }
 }
 
-
 /**
  * cole_mount:
  * filename: name of the file with the filesystem.
@@ -209,10 +208,10 @@ void cole_print_tree(COLEFS * colefilesystem, COLERRNO * colerrno)
 
     (void) cole_recurse_tree(colefilesystem, 
                           &level,
-                          __cole_print_tree_inroot,
-                          __cole_print_tree_indirentry,
-                          __cole_print_tree_indir,
-                          __cole_print_tree_outdir, 
+                          & __cole_print_tree_inroot,
+                          & __cole_print_tree_indirentry,
+                          & __cole_print_tree_indir,
+                          & __cole_print_tree_outdir, 
                           NULL, 
                           colerrno);
 }
@@ -257,7 +256,7 @@ int __cole_print_tree_inroot(COLEDIR * cd, void *info, COLERRNO * colerrno)
            (unsigned int)cole_dir_getsec2(cd));
     entry_name = cole_dir_getname(cd);
     if (!isprint(entry_name[0]))
-        printf(" '\\x%02x%s'\n", entry_name[0], entry_name + 1);
+        printf(" '\\x%02x%s'\n", (unsigned int) entry_name[0], entry_name + 1);
     else
         printf(" '%s'\n", entry_name);
 
@@ -299,7 +298,7 @@ __cole_print_tree_indirentry(COLEDIRENT * cde, void *info,
            (unsigned int)cole_direntry_getsec2(cde));
     entry_name = cole_direntry_getname(cde);
     if (!isprint(entry_name[0]))
-        printf(" '\\x%02x%s'\n", entry_name[0], entry_name + 1);
+        printf(" '\\x%02x%s'\n", (unsigned int) entry_name[0], entry_name + 1);
     else
         printf(" '%s'\n", entry_name);
 
@@ -390,7 +389,7 @@ int cole_closedir(COLEDIR * coledir, COLERRNO * colerrno)
 
 COLEDIRENT *cole_visiteddirentry(COLEDIR * coledir)
 {
-    if (coledir->visited_entry.entry == 0xffffffff)
+    if (coledir->visited_entry.entry == (uint32_t) 0xffffffff)
         return NULL;
 
     return &coledir->visited_entry;
@@ -399,13 +398,13 @@ COLEDIRENT *cole_visiteddirentry(COLEDIR * coledir)
 
 COLEDIRENT *cole_nextdirentry(COLEDIR * coledir)
 {
-    if (coledir->visited_entry.entry == 0xffffffff)
+    if (coledir->visited_entry.entry == (uint32_t) 0xffffffff)
         return NULL;
 
     coledir->visited_entry.entry =
         coledir->fs->tree[coledir->visited_entry.entry].next;
 
-    if (coledir->visited_entry.entry == 0xffffffff)
+    if (coledir->visited_entry.entry == (uint32_t) 0xffffffff)
         return NULL;
 
     return &coledir->visited_entry;
@@ -448,7 +447,7 @@ char *cole_direntry_getname(COLEDIRENT * coledirentry)
 }
 
 
-size_t cole_direntry_getsize(COLEDIRENT * coledirentry)
+uint32_t cole_direntry_getsize(COLEDIRENT * coledirentry)
 {
     return coledirentry->dir->fs->tree[coledirentry->entry].size;
 }
@@ -484,7 +483,7 @@ char *cole_dir_getname(COLEDIR * coledir)
 }
 
 
-size_t cole_dir_getsize(COLEDIR * coledir)
+uint32_t cole_dir_getsize(COLEDIR * coledir)
 {
     return coledir->fs->tree[coledir->entry].size;
 }
@@ -533,16 +532,16 @@ struct _cole_fopen_info {
     int succ;
     COLERRNO colerrno;
 };
+
 static COLE_LOCATE_ACTION_FUNC _cole_fopen_action;
+
 COLEFILE *cole_fopen(COLEFS * colefilesystem, char *filename,
                      COLERRNO * colerrno)
 {
     struct _cole_fopen_info info;
 
-    if (cole_locate_filename(colefilesystem, filename, &info, _cole_fopen_action, colerrno)) {
-        /* couldn't locate the filename, colerrno is set already */
+    if (cole_locate_filename(colefilesystem, filename, &info, &_cole_fopen_action, colerrno))
         return NULL;
-    }
 
     if (info.succ)
         return info.file;
@@ -703,13 +702,12 @@ int cole_fclose(COLEFILE * colefile, COLERRNO * colerrno)
  * Returns: in sucess the number of bytes actually readed (maximum @size)
  *          or zero in other case.
  */
-size_t
-cole_fread(COLEFILE * colefile, void *ptr, size_t size,
-           COLERRNO * colerrno)
+uint32_t
+cole_fread(COLEFILE * colefile, void *ptr, uint32_t size, COLERRNO * colerrno)
 {
-    size_t bytes_read;
+    uint32_t bytes_read;
 
-    if (fseek(colefile->file, colefile->pos, SEEK_SET)) {
+    if (fseek(colefile->file, (long) colefile->pos, SEEK_SET)) {
         if (colerrno != NULL)
             *colerrno = COLE_ESEEK;
         return 0;
@@ -750,9 +748,9 @@ cole_fread(COLEFILE * colefile, void *ptr, size_t size,
  *
  * Returns: The file position.
  */
-size_t cole_ftell(COLEFILE * colefile)
+uint32_t cole_ftell(COLEFILE * colefile)
 {
-    return colefile->pos;
+    return (size_t) colefile->pos;
 }
 
 
@@ -775,8 +773,7 @@ size_t cole_ftell(COLEFILE * colefile)
  * Returns: zero in success, no zero in other case.
  */
 int
-cole_fseek(COLEFILE * colefile, size_t delta, COLE_SEEK_FLAG direction,
-           COLERRNO * colerrno)
+cole_fseek(COLEFILE * colefile, uint32_t delta, COLE_SEEK_FLAG direction, COLERRNO * colerrno)
 {
     if (delta < 0) {
         if (colerrno != NULL)
@@ -854,7 +851,7 @@ int cole_frewind(COLEFILE * colefile, COLERRNO * colerrno)
  * 
  * Returns the size in bytes of the file @colefile.
  */
-size_t cole_fsize(COLEFILE * colefile)
+uint32_t cole_fsize(COLEFILE * colefile)
 {
     return colefile->filesize;
 }
@@ -1078,8 +1075,8 @@ cole_locate_filename(COLEFS * colefilesystem, char *filename,
     _info.current = filename + 1;
 
     if (cole_recurse_tree(colefilesystem, &_info, NULL,
-                          __cole_locate_filename_indirentry, NULL, NULL,
-                          __cole_locate_filename_visitdir, &_colerrno)) {
+                          & __cole_locate_filename_indirentry, NULL, NULL,
+                          & __cole_locate_filename_visitdir, &_colerrno)) {
         if (_colerrno == COLE_ELAST + 1) {
             /* file was found */
             return 0;

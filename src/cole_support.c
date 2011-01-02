@@ -68,7 +68,7 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
     size_t bytes_to_copy;
     uint8_t Block[0x0200];
 
-    *filename = malloc(L_tmpnam+1);
+    *filename = malloc((size_t) (L_tmpnam+1));
     if (*filename == NULL)
         return 1;
 
@@ -98,7 +98,7 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
         Depot = SDepot;
     }
 
-    while (pps_start < 0xfffffffd) {
+    while (pps_start < (uint32_t) 0xfffffffd) {
         FilePos = (long) ((pps_start + Offset) * BlockSize);
         if (FilePos < 0) {
             fclose(ret);
@@ -106,6 +106,7 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
             free(*filename);
             return 4;
         }
+        
         bytes_to_copy = MIN(BlockSize, size);
         if (fseek(infile, FilePos, SEEK_SET)) {
             fclose(ret);
@@ -113,20 +114,23 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
             free(*filename);
             return 4;
         }
-        fread(Block, bytes_to_copy, 1, infile);
+        
+        (void) fread(Block, bytes_to_copy, 1, infile);
         if (ferror(infile)) {
             fclose(ret);
             remove(*filename);
             free(*filename);
             return 5;
         }
-        fwrite(Block, bytes_to_copy, 1, ret);
+        
+        (void) fwrite(Block, bytes_to_copy, 1, ret);
         if (ferror(ret)) {
             fclose(ret);
             remove(*filename);
             free(*filename);
             return 6;
         }
+        
         pps_start = fil_sreadU32(Depot + (pps_start * 4));
         size -= MIN(BlockSize, size);
         if (size == 0)
@@ -164,7 +168,7 @@ void hexdump(void *ptr, void *zero, uint32_t length, char *msg)
     if (msg)
         printf("%s from 0x%p length 0x%08x (%d bytes)\n", msg, m, (unsigned int) length, (int) length);
 
-    for (pm = m; pm - m < length; pm++) {
+    for (pm = m; (uint32_t) (pm - m) < length; pm++) {
 
         /* print offset every 16 bytes */
         offset = (pm - m) % 16;
@@ -172,7 +176,7 @@ void hexdump(void *ptr, void *zero, uint32_t length, char *msg)
             printf("%08lx  ", (unsigned long) ((pm - m) + (m - start)));
 
         /* write char in the right column buffer */
-        buff[offset + (offset < 8 ? 0 : 1)] = (isprint(*pm) ? *pm : '.');
+        buff[offset + (offset < 8 ? 0 : 1)] = (isprint(*pm) ? (char) *pm : '.');
 
         /* print next char */
         if (!((pm - m + 1) % 16))

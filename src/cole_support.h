@@ -184,23 +184,23 @@ struct _COLEFS {
 };
 
 struct _COLEDIRENT {
-	size_t entry;
+	uint32_t entry;
 	struct _COLEDIR *dir;		/* father */
 };
 
 struct _COLEDIR {
-	size_t entry;
+	uint32_t entry;
 	struct _COLEDIRENT visited_entry;
 	struct _COLEFS *fs;		/* father */
 };
 
 struct _COLEFILE {
-	size_t entry;
+	uint32_t entry;
 	FILE *file;			/* actual extracted file */
-	char *filename;			/* actual extracted file's name */
-	uint32_t filesize;			/* actual extracted file size */
-	struct _COLEFS *fs;		/* father */
-	size_t pos;			/* file pointer position */
+	char *filename;		/* actual extracted file's name */
+	uint32_t filesize;	/* actual extracted file size */
+	struct _COLEFS *fs;	/* father */
+	uint32_t pos;		/* file position */
 };
 
 int __cole_extract_file (FILE **file, char **filename, uint32_t size,

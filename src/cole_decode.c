@@ -407,9 +407,9 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
                 assert(i == *root);
                 assert(i == 0);
 
-                *_sbfilename = malloc(L_tmpnam+1);
+                *_sbfilename = malloc((size_t) (L_tmpnam+1));
                 test_exitf(*_sbfilename != NULL, 10, ends());
-                tmpnam(*_sbfilename);
+                (void) tmpnam(*_sbfilename);
                 test_exitf(*_sbfilename[0], 7, ends());
                 sbfile = OLEfile = fopen(*_sbfilename, "wb+");
                 *_sbfile = sbfile;
