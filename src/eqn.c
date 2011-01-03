@@ -52,14 +52,14 @@ extern void hexdump (void *ptr, void *zero, uint32_t length, char *msg);
 # define EQN_MODE_EQNARRAY 3
 
 /*  Various local data which used to be in rtf2latex.ini.  Initialized at bottom of file. */
-char *Profile_FUNCTIONS[];
-char *Profile_VARIABLES[];
-char *Profile_PILEtranslation[];
-char *Profile_MT_CHARSET_ATTS[];
-char *Profile_CHARTABLE[];
-char *Profile_TEMPLATES[];
-char *Profile_TEMPLATES5[];
-char *Template_EMBELLS[];
+extern char *Profile_FUNCTIONS[];
+extern char *Profile_VARIABLES[];
+extern char *Profile_PILEtranslation[];
+extern char *Profile_MT_CHARSET_ATTS[];
+extern char *Profile_CHARTABLE[];
+extern char *Profile_TEMPLATES[];
+extern char *Profile_TEMPLATES5[];
+extern char *Template_EMBELLS[];
 
 char * typeFaceName[NUM_TYPEFACE_SLOTS] =
 {
@@ -163,7 +163,7 @@ void BreakTeX(char *ztex, FILE * outfile)
     }
 }
 
-void print_tag(unsigned char tag, int src_index)
+void print_tag(uint8_t tag, int src_index)
 {
     switch (tag) {
     case 0:
@@ -721,7 +721,7 @@ static void setMathMode(MTEquation * eqn, char * buff, int mode)
     }
 }
 
-static int GetAttribute(MTEquation * eqn, unsigned char *src, unsigned char *attrs)
+static int GetAttribute(MTEquation * eqn, unsigned char *src, uint8_t *attrs)
 {
     if (eqn->m_mtef_ver < 5) {
         *attrs = HiNibble(*src);
@@ -733,20 +733,22 @@ static int GetAttribute(MTEquation * eqn, unsigned char *src, unsigned char *att
 }
 
 static
-int GetNudge(unsigned char *src, int *x, int *y)
+int GetNudge(unsigned char *src, int16_t *x, int16_t *y)
 {
 
     int nudge_length;
-    short tmp;
+    int16_t tmp;
 
     unsigned char b1 = *src;
     unsigned char b2 = *(src + 1);
 
 
     if (b1 == 128 && b2 == 128) {
-        tmp = *(src + 2) | *(src + 3) << 8;     /*  high byte last */
+        tmp  = (int16_t) *(src + 2);
+        tmp |= (int16_t) *(src + 3) << 8;
         *x = tmp;
-        tmp = *(src + 4) | *(src + 5) << 8;     /*  high byte last */
+        tmp  = (int16_t) *(src + 4);
+        tmp |= (int16_t) *(src + 5) << 8;
         *y = tmp;
         nudge_length = 6;
     } else {
@@ -764,7 +766,7 @@ MT_RULER *Eqn_inputRULER(MTEquation * eqn, unsigned char *src,
 {
     MT_RULER *new_ruler;
     MT_TABSTOP *head, *curr, *new_stop;
-    int i, num_stops, tag;
+    uint8_t i, num_stops, tag;
 
     /* if we arrived here from LINE, then there does not seem to be
        a proper RULER tag.  Skip the tag only if it is a RULER */
@@ -844,8 +846,7 @@ MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
 }
 
 
-MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
-                           int *src_index)
+MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src, int *src_index)
 {
     unsigned char attrs, tag;
     MT_EMBELL *head = NULL;
@@ -865,7 +866,8 @@ MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src,
             *src_index += GetNudge(src + *src_index, &new_embell->nudge_x, &new_embell->nudge_y);
         
         new_embell->embell = *(src + *src_index);
-        if (DEBUG_EMBELLS  || g_equation_file) fprintf(stderr, "[%-3d] EMBELL --- embell=%d\n", *src_index, new_embell->embell);
+        if (DEBUG_EMBELLS  || g_equation_file) 
+        	fprintf(stderr, "[%-3d] EMBELL --- embell=%d\n", *src_index, (int) new_embell->embell);
         (*src_index)++;
 
         if (head)
@@ -942,9 +944,10 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     }
 
     if (g_equation_file || DEBUG_CHAR) {
-    	fprintf(stderr, "          '%c' or 0x%04x,", new_char->character, new_char->character);
-    	fprintf(stderr, " typeface = %d mtchar=%u, 16bit=%u ", new_char->typeface-128, new_char->mtchar, new_char->bits16);
-   		fprintf(stderr, " attr = 0x%02x \n", new_char->atts);
+    	fprintf(stderr, "          '%c' or 0x%04x,", (int)new_char->character, (unsigned int) new_char->character);
+    	fprintf(stderr, " typeface = %d mtchar=%u, 16bit=%u ", 
+    	          (int) new_char->typeface-128, (unsigned int) new_char->mtchar, (unsigned int) new_char->bits16);
+   		fprintf(stderr, " attr = 0x%02x \n", (unsigned int) new_char->atts);
    	}
 
     if (eqn->m_mtef_ver == 5) {
@@ -989,7 +992,7 @@ MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_index)
 
     if (DEBUG_TEMPLATE || g_equation_file) 
         fprintf(stderr, "TMPL : read sel=%2d var=0x%04x (%d.%d)\n", 
-        new_tmpl->selector, new_tmpl->variation, new_tmpl->selector, new_tmpl->variation);
+        (int) new_tmpl->selector, (unsigned int) new_tmpl->variation, (int) new_tmpl->selector, (int) new_tmpl->variation);
 
     new_tmpl->subobject_list = Eqn_GetObjectList(eqn, src, src_index, 0);
 
@@ -1029,8 +1032,7 @@ MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
 MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
                            int *src_index)
 {
-    unsigned char attrs;
-    int i, bytes;
+    uint8_t attrs, i, bytes;
 
     MT_MATRIX *new_matrix = (MT_MATRIX *) malloc(sizeof(MT_MATRIX));
     new_matrix->nudge_x = 0;
@@ -1317,13 +1319,13 @@ void Eqn_LoadCharSetAtts(MTEquation * eqn, char **table)
 {
     char key[16];
     char buff[16];
-    int slot = 1;
-    int zln;
+    uint8_t slot = 1;
+    uint32_t zln;
 
     eqn->atts_table = malloc(sizeof(MT_CHARSET_ATTS) * NUM_TYPEFACE_SLOTS);
 
     while (slot <= NUM_TYPEFACE_SLOTS) {
-        sprintf(key, "%d", slot + 128);
+        snprintf(key, 16, "%d", (int) slot + 128);
         zln = GetProfileStr(table, key, buff, 16);
         if (zln) {
             eqn->atts_table[slot - 1].mathattr = buff[0] - '0';
@@ -1422,13 +1424,12 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
 static
 char *Eqn_TranslateRULER(MTEquation * eqn, MT_RULER * ruler)
 {
-
+    char buf[128];
     EQ_STRREC strs[2];
     int num_strs = 0;
 
     if (eqn->log_level >= 2) {
-        char buf[128];
-        sprintf(buf, "\n%sRULER\n", eqn->indent);
+        snprintf(buf, 128, "\n%sRULER\n", eqn->indent);
         SetComment(strs, 2, buf);
         num_strs++;
     }
@@ -1445,13 +1446,13 @@ char *Eqn_TranslateRULER(MTEquation * eqn, MT_RULER * ruler)
 static
 char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line)
 {
+    char buf[128];
 	char *thetex;
     EQ_STRREC strs[3];
 
     int num_strs = 0;
     if (eqn->log_level >= 2) {
-        char buf[128];
-        sprintf(buf, "\n%sLINE\n", eqn->indent);
+        snprintf(buf, 128, "\n%sLINE\n", eqn->indent);
         SetComment(strs, 2, buf);
         num_strs++;
     }
@@ -1489,19 +1490,16 @@ char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line)
 static
 int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *math_attr)
 {
+    MT_CHARSET_ATTS set_atts;
     MT_EMBELL *embells;
     char buff[256];
-    int num_strs = 0;           /*  this holds the returned value */
-
-    int set = thechar->typeface;
-    int code_point = thechar->character;
+    int num_strs = 0; 
 
     char *ztex = (char *) NULL;
     char zch = 0;
     char *zdata = (char *) NULL;
 
-    MT_CHARSET_ATTS set_atts;
-    if (DEBUG_CHAR) fprintf(stderr,"in GetTeXChar seeking eqn->atts_table[%d]\n",set - 129);
+    if (DEBUG_CHAR) fprintf(stderr,"in GetTeXChar seeking eqn->atts_table[%d]\n",(int) thechar->typeface - 129);
 
     strs[0].log_level = 0;
     strs[0].do_delete = 1;
@@ -1509,13 +1507,13 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
     strs[0].is_line = 0;
     strs[0].data = NULL;
 
-    if (set >= 129 && set < 129 + NUM_TYPEFACE_SLOTS) {
-        set_atts = eqn->atts_table[set - 129];
+    if (thechar->typeface >= 129 && thechar->typeface < 129 + NUM_TYPEFACE_SLOTS) {
+        set_atts = eqn->atts_table[thechar->typeface - 129];
     } else {                    /*  unexpected charset */
         char buff[16];
         char key[16];
-        int zln;
-        sprintf(key, "%d", set);
+        uint32_t zln;
+        snprintf(key, 16, "%d", (int) thechar->typeface);
         zln = GetProfileStr(eqn->m_atts_table, key, buff, 16);
         if (zln) {
             set_atts.mathattr = buff[0] - '0';
@@ -1533,8 +1531,9 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
         uint32_t zln;
         char key[16];           /*  132.65m */
 
-        sprintf(key, "%d.%d", set, code_point);
-        if (DEBUG_CHAR) fprintf(stderr, "looking up char in table[%d] as %d.%d\n", set - 129, set, code_point);
+        snprintf(key, 16, "%d.%d", (int)thechar->typeface, (int)thechar->character);
+        if (DEBUG_CHAR) fprintf(stderr, "looking up char in table[%d] as %d.%d\n", 
+        (int)thechar->typeface - 129, (int) thechar->typeface, (int) thechar->character);
 
         if (*math_attr == 3) {
             if (eqn->m_mode == EQN_MODE_TEXT)
@@ -1557,10 +1556,10 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
         setMathMode(eqn, NULL, EQN_MODE_TEXT);
 
     if (!ztex && set_atts.use_codepoint) {
-        if (code_point >= 32 && code_point <= 127) {
-            zch = code_point;
+        if (thechar->character >= 32 && thechar->character <= 127) {
+            zch = (char) thechar->character;
 			if (thechar->typeface == 135) {
-				sprintf(buff,"\\mathbf{%c}", zch);
+				snprintf(buff,20,"\\mathbf{%c}", zch);
 				ztex = (char *) malloc(strlen(buff) + 1);
 				strcpy(ztex, buff);
 			}
@@ -1589,7 +1588,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
             strcpy(template, Template_EMBELLS[embells->embell]);
         
         if (DEBUG_EMBELLS || g_equation_file) 
-        	fprintf(stderr,"Yikes --- Template_EMBELLS[%d]='%s'!\n",embells->embell,template);
+        	fprintf(stderr,"Yikes --- Template_EMBELLS[%d]='%s'!\n", (int) embells->embell,template);
 
         if (strlen(template)) {     /*  only bother if there is a character */
             char *join, *t_ptr, *j_ptr;
@@ -1645,16 +1644,16 @@ char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar)
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sCHAR : atts=%d,typeface=%d,char=%c,%d\n",
-                eqn->indent, thechar->atts, thechar->typeface,
-                (char) thechar->character, thechar->character);
+        snprintf(buf, 128, "\n%sCHAR : atts=%d,typeface=%d,char=%c,%d\n",
+                eqn->indent, (int)thechar->atts, (int)thechar->typeface,
+                (char) thechar->character, (int)thechar->character);
         SetComment(strs, 2, buf);
         num_strs++;
     }
     if (DEBUG_CHAR || g_equation_file) 
         fprintf(stderr, "CHAR : atts=%d,typeface=%3d=%10s, char='%c' = 0x%04x = %d\n",
-                thechar->atts, thechar->typeface, typeFaceName[thechar->typeface-128],
-                (char) thechar->character, thechar->character, thechar->character);
+                (int)thechar->atts, (int)thechar->typeface, typeFaceName[thechar->typeface-128],
+                (char) thechar->character, (unsigned int)thechar->character, (int)thechar->character);
 /*
     SetComment(strs + num_strs, 100, (char *) NULL);
     num_strs++;
@@ -1677,7 +1676,7 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     char tex_func[128];
     EQ_STRREC strs[4];
     int num_strs = 0;
-    int zlen;
+    uint32_t zlen;
     char *zdata;
 
     /*  step through object list to gather the function name */
@@ -1685,7 +1684,7 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     nom[*advance] = '\0';
     while (curr_node && curr_node->tag == CHAR) {
         MT_CHAR *charptr = (MT_CHAR *) curr_node->obj_ptr;
-        if (!charptr || charptr->typeface != 130 || !isalpha(charptr->character)) 
+        if (!charptr || charptr->typeface != 130 || !isalpha((int) charptr->character)) 
         	break;
         
         nom[*advance] = (char) charptr->character;
@@ -1702,11 +1701,11 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
 
 	/* no function translation found, just emit these characters */
     if (!zlen || !tex_func[0])
-        sprintf(tex_func,"\\mathrm{%s}", nom);
+        snprintf(tex_func,128,"\\mathrm{%s}", nom);
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sFUNCTION : %s\n", eqn->indent, nom);
+        snprintf(buf, 128, "\n%sFUNCTION : %s\n", eqn->indent, nom);
         SetComment(strs, 2, buf);
         num_strs++;
     }
@@ -1742,7 +1741,7 @@ char *Eqn_TranslateTEXTRUN(MTEquation * eqn, MT_OBJLIST * curr_node,
     EQ_STRREC strs[4];
     int num_strs = 0;
     char tbuff[256];
-    int zlen;
+    uint32_t zlen;
     char *zdata;
     char *ndl;
 
@@ -1766,7 +1765,7 @@ char *Eqn_TranslateTEXTRUN(MTEquation * eqn, MT_OBJLIST * curr_node,
 
     if (eqn->log_level >= 2) {
         char buf[256];
-        sprintf(buf, "\n%sTEXTRUN : %s\n", eqn->indent, run);
+        snprintf(buf, 256, "\n%sTEXTRUN : %s\n", eqn->indent, run);
         SetComment(strs, 2, buf);
         num_strs++;
     }
@@ -1829,10 +1828,10 @@ int HasHVLine(int line_num, unsigned char *bits)
 static
 char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
 {
-    int buf_limit = 8192;
+    size_t buf_limit = 8192;
     char *thetex, *cell;
     char *col_align = "c";
-    int j,col,row;
+    uint8_t j,col,row;
     MT_OBJLIST *obj_list;
 
     thetex = malloc(buf_limit);
@@ -1840,7 +1839,7 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sStart MATRIX\n", eqn->indent);
+        snprintf(buf, 128, "\n%sStart MATRIX\n", eqn->indent);
         strcat(thetex, buf);
     }
 
@@ -1899,7 +1898,7 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sEnd MATRIX\n", eqn->indent);
+        snprintf(buf, 128, "\n%sEnd MATRIX\n", eqn->indent);
         strcat(thetex, buf);
     }
     return thetex;
@@ -1946,7 +1945,7 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sStart EQNARRAY\n", eqn->indent);
+        snprintf(buf, 128, "\n%sStart EQNARRAY\n", eqn->indent);
         strcat(rv, buf);
     }
 
@@ -2036,7 +2035,7 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "%sEnd EQNARRAY\n", eqn->indent);
+        snprintf(buf, 128, "%sEnd EQNARRAY\n", eqn->indent);
         strcat(rv, buf);
     }
 
@@ -2048,8 +2047,9 @@ static
 char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
 {
     MT_OBJLIST *obj_list;
-    int buf_limit = 8192;
-    int row, head_len;
+    size_t buf_limit = 8192;
+    uint8_t row;
+    uint32_t head_len;
     char *thetex, *line;
     
     thetex = (char *) malloc(buf_limit);
@@ -2059,7 +2059,7 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sStart TABULAR\n", eqn->indent);
+        snprintf(buf, 128, "\n%sStart TABULAR\n", eqn->indent);
         strcat(thetex, buf);
     }
 
@@ -2094,7 +2094,7 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
             break;
     }
 
-    head_len = strlen(thetex);
+    head_len = (uint32_t) strlen(thetex);
 
     row = 1;
     for (obj_list = pile->line_list; obj_list != NULL; obj_list = (MT_OBJLIST *)obj_list->next) {
@@ -2120,7 +2120,7 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sEnd TABULAR\n", eqn->indent);
+        snprintf(buf, 128, "\n%sEnd TABULAR\n", eqn->indent);
         strcat(thetex, buf);
     }
 
@@ -2133,7 +2133,7 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom
 {
     MT_OBJLIST *obj_list;
     char ini_line[256];
-    int dlen = 0;
+    uint32_t dlen = 0;
     int forces_math = 1;
     int forces_text = 0;
     char *head = "";
@@ -2186,7 +2186,7 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sStart PILE in TMPL field\n", eqn->indent);
+        snprintf(buf, 128, "\n%sStart PILE in TMPL field\n", eqn->indent);
         strcat(rv, buf);
     }
 
@@ -2245,7 +2245,7 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sEnd PILE in TMPL field\n", eqn->indent);
+        snprintf(buf, 128, "\n%sEnd PILE in TMPL field\n", eqn->indent);
         strcat(rv, buf);
     }
 
@@ -2262,7 +2262,7 @@ char *Eqn_TranslateSIZE(MTEquation * eqn, MT_SIZE * size)
     int num_strs = 0;
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sSIZE\n", eqn->indent);
+        snprintf(buf, 128, "\n%sSIZE\n", eqn->indent);
         SetComment(strs, 2, buf);
         num_strs++;
     }
@@ -2287,7 +2287,7 @@ char *Eqn_TranslateFONT(MTEquation * eqn, MT_FONT * font)
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sFONT\n", eqn->indent);
+        snprintf(buf, 128,"\n%sFONT\n", eqn->indent);
         SetComment(strs, 2, buf);
         num_strs++;
     }
@@ -2307,7 +2307,7 @@ void GetPileType(char *the_template, int arg_num, char *targ_nom)
     int di = 0;
     char *ptr;
     char tok[4];
-    sprintf(tok, "#%d", arg_num);       /* #2 */
+    snprintf(tok, 4, "#%d", arg_num);       /* #2 */
 
     ptr = strstr(the_template, tok);
     if (ptr && *(ptr + 2) == '[') {
@@ -2321,25 +2321,25 @@ void GetPileType(char *the_template, int arg_num, char *targ_nom)
 
 
 static
-int Eqn_GetTmplStr(MTEquation * eqn, int selector, int variation, EQ_STRREC * strs)
+int Eqn_GetTmplStr(MTEquation * eqn, uint8_t selector, uint16_t variation, EQ_STRREC * strs)
 {
-    char key[8];                /*  key = "20.1" */
+    char key[16];                /*  key = "20.1" */
     char ini_line[256];
     char *tmpl_ptr;
     int num_strs = 0;           /*  this becomes the return value */
 
-    sprintf(key, "%d.%d", selector, variation); /*  ini_line = "msg,template" */
+    snprintf(key, 16, "%d.%d", (int)selector, (int)variation); /*  ini_line = "msg,template" */
 
     if (eqn->m_mtef_ver==5)
-        GetProfileStr(Profile_TEMPLATES5, key, ini_line, 256);
+        (void) GetProfileStr(Profile_TEMPLATES5, key, ini_line, 256);
     else
-        GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
+        (void) GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
 
     tmpl_ptr = strchr(ini_line, ',');
 
     if (eqn->log_level >= 2) {
         char buf[512];
-        sprintf(buf, "\n%sTMPL : %s=!%s!\n", eqn->indent, key, ini_line);
+        snprintf(buf, 512, "\n%sTMPL : %s=!%s!\n", eqn->indent, key, ini_line);
         SetComment(strs, 2, buf);
         num_strs++;
     }
@@ -2373,15 +2373,14 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     int num_strs;
     MT_OBJLIST *obj_list;
 
-    if (eqn->m_mode == EQN_MODE_TEXT) {
-        strs[0].data = '\0';
-        setMathMode(eqn, strs[0].data, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
-    }
+    if (eqn->m_mode == EQN_MODE_TEXT) 
+        setMathMode(eqn, NULL, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
 
     if (eqn->m_mtef_ver == 5 && (tmpl->selector != 9))
         tmpl->variation &= 0x000f;
 
-    if (DEBUG_TEMPLATE || g_equation_file) fprintf(stderr,"TMPL : Processing (%d.%d)\n", tmpl->selector, tmpl->variation);
+    if (DEBUG_TEMPLATE || g_equation_file) 
+    	fprintf(stderr,"TMPL : Processing (%d.%d)\n", (int)tmpl->selector, (int)tmpl->variation);
 
     num_strs = Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation, strs);
 
@@ -2454,7 +2453,7 @@ char *Eqn_TranslatePILE(MTEquation * eqn, MT_PILE * pile)
 
     if (eqn->log_level >= 2) {
         char buf[128];
-        sprintf(buf, "\n%sPILE\n", eqn->indent);
+        snprintf(buf, 128, "\n%sPILE\n", eqn->indent);
         SetComment(strs, 2, buf);
         num_strs++;
     }
@@ -2500,6 +2499,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
         zcurr = (char *) NULL;
 
         if (DEBUG_TRANSLATION || g_equation_file) print_tag(curr_node->tag, 0);
+        
         switch (curr_node->tag) {
 
         case LINE:{

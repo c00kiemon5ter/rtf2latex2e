@@ -25,9 +25,9 @@
 /*  embellishment object */
 typedef struct {
     struct MT_EMBELL *next;
-    int nudge_x;
-    int nudge_y;
-    int embell;
+    int16_t nudge_x;
+    int16_t nudge_y;
+    uint8_t embell;
 } MT_EMBELL;
 
 #define MT_LEFT       0
@@ -51,8 +51,8 @@ typedef struct {
 /*  tabstop object */
 typedef struct {
     struct MT_TABSTOP *next;
-    int type;
-    int offset;
+    int16_t type;
+    int16_t offset;
 } MT_TABSTOP;
 
 #define END     0
@@ -89,16 +89,16 @@ typedef struct {
 
 /*  ruler object */
 typedef struct {
-    int n_stops;
+    int16_t n_stops;
     MT_TABSTOP *tabstop_list;
 } MT_RULER;
 
 
 /*  line (of math) object */
 typedef struct {
-    int nudge_x;
-    int nudge_y;
-    int line_spacing;
+    int16_t nudge_x;
+    int16_t nudge_y;
+    uint8_t line_spacing;
     MT_RULER *ruler;
     MT_OBJLIST *object_list;
 } MT_LINE;
@@ -106,10 +106,10 @@ typedef struct {
 
 /*  character object */
 typedef struct {
-    int nudge_x;
-    int nudge_y;
-    int atts;
-    int typeface;
+    int16_t nudge_x;
+    int16_t nudge_y;
+    uint8_t atts;
+    uint8_t typeface;
     uint16_t mtchar;
     uint16_t bits16;
     uint16_t character;
@@ -118,11 +118,11 @@ typedef struct {
 
 /*  template object */
 typedef struct {
-    int nudge_x;
-    int nudge_y;
-    int selector;
-    int variation;
-    int options;
+    int16_t nudge_x;
+    int16_t nudge_y;
+    uint8_t selector;
+    uint16_t variation;
+    uint8_t options;
     MT_OBJLIST *subobject_list;
 } MT_TMPL;
 
@@ -140,10 +140,10 @@ typedef struct {
 
 /*  pile object */
 typedef struct {
-    int nudge_x;
-    int nudge_y;
-    int halign;
-    int valign;
+    int16_t nudge_x;
+    int16_t nudge_y;
+    uint8_t halign;
+    uint8_t valign;
     MT_RULER *ruler;
     MT_OBJLIST *line_list;
 } MT_PILE;
@@ -152,15 +152,15 @@ typedef struct {
 
 /*  matrix object */
 typedef struct {
-    int nudge_x;
-    int nudge_y;
-    int valign;
-    int h_just;
-    int v_just;
-    int rows;
-    int cols;
-    unsigned char row_parts[MATR_MAX];
-    unsigned char col_parts[MATR_MAX];
+    int16_t nudge_x;
+    int16_t nudge_y;
+    uint8_t valign;
+    uint8_t h_just;
+    uint8_t v_just;
+    uint8_t rows;
+    uint8_t cols;
+    uint8_t row_parts[MATR_MAX];
+    uint8_t col_parts[MATR_MAX];
     MT_OBJLIST *element_list;
 } MT_MATRIX;
 

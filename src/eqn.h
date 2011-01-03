@@ -13,7 +13,7 @@ typedef struct {
 
 typedef struct {
     struct MT_OBJLIST *next;
-    int tag;
+    uint8_t tag;
     void *obj_ptr;
 } MT_OBJLIST;
 
