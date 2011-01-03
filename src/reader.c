@@ -516,9 +516,7 @@ short RTFGetToken()
             (*p) ();            /* give read hook a look at token */
 
         /* Silently discard newlines, carriage returns, nulls.  */
-        if (!(rtfClass == rtfText
-              && (rtfMajor == '\n' || rtfMajor == '\r'
-                  || rtfMajor == '\0')))
+        if (!(rtfClass == rtfText  && (rtfMajor == '\n' || rtfMajor == '\r' || rtfMajor == '\0')))
             break;
     }
     return (rtfClass);
@@ -1974,22 +1972,19 @@ char *p;
  * Token comparison routines
  */
 
-short RTFCheckCM(class, major)
-short class, major;
+short RTFCheckCM(short class, short major)
 {
     return (rtfClass == class && rtfMajor == major);
 }
 
 
-short RTFCheckCMM(class, major, minor)
-short class, major, minor;
+short RTFCheckCMM(short class, short major, short minor)
 {
     return (rtfClass == class && rtfMajor == major && rtfMinor == minor);
 }
 
 
-short RTFCheckMM(major, minor)
-short major, minor;
+short RTFCheckMM(short major, short minor)
 {
     return (rtfMajor == major && rtfMinor == minor);
 }

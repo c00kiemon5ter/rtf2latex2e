@@ -24,6 +24,7 @@
  *
  * Class number: Broadest (least detailed) breakdown.  For programs
  * 	that only care about gross token distinctions.
+ *
  * Major/minor numbers: Within their class, tokens have a major
  * 	number, and may also have a minor number to further
  * 	distinquish tokens with the same major number.
@@ -116,7 +117,7 @@ extern short	rtfLinePos;		/* input line position */
  * \wmetafile argument values
  */
 
-# define	rtfWmMmText		1
+# define	rtfWmMmText		    1
 # define	rtfWmMmLometric		2
 # define	rtfWmMmHimetric		3
 # define	rtfWmMmLoenglish	4
@@ -129,8 +130,8 @@ extern short	rtfLinePos;		/* input line position */
  * \pmmetafile argument values
  */
 
-# define	rtfPmPuArbitrary	4
-# define	rtfPmPuPels		8
+# define	rtfPmPuArbitrary	 4
+# define	rtfPmPuPels		     8
 # define	rtfPmPuLometric		12
 # define	rtfPmPuHimetric		16
 # define	rtfPmPuLoenglish	20
@@ -344,9 +345,9 @@ RTFFuncPtr	RTFGetReadHook ();
 void		RTFRouteToken ();
 void		RTFSkipGroup ();
 void		RTFExpandStyle ();
-short		RTFCheckCM ();
-short		RTFCheckCMM ();
-short		RTFCheckMM ();
+short       RTFCheckCM(short class, short major);
+short       RTFCheckCMM(short class, short major, short minor);
+short       RTFCheckMM(short major, short minor);
 RTFFont		*RTFGetFont ();
 RTFColor	*RTFGetColor ();
 RTFStyle	*RTFGetStyle ();

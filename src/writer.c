@@ -130,7 +130,7 @@ static struct {
     int oldSpacing;
     int lineSpacing;
     boolean wroteSpacing;
-    int	firstIndent;
+    int firstIndent;
     int leftIndent;
     int rightIndent;
     boolean parbox;
@@ -485,12 +485,12 @@ static void InsertNewLine(void)
 
 static void EnsureInlineMathMode(void)
 {
-	switch (mathMode) {
-	case MATH_INLINE_MODE:
-		break;
-		
+    switch (mathMode) {
+    case MATH_INLINE_MODE:
+        break;
+        
     case MATH_DISPLAY_MODE:
-    	break;
+        break;
    
     case MATH_NONE_MODE:
         PutLitStr("$ ");
@@ -501,21 +501,21 @@ static void EnsureInlineMathMode(void)
 
 static void EnsureNoMathMode(void)
 {
-	switch (mathMode) {
-	case MATH_INLINE_MODE:
+    switch (mathMode) {
+    case MATH_INLINE_MODE:
         PutLitStr(" $ ");
         wrapCount+=3;
         mathMode = MATH_NONE_MODE;
-		break;
-		
+        break;
+        
     case MATH_DISPLAY_MODE:
         PutLitStr("$$\n");
         wrapCount=0;
         mathMode = MATH_NONE_MODE;
-    	break;
+        break;
    
     case MATH_NONE_MODE:
-    	break;
+        break;
     }
 }
 
@@ -736,15 +736,15 @@ void CheckForCharAttr(void)
     int italicGL, noItalicGL;
     int boldGL, noBoldGL;
     int underlinedGL;
-/* 	int noUnderlinedGL; */
+/*  int noUnderlinedGL; */
     int dbUnderlinedGL;
-/* 	int noDbUnderlinedGL; */
+/*  int noDbUnderlinedGL; */
     int foreColorGL, backColorGL;
     int subScriptGL, superScriptGL;
 /*     int noSubScriptGL, noSuperScriptGL; */
     int fontSizeGL;
-/* 	int allCapsGL; */
-	int smallCapsGL;
+/*  int allCapsGL; */
+    int smallCapsGL;
     int i;
 
     italicGL         = textStyle.italicGroupLevel;
@@ -1154,15 +1154,15 @@ static void WriteTextStyle(void)
     int italicGL, noItalicGL;
     int boldGL, noBoldGL;
     int underlinedGL;
-/* 	int noUnderlinedGL; */
+/*  int noUnderlinedGL; */
     int dbUnderlinedGL;
-/* 	int noDbUnderlinedGL; */
+/*  int noDbUnderlinedGL; */
     int foreColorGL;
-/* 	int backColorGL; */
+/*  int backColorGL; */
     int subScriptGL, superScriptGL;
 /*     int fontSizeGL; */
-	int smallCapsGL;
-/* 	int allCapsGL; */
+    int smallCapsGL;
+/*  int allCapsGL; */
 
     if (writingHeading1 || writingHeading2 || writingHeading3
         || insideHyperlink)
@@ -1824,14 +1824,12 @@ static void ReadFootnote(void)
 }
 
 /*
- This function gets called when a \par token meaning line break is encountered.
- We need to figure out if this line break is just an ordinary line break or the
- end of a paragraph, since LaTeX treats paragraph endings differently from line 
- breaks. We do this check by scanning forward and looking if either another \par 
- (line break) or a \pard (paragraph definition) follows, both of which indicates
- that the paragraph has ended. If, however, a text item follows, it means that
- the line break was just that, a line break.
-*/
+ * This function gets called when a \par token meaning is encountered.
+ * We need to figure out if the \par is just an ordinary line break or the
+ * end of a paragraph, since LaTeX treats paragraph endings differently from line 
+ * breaks. We do this by scanning forward for a \par or \pard token.  If these
+ * are found first, then the paragraph ends, otherwise it is just a line break.
+ */
 static void CheckForParagraph(void)
 {
     int i;
@@ -1887,15 +1885,18 @@ static void CheckForParagraph(void)
             SetGroupLevels(SAVE_LEVELS);
             continueTextStyle = true;
         }
+        
         CheckForCharAttr();
         for (i = 0; i < charAttrCount; i++)
             PutLitChar('}');
+            
         if (blankLineCount < MAX_BLANK_LINES) {
             CheckForCharAttr();
             InsertNewLine();
             InsertNewLine();
             blankLineCount += 2;
         }
+        
         if (!preferenceValue[GetPreferenceNum("ignoreRulerSettings")])
             IndentParagraph();
 
@@ -1911,38 +1912,46 @@ static void CheckForParagraph(void)
     RTFGetToken();
 
     while (1) {
-		/* stop if we see a line break */
-        if (rtfMajor == rtfSpecialChar && (rtfMinor == rtfPar || rtfMinor == rtfPage)) {
+        /* stop if we see a line break */
+        if (RTFCheckMM(rtfSpecialChar, rtfPar)) {
+            newParagraph = true;
+            break;
+        }
+
+        /* or a page break */
+        if (RTFCheckMM(rtfSpecialChar, rtfPage) ) {
             newParagraph = true;
             break;
         }
 
         /* or a paragraph definition */
-        else if (rtfMajor == rtfParAttr && rtfMinor == rtfParDef) {
+        if (RTFCheckMM(rtfParAttr, rtfParDef)) {
             newParagraph = true;
             break;
         }
 
         /* or a destination */
-        else if (RTFCheckCM(rtfControl, rtfDestination)) {
+        if (RTFCheckCM(rtfControl, rtfDestination)) {
             newParagraph = false;
             break;
         }
 
         /* or something else */
-        else if ((rtfClass == rtfText && rtfMinor != rtfSC_space)
-                 || (rtfClass == rtfDestination && rtfMinor != rtfUnicode)
-                 || rtfClass == rtfEOF || rtfMajor == rtfSpecialChar
-                 || rtfMajor == rtfTblAttr || rtfMajor == rtfFontAttr
-                 || rtfMajor == rtfSectAttr || rtfMajor == rtfPictAttr
-                 || rtfMajor == rtfObjAttr) {
+        if ( (rtfClass == rtfText && rtfMinor != rtfSC_space)
+           || rtfClass == rtfEOF 
+           || rtfMajor == rtfSpecialChar
+           || rtfMajor == rtfTblAttr 
+           || rtfMajor == rtfFontAttr
+           || rtfMajor == rtfSectAttr 
+           || rtfMajor == rtfPictAttr
+           || rtfMajor == rtfObjAttr) {
             newParagraph = false;
             break;
         }
 
         /* otherwise keep looking and route the tokens scanned */
-		RTFRouteToken();
-		RTFGetToken();
+        RTFRouteToken();
+        RTFGetToken();
     }
 
     /* if we saw a line break or a paragraph definition, the paragraph has ended. */
@@ -1952,20 +1961,25 @@ static void CheckForParagraph(void)
             SetGroupLevels(SAVE_LEVELS);
             continueTextStyle = true;
         }
+        
         CheckForCharAttr();
         for (i = 0; i < charAttrCount; i++)
             PutLitChar('}');
         charAttrCount = 0;
-        if (groupLevel <= storeGroupLevel
-            && blankLineCount < MAX_BLANK_LINES) {
+        
+        if (groupLevel <= storeGroupLevel && blankLineCount < MAX_BLANK_LINES) {
+            /* PutLitStr("[new par, but group decreased]"); */
             CheckForCharAttr();
             InsertNewLine();
             InsertNewLine();
             blankLineCount += 2;
         } else if (!suppressLineBreak && !(textStyle.open) && !lineIsBlank) {
+            /* PutLitStr("[new par but same group depth]"); */
             PutLitStr("\\\\{}");  /* braces because next line may start with [ */
             InsertNewLine();
+            InsertNewLine();
         }
+        
         wrapCount = 0;
         lastCharWasLineBreak = true;
         RTFUngetToken();
@@ -1976,19 +1990,15 @@ static void CheckForParagraph(void)
         return;
     }
 
-
-    else {
-        if (rtfClass != rtfEOF && !(textStyle.open) && !lineIsBlank) {
-            PutLitStr("\\\\{}");
-            InsertNewLine();
-        }
-        wrapCount = 0;
-        RTFUngetToken();
-        return;
+    if (rtfClass != rtfEOF && !(textStyle.open) && !lineIsBlank) {
+        /* PutLitStr("[line break]"); */
+        PutLitStr("\\\\{}");
+        InsertNewLine();
     }
-
-
-
+    
+    wrapCount = 0;
+    RTFUngetToken();
+    return;
 }
 
 /*
@@ -2009,9 +2019,9 @@ static void SpecialChar(void)
             CheckForParagraph();
         break;
 /*      case rtfCurFNote:
-				PutLitChar ('}');
-				EnsureNoMathMode();
-				charAttrCount--;
+                PutLitChar ('}');
+                EnsureNoMathMode();
+                charAttrCount--;
                 textStyle.subScriptGroupLevel = 0;
                 textStyle.superScriptGroupLevel = 0;
                 break; 
@@ -2146,11 +2156,11 @@ static void ReadCell(void)
     cell *cellPtr;
     char *fn = "ReadCell";
 
-	cellPtr = New(cell);
+    cellPtr = New(cell);
     if (!cellPtr) {
         RTFPanic("%s: cannot allocate cell entry", fn);
-		exit(1);
-	}
+        exit(1);
+    }
 
     cellPtr->nextCell = table.cellInfo;
     cellPtr->x = table.rows;
@@ -2258,10 +2268,10 @@ static void InheritTableRowDef(void)
         cellPtr = GetCellByPos(prevRow, i);
 
         newCellPtr = New(cell);
-		if (!newCellPtr) {
+        if (!newCellPtr) {
             RTFPanic("%s: cannot allocate inheriting cell entry", fn);
-			exit(1);
-		}
+            exit(1);
+        }
 
         newCellPtr->nextCell = table.cellInfo;
         newCellPtr->x = prevRow + 1;
@@ -2376,7 +2386,7 @@ static void PrescanTable(void)
             else if (RTFCheckMM(rtfTblAttr, rtfRowDef) != 0) {
                 table.inside = true;
                 table.newRowDef = true;
-				break;
+                break;
             }
 
             else if (rtfClass == rtfText || RTFCheckCM(rtfControl, rtfSpecialChar) != 0) {
@@ -2437,8 +2447,8 @@ static void PrescanTable(void)
         rightBorders = (int *) RTFAlloc((table.cellCount) * sizeof(int));
         if (!rightBorders) {
             RTFPanic("%s: cannot allocate array for cell borders\n", fn);
-			exit(1);
-		}
+            exit(1);
+        }
 
         table.cols = 0;
         for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
@@ -2454,11 +2464,11 @@ static void PrescanTable(void)
 
         /* allocate array for coulumn border entries. */
         table.columnBorders = (int *) RTFAlloc(((table.cols) + 1) * sizeof(int));
-		
+        
         if (!table.columnBorders) {
             RTFPanic("%s: cannot allocate array for cell borders\n", fn);
-			exit(1);
-		}
+            exit(1);
+        }
 
         for (i = 0; i < table.cols; i++)
             (table.columnBorders)[i + 1] = rightBorders[i];
@@ -2511,9 +2521,9 @@ static void PrescanTable(void)
         cellPtr = GetCellInfo(i);
         if (!cellPtr){
             RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn, i);
-			exit(1);
-		}
-		
+            exit(1);
+        }
+        
         cellPtr->columnSpan = GetColumnSpan(cellPtr);
         if (cellPtr->columnSpan > 1)
             table.multiCol = true;
@@ -2606,8 +2616,8 @@ static void WriteCellHeader(int cellNum)
     cellPtr = GetCellInfo(cellNum);
     if (!cellPtr) {
         RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn, cellNum);
-		exit(1);
-	}
+        exit(1);
+    }
 
     if (table.multiCol) {
         snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{", cellPtr->columnSpan);
@@ -3161,14 +3171,14 @@ static int HexData(void)
 static void WritePictureHeader(FILE * pictureFile)
 {
     unsigned char wmfhead[22] = {
-		/* key      = */ 0xd7, 0xcd, 0xc6, 0x9a,
-		/* hmf      = */ 0x00, 0x00,
+        /* key      = */ 0xd7, 0xcd, 0xc6, 0x9a,
+        /* hmf      = */ 0x00, 0x00,
         /* bbox     = */ 0xfc, 0xff, 0xfc, 0xff, 
-		/* width    = */ 0x00, 0x00, 
-		/* height   = */ 0x00, 0x00,
-		/* inch     = */ 0x60, 0x00,
-		/* reserved = */ 0x00, 0x00, 0x00, 0x00,
-		/* checksum = */ 0x00, 0x00
+        /* width    = */ 0x00, 0x00, 
+        /* height   = */ 0x00, 0x00,
+        /* inch     = */ 0x60, 0x00,
+        /* reserved = */ 0x00, 0x00, 0x00, 0x00,
+        /* checksum = */ 0x00, 0x00
     };
     int i;
     int height, width;
@@ -3478,22 +3488,22 @@ static void ReadPicture(void)
 
 char *my_strcasestr(const char *haystack, const char *needle)
 {
-	size_t hay_len = strlen(haystack);
-	size_t needle_len = strlen(needle);
-	while (hay_len >= needle_len) {
-		if (strncasecmp(haystack, needle, needle_len) == 0) 
-		    return (char *) haystack;
+    size_t hay_len = strlen(haystack);
+    size_t needle_len = strlen(needle);
+    while (hay_len >= needle_len) {
+        if (strncasecmp(haystack, needle, needle_len) == 0) 
+            return (char *) haystack;
 
-		haystack++;
-		hay_len--;
-	}
+        haystack++;
+        hay_len--;
+    }
 
-	return NULL;
+    return NULL;
 }
 
 static void ReadObjWidth(void)
 {
-	g_object_width = rtfParam;
+    g_object_width = rtfParam;
 }
 
 
@@ -3509,8 +3519,8 @@ static void GetObjectClass(int *groupCounter)
 /* keep scanning until \objectclass is found */
     while (!reachedObjectClass) {
         RTFGetToken();
-		if (RTFCheckMM(rtfObjAttr, rtfObjWid)!=0)
-			ReadObjWidth();
+        if (RTFCheckMM(rtfObjAttr, rtfObjWid)!=0)
+            ReadObjWidth();
         if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0)
             (*groupCounter)++;
         else if (RTFCheckCM(rtfGroup, rtfEndGroup) != 0)
@@ -3609,7 +3619,7 @@ DecodeOLE(char *objectFileName, char *streamType,
     }
 
 #ifdef COLE_VERBOSE
-	cole_print_tree (cfs, &colerrno); 
+    cole_print_tree (cfs, &colerrno); 
 #endif
 
     if ((coleFile = cole_fopen(cfs, streamType, &colerrno)) == NULL) {
@@ -3699,19 +3709,19 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
        
     i = 0;
     while (i < 8) {
-    	RTFGetToken();
-    	if (rtfTextBuf[0] == OLE_MARK[i])
-    		i++;
-    	else if (rtfTextBuf[0] == OLE_MARK[0])
-    		i = 1;
-    	else
-    		i = 0;
+        RTFGetToken();
+        if (rtfTextBuf[0] == OLE_MARK[i])
+            i++;
+        else if (rtfTextBuf[0] == OLE_MARK[0])
+            i = 1;
+        else
+            i = 0;
     }
     fputc(0xd0, objFile);
     fputc(0xcf, objFile);
     fputc(0x11, objFile);
     fputc(0xe0, objFile);
-    	
+        
 
     /* each byte is encoded as two hex chars ... ff, a1, 4c, ...*/
     while (1) {
@@ -3759,7 +3769,7 @@ boolean ConvertEquationFile(char *objectFileName)
 
     nativeStream = NULL;
     theEquation = NULL;
-       	
+        
     /* Decode the OLE and extract the equation stream into buffer nativeStream */
     if (DecodeOLE(objectFileName, "/Equation Native", &nativeStream, &equationSize)) {
         RTFMsg("* error decoding OLE equation object!\n");
@@ -3785,19 +3795,19 @@ boolean ConvertEquationFile(char *objectFileName)
         }
 
         if (lastCharWasLineBreak) 
-        	theEquation->m_inline = 0;
+            theEquation->m_inline = 0;
         else
-        	theEquation->m_inline = 1;
-        	
+            theEquation->m_inline = 1;
+            
         DoParagraphCleanUp();
         DoSectionCleanUp();
         
         if (g_insert_eqn_name) {
-        	PutLitStr("\\url{file://");
-        	PutLitStr(objectFileName);
-        	PutLitStr("}");
-        	wrapCount += strlen(objectFileName) + strlen("\\url{file://}");
-        	requireHyperrefPackage = true;
+            PutLitStr("\\url{file://");
+            PutLitStr(objectFileName);
+            PutLitStr("}");
+            wrapCount += strlen(objectFileName) + strlen("\\url{file://}");
+            requireHyperrefPackage = true;
         }
 
         Eqn_TranslateObjectList(theEquation, ostream, 0);
@@ -3850,31 +3860,31 @@ static boolean ReadEquation(int *groupCount)
     ReadObjectData(objectFileName, EquationClass, EQUATION_OFFSET);
     (*groupCount)--;
 
-	/* hack because sometimes EQUATION_OFFSET needs to be 4 bytes longer */
-	in = fopen(objectFileName, "r");
-	if (fgetc(in) == 0xd0) 
-		fclose(in);
-	else {
-		strcpy(objectFileNameX,objectFileName);
-		objectFileNameX[strlen(objectFileName)-1] = 'x';
-		fgetc(in); 
-		fgetc(in); 
-		fgetc(in);
-		out = fopen(objectFileNameX, "wb");
+    /* hack because sometimes EQUATION_OFFSET needs to be 4 bytes longer */
+    in = fopen(objectFileName, "r");
+    if (fgetc(in) == 0xd0) 
+        fclose(in);
+    else {
+        strcpy(objectFileNameX,objectFileName);
+        objectFileNameX[strlen(objectFileName)-1] = 'x';
+        fgetc(in); 
+        fgetc(in); 
+        fgetc(in);
+        out = fopen(objectFileNameX, "wb");
 
-		while (!feof(in))
-			fputc(fgetc(in), out);
-		fclose(out);
-		fclose(in);
-		rename(objectFileNameX,objectFileName);
-	} 
+        while (!feof(in))
+            fputc(fgetc(in), out);
+        fclose(out);
+        fclose(in);
+        rename(objectFileNameX,objectFileName);
+    } 
 
     result = ConvertEquationFile(objectFileName);
     
     if (g_delete_eqn_file)
         remove(objectFileName);
         
-	return result;
+    return result;
 }
 
 
@@ -4147,34 +4157,34 @@ static void emitBookmark(void)
 
 static void ReadUnicode(void)
 {
-	char unitext[20];
+    char unitext[20];
 
     if (rtfParam == 8220) {
-    	PutLitStr("``");
-    	wrapCount+=2;
-   	    RTFGetToken();
+        PutLitStr("``");
+        wrapCount+=2;
+        RTFGetToken();
         return;
     }
 
     if (rtfParam == 8221) {
-    	PutLitStr("''");
-    	wrapCount+=2;
-   	    RTFGetToken();
+        PutLitStr("''");
+        wrapCount+=2;
+        RTFGetToken();
         return;
     }
 
     if (rtfParam == 8230) {
-    	PutLitStr("...");
-    	wrapCount+=3;
-   	    RTFGetToken();
+        PutLitStr("...");
+        wrapCount+=3;
+        RTFGetToken();
         return;
     }
 
-	if (rtfParam<0) 
-		rtfParam += 65536;
+    if (rtfParam<0) 
+        rtfParam += 65536;
 
-	snprintf(unitext,20,"\\unichar{%d}",rtfParam);
-	if (0) fprintf(stderr,"unicode --- %s!\n",unitext);
+    snprintf(unitext,20,"\\unichar{%d}",rtfParam);
+    if (0) fprintf(stderr,"unicode --- %s!\n",unitext);
     PutLitStr(unitext);
     wrapCount += (uint32_t) strlen(unitext);
     requireUnicodePackage = true;
