@@ -118,7 +118,7 @@ static void ReadCharSetMaps();
 void DebugMessage();
 
 /* these functions added by Ujwal Sathyam */
-static void RTFSwitchCharSet(long enc);
+static void RTFSwitchCharSet(uint32_t enc);
 void CheckForCharAttr(void);
 void RTFPushTextStyle(void);
 void RTFPopTextStyle(void);
@@ -579,7 +579,7 @@ static void _RTFGetToken()
         rtfMinor = pushedMinor;
         rtfParam = pushedParam;
         (void) strcpy(rtfTextBuf, pushedTextBuf);
-        rtfTextLen = strlen(rtfTextBuf);
+        rtfTextLen = (short) strlen(rtfTextBuf);
         pushedClass = -1;
         return;
     }
@@ -886,7 +886,7 @@ void RTFSetToken(short class, short major, short minor, int32_t param, char *tex
     if (param == rtfNoParam)
         (void) strcpy(rtfTextBuf, text);
     else
-        sprintf(rtfTextBuf, "%s%d", text, (int) param);
+        snprintf(rtfTextBuf, rtfBufSiz, "%s%d", text, (int) param);
     rtfTextLen = strlen(rtfTextBuf);
 }
 
@@ -957,18 +957,6 @@ static void ReadCharSetMaps()
 {
     char buf[rtfBufSiz];
 
-/* commented out by Ujwal Sathyam to enable automatic switching of character sets
-        if (genCharSetFile != (char *) NULL)
-                (void) strcpy (buf, genCharSetFile);
-        else
-                sprintf (buf, "%s-gen", &rtfTextBuf[1]);
-        if (RTFReadCharSetMap (buf, rtfCSGeneral) == 0)
-                RTFPanic ("ReadCharSetMaps: Cannot read charset map %s", buf);
-*/
-
-/* following added by Ujwal Sathyam for rtf2latex2e to 
-   enable automatic switching of character sets */
-
     if (strcmp(&rtfTextBuf[1], "ansi") == 0)
         genCharCode = cp1252CharCode;
     else if (strcmp(&rtfTextBuf[1], "mac") == 0)
@@ -986,7 +974,8 @@ static void ReadCharSetMaps()
     if (symCharSetFile != (char *) NULL)
         (void) strcpy(buf, symCharSetFile);
     else
-        sprintf(buf, "%s-sym", &rtfTextBuf[1]);
+        snprintf(buf, rtfBufSiz, "%s-sym", &rtfTextBuf[1]);
+        
     if (RTFReadCharSetMap(buf, rtfCSSymbol) == 0)
         RTFPanic("ReadCharSetMaps: Cannot read charset map %s", buf);
 }
@@ -2183,7 +2172,7 @@ void RTFMsg(char *fmt, ...)
 
     va_list args;
     va_start(args, fmt);
-    vsprintf(buf, fmt, args);
+    vsnprintf(buf, rtfBufSiz, fmt, args);
     va_end(args);
     (*msgProc) (buf);
 }
@@ -2219,11 +2208,11 @@ void RTFPanic(char *fmt, ...)
 
     va_list args;
     va_start(args, fmt);
-    vsprintf(buf, fmt, args);
+    vsnprintf(buf, rtfBufSiz, fmt, args);
     va_end(args);
     (void) strcat(buf, "\n");
     if (prevChar != EOF && rtfTextBuf != (char *) NULL) {
-        sprintf(buf + strlen(buf),
+        snprintf(buf + strlen(buf), rtfBufSiz-strlen(buf),
                 "Last token read was \"%s\" near line %d, position %hd.\n",
                 rtfTextBuf, (int)rtfLineNum, (int)rtfLinePos);
     }
@@ -2261,7 +2250,7 @@ void RTFSetPushedChar(short lastChar)
     pushedChar = lastChar;
 }
 
-static void RTFSwitchCharSet(long enc)
+static void RTFSwitchCharSet(uint32_t enc)
 {
 
 

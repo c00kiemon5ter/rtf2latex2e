@@ -537,7 +537,7 @@ static void DefineColors(void)
         textGreen = (float) ((rtfColorPtr->rtfCGreen) / 255.0);
         textBlue = (float) ((rtfColorPtr->rtfCBlue) / 255.0);
 
-        sprintf(buf, "\\definecolor{color%d}{rgb}{%1.3f,%1.3f,%1.3f}\n",
+        snprintf(buf, rtfBufSiz, "\\definecolor{color%d}{rgb}{%1.3f,%1.3f,%1.3f}\n",
                 i, textRed, textGreen, textBlue);
         PutLitStr(buf);
         wrapCount = 0;
@@ -599,7 +599,7 @@ int stdCode;
     }
     oStr = outMap[stdCode];
     if (oStr == (char *) NULL) {        /* no output sequence in map */
-        sprintf(buf, "(%s)", RTFStdCharName(stdCode));
+        snprintf(buf, rtfBufSiz, "(%s)", RTFStdCharName(stdCode));
         oStr = buf;
     }
     PutLitStr(oStr);
@@ -613,7 +613,7 @@ static void WriteColor (void)
 char buf[rtfBufSiz];
 
 
-        sprintf(buf, "{\\color{color%ld} ", (int)rtfParam);
+        snprintf(buf, rtfBufSiz, "{\\color{color%ld} ", (int)rtfParam);
         PutLitStr (buf);        
         wrapCount += 17;
 
@@ -630,14 +630,11 @@ static void CheckForBeginDocument(void)
 
     if (!wroteBeginDocument) {
         if (!preferenceValue[GetPreferenceNum("ignoreRulerSettings")]) {
-            sprintf(buf, "\\setlength{\\oddsidemargin}{%3.2fin}\n",
-                    1 - page.leftMargin);
+            snprintf(buf, 100, "\\setlength{\\oddsidemargin}{%3.2fin}\n", 1 - page.leftMargin);
             PutLitStr(buf);
-            sprintf(buf, "\\setlength{\\evensidemargin}{%3.2fin}\n",
-                    1 - page.rightMargin);
+            snprintf(buf, 100, "\\setlength{\\evensidemargin}{%3.2fin}\n", 1 - page.rightMargin);
             PutLitStr(buf);
-            sprintf(buf, "\\setlength{\\textwidth}{%3.2fin}\n",
-                    page.width - page.leftMargin - page.rightMargin);
+            snprintf(buf, 100, "\\setlength{\\textwidth}{%3.2fin}\n", page.width - page.leftMargin - page.rightMargin);
             PutLitStr(buf);
             blankLineCount++;
         }
@@ -1195,7 +1192,7 @@ static void WriteTextStyle(void)
     if (foreColorGL <= groupLevel && foreColorGL > 0
         && (textStyle.foreColor) > 0 && !(textStyle.wroteForeColor)) {
 
-        sprintf(buf, "{\\color{color%d} ", (int) (textStyle.foreColor));
+        snprintf(buf, rtfBufSiz, "{\\color{color%d} ", (int) (textStyle.foreColor));
         PutLitStr(buf);
         wrapCount += 17;
         charAttrCount++;
@@ -1314,7 +1311,7 @@ static void WriteTextStyle(void)
     }
     if (textStyle.fontSize != normalSize && mathMode==MATH_NONE_MODE
         && !(textStyle.wroteFontSize)) {
-        sprintf(buf, "{%s ", fontSizeList[textStyle.fontSize]);
+        snprintf(buf, rtfBufSiz, "{%s ", fontSizeList[textStyle.fontSize]);
         PutLitStr(buf);
         charAttrCount++;
         wrapCount += 7;
@@ -1454,7 +1451,7 @@ static void DoParagraphCleanUp(void)
 
     /* close previous environment */
     if (paragraph.alignment != left && paragraph.wroteAlignment) {
-        sprintf(buf, "\n\\end{%s}", environmentList[paragraph.alignment]);
+        snprintf(buf, rtfBufSiz, "\n\\end{%s}", environmentList[paragraph.alignment]);
         PutLitStr(buf);
         InsertNewLine();
         paragraph.alignment = left;
@@ -1543,7 +1540,7 @@ static void IndentParagraph(void)
         PutLitStr("\n\\noindent");
         InsertNewLine();
     } else {
-        sprintf(buf, "\n\\setlength{\\parindent}{%2.3fin}",
+        snprintf(buf, 100, "\n\\setlength{\\parindent}{%2.3fin}",
                 (double) ((double) (paragraph.leftIndent) /
                           (double) rtfTpi));
         PutLitStr(buf);
@@ -1580,12 +1577,12 @@ static void WriteParagraphStyle(void)
 
         if (paragraph.leftIndent != 0 || paragraph.rightIndent != 0) {
             if (paragraph.leftIndent > 0) {
-                sprintf(buf, "\n\\makebox[%2.3fin]{}",
+                snprintf(buf, rtfBufSiz, "\n\\makebox[%2.3fin]{}",
                         ((double) (paragraph.leftIndent) /
                          (double) rtfTpi));
                 PutLitStr(buf);
             }
-            sprintf(buf, "\n\\parbox{%2.3fin}\n{",
+            snprintf(buf, rtfBufSiz, "\n\\parbox{%2.3fin}\n{",
                     textWidth -
                     ((double) (paragraph.rightIndent) / (double) rtfTpi) -
                     ((double) (paragraph.leftIndent) / (double) rtfTpi));
@@ -1596,7 +1593,7 @@ static void WriteParagraphStyle(void)
 
     if (paragraph.alignment != left &&
         !preferenceValue[GetPreferenceNum("ignoreParagraphAlignment")]) {
-        sprintf(buf, "\n\\begin{%s}",
+        snprintf(buf, rtfBufSiz, "\n\\begin{%s}",
                 environmentList[paragraph.alignment]);
         PutLitStr(buf);
         InsertNewLine();
@@ -1605,7 +1602,7 @@ static void WriteParagraphStyle(void)
 
     if (paragraph.lineSpacing != paragraph.oldSpacing &&
         !preferenceValue[GetPreferenceNum("ignoreSpacing")]) {
-        sprintf(buf, "\\begin{spacing}{%1.1f}", spacing);
+        snprintf(buf, rtfBufSiz, "\\begin{spacing}{%1.1f}", spacing);
         PutLitStr(buf);
         InsertNewLine();
         paragraph.wroteSpacing = true;
@@ -1636,7 +1633,7 @@ static void WriteSectionStyle(void)
     }
 
     if (section.cols > 1) {
-        sprintf(buf, "\n\\begin{multicols}{%d}", section.cols);
+        snprintf(buf, rtfBufSiz, "\n\\begin{multicols}{%d}", section.cols);
         PutLitStr(buf);
         InsertNewLine();
         wrapCount = 0;
@@ -2581,7 +2578,7 @@ static void DoMergedCells(cell * cellPtr)
         else
             localCellPtr = GetCellByPos(x + i, y);
 
-    sprintf(buf, "\\multirow{%d}{%1.3fin}{%s ",
+    snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s ",
             i - 1, cellPtr->width, justificationList[paragraph.alignment]);
     PutLitStr(buf);
 
@@ -2613,7 +2610,7 @@ static void WriteCellHeader(int cellNum)
 	}
 
     if (table.multiCol) {
-        sprintf(buf, "\\multicolumn{%d}{", cellPtr->columnSpan);
+        snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{", cellPtr->columnSpan);
         PutLitStr(buf);
         if (cellPtr->columnSpan < 1)
             RTFMsg("* Warning: nonsensical table encountered...cell %d spans %d columns.\n \
@@ -2623,16 +2620,16 @@ static void WriteCellHeader(int cellNum)
         if (cellPtr->y == 0)
             PutLitChar('|');
         if (cellPtr->mergePar == first) {
-            sprintf(buf, "p{%1.3fin}|}\n{", cellPtr->width);
+            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}\n{", cellPtr->width);
             PutLitStr(buf);
         } else {
-            sprintf(buf, "p{%1.3fin}|}\n{%s", cellPtr->width,
+            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}\n{%s", cellPtr->width,
                     justificationList[paragraph.alignment]);
             PutLitStr(buf);
             InsertNewLine();
         }
     } else if (cellPtr->mergePar != first) {
-        sprintf(buf, "{%s ", justificationList[paragraph.alignment]);
+        snprintf(buf,rtfBufSiz, "{%s ", justificationList[paragraph.alignment]);
         PutLitStr(buf);
     } else {
         PutLitStr("{");
@@ -2790,7 +2787,7 @@ static void DrawTableRowLine(int rowNum)
         cellPosition += cellInfo1->columnSpan;
 
         if (cellInfo1->mergePar == none) {
-            sprintf(buf, "\\cline{%d-%d}", cellInfo1->y + 1,
+            snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", cellInfo1->y + 1,
                     cellInfo1->y + cellInfo1->columnSpan);
             PutLitStr(buf);
         }
@@ -2798,7 +2795,7 @@ static void DrawTableRowLine(int rowNum)
         else if (cellInfo1->mergePar == previous) {
             cellInfo2 = GetCellByPos(rowNum + 1, i);
             if (cellInfo2->mergePar != previous) {
-                sprintf(buf, "\\cline{%d-%d}", cellInfo1->y + 1,
+                snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", cellInfo1->y + 1,
                         cellInfo1->y + cellInfo1->columnSpan);
                 PutLitStr(buf);
             }
@@ -2863,7 +2860,7 @@ static void DoTable(void)
             cellPtr = GetCellInfo(i);
             if (cellPtr->x > 0)
                 break;
-            sprintf(buf, "p{%1.3fin}|", cellPtr->width);
+            snprintf(buf, 100, "p{%1.3fin}|", cellPtr->width);
             PutLitStr(buf);
         }
         PutLitStr("}");
@@ -2879,7 +2876,7 @@ static void DoTable(void)
 
 /*      printf ("* processing table rows...\n");        */
     for (i = 0; i < table.rows; i++) {
-        sprintf(buf, "%% ROW %d", i + 1);
+        snprintf(buf, 100, "%% ROW %d", i + 1);
         PutLitStr(buf);
         InsertNewLine();
 
@@ -2899,7 +2896,7 @@ static void DoTable(void)
     }
 
     PutLitStr("\\hline\n");
-    sprintf(buf, "\\end{%s}\n", tableString);
+    snprintf(buf, 100, "\\end{%s}\n", tableString);
     PutLitStr(buf);
     InsertNewLine();
     lastCharWasLineBreak = true;
@@ -3233,7 +3230,7 @@ static void ConvertHexPicture(char *pictureType)
         strcpy(pictureType, "unknown");
 
     strcpy(picture.name, RTFGetInputName());
-    sprintf(dummyBuf, "Fig%03d.%s", picture.count, pictureType);
+    snprintf(dummyBuf, rtfBufSiz, "Fig%03d.%s", picture.count, pictureType);
     strcat(picture.name, dummyBuf);
 
     /* open picture file */
@@ -3334,11 +3331,11 @@ static void IncludeGraphics(char *pictureType)
             urx = picture.urx;
             ury = picture.ury;
             scale = (double) ((double) (height) / ((double) (ury - lly)));
-            sprintf(dummyBuf, "\\includegraphics[bb = %d %d %d %d, scale=%2.2f]{%s}",
+            snprintf(dummyBuf, rtfBufSiz, "\\includegraphics[bb = %d %d %d %d, scale=%2.2f]{%s}",
                     llx, lly, urx, ury, scale, figPtr);
 
         } else
-            sprintf(dummyBuf, "\\includegraphics[width=%2.3fin, height=%2.3fin]{%s}",
+            snprintf(dummyBuf, rtfBufSiz, "\\includegraphics[width=%2.3fin, height=%2.3fin]{%s}",
                     width / 72, height / 72, figPtr);
 
         if (!(table.inside) && !insideFootnote) {
@@ -3354,7 +3351,7 @@ static void IncludeGraphics(char *pictureType)
             PutLitStr(dummyBuf);
             wrapCount += (int) strlen(dummyBuf);
             if (height > 50) {
-                sprintf(dummyBuf, "\n\\caption{%s about here.}", figPtr);
+                snprintf(dummyBuf, rtfBufSiz, "\n\\caption{%s about here.}", figPtr);
                 PutLitStr(dummyBuf);
             }
             if (height > 20) {
@@ -3376,25 +3373,25 @@ static void IncludeGraphics(char *pictureType)
         }
     } else {                    /* this is for compatibility with Scientific Word */
 
-        sprintf(dummyBuf,
+        snprintf(dummyBuf, rtfBufSiz,
                 "\\FRAME{ftbpxFU}{%2.3fpt}{%2.3fpt}{0pt}{}{}{Figure %s}",
                 width, height, figPtr);
         PutLitStr(dummyBuf);
         PutLitStr("{");
         InsertNewLine();
-        sprintf(specialBuf,
+        snprintf(specialBuf,rtfBufSiz,
                 "\\special{language \"Scientific Word\";type \"GRAPHIC\";maintain-aspect-ratio TRUE; display \"USEDEF\";valid_file \"T\";");
         PutLitStr(specialBuf);
         InsertNewLine();
-        sprintf(specialBuf, "height %2.3fpt;width %2.3fpt;depth 0pt;",
+        snprintf(specialBuf, rtfBufSiz, "height %2.3fpt;width %2.3fpt;depth 0pt;",
                 width, height);
         PutLitStr(specialBuf);
         InsertNewLine();
-        sprintf(specialBuf,
+        snprintf(specialBuf,rtfBufSiz,
                 "cropleft \"0\";croptop \"1\";cropright \"1\";cropbottom \"0\";");
         PutLitStr(specialBuf);
         InsertNewLine();
-        sprintf(specialBuf,
+        snprintf(specialBuf,rtfBufSiz,
                 "tempfilename '%s';tempfile-properties \"XPNEU\";",
                 figPtr);
         PutLitStr(specialBuf);
@@ -3672,9 +3669,9 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 
     if (type == EquationClass) {
         (oleEquation.count)++;
-        sprintf(dummyBuf, "Eq%03d.eqn", oleEquation.count);
+        snprintf(dummyBuf, 20, "Eq%03d.eqn", oleEquation.count);
     } else
-        sprintf(dummyBuf, ".obj");
+        snprintf(dummyBuf, 20, ".obj");
 
     /* construct full path of file name */
     strcpy(objectFileName, RTFGetInputName());
@@ -4176,7 +4173,7 @@ static void ReadUnicode(void)
 	if (rtfParam<0) 
 		rtfParam += 65536;
 
-	sprintf(unitext,"\\unichar{%d}",rtfParam);
+	snprintf(unitext,20,"\\unichar{%d}",rtfParam);
 	if (0) fprintf(stderr,"unicode --- %s!\n",unitext);
     PutLitStr(unitext);
     wrapCount += (uint32_t) strlen(unitext);

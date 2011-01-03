@@ -220,8 +220,9 @@ int
 main(int argc, char **argv)
 {
     char            c, buf[rtfBufSiz], *buf1, buf2[rtfBufSiz];
-    int             i, fileCounter;
-    long            cursorPos, bufLength;
+    int             fileCounter;
+    long            cursorPos;
+    size_t          i,bufLength;
     extern char    *optarg;
     extern int      optind;
 
@@ -353,7 +354,7 @@ main(int argc, char **argv)
 
         if (BeginLaTeXFile()) {
         	if (g_equation_file) 
-                ConvertEquationFile(argv[fileCounter]);
+                (void) ConvertEquationFile(argv[fileCounter]);
             else
             	RTFRead();
             EndLaTeXFile();
