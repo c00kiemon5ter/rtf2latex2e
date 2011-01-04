@@ -87,12 +87,10 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
     
     /* if opening fails, then try again using tempnam() */
     if (ret == NULL) {
-        char *p = tempnam("./", *filename);
-        if (p == NULL) {
-            free(*filename);
-            return 2;
-        }
-        strcpy(*filename,p);
+        free(*filename);
+        *filename = tempnam("./", "rtf2latex-tmp-");
+        verboseS(*filename);
+        if (*filename == NULL) return 2;
     }
     
     verboseS(*filename);  /* added by Wilfried */

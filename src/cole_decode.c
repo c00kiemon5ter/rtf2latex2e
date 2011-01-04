@@ -417,10 +417,20 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
 
                 /* if opening fails, then try again using tempnam() */
                 if (OLEfile == NULL) {
+                    free(*_sbfilename);
+                    *_sbfilename = tempnam("./", "rtf2latex-tmp-");
+                    verboseS(*_sbfilename);
+                    if (*_sbfilename == NULL) return 2;
+                    test_exitf(_sbfilename != NULL, 10, ends());
+                    OLEfile = fopen(*_sbfilename, "wb+");
+                 }
+
+                /* if opening fails, then try again using tempnam() */
+                if (OLEfile == NULL) {
                     char *p = tempnam("./", *_sbfilename);
                     test_exitf(*p != NULL, 10, ends());
                     strcpy(*_sbfilename,p);
-                	OLEfile = fopen(*_sbfilename, "wb+");
+                    OLEfile = fopen(*_sbfilename, "wb+");
                 }
                 
                 sbfile = OLEfile;
