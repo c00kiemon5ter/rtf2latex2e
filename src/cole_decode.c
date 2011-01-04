@@ -79,7 +79,6 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
     uint32_t num_bbd_blocks, num_xbbd_blocks, bl, i, j, len;
     uint8_t *s, *p, *t;
     long FilePos;      /*long because second argument of fseek is long */
-    char template_name[]="rtf2latex-sb-XXXXXX";
 
     /* initialize static variables */
     input = sbfile = NULL;
@@ -240,8 +239,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
         }
         root_list[len] = fil_sreadU32(BDepot + (root_list[len - 1] * 4));
         verboseU32(root_list[len]);
-        test_exitf(root_list[len] != (uint32_t) 0xfffffffd 
-                   && root_list[len] != (uint32_t) 0xffffffff, 5, ends());
+        test_exitf(root_list[len] != (uint32_t) 0xfffffffd && root_list[len] != (uint32_t) 0xffffffff, 5, ends());
     }
     len--;
     verboseU32Array(root_list, len + 1);
@@ -400,7 +398,6 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
             /* create the new file */
             /* root entry, sbfile must be generated */
             {
-            	int temp_fd;
                 if (SDepot == NULL) {
                     /* if there are no small blocks, do not generate sbfile */
                     *_sbfilename = NULL;
@@ -409,12 +406,13 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
                 }
                 assert(i == *root);
                 assert(i == 0);
-                *_sbfilename = malloc(strlen(template_name)+1);
-                strcpy(*_sbfilename, template_name);
+
+                *_sbfilename = malloc((size_t) (L_tmpnam+1));
                 test_exitf(*_sbfilename != NULL, 10, ends());
-                temp_fd = mkstemp(*_sbfilename);
+                (void) tmpnam(*_sbfilename);
+                verboseS(*_sbfilename);  /* added by Wilfried */
                 test_exitf(*_sbfilename[0], 7, ends());
-                sbfile = OLEfile = fdopen(temp_fd, "wb+");
+                sbfile = OLEfile = fopen(*_sbfilename, "wb+");
                 *_sbfile = sbfile;
                 test_exitf(OLEfile != NULL, 7, ends());
                 verboseS(*_sbfilename);
@@ -460,12 +458,10 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
                 if (pps_size == 0)
                     pps_start = 0xfffffffe;
             }
-            
-            /* if small block file generated, rewind because we will read it later */
             if (OLEfile == sbfile)
-                rewind(OLEfile);       
-            /*else if (!fclose (OLEfile)) */
-            /* close the pps file */
+                /* if small block file generated */
+                rewind(OLEfile);        /* rewind because we will read it later */
+            /*else if (!fclose (OLEfile)) *//* close the pps file */
             /* don't know what to do here */
             /*; */
         }

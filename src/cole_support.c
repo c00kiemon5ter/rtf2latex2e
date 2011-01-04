@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <string.h>
+#include "cole_support.h"
 
 uint16_t fil_sreadU16(uint8_t * in)
 {
@@ -68,21 +68,19 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
     long FilePos;
     size_t bytes_to_copy;
     uint8_t Block[0x0200];
-    char template_name[]="rtf2latex-ex-XXXXXX";
-    int temp_fd;
 
-    *filename = malloc(strlen(template_name)+1);
+    *filename = malloc((size_t) (L_tmpnam+1));
     if (*filename == NULL)
         return 1;
 
-	temp_fd = mkstemp(*filename);
-	
-    if (*filename == NULL) {
+    if (tmpnam(*filename) == NULL) {
         free(*filename);
         return 2;
     }
+
+                verboseS(*filename);  /* added by Wilfried */
     
-    ret = fdopen(temp_fd, "w+b");
+    ret = fopen(*filename, "w+b");
     *file = ret;
     if (ret == NULL) {
         free(*filename);
