@@ -392,9 +392,9 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
             pps_size = pps_list[i].size;
             pps_start = pps_list[i].start;
 
-			/* FIXME can pps_start point to a block larger than sbfile input ? */
+            /* FIXME can pps_start point to a block larger than sbfile input ? */
 
-        	assert(pps_list[i].type == 5);
+            assert(pps_list[i].type == 5);
             /* create the new file */
             /* root entry, sbfile must be generated */
             {
@@ -411,8 +411,19 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
                 test_exitf(*_sbfilename != NULL, 10, ends());
                 (void) tmpnam(*_sbfilename);
                 verboseS(*_sbfilename);  /* added by Wilfried */
+
                 test_exitf(*_sbfilename[0], 7, ends());
-                sbfile = OLEfile = fopen(*_sbfilename, "wb+");
+                OLEfile = fopen(*_sbfilename, "wb+");
+
+                /* if opening fails, then try again using tempnam() */
+                if (OLEfile == NULL) {
+                    char *p = tempnam("./", *_sbfilename);
+                    test_exitf(*p != NULL, 10, ends());
+                    strcpy(*_sbfilename,p);
+                	OLEfile = fopen(*_sbfilename, "wb+");
+                }
+                
+                sbfile = OLEfile;
                 *_sbfile = sbfile;
                 test_exitf(OLEfile != NULL, 7, ends());
                 verboseS(*_sbfilename);

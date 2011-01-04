@@ -69,19 +69,37 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
     size_t bytes_to_copy;
     uint8_t Block[0x0200];
 
+    /* allocate temporary file name */
     *filename = malloc((size_t) (L_tmpnam+1));
     if (*filename == NULL)
         return 1;
 
+    /* use tmpnam to fill the file name */
     if (tmpnam(*filename) == NULL) {
         free(*filename);
         return 2;
     }
 
-                verboseS(*filename);  /* added by Wilfried */
+    verboseS(*filename);  /* added by Wilfried */
+
+    /* try to open the file */    
+    ret = fopen(*filename, "w+b");
     
+    /* if opening fails, then try again using tempnam() */
+    if (ret == NULL) {
+        char *p = tempnam("./", *filename);
+        if (p == NULL) {
+            free(*filename);
+            return 2;
+        }
+        strcpy(*filename,p);
+    }
+    
+    verboseS(*filename);  /* added by Wilfried */
+
     ret = fopen(*filename, "w+b");
     *file = ret;
+
     if (ret == NULL) {
         free(*filename);
         return 3;
