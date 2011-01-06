@@ -26,8 +26,8 @@ BIN_INSTALL    =$(PREFIX)/bin
 SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex2e
 
 # MacOS X flags to support PICT -> PDF conversion
-#CFLAGS  :=$(CFLAGS) -m32 -DPICT2PDF
-#LDFLAGS :=$(LDFLAGS) -m32 -framework ApplicationServices
+CFLAGS  :=$(CFLAGS) -m32 -DPICT2PDF
+LDFLAGS :=$(LDFLAGS) -m32 -framework ApplicationServices
 
 # Uncomment to get debugging information about OLE translation
 #CFLAGS:=$(CFLAGS) -DCOLE_VERBOSE
@@ -123,9 +123,7 @@ dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $
 	zip -r rtf2latex2e-$(VERSION) rtf2latex2e-$(VERSION)
 	rm -rf rtf2latex2e-$(VERSION)
 	
-install:
-	$(MAKE) rtfprep
-	$(MAKE)
+install: rtf2latex2e doc
 	$(MKDIR)                   $(BIN_INSTALL)
 	$(MKDIR)                   $(SUPPORT_INSTALL)
 	cp $(BINARY_NAME)          $(BIN_INSTALL)
