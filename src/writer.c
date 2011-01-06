@@ -3704,6 +3704,16 @@ DecodeOLE(char *objectFileName, char *streamType,
     return 0;
 }
 
+static int ishex(char c)
+{
+	if ( '0' <= c && c <= '9' )
+		return 1;
+	if ('a' <= c && c <= 'f') 
+		return 1;
+	if ('A' <= c && c <= 'F') 
+		return 1;
+	return 0;
+}
 
 /* 
  * Save the hex-encoded object data and as binary bytes in objectFileName 
@@ -3745,19 +3755,30 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     i = 0;
     while (i < 8) {
         RTFGetToken();
+        if (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d)
+        	continue;
+
         if (rtfTextBuf[0] == OLE_MARK[i])
             i++;
         else if (rtfTextBuf[0] == OLE_MARK[0])
             i = 1;
-        else
+        else if (ishex(rtfTextBuf[0]))
             i = 0;
+        else 
+        	break;
     }
+    
+    if (i<8) {
+        RTFMsg("* OLE object does not have proper header\n");
+        fclose(objFile);
+        return;
+    }
+    	
     fputc(0xd0, objFile);
     fputc(0xcf, objFile);
     fputc(0x11, objFile);
     fputc(0xe0, objFile);
         
-
     /* each byte is encoded as two hex chars ... ff, a1, 4c, ...*/
     while (1) {
         RTFGetToken();

@@ -1,4 +1,4 @@
-VERSION = 1-6-0
+VERSION = 1-7-0
 
 CC?=gcc
 TAR?=gnutar
@@ -38,14 +38,15 @@ CFLAGS:=$(CFLAGS) $(PLATFORM)
 
 SRCS         = src/cole.c                 src/cole_decode.c          src/cole_support.c      \
                src/eqn.c                  src/main.c                 src/mygetopt.c          \
-               src/reader.c               src/writer.c
-
+               src/reader.c               src/writer.c               
+               
 HDRS         = src/cole.h                 src/cole_support.h         src/eqn.h               \
                src/eqn_support.h          src/mygetopt.h             src/rtf2latex2e.h       \
                src/rtf.h
 
 RTFPREP_SRCS = src/rtf-controls           src/rtfprep.c              src/standard-names      \
-               src/tokenscan.c            src/tokenscan.h  
+               src/tokenscan.c            src/tokenscan.h            src/rtf-ctrldef.h       \
+               src/rtf-namedef.h          src/stdcharnames.h         src/rtf-ctrl
 
 RTFPREP_OBJS = src/rtfprep.o              src/tokenscan.o
 
@@ -82,9 +83,6 @@ all : checkfiles rtf2latex2e
 src/rtfprep: src/tokenscan.o src/rtfprep.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $(RTFPREP_OBJS) -o src/rtfprep
 
-src/rtf-ctrl src/rtf-namedef.h src/rtf-ctrldef.h: src/rtfprep src/rtf-controls src/standard-names
-	cd src && ./rtfprep
-	
 rtf2latex2e: $(OBJS) $(HDRS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $(BINARY_NAME)
 	cp $(BINARY_NAME) rtf2latex
@@ -154,10 +152,15 @@ clean:
 realclean: checkfiles clean
 	rm -f makefile.depend
 	rm -f src/rtfprep
-	rm -f src/rtf-ctrldef.h  src/rtf-namedef.h  src/stdcharnames.h rtf-ctrl
 	cd test   && make realclean
 	cd doc    && make realclean
-	
+
+parser: checkfiles clean
+	rm -f src/rtfprep
+	rm -f src/rtf-ctrldef.h  src/rtf-namedef.h  src/stdcharnames.h src/rtf-ctrl
+	make src/rtfprep	
+	cd src && ./rtfprep
+
 appleclean:
 	sudo xattr -r -d com.apple.FinderInfo ../trunk
 	sudo xattr -r -d com.apple.TextEncoding ../trunk
