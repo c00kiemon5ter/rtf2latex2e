@@ -428,7 +428,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
                 /* if opening fails, then try again using tempnam() */
                 if (OLEfile == NULL) {
                     char *p = tempnam("./", *_sbfilename);
-                    test_exitf(*p != NULL, 10, ends());
+                    test_exitf(p != NULL, 10, ends());
                     strcpy(*_sbfilename,p);
                     OLEfile = fopen(*_sbfilename, "wb+");
                 }

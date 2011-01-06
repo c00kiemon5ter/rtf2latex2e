@@ -37,6 +37,7 @@ char outputMapName[255];
 # define        MATH_INLINE_MODE      1
 # define        MATH_DISPLAY_MODE     2 
 
+# define        PREVIOUS_COLUMN_VALUE -10000
 char texMapQualifier[rtfBufSiz];
 
 void RTFSetOutputStream(FILE * stream);
@@ -234,8 +235,9 @@ static boolean startFootnoteText = false;
 static boolean continueTextStyle = false;
 static boolean lineIsBlank = true;
 
-int g_trac_par_start = 0;
-
+int g_debug_par_start = 0;
+int g_debug_table_prescan   = 0;
+int g_debug_table_writing   = 0;
 static short R2LItem(char *name)
 {
     short i;
@@ -560,9 +562,9 @@ void ExamineToken(void)
 {
     printf("* Token is %s\n", rtfTextBuf);
     printf("* Class is %d\n", rtfClass);
-    printf("* Major is %d\n", (int) rtfMajor);
+    printf("* Major is %d\n", rtfMajor);
     printf("* Minor is %d\n", rtfMinor);
-    printf("* Param is %d\n\n", rtfParam);
+    printf("* Param is %d\n\n", (int) rtfParam);
 }
 
 
@@ -1920,62 +1922,62 @@ static void CheckForParagraph(void)
     while (1) {
         /* stop if we see a line break */
         if (RTFCheckMM(rtfSpecialChar, rtfPar)) {
-            if (g_trac_par_start) PutLitStr("\\fbox{rtfPar}"); 
+            if (g_debug_par_start) PutLitStr("\\fbox{rtfPar}"); 
             newParagraph = true;
             break;
         }
 
         /* or a page break */
         if (RTFCheckMM(rtfSpecialChar, rtfPage) ) {
-            if (g_trac_par_start) PutLitStr("\\fbox{rtfPage}"); 
+            if (g_debug_par_start) PutLitStr("\\fbox{rtfPage}"); 
             newParagraph = true;
             break;
         }
 
         /* or a paragraph definition */
         if (RTFCheckMM(rtfParAttr, rtfParDef)) {
-            if (g_trac_par_start) PutLitStr("\\fbox{rtfParDef}"); 
+            if (g_debug_par_start) PutLitStr("\\fbox{rtfParDef}"); 
             newParagraph = true;
             break;
         }
 
         /* or a tab */
         if (RTFCheckMM(rtfSpecialChar, rtfTab)) {
-            if (g_trac_par_start) PutLitStr("\\fbox{rtfTab}"); 
+            if (g_debug_par_start) PutLitStr("\\fbox{rtfTab}"); 
             newParagraph = true;
             break;
         }
 
         /* or a table */
         if (rtfMajor == rtfTblAttr) {
-            if (g_trac_par_start) PutLitStr("\\fbox{table}"); 
+            if (g_debug_par_start) PutLitStr("\\fbox{table}"); 
             newParagraph = true;
             break;
         }
 
         /* or a object */
         if (rtfMajor == rtfObjAttr) {
-            if (g_trac_par_start) PutLitStr("\\fbox{object}"); 
+            if (g_debug_par_start) PutLitStr("\\fbox{object}"); 
             newParagraph = false;
             break;
         }
 
         /* or a picture */
         if (rtfMajor == rtfPictAttr) {
-            if (g_trac_par_start) PutLitStr("\\fbox{pict}"); 
+            if (g_debug_par_start) PutLitStr("\\fbox{pict}"); 
             newParagraph = false;
             break;
         }
 
         if (rtfClass == rtfText) {
-            if (g_trac_par_start) PutLitStr("\\fbox{text}"); 
+            if (g_debug_par_start) PutLitStr("\\fbox{text}"); 
             newParagraph = false;
             break;
         }
 
         /* or a destination */
         if (RTFCheckCM(rtfControl, rtfDestination)) {
-            if (g_trac_par_start) PutLitStr("\\fbox{rtfDestination}"); 
+            if (g_debug_par_start) PutLitStr("\\fbox{rtfDestination}"); 
             newParagraph = false;
             break;
         }
@@ -1986,7 +1988,7 @@ static void CheckForParagraph(void)
            || rtfMajor == rtfFontAttr
            || rtfMajor == rtfSectAttr) {
             newParagraph = false;
-            if (g_trac_par_start) PutLitStr("\\fbox{other}"); 
+            if (g_debug_par_start) PutLitStr("\\fbox{other}"); 
             break;
         }
 
@@ -2009,13 +2011,13 @@ static void CheckForParagraph(void)
         charAttrCount = 0;
         
         if (groupLevel <= storeGroupLevel && blankLineCount < MAX_BLANK_LINES) {
-            if (g_trac_par_start) PutLitStr("[usual]");
+            if (g_debug_par_start) PutLitStr("[usual]");
             CheckForCharAttr();
             InsertNewLine();
             InsertNewLine();
             blankLineCount += 2;
         } else if (!suppressLineBreak && !(textStyle.open) && !lineIsBlank) {
-            if (g_trac_par_start) PutLitStr("[**ah ha**]");
+            if (g_debug_par_start) PutLitStr("[**ah ha**]");
             PutLitStr("\\\\{}");  /* braces because next line may start with [ */
             InsertNewLine();
             InsertNewLine();
@@ -2033,7 +2035,7 @@ static void CheckForParagraph(void)
     }
 
     if (rtfClass != rtfEOF && !(textStyle.open) && !lineIsBlank) {
-            if (g_trac_par_start) PutLitStr("[line break]"); 
+            if (g_debug_par_start) PutLitStr("[line break]"); 
         PutLitStr("\\\\{}");
         InsertNewLine();
     }
@@ -2189,7 +2191,8 @@ static void CharAttr(void)
 
 }
 
-/* This routine sets attributes for the detected cell and 
+/* 
+ * This routine sets attributes for the detected cell and 
  * adds it to the table.cellInfo list. Memory for cells is 
  * allocated dynamically as each cell is encountered. 
  */
@@ -2212,9 +2215,7 @@ static void ReadCell(void)
     else
         cellPtr->left = (table.cellInfo)->right;
     cellPtr->right = rtfParam;
-    cellPtr->width =
-        (double) ((double) (cellPtr->right) -
-                  (double) (cellPtr->left)) / rtfTpi;
+    cellPtr->width = (double) (cellPtr->right - cellPtr->left) / rtfTpi;
     cellPtr->index = table.cellCount;
     cellPtr->mergePar = table.cellMergePar;
     table.cellMergePar = none;  /* reset */
@@ -2245,50 +2246,56 @@ static void DoTableAttr(void)
     case rtfVertMergeRngPrevious:
         table.cellMergePar = previous;
         break;
-
     }
-
 }
 
-/* This function searches the cell list by the cell index */
+
+/* 
+ * This function searches the cell list by cell index 
+ * returns NULL if not found
+ */
 static cell *GetCellInfo(int cellNum)
 {
     cell *cellPtr;
-    char *fn = "GetCellInfo";
 
     if (cellNum == -1)
         return (table.cellInfo);
-    for (cellPtr = (table.cellInfo); cellPtr != (cell *) NULL;
-         cellPtr = cellPtr->nextCell) {
+        
+    for (cellPtr = (table.cellInfo); cellPtr != NULL; cellPtr = cellPtr->nextCell) {
         if (cellPtr->index == cellNum)
-            break;
+            return cellPtr;
     }
-    if (cellPtr == (cell *) NULL)
-        RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn,
-                 cellNum);
-    return (cellPtr);           /* NULL if not found */
+    
+    if (!cellPtr)
+        RTFPanic("GetCellInfo: Attempting to access invalid cell at index %d\n", cellNum);
+        
+    return NULL;
 }
 
-/* This function searches the cell list by the cell coordinates */
+
+/* 
+ * This function searches the cell list by cell coordinates 
+ * returns NULL if not found
+ */
 static cell *GetCellByPos(int x, int y)
 {
     cell *cellPtr;
-    char *fn = "GetCellByPos";
 
-    for (cellPtr = (table.cellInfo); cellPtr != (cell *) NULL;
-         cellPtr = cellPtr->nextCell) {
+    if (!table.cellInfo)
+        RTFPanic("GetCellByPos: Attempting to access invalid cell at %d, %d\n", x, y);
+
+    for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
         if (cellPtr->x == x && cellPtr->y == y)
-            break;
+            return cellPtr;
     }
-    if (cellPtr == (cell *) NULL)
-        RTFPanic("%s: Attempting to access invalid cell at %d, %d\n", fn,
-                 x, y);
-    return (cellPtr);           /* NULL if not found */
+    
+    return NULL;
 }
 
 
 
-/* In RTF, each table row need not start with a table row definition.
+/* 
+ * In RTF, each table row need not start with a table row definition.
  * The next row may decide to use the row definition of the previous
  * row. In that case, I need to call this InheritTableRowDef function
  */
@@ -2326,47 +2333,47 @@ static void InheritTableRowDef(void)
         table.cellMergePar = none;      /* reset */
         table.cellInfo = newCellPtr;
         table.cellCount++;
-
-
     }
-
-
 }
 
 /*
- This function figures out how many columns the cell spans. 
- This is done by comparing the cell's left and right edges 
- to the sorted column border array. If the left and right 
- edges of the cell are not consecutive entries in the array, 
- the cell spans multiple columns.
+ * This function figures out how many columns the cell spans. 
+ * This is done by comparing the cell's left and right edges 
+ * to the sorted column border array. If the left and right 
+ * edges of the cell are not consecutive entries in the array, 
+ * the cell spans multiple columns.
  */
 static int GetColumnSpan(cell * cellPtr)
 {
     int i, j;
 
-    /* if this is the last cell in the row, make its right edge
-       flush with the table right edge */
+    /* if this is the last cell in the row, make its right edge flush with the table right edge */
     if (cellPtr->y == ((table.rowInfo)[cellPtr->x]) - 1)
         cellPtr->right = (table.columnBorders)[table.cols];
 
     for (i = 0; i < table.cols; i++)
         if ((table.columnBorders)[i] == cellPtr->left)
             break;
+            
     for (j = i; j < table.cols + 1; j++)
         if ((table.columnBorders)[j] == cellPtr->right)
             break;
-
 
     return (j - i);
 }
 
 
 /* 
- This routine prescans the table. It figures out how many rows there are in the table
- and the number of cells in each row. It also calculates the cell widths. Finally, it
- buils an array of column borders that is useful in figuring out whether a cell spans
- multiple columns. It has lots of diagnostic printf statements. Shows how much I
- struggled, and how much I trust it.
+ * This routine prescans the table.
+ 
+ * This is tricky because RTF does not really have a table construct.  Instead, each 
+ * row is laid out as a series of cells with markup for each.  
+ * It figures out how many rows there are in the table
+ * and the number of cells in each row. It also calculates the cell widths. Finally, it
+ * builds an array of column borders that is useful in figuring out whether a cell spans
+ * multiple columns. It has lots of diagnostic printf statements. Shows how much I
+ * struggled, and how much I trust it.
+ *
 */
 static void PrescanTable(void)
 {
@@ -2400,51 +2407,50 @@ static void PrescanTable(void)
 
         while (foundColumn) {
             RTFGetToken();
-            if (RTFCheckMM(rtfSpecialChar, rtfOptDest) != 0)
+            if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
                 RTFSkipGroup();
 
-            else if (RTFCheckCM(rtfControl, rtfTblAttr) != 0)
+            else if (RTFCheckCM(rtfControl, rtfTblAttr))
                 RTFRouteToken();
 
-            else if (RTFCheckMM(rtfSpecialChar, rtfRow) != 0
-                     || rtfClass == rtfEOF)
+            else if (RTFCheckMM(rtfSpecialChar, rtfRow) || rtfClass == rtfEOF)
                 foundColumn = false;
-
         }
 
-/*              RTFMsg ("* reached end of row %d\n", table.rows); */
+		if (g_debug_table_prescan) fprintf(stderr,"* reached end of row %d\n", table.rows);
 
         table.inside = false;
         table.newRowDef = false;
 
+		/* table row should end with rtfRowDef, rtfParAttr */
         while (1) {
 
             RTFGetToken();
 
-            if (RTFCheckMM(rtfSpecialChar, rtfOptDest) != 0) {
+            if (RTFCheckMM(rtfSpecialChar, rtfOptDest)) {
                 RTFSkipGroup();
+                continue;
             }
 
-            else if (RTFCheckMM(rtfTblAttr, rtfRowDef) != 0) {
+            if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
                 table.inside = true;
                 table.newRowDef = true;
                 break;
             }
 
-            else if (rtfClass == rtfText || RTFCheckCM(rtfControl, rtfSpecialChar) != 0) {
+            if (rtfClass == rtfText)
                 break;
-            }
 
-            else if (RTFCheckMM(rtfParAttr, rtfInTable) != 0) {
+            if (RTFCheckCM(rtfControl, rtfSpecialChar)) 
+                break;
+
+            if (RTFCheckMM(rtfParAttr, rtfInTable)) {
                 table.inside = true;
                 break;
             }
 
-            else if (rtfClass == rtfEOF) {
-/*                              printf ("* end of file!\n"); */
-                table.inside = false;
+            if (rtfClass == rtfEOF) 
                 break;
-            }
         }
 
 
@@ -2457,26 +2463,24 @@ static void PrescanTable(void)
         if ((table.rowInfo)[table.rows] == 0)
             (table.rowInfo)[table.rows] = (table.rowInfo)[table.rows - 1];
 
-        if (table.cols > maxCols) {
+        if (table.cols > maxCols)
             maxCols = table.cols;
-        }
 
-/*              RTFMsg ("* read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]); */
+
+		if (g_debug_table_prescan) fprintf(stderr,"* read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]);
         (table.rows)++;
-        table.previousColumnValue = -1000000;
+        table.previousColumnValue = PREVIOUS_COLUMN_VALUE;
 
-/*              RTFMsg ("* inside table is %d, new row def is %d\n", table.inside, table.newRowDef); */
+		if (g_debug_table_prescan) fprintf(stderr,"* inside table is %d, new row def is %d\n", table.inside, table.newRowDef);
 
         if (table.inside && !(table.newRowDef)) {
             (table.rows)--;
             InheritTableRowDef();
-/*                      RTFMsg ("* Inherited: read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]); */
+		    if (g_debug_table_prescan) fprintf(stderr,"* Inherited: read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]);
             (table.rows)++;
         }
 
-
         foundColumn = true;
-
     }
 
 
@@ -2504,7 +2508,7 @@ static void PrescanTable(void)
                 cellPtr->left = table.leftEdge;
         }
 
-        /* allocate array for coulumn border entries. */
+        /* allocate array for column border entries. */
         table.columnBorders = (int *) RTFAlloc(((table.cols) + 1) * sizeof(int));
         
         if (!table.columnBorders) {
@@ -2518,32 +2522,26 @@ static void PrescanTable(void)
         RTFFree(rightBorders);
     }
 
-/*      
- *      Table parsing can be messy, and it is still buggy. 
- *  Here are a few diagnostic messages
- *      that I print out when I am having trouble. 
- *  Comment out for normal operation.
-*/
+    /******* Table parsing can be messy, and it is still buggy. *******/
 
-
-/*      RTFMsg ("* table has %d rows and %d cols \n", table.rows, table.cols); */
+	if (g_debug_table_prescan) fprintf(stderr,"* table has %d rows and %d cols \n", table.rows, table.cols);
 
     (table.columnBorders)[0] = table.leftEdge;
 
-
     /*
-       sort the column border array in ascending order. 
-       This is important for figuring out 
-       whether a cell spans multiple columns. 
-       This is calculated in the function GetColumnSpan.
+     * sort the column border array in ascending order. 
+     * This is important for figuring out whether a cell spans multiple columns. 
+     * This is calculated in the function GetColumnSpan.
      */
-/*      RTFMsg ("* sorting borders...\n"); */
+     
+	if (g_debug_table_prescan) fprintf(stderr,"* sorting borders...\n");
     for (i = 0; i < (table.cols); i++)
         for (j = i + 1; j < (table.cols + 1); j++)
             if ((table.columnBorders)[i] > (table.columnBorders)[j])
                 Swap((table.columnBorders)[i], (table.columnBorders)[j]);
 
-/*      RTFMsg ("* table left border is at %ld\n", (table.columnBorders)[0]); */
+	if (g_debug_table_prescan) fprintf(stderr,"* table left border is at %d\n", (table.columnBorders)[0]);
+	
     for (i = 1; i < (table.cols + 1); i++) {
         /* Sometimes RTF does something stupid and assigns two adjoining cell
            the same right border value. Dunno why. If this happens, I move the
@@ -2552,11 +2550,9 @@ static void PrescanTable(void)
          */
         if (table.columnBorders[i] == table.columnBorders[i - 1])
             table.columnBorders[i] += 10;
-/*
-                RTFMsg ("* cell right border is at %ld\n", table.columnBorders[i]); 
-*/
-    }
 
+		if (g_debug_table_prescan) fprintf(stderr,"* cell right border is at %d\n", table.columnBorders[i]); 
+    }
 
     /* fill in column spans for each cell */
     for (i = 0; i < table.cellCount; i++) {
@@ -2569,48 +2565,43 @@ static void PrescanTable(void)
         cellPtr->columnSpan = GetColumnSpan(cellPtr);
         if (cellPtr->columnSpan > 1)
             table.multiCol = true;
-/*              RTFMsg ("* cell %d spans %d columns\n", cellPtr->index, cellPtr->columnSpan); */
+            
+		if (g_debug_table_prescan) fprintf(stderr,"* cell %d spans %d columns\n", cellPtr->index, cellPtr->columnSpan); 
 
         /* correct the vertical cell position for any multicolumn cells */
         if ((cellPtr->y) != 0) {
             cellPtr1 = GetCellInfo(i - 1);
             if (cellPtr == (cell *) NULL)
-                RTFPanic
-                    ("%s: Attempting to access invalid cell at index %d\n",
-                     fn, i);
+                RTFPanic ("%s: Attempting to access invalid cell at index %d\n", fn, i);
             cellPtr->y = cellPtr1->y + cellPtr1->columnSpan;
-
         }
 
         tableLeft = (table.columnBorders)[0];
         tableRight = (table.columnBorders)[table.cols];
         tableWidth = tableRight - tableLeft;
 
-        cellPtr->width =
-            (double) ((double) (cellPtr->right) -
-                      (double) (cellPtr->left)) / rtfTpi;
+        cellPtr->width = (double) (cellPtr->right - cellPtr->left) / rtfTpi;
         if (tableWidth > 4.5 * rtfTpi)
-            cellPtr->width *=
-                (double) (4.5 * (double) rtfTpi / (double) tableWidth);
+            cellPtr->width *= 4.5 * rtfTpi / tableWidth;
 
     }
 
-/*
-        for (cellPtr = table.cellInfo; cellPtr != (cell *)NULL; cellPtr = cellPtr->nextCell)
-                RTFMsg ("* now cell %d (%d, %d) has left and right borders at %ld, %ld and spans %d columns\n", 
+	if (g_debug_table_prescan) {
+        for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell)
+			fprintf(stderr,"* now cell %d (%d, %d) has left and right borders at %d, %d and spans %d columns\n", 
                 cellPtr->index, cellPtr->x, cellPtr->y, cellPtr->left, cellPtr->right, cellPtr->columnSpan);
-*/
+    }
+
     /* go back to beginning of the table */
     fseek(ifp, tableStart, 0);
     RTFSimpleInit();
     RTFSetPushedChar(prevChar);
     RTFRestoreStack();
-
 }
 
 /*
- This routine figures out how many cells are merged vertically and writes the
- corresponding \multirow statement.
+ * This routine figures out how many cells are merged vertically and writes the
+ * corresponding \multirow statement.
  */
 static void DoMergedCells(cell * cellPtr)
 {
@@ -2630,53 +2621,51 @@ static void DoMergedCells(cell * cellPtr)
         else
             localCellPtr = GetCellByPos(x + i, y);
 
-    snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s ",
-            i - 1, cellPtr->width, justificationList[paragraph.alignment]);
+    snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s ", i - 1, cellPtr->width, justificationList[paragraph.alignment]);
     PutLitStr(buf);
 
     table.multiRow = true;
     requireMultirowPackage = true;
-
 }
 
 
-/* writes cell information for each cell.
-   Each cell is defined in a multicolumn
-   environment for maximum flexibility.
-   Useful when we have merged rows and
-   columns.
+/* 
+ * Writes cell information for each cell. Each cell is defined in a multicolumn
+ * environment for maximum flexibility. Useful when we have merged rows and columns.
  */
 static void WriteCellHeader(int cellNum)
 {
     char buf[rtfBufSiz];
     cell *cellPtr;
-    char *fn = "WriteCellHeader";
 
     if (wroteCellHeader)
         return;
 
+	if (g_debug_table_writing) fprintf(stderr,"* Writing table header\n");
+	
     cellPtr = GetCellInfo(cellNum);
     if (!cellPtr) {
-        RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn, cellNum);
+        RTFPanic("WriteCellHeader: Attempting to access invalid cell at index %d\n", cellNum);
         exit(1);
     }
 
     if (table.multiCol) {
         snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{", cellPtr->columnSpan);
         PutLitStr(buf);
+        
         if (cellPtr->columnSpan < 1)
-            RTFMsg("* Warning: nonsensical table encountered...cell %d spans %d columns.\n \
-                                        Proceed with caution!\n",
+            RTFMsg("* Warning: nonsensical table encountered...cell %d spans %d columns.\nProceed with caution!\n",
                    cellPtr->index, cellPtr->columnSpan);
+                   
         /* this check is to draw the left vertical boundary of the table */
         if (cellPtr->y == 0)
             PutLitChar('|');
+            
         if (cellPtr->mergePar == first) {
             snprintf(buf, rtfBufSiz, "p{%1.3fin}|}\n{", cellPtr->width);
             PutLitStr(buf);
         } else {
-            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}\n{%s", cellPtr->width,
-                    justificationList[paragraph.alignment]);
+            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}\n{%s", cellPtr->width, justificationList[paragraph.alignment]);
             PutLitStr(buf);
             InsertNewLine();
         }
@@ -2695,7 +2684,6 @@ static void WriteCellHeader(int cellNum)
 
     suppressLineBreak = true;
     wroteCellHeader = true;
-
 }
 
 /* This is where we actually process each table row. */
@@ -2709,18 +2697,21 @@ static void ProcessTableRow(int rowNum)
 
     wroteCellHeader = false;
 
-
+	if (g_debug_table_writing) fprintf(stderr,"* Starting new row\n");
+	
     while (!endOfRow) {
         RTFGetToken();
-        if (RTFCheckCM(rtfControl, rtfCharAttr) != 0) {
+        if (RTFCheckCM(rtfControl, rtfCharAttr)) {
             switch (rtfMinor) {
             case rtfFontNum:
                 RTFRouteToken();
                 break;
+                
             case rtfPlain:
-                CheckForCharAttr();     /* suggested by Jens Ricky */
+                CheckForCharAttr();
                 InitializeTextStyle();
                 break;
+                
             case rtfBold:
             case rtfItalic:
             case rtfUnderline:
@@ -2731,37 +2722,39 @@ static void ProcessTableRow(int rowNum)
             case rtfBackColor:
             case rtfFontSize:
                 CharAttr();
-                if (startCellText
-                    && (cellsInThisRow < (table.rowInfo)[rowNum]))
+                if (startCellText && (cellsInThisRow < (table.rowInfo)[rowNum]))
                     RTFRouteToken();
                 break;
             }
+            continue;
         }
 
-        else if (RTFCheckCM(rtfControl, rtfDestination)) {
+        if (RTFCheckCM(rtfControl, rtfDestination)) {
             WriteCellHeader(table.cellCount);
             cellPtr = GetCellInfo(table.cellCount);
             wrapCount = 1;
             startCellText = true;
             RTFRouteToken();
+            continue;
         }
 
         /* ignore unknown destination groups */
-        else if (strcmp(rtfTextBuf, "\\*") == 0) {
+        if (strcmp(rtfTextBuf, "\\*") == 0) {
             RTFSkipGroup();
             continue;
         }
 
-        else if (RTFCheckCM(rtfControl, rtfSpecialChar) != 0) {
+        if (RTFCheckCM(rtfControl, rtfSpecialChar)) {
             switch (rtfMinor) {
             case rtfRow:
+				if (g_debug_table_writing) fprintf(stderr,"* end of row\n");
                 return;
 
             case rtfCell:
                 (table.cellCount)++;
                 cellsInThisRow++;
-                if (!startCellText) {   /* this is in case the cell was blank. 
-                                         * We still have to tell latex about it. */
+                if (!startCellText) {   
+               		/* The cell is empty. */
                     cellPtr = GetCellInfo(table.cellCount - 1);
                     WriteCellHeader(table.cellCount - 1);
                 }
@@ -2783,8 +2776,8 @@ static void ProcessTableRow(int rowNum)
                 break;
 
             default:
-                if (!startCellText) {   /* this is in case the cell was blank. 
-                                         * We still have to tell latex about it. */
+                if (!startCellText) {   
+                    /* the cell is blank */
                     cellPtr = GetCellInfo(table.cellCount);
                     WriteCellHeader(table.cellCount);
                     startCellText = true;
@@ -2792,9 +2785,10 @@ static void ProcessTableRow(int rowNum)
                 RTFRouteToken();
                 break;
             }
+            continue;
         }
 
-        else if (RTFCheckCM(rtfControl, rtfTblAttr) == 0) {
+        if (RTFCheckCM(rtfControl, rtfTblAttr) == 0) {
             /* if we see text, we are already in the text field of a cell */
             if (rtfClass == rtfText && !startCellText) {
                 WriteCellHeader(table.cellCount);
@@ -2804,18 +2798,17 @@ static void ProcessTableRow(int rowNum)
                 textStyle.newStyle = false;
             }
             RTFRouteToken();
+            continue;
         }
 
-        else if (RTFCheckCM(rtfControl, rtfGroup) != 0)
+        if (RTFCheckCM(rtfControl, rtfGroup))
             RTFRouteToken();
-
     }
-
 }
 
 /*
  This function draws horizontal lines within a table. It looks 
- for vertically merged rows that  do not have any bottom border
+ for vertically merged rows that do not have any bottom border
  */
 static void DrawTableRowLine(int rowNum)
 {
@@ -2839,20 +2832,18 @@ static void DrawTableRowLine(int rowNum)
         cellPosition += cellInfo1->columnSpan;
 
         if (cellInfo1->mergePar == none) {
-            snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", cellInfo1->y + 1,
-                    cellInfo1->y + cellInfo1->columnSpan);
+            snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", cellInfo1->y + 1, cellInfo1->y + cellInfo1->columnSpan);
             PutLitStr(buf);
+            continue;
         }
 
-        else if (cellInfo1->mergePar == previous) {
+        if (cellInfo1->mergePar == previous) {
             cellInfo2 = GetCellByPos(rowNum + 1, i);
             if (cellInfo2->mergePar != previous) {
-                snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", cellInfo1->y + 1,
-                        cellInfo1->y + cellInfo1->columnSpan);
+                snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", cellInfo1->y + 1, cellInfo1->y + cellInfo1->columnSpan);
                 PutLitStr(buf);
             }
         }
-
     }
 
     InsertNewLine();
@@ -2861,11 +2852,12 @@ static void DrawTableRowLine(int rowNum)
 
 
 /* All right, the big monster. When we reach a table, 
- * we don't know anything about it, ie. number of rows
+ * we don't know anything about it, i.e., number of rows
  * and columns, whether any rows or columns are merged,
  * etc. We have to prescan the table first, where we
  * get vital table parameters, and then come back to
- * read the table in actual.
+ * read the table in actual.  This is necessary because
+ * latex formats the table at the start.
  */
 static void DoTable(void)
 {
@@ -2874,10 +2866,10 @@ static void DoTable(void)
     char buf[100];
 
     requireTablePackage = true;
-    table.previousColumnValue = -1000000;
+    table.previousColumnValue = PREVIOUS_COLUMN_VALUE;
 
     /* throw away old cell information lists */
-    while (table.cellInfo != (cell *) NULL) {
+    while (table.cellInfo) {
         cellPtr = (table.cellInfo)->nextCell;
         RTFFree((char *) table.cellInfo);
         table.cellInfo = cellPtr;
@@ -2959,7 +2951,7 @@ static void DoTable(void)
 
     RTFFree((char *) table.columnBorders);
     table.inside = false;       /* end of table */
-    table.previousColumnValue = -1000000;
+    table.previousColumnValue = PREVIOUS_COLUMN_VALUE;
     table.multiCol = false;
     table.multiRow = false;
 
@@ -4232,8 +4224,14 @@ static void ReadUnicode(void)
 
     if (rtfParam<0) 
         rtfParam += 65536;
+        
+    if (rtfParam==61549) {
+    	PutLitStr("\\ensuremath{\\mu}");
+    	wrapCount += 16;
+    	return;
+    }
 
-    snprintf(unitext,20,"\\unichar{%d}",rtfParam);
+    snprintf(unitext,20,"\\unichar{%d}",(int)rtfParam);
     if (0) fprintf(stderr,"unicode --- %s!\n",unitext);
     PutLitStr(unitext);
     wrapCount += (uint32_t) strlen(unitext);
