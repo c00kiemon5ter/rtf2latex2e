@@ -90,12 +90,12 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
         free(*filename);
         *filename = tempnam("./", "rtf2latex-tmp-");
         verboseS(*filename);
+        ret = fopen(*filename, "w+b");   /* moved here by Wilfried */
         if (*filename == NULL) return 2;
     }
     
     verboseS(*filename);  /* added by Wilfried */
 
-    ret = fopen(*filename, "w+b");
     *file = ret;
 
     if (ret == NULL) {
