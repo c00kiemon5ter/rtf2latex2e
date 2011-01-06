@@ -3716,8 +3716,6 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     int i;
     uint8_t hexNumber;
     uint8_t hexEvenOdd = 0;       /* should be even at the end */
-/*     char *fn = "ReadObjectData"; */
-/*     RTFMsg("%s: * starting ...\n", fn); */
 
     if (type == EquationClass) {
         (oleEquation.count)++;
@@ -3733,11 +3731,6 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     objFile = fopen(objectFileName, "wb");
     if (!objFile)
         RTFPanic("Cannot open input file %s\n", objectFileName);
-
-/* skip offset header (2 hex characters for each byte) 
-   for (i = 0; i < offset * 2; i++)
-       RTFGetToken();
-*/
 
 /* 
  * The offset to the data should be a constant, but it seems to
@@ -3848,7 +3841,7 @@ boolean ConvertEquationFile(char *objectFileName)
             PutLitStr("\\fbox{file://");
             PutLitStr(objectFileName);
             PutLitStr("}");
-            wrapCount += strlen(objectFileName) + strlen("\\url{file://}");
+            wrapCount += strlen(objectFileName) + strlen("\\fbox{file://}");
             requireHyperrefPackage = true;
         }
 
@@ -3872,10 +3865,8 @@ boolean ConvertEquationFile(char *objectFileName)
  */
 static boolean ReadEquation(int *groupCount)
 {
-    FILE *in, *out;
     boolean result;
     char objectFileName[rtfBufSiz];
-    char objectFileNameX[rtfBufSiz];
 
     /* look for start of \objdata  group */
     while (!RTFCheckMM(rtfDestination, rtfObjData)) {
@@ -3901,25 +3892,6 @@ static boolean ReadEquation(int *groupCount)
     /* save hex-encoded object data a binary objectFileName */
     ReadObjectData(objectFileName, EquationClass, EQUATION_OFFSET);
     (*groupCount)--;
-
-    /* hack because sometimes EQUATION_OFFSET needs to be 4 bytes longer */
-    in = fopen(objectFileName, "r");
-    if (fgetc(in) == 0xd0) 
-        fclose(in);
-    else {
-        strcpy(objectFileNameX,objectFileName);
-        objectFileNameX[strlen(objectFileName)-1] = 'x';
-        fgetc(in); 
-        fgetc(in); 
-        fgetc(in);
-        out = fopen(objectFileNameX, "wb");
-
-        while (!feof(in))
-            fputc(fgetc(in), out);
-        fclose(out);
-        fclose(in);
-        rename(objectFileNameX,objectFileName);
-    } 
 
     result = ConvertEquationFile(objectFileName);
     
