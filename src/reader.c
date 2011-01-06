@@ -63,7 +63,7 @@
 # include       <stdlib.h>
 # include       <stdint.h>
 
-# include       "rtfprep/tokenscan.h"
+# include       "tokenscan.h"
 
 # define        rtfInternal
 # include       "rtf.h"
@@ -174,7 +174,7 @@ static char *outputName = (char *) NULL;
  */
 
 static char *stdCharName[] = {
-# include       "rtfprep/stdcharnames.h"
+# include       "stdcharnames.h"
     (char *) NULL
 };
 

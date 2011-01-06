@@ -1595,7 +1595,10 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
 
             t_ptr = strchr(template, ',');
             
-            if (!t_ptr) RTFPanic("Malformed EMBELL Template!\n");
+            if (!t_ptr) {
+				RTFPanic("Malformed EMBELL Template!\n");
+				exit(1);
+			}
             
             /* set string to first or second half of template depending on mode */
             if (eqn->m_mode != EQN_MODE_TEXT) {
@@ -2134,13 +2137,12 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom
     MT_OBJLIST *obj_list;
     char ini_line[256];
     uint32_t dlen = 0;
-    int forces_math = 1;
-    int forces_text = 0;
+    /*int forces_math = 1;*/
+    /*int forces_text = 0;*/
     char *head = "";
     char *line_sep = " \\\\ ";
     char *tail = "";
     uint32_t buf_limit = 8192;
-    int save_math_mode;
     int curr_row = 0;
 
     char *rv = (char *) malloc(buf_limit);
@@ -2149,15 +2151,13 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom
     if (targ_nom && *targ_nom)
         dlen = GetProfileStr(Profile_PILEtranslation, targ_nom, ini_line, 256);
 
-    save_math_mode = eqn->m_mode;
-
     /*   ini_line  =  "TextOnly,\begin{env}, \\,\end{env}" */
 
     if (dlen) {
         char *rover = ini_line;
         if (*rover == 'T') {
-            forces_math = 0;
-            forces_text = 1;
+           /* forces_math = 0; */
+           /* forces_text = 1; */
         }
         rover = strchr(rover, ',');     /*  end math/text force flag */
         if (rover && *(rover + 1)) {

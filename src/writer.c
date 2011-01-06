@@ -24,7 +24,7 @@
 # include <ctype.h>
 
 # include "rtf.h"
-# include "rtfprep/tokenscan.h"
+# include "tokenscan.h"
 # include "cole.h"
 # include "rtf2latex2e.h"
 # include "eqn.h"
@@ -178,6 +178,10 @@ static boolean writingHeading1, writingHeading2, writingHeading3;
 static boolean insideFootnote, justWroteFootnote;
 static boolean insideHyperlink;
 
+#ifdef __APPLE__
+char * WritePictAsPDF(char *pict);
+#endif
+
 /*
 static int mathGroup = 0;
 static int colorChange = 0;
@@ -229,6 +233,8 @@ static boolean wroteCellHeader = false;
 static boolean startFootnoteText = false;
 static boolean continueTextStyle = false;
 static boolean lineIsBlank = true;
+
+int g_trac_par_start = 0;
 
 static short R2LItem(char *name)
 {
@@ -1914,38 +1920,73 @@ static void CheckForParagraph(void)
     while (1) {
         /* stop if we see a line break */
         if (RTFCheckMM(rtfSpecialChar, rtfPar)) {
+            if (g_trac_par_start) PutLitStr("\\fbox{rtfPar}"); 
             newParagraph = true;
             break;
         }
 
         /* or a page break */
         if (RTFCheckMM(rtfSpecialChar, rtfPage) ) {
+            if (g_trac_par_start) PutLitStr("\\fbox{rtfPage}"); 
             newParagraph = true;
             break;
         }
 
         /* or a paragraph definition */
         if (RTFCheckMM(rtfParAttr, rtfParDef)) {
+            if (g_trac_par_start) PutLitStr("\\fbox{rtfParDef}"); 
             newParagraph = true;
+            break;
+        }
+
+        /* or a tab */
+        if (RTFCheckMM(rtfSpecialChar, rtfTab)) {
+            if (g_trac_par_start) PutLitStr("\\fbox{rtfTab}"); 
+            newParagraph = true;
+            break;
+        }
+
+        /* or a table */
+        if (rtfMajor == rtfTblAttr) {
+            if (g_trac_par_start) PutLitStr("\\fbox{table}"); 
+            newParagraph = true;
+            break;
+        }
+
+        /* or a object */
+        if (rtfMajor == rtfObjAttr) {
+            if (g_trac_par_start) PutLitStr("\\fbox{object}"); 
+            newParagraph = false;
+            break;
+        }
+
+        /* or a picture */
+        if (rtfMajor == rtfPictAttr) {
+            if (g_trac_par_start) PutLitStr("\\fbox{pict}"); 
+            newParagraph = false;
+            break;
+        }
+
+        if (rtfClass == rtfText) {
+            if (g_trac_par_start) PutLitStr("\\fbox{text}"); 
+            newParagraph = false;
             break;
         }
 
         /* or a destination */
         if (RTFCheckCM(rtfControl, rtfDestination)) {
+            if (g_trac_par_start) PutLitStr("\\fbox{rtfDestination}"); 
             newParagraph = false;
             break;
         }
 
         /* or something else */
-        if ( (rtfClass == rtfText && rtfMinor != rtfSC_space)
-           || rtfClass == rtfEOF 
-           || rtfMajor == rtfSpecialChar
-           || rtfMajor == rtfTblAttr 
+        if ( rtfClass == rtfEOF 
+           || (rtfMajor == rtfSpecialChar && rtfMinor != rtfSC_space)
            || rtfMajor == rtfFontAttr
-           || rtfMajor == rtfSectAttr 
-           || rtfMajor == rtfPictAttr
-           || rtfMajor == rtfObjAttr) {
+           || rtfMajor == rtfSectAttr) {
             newParagraph = false;
+            if (g_trac_par_start) PutLitStr("\\fbox{other}"); 
             break;
         }
 
@@ -1968,17 +2009,18 @@ static void CheckForParagraph(void)
         charAttrCount = 0;
         
         if (groupLevel <= storeGroupLevel && blankLineCount < MAX_BLANK_LINES) {
-            /* PutLitStr("[new par, but group decreased]"); */
+            if (g_trac_par_start) PutLitStr("[usual]");
             CheckForCharAttr();
             InsertNewLine();
             InsertNewLine();
             blankLineCount += 2;
         } else if (!suppressLineBreak && !(textStyle.open) && !lineIsBlank) {
-            /* PutLitStr("[new par but same group depth]"); */
+            if (g_trac_par_start) PutLitStr("[**ah ha**]");
             PutLitStr("\\\\{}");  /* braces because next line may start with [ */
             InsertNewLine();
             InsertNewLine();
-        }
+        } else 
+            PutLitStr("[NO NEW PARAGRAPH !!]");
         
         wrapCount = 0;
         lastCharWasLineBreak = true;
@@ -1991,7 +2033,7 @@ static void CheckForParagraph(void)
     }
 
     if (rtfClass != rtfEOF && !(textStyle.open) && !lineIsBlank) {
-        /* PutLitStr("[line break]"); */
+            if (g_trac_par_start) PutLitStr("[line break]"); 
         PutLitStr("\\\\{}");
         InsertNewLine();
     }
@@ -3305,8 +3347,16 @@ static void IncludeGraphics(char *pictureType)
     suffix = strrchr(picture.name, '.');
     if (suffix != (char *) NULL && strcmp(pictureType, "eps") == 0)
         strcpy(suffix, ".eps");
-    else if (strcmp(pictureType, "pict") == 0)
+    else if (strcmp(pictureType, "pict") == 0) {
+#ifdef __APPLE__
+		char *pdfname = WritePictAsPDF(picture.name);
+    	if (pdfname) {
+    		strcpy(picture.name,pdfname);
+    		free(pdfname);
+    	}
+#endif    		
         strcpy(suffix, ".pdf");
+    }
 
     if (picture.scaleX == 0)
         scaleX = 1;
@@ -3803,7 +3853,7 @@ boolean ConvertEquationFile(char *objectFileName)
         DoSectionCleanUp();
         
         if (g_insert_eqn_name) {
-            PutLitStr("\\url{file://");
+            PutLitStr("\\fbox{file://");
             PutLitStr(objectFileName);
             PutLitStr("}");
             wrapCount += strlen(objectFileName) + strlen("\\url{file://}");
@@ -4532,6 +4582,56 @@ int BeginLaTeXFile(void)
 
     return (1);
 }
+
+#ifdef __APPLE__
+
+#include <ApplicationServices/ApplicationServices.h>
+
+/* create a PDF file context and draw the picture in that Graphics Context */
+char * WritePictAsPDF(char *pict)
+{
+    CFStringRef 	pict_name, pdf_name;
+    CFURLRef		pict_url, pdf_url;
+    QDPictRef 		pict_ref;
+    CGRect			pict_rect;
+    CGContextRef	pdf_ctx;
+    OSStatus		err;
+    char *          pdf;
+    int             n;
+    
+    if (pict == NULL) return NULL;
+    n=strlen(pict);
+    pdf=malloc(n+1);
+    strcpy(pdf,pict);
+    strcpy(pdf+n-4,"pdf");
+
+    pict_name = CFStringCreateWithCString(NULL, pict, kCFStringEncodingMacRoman);
+    pict_url  = CFURLCreateWithFileSystemPath(NULL, pict_name, kCFURLPOSIXPathStyle, FALSE);
+    pict_ref  = QDPictCreateWithURL(pict_url);
+
+    CFRelease(pict_name);
+    CFRelease(pict_url);
+    if (pict_ref == NULL) return NULL;
+
+    pict_rect = QDPictGetBounds(pict_ref);
+    
+    pdf_name  = CFStringCreateWithCString(NULL, pdf, kCFStringEncodingMacRoman);
+    pdf_url   = CFURLCreateWithFileSystemPath(NULL, pdf_name,  kCFURLPOSIXPathStyle, FALSE);
+	pdf_ctx   = CGPDFContextCreateWithURL(pdf_url, &pict_rect, NULL);
+
+    pict_rect = QDPictGetBounds(pict_ref);
+    CGContextBeginPage(pdf_ctx, &pict_rect);
+    err = QDPictDrawToCGContext(pdf_ctx, pict_rect, pict_ref);    
+    CGContextEndPage(pdf_ctx);
+    CGContextFlush(pdf_ctx);
+	
+    CFRelease(pdf_ctx);
+    CFRelease(pdf_name);
+    CFRelease(pdf_url); 
+    return pdf;
+}
+
+#endif
 
 /* this is a diagnostic function that I call when I get into trouble 
  * with text styles.  Unused
