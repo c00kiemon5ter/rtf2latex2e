@@ -178,7 +178,7 @@ static boolean writingHeading1, writingHeading2, writingHeading3;
 static boolean insideFootnote, justWroteFootnote;
 static boolean insideHyperlink;
 
-#ifdef __APPLE__
+#ifdef PICT2PDF
 char * WritePictAsPDF(char *pict);
 #endif
 
@@ -3348,14 +3348,14 @@ static void IncludeGraphics(char *pictureType)
     if (suffix != (char *) NULL && strcmp(pictureType, "eps") == 0)
         strcpy(suffix, ".eps");
     else if (strcmp(pictureType, "pict") == 0) {
-#ifdef __APPLE__
+#ifdef PICT2PDF
 		char *pdfname = WritePictAsPDF(picture.name);
     	if (pdfname) {
     		strcpy(picture.name,pdfname);
     		free(pdfname);
     	}
-#endif    		
         strcpy(suffix, ".pdf");
+#endif    		
     }
 
     if (picture.scaleX == 0)
@@ -4583,7 +4583,7 @@ int BeginLaTeXFile(void)
     return (1);
 }
 
-#ifdef __APPLE__
+#ifdef PICT2PDF
 
 #include <ApplicationServices/ApplicationServices.h>
 
