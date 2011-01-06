@@ -323,63 +323,63 @@ typedef	void (*RTFFuncPtr) ();		/* generic function pointer */
  * Public RTF reader routines
  */
 
-void		RTFSimpleInit ();
+void		RTFSimpleInit (void);
 void 		RTFSetDefaultFont (int fontNumber);
-void		RTFInit ();
+void		RTFInit (void);
 void 		RTFSetStream(FILE *stream);
-char 		*RTFGetInputName();
+char 		*RTFGetInputName(void);
 void 		RTFSetInputName(char *name);
 void 		RTFSetOutputName(char *name);
-char		*RTFGetOutputName ();
+char		*RTFGetOutputName (void);
 void 		RTFSetClassCallback(short class, RTFFuncPtr callback);
 RTFFuncPtr 	RTFGetClassCallback(short class);
 void 		RTFSetDestinationCallback(short dest, RTFFuncPtr callback);
 RTFFuncPtr 	RTFGetDestinationCallback(short dest);
-void		RTFRead ();
-short		RTFGetToken ();	/* writer should rarely need this */
-void		RTFUngetToken ();
-short		RTFPeekToken ();
+void		RTFRead (void);
+short	RTFGetToken (void);	/* writer should rarely need this */
+void		RTFUngetToken (void);
+short	RTFPeekToken (void);
 void 		RTFSetToken(short class, short major, short minor, int32_t param, char *text);
-void		RTFSetReadHook ();
-RTFFuncPtr	RTFGetReadHook ();
-void		RTFRouteToken ();
-void		RTFSkipGroup ();
-void		RTFExpandStyle ();
-short       RTFCheckCM(short class, short major);
-short       RTFCheckCMM(short class, short major, short minor);
-short       RTFCheckMM(short major, short minor);
-RTFFont		*RTFGetFont ();
-RTFColor	*RTFGetColor ();
-RTFStyle	*RTFGetStyle ();
+void 		RTFSetReadHook(RTFFuncPtr f);
+RTFFuncPtr	RTFGetReadHook (void);
+void		RTFRouteToken (void);
+void		RTFSkipGroup (void);
+void		RTFExpandStyle (short n);
+short    RTFCheckCM(short class, short major);
+short    RTFCheckCMM(short class, short major, short minor);
+short    RTFCheckMM(short major, short minor);
+RTFFont		*RTFGetFont (short num);
+RTFColor	*RTFGetColor (short num);
+RTFStyle	*RTFGetStyle (short num);
 char        *RTFAlloc(size_t size);
-char		*RTFStrSave ();
-void		RTFFree ();
-short		RTFCharToHex ();
-short		RTFHexToChar ();
-void		RTFSetMsgProc ();
-void		RTFSetPanicProc ();
-short		RTFPushedChar ();
+char 	    *RTFStrSave(char *s);
+void 		RTFFree(char *p);
+short 	RTFCharToHex(char c);
+short 	RTFHexToChar(short i);
+void 		RTFSetMsgProc(RTFFuncPtr proc);
+void 		RTFSetPanicProc(RTFFuncPtr proc);
+short	RTFPushedChar (void);
 void		RTFSetPushedChar (short lastChar);
-void		ReadColorTbl (); /* made public and brought over from reader.c by Ujwal Sathyam */
+void		ReadColorTbl (void); /* made public and brought over from reader.c by Ujwal Sathyam */
 
 void		RTFMsg (char *fmt, ...);
 void		RTFPanic (char *fmt, ...);
 
-short 		RTFReadCharSetMap(char *file, short csId);
+short 	RTFReadCharSetMap(char *file, short csId);
 void 		RTFSetCharSetMap(char *name, short csId);
-short 		RTFStdCharCode(char *name);
+short 	RTFStdCharCode(char *name);
 char		*RTFStdCharName (short code);
-short		RTFMapChar (short c);
-short		RTFGetCharSet();
+short	RTFMapChar (short c);
+short	RTFGetCharSet(void);
 void		RTFSetCharSet(short csId);
-short 		RTFReadOutputMap(char *file, char *outMap[], short reinit); 
+short 	RTFReadOutputMap(char *file, char *outMap[], short reinit); 
 void 		RTFPushStack (void);
 void 		RTFPopStack (void); 
 void		RTFStoreStack (void);
 void		RTFRestoreStack (void);
 
-/*char		*RTFGetLibPrefix();*/
-void 		RTFSetOpenLibFileProc(FILE *(*proc) ());
+/*char		*RTFGetLibPrefix(void);*/
+void RTFSetOpenLibFileProc(FILE * (*proc) (char *file, char *mode));
 FILE 		*RTFOpenLibFile(char *file, char *mode);
 
 extern int g_debug_level;

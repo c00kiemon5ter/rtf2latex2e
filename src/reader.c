@@ -101,21 +101,21 @@ static textStyleStruct  tsStack[maxTSStack];
 static short    tsTop = 0;
 */
 
-static void _RTFGetToken();
-static void _RTFGetToken2();
-static short GetChar();
-static void ReadFontTbl();
-/* static void  ReadColorTbl (); *//* made public by Ujwal Sathyam and taken to rtf.h */
-static void ReadStyleSheet();
-static void ReadInfoGroup();
-static void ReadPictGroup();
-static void ReadObjGroup();
-static void LookupInit();
-static void Lookup();
+static void _RTFGetToken(void);
+static void _RTFGetToken2(void);
+static short GetChar(void);
+static void ReadFontTbl(void);
+/* static void  ReadColorTbl (void); *//* made public by Ujwal Sathyam and taken to rtf.h */
+static void ReadStyleSheet(void);
+static void ReadInfoGroup(void);
+static void ReadPictGroup(void);
+static void ReadObjGroup(void);
+static void LookupInit(void);
+static void Lookup(char *s);
 
-static void CharSetInit();
-static void ReadCharSetMaps();
-void DebugMessage();
+static void CharSetInit(void);
+static void ReadCharSetMaps(void);
+void DebugMessage(void);
 
 /* these functions added by Ujwal Sathyam */
 static void RTFSwitchCharSet(uint32_t enc);
@@ -250,7 +250,7 @@ static int32_t savedGroupLevel;
  * stream; that must be done with RTFSetStream().
  */
 
-void RTFInit()
+void RTFInit(void)
 {
     short i;
     RTFColor *cp;
@@ -356,7 +356,7 @@ void RTFSetInputName(char *name)
 }
 
 
-char *RTFGetInputName()
+char *RTFGetInputName(void)
 {
     return (inputName);
 }
@@ -369,7 +369,7 @@ void RTFSetOutputName(char *name)
 }
 
 
-char *RTFGetOutputName()
+char *RTFGetOutputName(void)
 {
     return (outputName);
 }
@@ -440,7 +440,7 @@ RTFFuncPtr RTFGetDestinationCallback(short dest)
  * where appropriate.
  */
 
-void RTFRead()
+void RTFRead(void)
 {
     while (RTFGetToken() != rtfEOF)
         RTFRouteToken();
@@ -453,7 +453,7 @@ void RTFRead()
  * pass the token to the writer's class callback.
  */
 
-void RTFRouteToken()
+void RTFRouteToken(void)
 {
     RTFFuncPtr p;
 
@@ -482,7 +482,7 @@ void RTFRouteToken()
  * closing brace.
  */
 
-void RTFSkipGroup()
+void RTFSkipGroup(void)
 {
     short level = 1;
 
@@ -505,7 +505,7 @@ void RTFSkipGroup()
  * are no more tokens.
  */
 
-short RTFGetToken()
+short RTFGetToken(void)
 {
     RTFFuncPtr p;
 
@@ -530,20 +530,19 @@ short RTFGetToken()
 static RTFFuncPtr readHook;
 
 
-void RTFSetReadHook(f)
-RTFFuncPtr f;
+void RTFSetReadHook(RTFFuncPtr f)
 {
     readHook = f;
 }
 
 
-RTFFuncPtr RTFGetReadHook()
+RTFFuncPtr RTFGetReadHook(void)
 {
     return (readHook);
 }
 
 
-void RTFUngetToken()
+void RTFUngetToken(void)
 {
     if (pushedClass >= 0)       /* there's already an ungotten token */
         RTFPanic("cannot unget two tokens");
@@ -557,7 +556,7 @@ void RTFUngetToken()
 }
 
 
-short RTFPeekToken()
+short RTFPeekToken(void)
 {
     _RTFGetToken();
     RTFUngetToken();
@@ -565,7 +564,7 @@ short RTFPeekToken()
 }
 
 
-static void _RTFGetToken()
+static void _RTFGetToken(void)
 {
     RTFFont *fp;
 
@@ -680,7 +679,7 @@ static void _RTFGetToken()
 
 /* this shouldn't be called anywhere but from _RTFGetToken() */
 
-static void _RTFGetToken2()
+static void _RTFGetToken2(void)
 {
     short sign;
     short c;
@@ -835,7 +834,7 @@ static void _RTFGetToken2()
  * the *next* input character.
  */
 
-static short GetChar()
+static short GetChar(void)
 {
     short c;
     short oldBumpLine;
@@ -909,7 +908,7 @@ void RTFSetToken(short class, short major, short minor, int32_t param, char *tex
  * Initialize charset stuff.
  */
 
-static void CharSetInit()
+static void CharSetInit(void)
 {
     autoCharSetFlags = (rtfReadCharSet | rtfSwitchCharSet);
 /*  commented out by Ujwal Sathyam after enabling autoswitching of character sets.
@@ -951,7 +950,7 @@ void RTFSetCharSetMap(char *name, short csId)
  * Do auto-charset-file reading.
  */
 
-static void ReadCharSetMaps()
+static void ReadCharSetMaps(void)
 {
     char buf[rtfBufSiz];
 
@@ -1207,7 +1206,7 @@ void RTFSetCharSet(short csId)
 }
 
 
-short RTFGetCharSet()
+short RTFGetCharSet(void)
 {
     return (curCharSet);
 }
@@ -1241,7 +1240,7 @@ short RTFGetCharSet()
  * braces around each table entry; try to adjust for that.
  */
 
-static void ReadFontTbl()
+static void ReadFontTbl(void)
 {
     RTFFont *fp = NULL;
     char buf[rtfBufSiz], *bp;
@@ -1382,7 +1381,7 @@ static void ReadFontTbl()
 
  */
 
-void ReadColorTbl()
+void ReadColorTbl(void)
 {
     RTFColor *cp;
     short cnum = 0;
@@ -1437,7 +1436,7 @@ void ReadColorTbl()
  * all others do.  Normal style is given style rtfNormalStyleNum.
  */
 
-static void ReadStyleSheet()
+static void ReadStyleSheet(void)
 {
     RTFStyle *sp;
     RTFStyleElt *sep, *sepLast;
@@ -1597,21 +1596,21 @@ static void ReadStyleSheet()
 }
 
 
-static void ReadInfoGroup()
+static void ReadInfoGroup(void)
 {
     RTFSkipGroup();
     RTFRouteToken();            /* feed "}" back to router */
 }
 
 
-static void ReadPictGroup()
+static void ReadPictGroup(void)
 {
     RTFSkipGroup();
     RTFRouteToken();            /* feed "}" back to router */
 }
 
 
-static void ReadObjGroup()
+static void ReadObjGroup(void)
 {
     RTFSkipGroup();
     RTFRouteToken();            /* feed "}" back to router */
@@ -1625,8 +1624,7 @@ static void ReadObjGroup()
  */
 
 
-RTFStyle *RTFGetStyle(num)
-short num;
+RTFStyle *RTFGetStyle(short num)
 {
     RTFStyle *s;
 
@@ -1640,8 +1638,7 @@ short num;
 }
 
 
-RTFFont *RTFGetFont(num)
-short num;
+RTFFont *RTFGetFont(short num)
 {
     RTFFont *f;
 
@@ -1659,8 +1656,7 @@ short num;
 }
 
 
-RTFColor *RTFGetColor(num)
-short num;
+RTFColor *RTFGetColor(short num)
 {
     RTFColor *c;
 
@@ -1681,8 +1677,7 @@ short num;
  * Expand style n, if there is such a style.
  */
 
-void RTFExpandStyle(n)
-short n;
+void RTFExpandStyle(short n)
 {
     RTFStyle *s;
     RTFStyleElt *se;
@@ -1753,7 +1748,7 @@ static short nCtrls;
 
 # define        ctrlFileName    "rtf-ctrl"
 
-static void LookupInit()
+static void LookupInit(void)
 {
     FILE *f;
     RTFCtrl *rp;
@@ -1869,8 +1864,7 @@ static void LookupInit()
  * the tokens are stored in the table in sorted order.
  */
 
-static void Lookup(s)
-char *s;
+static void Lookup(char *s)
 {
     RTFCtrl *rp;
     char c1, c2;
@@ -1912,7 +1906,7 @@ char *s;
     rtfClass = rtfUnknown;
 }
 
-void DebugMessage() 
+void DebugMessage(void) 
 {
     if (0 && g_debug_level > 0)
     	if (strcmp(rtfCtrl[rtfTokenIndex]->str,"objdata"))
@@ -1946,8 +1940,7 @@ char * RTFAlloc(size_t size)
  */
 
 
-char *RTFStrSave(s)
-char *s;
+char *RTFStrSave(char *s)
 {
     char *p;
 
@@ -1957,8 +1950,7 @@ char *s;
 }
 
 
-void RTFFree(p)
-char *p;
+void RTFFree(char *p)
 {
     if (p != (char *) NULL)
         free(p);
@@ -1993,8 +1985,7 @@ short RTFCheckMM(short major, short minor)
 /* ---------------------------------------------------------------------- */
 
 
-short RTFCharToHex(c)
-char c;
+short RTFCharToHex(char c)
 {
     if (isupper(c))
         c = tolower(c);
@@ -2004,8 +1995,7 @@ char c;
 }
 
 
-short RTFHexToChar(i)
-short i;
+short RTFHexToChar(short i)
 {
     if (i < 10)
         return (i + '0');
@@ -2016,7 +2006,7 @@ short i;
 /* ---------------------------------------------------------------------- */
 
 /*
- * RTFReadOutputMap() -- Read output translation map
+ * RTFReadOutputMap(void) -- Read output translation map
  */
 
 
@@ -2118,7 +2108,7 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
 
 static FILE *(*libFileOpen) () = NULL;
 
-void RTFSetOpenLibFileProc(FILE *(*proc) ())
+void RTFSetOpenLibFileProc(FILE * (*proc) (char *file, char *mode))
 {
     libFileOpen = proc;
 }
@@ -2224,7 +2214,7 @@ void RTFPanic(char *fmt, ...)
  reader forget what it has seen before.
  */
 
-void RTFSimpleInit()
+void RTFSimpleInit(void)
 {
     rtfClass = -1;
     pushedClass = -1;
@@ -2235,7 +2225,7 @@ void RTFSimpleInit()
 /*
  This function returns the last character the RTF reader removed from the input stream.
  */
-short RTFPushedChar()
+short RTFPushedChar(void)
 {
     return (pushedChar);
 }

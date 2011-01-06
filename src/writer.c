@@ -2519,7 +2519,7 @@ static void PrescanTable(void)
         for (i = 0; i < table.cols; i++)
             (table.columnBorders)[i + 1] = rightBorders[i];
 
-        RTFFree(rightBorders);
+        RTFFree((char *)rightBorders);
     }
 
     /******* Table parsing can be messy, and it is still buggy. *******/
