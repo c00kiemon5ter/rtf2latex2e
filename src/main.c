@@ -287,7 +287,7 @@ main(int argc, char **argv)
          * global access to input file name
          */
 
-		ifp = fopen(argv[fileCounter], "r");
+		ifp = fopen(argv[fileCounter], "rb");      /* Wilfried added b mode */
         if (!ifp) {
             RTFPanic("* Cannot open input file %s\n", argv[fileCounter]);
             exit(1);
