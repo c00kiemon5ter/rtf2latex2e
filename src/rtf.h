@@ -214,11 +214,13 @@ extern short	rtfLinePos;		/* input line position */
 # define	rtfCSMac	6	/* mac character set */
 # define	rtfCS437	7	/* code page 437 */
 # define	rtfCS850	8	/* code page 850 */
+# define    rtfCSNext   9   /* NextStep code page, used for .rtfd files */
 
 # define	macCharSet	256
 # define	ansiCharSet	0
 # define	pcCharSet	437
 # define	pcaCharSet	850
+# define    nextCharSet 10646
 
 # define	cp1252Enc	0
 # define	symbolEnc	2
@@ -388,5 +390,6 @@ extern int g_delete_eqn_file;
 extern int g_insert_eqn_name;
 extern int g_equation_file;
 extern int g_object_width;
+extern int g_file_is_rtfd;
 
 #endif /* _RTF_H */

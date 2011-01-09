@@ -346,6 +346,9 @@ void WriterInit(void)
     if (RTFReadCharSetMap("cp850.map", rtfCS850) == 0)
         RTFPanic("Cannot read character set map file cp850.map for code page 850!\n");
 
+    if (RTFReadCharSetMap("next.map", rtfCSNext) == 0)
+        RTFPanic("Cannot read character set map file next.map for code page Next!\n");
+
     /* read preferences */
     if (ReadPrefFile(prefFileName) == 0)
         RTFPanic("Cannot read preferences file %s", prefFileName);

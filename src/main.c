@@ -49,6 +49,7 @@ int          g_delete_eqn_file = 1;
 int          g_insert_eqn_name = 0;
 int          g_equation_file   = 0;
 int          g_object_width    = 0;
+int			 g_file_is_rtfd    = 0;
 
 /* Figure out endianness of machine.  Needed for OLE & graphics support */
 static void 
@@ -278,27 +279,39 @@ main(int argc, char **argv)
     }
 
     for (fileCounter = 0; fileCounter < argc; fileCounter++) {
+
         fprintf(stderr, "Processing %s\n", argv[fileCounter]);
 
         RTFInit();
+        
+        strcpy(buf2, argv[fileCounter]);
+        buf1 = buf2;
+        bufLength = strlen(buf1);
 
+		if (bufLength > 5 && strcasecmp(buf1+bufLength-5,".rtfd")==0) {
+			strcat(buf2,"/TXT.RTF");
+			bufLength = strlen(buf2);
+			g_file_is_rtfd = 1;
+		} else
+			g_file_is_rtfd = 0;
+		
+		
         /*
          * open first file, set it as the input file, and enable
          * global access to input file name
          */
 
-		ifp = fopen(argv[fileCounter], "rb");
+		ifp = fopen(buf2, "rb");
+
         if (!ifp) {
-            RTFPanic("* Cannot open input file %s\n", argv[fileCounter]);
+            RTFPanic("* Cannot open input file %s\n", buf2);
             exit(1);
         }
         RTFSetStream(ifp);
 
         /* strip extension and determine if the input file is a .eqn file */
         g_equation_file = 0;
-        strcpy(buf2, argv[fileCounter]);
-        buf1 = buf2;
-        bufLength = strlen(buf1);
+
         if (bufLength > 3) {
             buf1 += (bufLength - 4);
             /* strip .rtf by terminating string */

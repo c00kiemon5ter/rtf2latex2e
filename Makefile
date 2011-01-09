@@ -67,7 +67,11 @@ TEST         = test/Makefile              test/arch.rtf              test/arch-m
                test/equation.rtf          test/fig-jpeg.rtf          test/multiline.rtf      \
                test/mapping.rtf           test/rtf-misc.rtf          test/rtf.rtf            \
                test/table.rtf             test/test.rtf              test/moreEqns.rtf       \
-               test/twoEqn.rtf
+               test/twoEqn.rtf            \
+
+RTFD         = test/sample.rtfd/TXT.rtf      test/sample.rtfd/amiga.gif \
+               test/sample.rtfd/build.tiff   test/sample.rtfd/button_smile.jpeg \
+               test/sample.rtfd/paste.eps
 
 EQNS         = test/testeqn01.eqn         test/testeqn02.eqn         test/testeqn03.eqn      \
                test/testeqn04.eqn         test/testeqn05.eqn         test/testeqn06.eqn      \
@@ -108,6 +112,7 @@ dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $
 	$(MKDIR)           rtf2latex2e-$(VERSION)/pref
 	$(MKDIR)           rtf2latex2e-$(VERSION)/doc
 	$(MKDIR)           rtf2latex2e-$(VERSION)/test
+	$(MKDIR)           rtf2latex2e-$(VERSION)/test/sample.rtfd
 	$(MKDIR)           rtf2latex2e-$(VERSION)/src
 	ln README          rtf2latex2e-$(VERSION)
 	ln Makefile        rtf2latex2e-$(VERSION)
@@ -118,6 +123,7 @@ dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $
 	ln $(DOCS)         rtf2latex2e-$(VERSION)/doc
 	ln $(PDFS)         rtf2latex2e-$(VERSION)/doc
 	ln $(TEST)         rtf2latex2e-$(VERSION)/test
+	ln $(RTFD)         rtf2latex2e-$(VERSION)/test/sample.rtfd
 	ln $(EQNS)         rtf2latex2e-$(VERSION)/test
 #	tar cvf - rtf2latex2e-$(VERSION) | gzip > rtf2latex2e-$(VERSION).tar.gz
 	zip -r rtf2latex2e-$(VERSION) rtf2latex2e-$(VERSION)

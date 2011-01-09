@@ -203,7 +203,8 @@ static short cp1253CharCode[charSetSize];       /* code page 1253 */
 static short cp1254CharCode[charSetSize];       /* code page 1254 */
 static short cp437CharCode[charSetSize];        /* code page 437 */
 static short cp850CharCode[charSetSize];        /* code page 850 */
-static short macCharCode[charSetSize];  /* mac character set */
+static short cpMacCharCode[charSetSize];  		/* mac character set */
+static short cpNextCharCode[charSetSize];  		/* NeXt character set */
 
 static short *genCharCode = cp1252CharCode;
 
@@ -600,8 +601,7 @@ static void _RTFGetToken(void)
 
     if ((autoCharSetFlags & rtfReadCharSet)
         && RTFCheckCM(rtfControl, rtfCharSet)) {
-        /* added by Ujwal Sathyam for rtf2latex2e */
-        globalCharSet = macCharSet;
+
         if (strcmp(&rtfTextBuf[1], "mac") == 0)
             globalCharSet = macCharSet;
         else if (strcmp(&rtfTextBuf[1], "ansi") == 0)
@@ -611,7 +611,8 @@ static void _RTFGetToken(void)
         else if (strcmp(&rtfTextBuf[1], "pca") == 0)
             globalCharSet = pcaCharSet;
 
-        /* end additions by Ujwal Sathyam */
+        if (g_file_is_rtfd)
+        	globalCharSet = nextCharSet;
 
         ReadCharSetMaps();
 
@@ -957,13 +958,17 @@ static void ReadCharSetMaps(void)
     if (strcmp(&rtfTextBuf[1], "ansi") == 0)
         genCharCode = cp1252CharCode;
     else if (strcmp(&rtfTextBuf[1], "mac") == 0)
-        genCharCode = macCharCode;
+        genCharCode = cpMacCharCode;
     else if (strcmp(&rtfTextBuf[1], "pc") == 0)
         genCharCode = cp437CharCode;
     else if (strcmp(&rtfTextBuf[1], "pca") == 0)
         genCharCode = cp850CharCode;
     else
         genCharCode = cp1252CharCode;
+
+    /* use NeXtStep Code Page unless \ansicpg token is encountered */
+	if (g_file_is_rtfd)
+		genCharCode = cpNextCharCode;
 
     genCharSetFile = &rtfTextBuf[1];
     haveGenCharSet = 1;
@@ -1010,7 +1015,6 @@ short RTFReadCharSetMap(char *file, short csId)
     case rtfCSSymbol:
         stdCodeArray = symCharCode;
         break;
-        /* added by Ujwal Sathyam for rtf2latex2e */
     case rtfCS1250:
         stdCodeArray = cp1250CharCode;
         break;
@@ -1024,7 +1028,7 @@ short RTFReadCharSetMap(char *file, short csId)
         stdCodeArray = cp1254CharCode;
         break;
     case rtfCSMac:
-        stdCodeArray = macCharCode;
+        stdCodeArray = cpMacCharCode;
         break;
     case rtfCS437:
         stdCodeArray = cp437CharCode;
@@ -1032,7 +1036,9 @@ short RTFReadCharSetMap(char *file, short csId)
     case rtfCS850:
         stdCodeArray = cp850CharCode;
         break;
-
+    case rtfCSNext:
+        stdCodeArray = cpNextCharCode;
+        break;
     }
 
     if ((f = RTFOpenLibFile(file, "r")) == (FILE *) NULL)
@@ -1151,7 +1157,7 @@ short RTFMapChar(short c)
     case rtfCSGeneral:
         if (!haveGenCharSet) {
             if (RTFReadCharSetMap("cp1252.map", rtfCSGeneral) == 0)
-                RTFPanic("RTFMapChar: cannot read cp1252.map");
+                	RTFPanic("RTFMapChar: cannot read cp1252.map");
         }
         break;
     case rtfCSSymbol:
@@ -1185,7 +1191,6 @@ void RTFSetCharSet(short csId)
         curCharCode = symCharCode;
         curCharSet = csId;
         break;
-        /* added by Ujwal Sathyam for rtf2latex2e */
     case rtfCS1250:
         curCharCode = cp1250CharCode;
         curCharSet = csId;
@@ -1199,7 +1204,11 @@ void RTFSetCharSet(short csId)
         curCharSet = csId;
         break;
     case rtfCSMac:
-        curCharCode = macCharCode;
+        curCharCode = cpMacCharCode;
+        curCharSet = csId;
+        break;
+    case rtfCSNext:
+        curCharCode = cpNextCharCode;
         curCharSet = csId;
         break;
     }

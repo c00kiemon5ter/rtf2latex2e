@@ -3,14 +3,15 @@
 # Rename this file "TeX-map" to use!!
 
 # Encoding used for producing characters between 
-# 127-255: iso-latin1
+# 127-255: cp1252 (ansi/latin1)
 
-# Use of this file requires the inputenc package with the latin1 option.
-# You can add a qualifier here to use the latin1 inputenc package.
+# Use of this file requires the inputenc package with the cp1252 option.
+# You can add a qualifier here to use the cp1252 inputenc package.
 # The '%' is NOT a COMMENT sign, it denotes that rtf2latex2e should treat the 
 # following string as a qualifier.
 
-%\usepackage[latin1]{inputenc}
+%\usepackage[cp1252]{inputenc}
+
 
 # Field 1 is the standard character name.  Field 2 is the output sequence
 # to produce for that character.
@@ -23,7 +24,7 @@
 
 space		" "
 exclam		!
-quotedbl	{\textquotedbl}
+quotedbl	{\tt\char34}
 numbersign	\#
 dollar		\$
 percent		\%
@@ -119,23 +120,23 @@ asciitilde	{\textasciitilde}
 
 # non-ASCII
 
-AE					Æ					# \AE
-Aacute				Á					# "\'{A}"
+AE					∆					# \AE
+Aacute				¡					# "\'{A}"
 Abreve	\u{A}
-Acircumflex			Â					# \^{A}
-Adieresis			Ä					# '\"{A}'
-Agrave				À					# "\`{A}"
+Acircumflex			¬					# \^{A}
+Adieresis			ƒ					# '\"{A}'
+Agrave				¿					# "\`{A}"
 Aogonek	\k{A}
-Aring				Å					# \AA
-Atilde				Ã					# \~{A}
-aacute				á					# "\'{a}"
+Aring				≈					# \AA
+Atilde				√					# \~{A}
+aacute				·					# "\'{a}"
 abreve	\u{a}
-acircumflex			â					# \^{a}
+acircumflex			‚					# \^{a}
 acute		"'"
 acutedbl	\H{}
-adieresis			ä					# '\"{a}'
-ae					æ					# {\ae}
-agrave				à					# "\`{a}"
+adieresis			‰					# '\"{a}'
+ae					Ê					# {\ae}
+agrave				‡					# "\`{a}"
 aleph	\ensuremath{\aleph}
 angle		\ensuremath{\angle}
 angleleft	\ensuremath{\langle}
@@ -143,7 +144,7 @@ angleright	\ensuremath{\rangle}
 aogonek		\k{a}
 apple		{\textapplelogo}
 approxequal	\ensuremath{\approx}
-aring				å					# {\aa}
+aring				Â					# {\aa}
 arrowboth	\ensuremath{\leftrightarrow}
 arrowdown	\ensuremath{\downarrow}
 arrowhorizex	---
@@ -156,20 +157,20 @@ arrowdblright	\ensuremath{\Rightarrow}
 arrowdblup	\ensuremath{\Uparrow}
 arrowup		\ensuremath{\uparrow}
 arrowvertex	\ensuremath{\arrowvert}
-atilde				ã					# \~{a}
+atilde				„					# \~{a}
 breve		\u{}
 bracevert	\ensuremath{\bracevert}
 brokenbar	{\textbrokenbar}
-bullet		{\textbullet}
+bullet				ï					# {\textbullet}
 carriagereturn	\ensuremath{\hookleftarrow}
 Cacute		"\'{C}"
 Ccaron		\v{C}
-Ccedilla			Ç					# \c{C}
+Ccedilla			«					# \c{C}
 Cdblhorizbar	\hbox{\rm\rlap=C}
 cacute		"\'{c}"
 caron		\v{}
 ccaron		\v{c}
-ccedilla			ç					# \c{c}
+ccedilla			Á					# \c{c}
 cedilla		\c{}
 cent		\hbox{\rm\rlap/c}
 circlemultiply	\ensuremath{\otimes}
@@ -193,18 +194,18 @@ divide		\ensuremath{\div}
 dotaccent	\.{}
 dotlessi	{\i}
 dslash		{\dj}
-Eacute				É					# "\'{E}"
+Eacute				…					# "\'{E}"
 Ecaron		\v{E}
 Ecircumflex		\^{E}
-Edieresis			Ë					# '\"{E}'
-Egrave				È					# "\`{E}"
+Edieresis			À					# '\"{E}'
+Egrave				»					# "\`{E}"
 Eogonek		\k{E}
 Eth			{\DH}
-eacute				é					# "\'{e}"
+eacute				È					# "\'{e}"
 ecaron		\v{e}
-ecircumflex			ê					# \^{e}
-edieresis			ë					# '\"{e}'
-egrave				è					# "\`{e}"
+ecircumflex			Í					# \^{e}
+edieresis			Î					# '\"{e}'
+egrave				Ë					# "\`{e}"
 element		\ensuremath{\in}
 ellipsis	"\dots "
 emdash		---
@@ -223,26 +224,26 @@ forall		\ensuremath{\forall}
 fraction	/
 Gbreve		\u{G}
 gbreve		\u{g}
-germandbls			ß					# {\ss}
+germandbls			ﬂ					# {\ss}
 grave		"\`{}"
 gradient	\ensuremath{\nabla}
 greaterequal	\ensuremath{\geq}
-guillemotleft   	«					# {\guillemotleft}
-guillemotright  	»					# {\guillemotright}
-guilsinglleft	{\guilsinglleft}
-guilsinglright  {\guilsinglright}
+guillemotleft   	´					# {\guillemotleft}
+guillemotright  	ª					# {\guillemotright}
+guilsinglleft   	ã					# {\guilsinglleft}
+guilsinglright  	õ					# {\guilsinglright}
 heart			\ensuremath{\heartsuit}
 hungarumlaut	\H{}
-Iacute				Í					# "\'{I}"
-Icircumflex			Î					# \^{I}
-Idieresis			Ï					# '\"{I}'
+Iacute				Õ					# "\'{I}"
+Icircumflex			Œ					# \^{I}
+Idieresis			œ					# '\"{I}'
 Idotaccent		\.{I}
 Ifraktur		\ensuremath{\mathfrak{I}}
-Igrave				Ì					# "\`{I}"
-iacute				í					# "\'{\i}"
-icircumflex			î					# \^{\i}
-idieresis			ï					# '\"{\i}'
-igrave				ì					# "\`{\i}"
+Igrave				Ã					# "\`{I}"
+iacute				Ì					# "\'{\i}"
+icircumflex			Ó					# \^{\i}
+idieresis			Ô					# '\"{\i}'
+igrave				Ï					# "\`{\i}"
 infinity	\ensuremath{\infty}
 integral	\ensuremath{\int}
 intersection	\ensuremath{\cap}
@@ -276,44 +277,43 @@ mu			\ensuremath{u}
 multiply	\ensuremath{\times}
 Nacute		"\'{N}"
 Ncaron		\v{N}
-Ntilde				Ñ					# \~{N}
+Ntilde				—					# \~{N}
 nabla		\ensuremath{\nabla}
 nacute		"\'{n}"
 ncaron		\v{n}
 nobrkhyphen	{\-}
-nobrkspace	~
+nobrkspace	{\nobreakspace}
 notelement	\ensuremath{\notin}
 notequal	\ensuremath{\neq}
 notsubset	\ensuremath{\not\subset}
-ntilde				ñ					# \~{n}
-OE		{\OE}
-Oacute				Ó					# "\'{O}"
+ntilde				Ò					# \~{n}
+OE					å					# {\OE}
+Oacute				”					# "\'{O}"
 Oacutedbl	\H{O}
-Ocircumflex			Ô					# \^{O}
-Odieresis			Ö					#'\"{O}'
-Ograve				Ò					# "\`{O}"
-Oslash				Ø					# {\O}
-Otilde				Õ					# \~{O}
-oacute				ó					# "\'{o}"
+Ocircumflex			‘					# \^{O}
+Odieresis			÷					#'\"{O}'
+Ograve				“					# "\`{O}"
+Oslash				ÿ					# {\O}
+Otilde				’					# \~{O}
+oacute				Û					# "\'{o}"
 oacutedbl	\H{o}
-ocircumflex			ô					# \^{o}
-odieresis			ö					# '\"{o}'
-oe		{\oe}
-ograve				ò					# "\`{o}"
+ocircumflex			Ù					# \^{o}
+odieresis			ˆ					# '\"{o}'
+oe					ú					# {\oe}
+ograve				Ú					# "\`{o}"
 ogonek		\k{}
 onehalf         \ensuremath{\frac12}
 onequarter      \ensuremath{\frac14}
 ordfeminine		\ensuremath{^a}
 ordmasculine	\ensuremath{^\circ}
-otilde				õ					# \~{o}
-oslash				ø					# {\o}
+otilde				ı					# \~{o}
+oslash				¯					# {\o}
 paragraph	{\P}
 partialdiff	\ensuremath{\partial}
 periodcentered	{\textperiodcentered}
 perpendicular	\ensuremath{\perp}
 perthousand		{\perthousand}
 plusminus	\ensuremath{\pm}
-powern		\ensuremath{^n}
 powerone	\ensuremath{^1}
 powertwo	\ensuremath{^2}
 powerthree	\ensuremath{^3}
@@ -340,10 +340,10 @@ registersans	{\textregistered}
 rfloor		\ensuremath{\rfloor}
 ring		\r{}
 Sacute		"\'{S"
-Scaron		\v{S}
+Scaron				ä					# \v{S}
 Scedilla	\c{S}
 sacute		"\'{s}"
-scaron		\v{s}
+scaron				ö					# \v{s}
 scedilla	\c{s}
 second		\ensuremath{"''"}
 section		{\S}
@@ -366,24 +366,24 @@ threequarters	\ensuremath{\frac34}
 tilde		\~{}
 trademark	{\texttrademark}
 trademarksans	{\texttrademark}
-Uacute				Ú					# "\'{U}"
+Uacute				⁄					# "\'{U}"
 Uacutedbl	\H{U}
-Ucircumflex			Û					# \^{U}
-Udieresis			Ü					# '\"{U}'
-Ugrave				Ù					# "\`{U}"
+Ucircumflex			€					# \^{U}
+Udieresis			‹					# '\"{U}'
+Ugrave				Ÿ					# "\`{U}"
 Uring		\r{U}
-uacute				ú					# "\'{u}"
+uacute				˙					# "\'{u}"
 uacutedbl	\H{u}
-ucircumflex			û					# \^{u}
-udieresis			ü					# '\"{u}'
-ugrave				ù					# "\`{u}"
+ucircumflex			˚					# \^{u}
+udieresis			¸					# '\"{u}'
+ugrave				˘					# "\`{u}"
 union		\ensuremath{\cup}
 uring		\r{u}
 weierstrass	\ensuremath{\wp}
-Yacute				†					# "\'{Y}"
-Ydieresis	'\"{Y}'
-yacute				‡					# "\'{y}"
-ydieresis			ÿ					# '\"{y}'
+Yacute				›					# "\'{Y}"
+Ydieresis			ü					# '\"{Y}'
+yacute				˝					# "\'{y}"
+ydieresis			ˇ					# '\"{y}'
 yen			\hbox{\rm\rlap=Y}
 # yen			{\textyen} 					# not available in some encodings
 Zacute		"\'{Z}"
@@ -450,5 +450,4 @@ psi			\ensuremath{\psi}
 # varepsilon	\ensuremath{\varepsilon}
 # varrho		\ensuremath{\varrho}
 zeta		\ensuremath{\zeta}
-
 
