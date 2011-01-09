@@ -1,17 +1,19 @@
 Security
    Incorporate all the SafeBuf stuff
 
-Features
-   use two linefeeds instead of bizarre \\{} construct
+Improvements
+   handle space directives in equations
+   improve paragraph breaking
+   clean up table formatting
+   handle latin1 characters between 0xA0 and 0xBF directly
+
+Other
    automatically create directory for entire translation
-   automatically convert pict files to pdf files
-   CLI option to toggle debug level?
    document CLI options
    automatically append .rtf?
    
 Packaging
    Revise README
-   Get windows binary working
-   move rtfprep to parent directory?
+   explain how to use -E to provide bug reports for equations
    bump version to 2.0
    

@@ -174,6 +174,7 @@ static boolean requireUlemPackage;
 static boolean requireHyperrefPackage;
 static boolean requireAmsMathPackage;
 static boolean requireUnicodePackage;
+static boolean requireLatin1Package;
 static size_t packagePos;
 static boolean writingHeading1, writingHeading2, writingHeading3;
 static boolean insideFootnote, justWroteFootnote;
@@ -238,6 +239,10 @@ static boolean lineIsBlank = true;
 int g_debug_par_start = 0;
 int g_debug_table_prescan   = 0;
 int g_debug_table_writing   = 0;
+
+char *UnicodeSymbolFontToLatex[];
+char *UnicodeGreekToLatex[];
+
 static short R2LItem(char *name)
 {
     short i;
@@ -483,6 +488,14 @@ static void PutLitChar(int c)
 static void PutLitStr(char *s)
 {
     fputs(s, ostream);
+}
+
+/* one day, check perhaps if already in math mode */
+static void PutMathLitStr(char *s)
+{
+    fputs("$ ", ostream);
+    fputs(s, ostream);
+    fputs("$", ostream);
 }
 
 static void InsertNewLine(void)
@@ -1523,9 +1536,11 @@ static void WriteLaTeXFooter(void)
     if (requireAmsMathPackage)
         PutLitStr("\\usepackage{amsmath}\n");
     if (requireUnicodePackage) {
-        PutLitStr("\\usepackage{textgreek}\n");
+      /*  PutLitStr("\\usepackage{textgreek}\n");*/
         PutLitStr("\\usepackage{ucs}\n");
     }
+    if (requireLatin1Package) 
+    	PutLitStr("\\usepackage[latin1]{inputenc}\n");
     if (requireHyperrefPackage) {
         PutLitStr("\\usepackage{hyperref}\n");
     }
@@ -2587,9 +2602,11 @@ static void PrescanTable(void)
     }
 
 	if (g_debug_table_prescan) {
-        for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell)
-			fprintf(stderr,"* now cell %d (%d, %d) has left and right borders at %d, %d and spans %d columns\n", 
-                cellPtr->index, cellPtr->x, cellPtr->y, cellPtr->left, cellPtr->right, cellPtr->columnSpan);
+        for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
+			fprintf(stderr,"* cell #%d (%d, %d) ", cellPtr->index, cellPtr->x, cellPtr->y);
+			fprintf(stderr,"left=%5d right=%5d ", cellPtr->left, cellPtr->right);
+			fprintf(stderr,"and spans %d columns\n", cellPtr->columnSpan);
+        }
     }
 
     /* go back to beginning of the table */
@@ -2641,7 +2658,7 @@ static void WriteCellHeader(int cellNum)
     if (wroteCellHeader)
         return;
 
-	if (g_debug_table_writing) fprintf(stderr,"* Writing table header\n");
+	if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
 	
     cellPtr = GetCellInfo(cellNum);
     if (!cellPtr) {
@@ -2676,14 +2693,19 @@ static void WriteCellHeader(int cellNum)
         PutLitStr("{");
     }
 
-    if (rtfClass == rtfText)
-        WriteTextStyle();
+//    if (rtfClass == rtfText)
+    WriteTextStyle();
 
     if (cellPtr->mergePar == first)
         DoMergedCells(cellPtr);
 
     suppressLineBreak = true;
     wroteCellHeader = true;
+
+	if (g_debug_table_writing)  {
+		snprintf(buf, rtfBufSiz, "[cell \\#%d]",cellNum);
+        PutLitStr(buf);
+    }
 }
 
 /* This is where we actually process each table row. */
@@ -4194,6 +4216,27 @@ static void ReadUnicode(void)
 {
     char unitext[20];
 
+    if (rtfParam == 8212) {
+        PutLitStr("---");
+        wrapCount+=3;
+        RTFGetToken();
+        return;
+    }
+
+    if (rtfParam == 8216) {
+        PutLitStr("`");
+        wrapCount+=1;
+        RTFGetToken();
+        return;
+    }
+
+    if (rtfParam == 8217) {
+        PutLitStr("'");
+        wrapCount+=1;
+        RTFGetToken();
+        return;
+    }
+
     if (rtfParam == 8220) {
         PutLitStr("``");
         wrapCount+=2;
@@ -4215,12 +4258,28 @@ static void ReadUnicode(void)
         return;
     }
 
+	if (0xC0 <= rtfParam && rtfParam <=0xFF) {
+		PutLitChar(rtfParam);
+		RTFGetToken();
+    	requireLatin1Package = true;
+		return;
+	}
+
     if (rtfParam<0) 
         rtfParam += 65536;
         
-    if (rtfParam==61549) {
-    	PutLitStr("\\ensuremath{\\mu}");
-    	wrapCount += 16;
+    /* directly translate greek */
+    if (913 <= rtfParam && rtfParam <= 969) {
+    	PutMathLitStr(UnicodeGreekToLatex[rtfParam-913]);
+        RTFGetToken();
+    	return;
+    }
+
+    /* and also a bunch of wierd codepoints from the Symbol font 
+       that end up in a private code area of Unicode */
+    if (61472 <= rtfParam && rtfParam <= 61632) {
+    	PutMathLitStr(UnicodeSymbolFontToLatex[rtfParam-61472]);
+        RTFGetToken();
     	return;
     }
 
@@ -4475,6 +4534,7 @@ int BeginLaTeXFile(void)
     requireMultirowPackage = false;
     requireAmsMathPackage = false;
     requireUnicodePackage = false;
+    requireLatin1Package = false;
 
 
     picture.count = 0;
@@ -4624,68 +4684,201 @@ char * WritePictAsPDF(char *pict)
 
 #endif
 
-/* this is a diagnostic function that I call when I get into trouble 
- * with text styles.  Unused
- */
- /*
-    static void ExamineTextStyle (void)
-    {
-    RTFMsg ("* GL is %d\n", groupLevel);
-    RTFMsg ("* charAttrCount is %d\n", charAttrCount);
-    RTFMsg ("* Bgl is %d\n", textStyle.boldGroupLevel);
-    RTFMsg ("* TBgl is %d\n", textStyle.noBoldGroupLevel);
-    RTFMsg ("* Igl is %d\n", textStyle.italicGroupLevel);
-    RTFMsg ("* TIgl is %d\n", textStyle.noItalicGroupLevel);
-    RTFMsg ("* Ugl is %d\n", textStyle.underlinedGroupLevel);
-    RTFMsg ("* TUgl is %d\n", textStyle.noUnderlinedGroupLevel);
-    RTFMsg ("* FCgl is %d\n", textStyle.foreColorGroupLevel);
-    RTFMsg ("* BCgl is %d\n", textStyle.backColorGroupLevel);
-    RTFMsg ("* Sbgl is %d\n", textStyle.subScriptGroupLevel);
-    RTFMsg ("* TSbgl is %d\n", textStyle.noSubScriptGroupLevel);
-    RTFMsg ("* Spgl is %d\n", textStyle.superScriptGroupLevel);
-    RTFMsg ("* TSpgl is %d\n", textStyle.noSuperScriptGroupLevel);
-    RTFMsg ("* Fsgl is %d\n\n", textStyle.fontSizeGroupLevel);
-    }
-  */
 
-/* This function scans the bounding box information for an EPS file 
-   Currently unused
-   */
-/*
-static int ScanBoundingBox (char *epsFile)
-{
-FILE *fp;
-char    buf[50];
+/* characters from the Symbol font get written to private areas of unicode that are 
+   not well supported by latex.  This is simple translation tabl.] */
+char *UnicodeSymbolFontToLatex[] = {
+    " ",  /* 61472 or U+F020 */
+    "!",
+    "\\forall",
+    "\\#",
+    "\\exists",
+    "\\%",
+    "\\&",
+    " ",
+    "(",
+    ")",
+    "*",
+    "+",
+    ",",
+    "-",
+    ".",
+    "/",
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    ":",
+    ";",
+    "<",
+    "=",
+    ">",
+    "?",
+    "\\concruent",
+    "A",
+    "B",
+    "X",
+    "\\Delta",
+    "E",
+    "\\Phi",
+    "\\Gamma",
+    "H",
+    "I",
+    "\\vartheta",
+    "K",
+    "\\Lambda",
+    "",
+    "N",
+    "O",
+    "\\Pi",
+    "\\Theta",
+    "P",
+    "\\Sigma",
+    "T",
+    "Y",
+    "\\zeta",
+    "\\Omega",
+    "\\Xi",
+    "\\Psi",
+    "Z",
+    "[",
+    "\\therefore",
+    "]",
+    "\\bot",
+    "\\_",
+    "-",  /* over bar?? */
+    "\\alpha",
+    "\\beta",
+    "\\chi",
+    "\\delta",
+    "\\epsilon",
+    "\\phi",
+    "\\gamma",
+    "\\eta",
+    "\\iota",
+    "\\varphi",
+    "\\kappa",
+    "\\lambda",
+    "\\mu",
+    "\\nu",
+    "o",
+    "\\pi",
+    "\\theta",
+    "\\rho",
+    "\\sigma",
+    "\\tau",
+    "\\nu",
+    "\\varpi",
+    "\\omega",
+    "\\xi",
+    "\\psi",
+    "\\zeta",
+    "{",
+    "|",
+    "}",
+    "\\sim",
+    "Y",
+    "\\prime",
+    "\\le",
+    "/",
+    "\\infty",
+    "\\int",
+    "\\clubsuit",
+    "\\diamondsuit",
+    "\\heartsuit",
+    "\\spadesuit",
+    "\\rightleftarrow",
+    "\\leftarrow",
+    "\\uparrow",
+    "\\rightarrow",
+    "\\downarrow",
+    "^\\circ",
+    "\\pm",
+    "\\prime\\prime",
+    "\\ge",
+    "\\times",
+    "\\propto",
+    "\\partial",
+    "\\blackcircle",
+    "\\division",
+    "\\ne",
+    "\\equiv",
+    "\\approx",
+    "...",
+    "|",
+    "\\_",
+    "", /*corner arrow*/
+    "\\Aleph",
+    0
+};
+    
+/* greek characters translated directly to avoid the textgreek.sty package 
+   positions 913-969  (0x0391-0x03C9)*/
+char *UnicodeGreekToLatex[] = {
+    "A",
+    "B",
+    "\\Gamma",
+    "\\Delta",
+    "E",
+    "Z",
+    "H",
+    "\\Theta",
+    "I",
+    "K",
+    "\\Lambda",
+    "M",
+    "N",
+    "\\Xi",
+    "O",
+    "\\Pi",
+    "P",
+    "", /* invalid character capital rho */
+    "\\Sigma",
+    "T",
+    "Y",
+    "\\Phi",
+    "X",
+    "\\Psi",
+    "\\Omega",
+    "\\\"I",
+    "\\\"Y",
+    "\\'\\alpha",
+    "\\'\\epsilon",
+    "\\'\\eta",
+    "\\'\\iota",
+    "\\\"u",
+    "\\alpha",
+    "\\beta",
+    "\\gamma",
+    "\\delta",
+    "\\epsilon",
+    "\\zeta",
+    "\\eta",
+    "\\theta",
+    "\\iota",
+    "\\kappa",
+    "\\lambda",
+    "\\mu",
+    "\\nu",
+    "\\xi",
+    "o",
+    "\\pi",
+    "\\rho",
+    "s",
+    "\\sigma",
+    "\\tau",
+    "u",
+    "\\phi",
+    "\\chi",
+    "\\psi",
+    "\\omega",
+    0
+};
 
-
-        if ((fp = fopen (epsFile, "r")) == (FILE *) NULL)
-                        {
-                                RTFMsg ("* can't open eps file %s\n", epsFile);
-                                return (1);
-                        }
-
-        while (fscanf (fp, "%s", buf) != EOF)
-        {
-                if (strcmp (buf, "%%BoundingBox:") == 0)
-                {
-                        fscanf (fp, "%d", &(picture.llx));
-                        fscanf (fp, "%d", &(picture.lly));
-                        fscanf (fp, "%d", &(picture.urx));
-                        fscanf (fp, "%d", &(picture.ury));
-                        if (fclose(fp) != 0) 
-            {
-                printf("* error closing eps file %s\n", epsFile);
-                            return (1);
-            }
-            return (0);
-                }
-        }
-
-        if (fclose(fp) != 0) 
-    {
-        printf("* error closing eps file %s\n", epsFile);
-        return (1);
-    }
-        return (0);
-}
-*/
+    
