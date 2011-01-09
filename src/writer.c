@@ -1539,8 +1539,10 @@ static void WriteLaTeXFooter(void)
       /*  PutLitStr("\\usepackage{textgreek}\n");*/
         PutLitStr("\\usepackage{ucs}\n");
     }
-    if (requireLatin1Package) 
+    if (requireLatin1Package) {
+    	PutLitStr("\\usepackage[T1]{fontenc}\n");
     	PutLitStr("\\usepackage[latin1]{inputenc}\n");
+    }
     if (requireHyperrefPackage) {
         PutLitStr("\\usepackage{hyperref}\n");
     }
@@ -2099,27 +2101,33 @@ static void SpecialChar(void)
         suppressLineBreak = false;
         break;
     case rtfEmDash:
-        PutStdChar(rtfSC_emdash);
+        PutLitStr("--");
+        /*PutStdChar(rtfSC_emdash);*/
         suppressLineBreak = false;
         break;
     case rtfEnDash:
-        PutStdChar(rtfSC_endash);
+        PutLitStr("-");
+        /*PutStdChar(rtfSC_endash);*/
         suppressLineBreak = false;
         break;
     case rtfLQuote:
-        PutStdChar(rtfSC_quoteleft);
+        PutLitStr("`");
+        /* PutStdChar(rtfSC_quoteleft); */
         suppressLineBreak = false;
         break;
     case rtfRQuote:
-        PutStdChar(rtfSC_quoteright);
+        PutLitStr("'");
+        /* PutStdChar(rtfSC_quoteright); */
         suppressLineBreak = false;
         break;
     case rtfLDblQuote:
-        PutStdChar(rtfSC_quotedblleft);
+        PutLitStr("``");
+        /*PutStdChar(rtfSC_quotedblleft);*/
         suppressLineBreak = false;
         break;
     case rtfRDblQuote:
-        PutStdChar(rtfSC_quotedblright);
+    	PutLitStr("''");
+        /*PutStdChar(rtfSC_quotedblright);*/
         suppressLineBreak = false;
         break;
     case rtfPage:
