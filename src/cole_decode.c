@@ -410,7 +410,7 @@ __OLEdecode(char *OLEfilename, pps_entry ** stream_list, size_t * root,
                 *_sbfilename = malloc((size_t) (L_tmpnam+1));
                 test_exitf(*_sbfilename != NULL, 10, ends());
                 (void) tmpnam(*_sbfilename);
-                verboseS(*_sbfilename);  /* added by Wilfried */
+                verboseS(*_sbfilename);
 
                 test_exitf(*_sbfilename[0], 7, ends());
                 OLEfile = fopen(*_sbfilename, "wb+");

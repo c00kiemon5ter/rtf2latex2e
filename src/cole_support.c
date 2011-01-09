@@ -80,7 +80,7 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
         return 2;
     }
 
-    verboseS(*filename);  /* added by Wilfried */
+    verboseS(*filename);
 
     /* try to open the file */    
     ret = fopen(*filename, "w+b");
@@ -90,12 +90,10 @@ __cole_extract_file(FILE ** file, char **filename, uint32_t size, uint32_t pps_s
         free(*filename);
         *filename = tempnam("./", "rtf2latex-tmp-");
         verboseS(*filename);
-        ret = fopen(*filename, "w+b");   /* moved here by Wilfried */
+        ret = fopen(*filename, "w+b");
         if (*filename == NULL) return 2;
     }
     
-    verboseS(*filename);  /* added by Wilfried */
-
     *file = ret;
 
     if (ret == NULL) {
