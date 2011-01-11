@@ -384,12 +384,19 @@ void		RTFRestoreStack (void);
 void RTFSetOpenLibFileProc(FILE * (*proc) (char *file, char *mode));
 FILE 		*RTFOpenLibFile(char *file, char *mode);
 
+enum INPUT_FILE_TYPE {
+    TYPE_RTF,        /* normal .rtf file */
+    TYPE_EQN,        /* equation .eqn file */
+    TYPE_RTFD,       /* .rtfd file */
+    TYPE_UNKNOWN  
+};
+
+extern enum INPUT_FILE_TYPE g_input_file_type;
+
 extern int g_debug_level;
 extern int g_include_both;
 extern int g_delete_eqn_file;
 extern int g_insert_eqn_name;
-extern int g_equation_file;
 extern int g_object_width;
-extern int g_file_is_rtfd;
 
 #endif /* _RTF_H */

@@ -483,27 +483,62 @@ short ReadPrefFile(char *file)
 
 }
 
+#define BYTETOBINARYPATTERN "%d%d%d%d%d%d%d%d"
+#define BYTETOBINARY(byte)  \
+  (byte & 0x80 ? 1 : 0), \
+  (byte & 0x40 ? 1 : 0), \
+  (byte & 0x20 ? 1 : 0), \
+  (byte & 0x10 ? 1 : 0), \
+  (byte & 0x08 ? 1 : 0), \
+  (byte & 0x04 ? 1 : 0), \
+  (byte & 0x02 ? 1 : 0), \
+  (byte & 0x01 ? 1 : 0) 
+  
 static void PutLitChar(int c)
 {
-    fputc(c, ostream);
+	unsigned char d,e;
+	
+	c &= 0x00ff;
+    if (c < 0x80){
+    	fputc(c, ostream);
+    	return;
+    }
+    if (c < 0xA0) {
+    	fprintf(stderr, "there should be character c='%c'=0x%02x\n",c,c);
+    	return;
+    }
+    d = 0xc0 + (c & 0xC0) /64;
+    e = 0x80 + (c & 0x3F);
+    fputc(d, ostream);
+    fputc(e, ostream);
+//    fprintf(stderr, "c='%c'=0x%02x ===> utf8 is 0x%02x,0x%02x\n",c,c, d,e);
+//	fprintf(stderr,"c=%d%d%d%d%d%d%d%d,", BYTETOBINARY(c));
+//	fprintf(stderr,"==> utf8==%d%d%d%d%d%d%d%d,", BYTETOBINARY(d) );
+//	fprintf(stderr,"%d%d%d%d%d%d%d%d\n", BYTETOBINARY(e));
 }
 
 static void PutLitStr(char *s)
 {
-    fputs(s, ostream);
+	char *p = s;
+	if (!s) return;
+	while (*p) {
+		PutLitChar(*p);
+		p++;
+	}
 }
 
-/* one day, check perhaps if already in math mode */
 static void PutMathLitStr(char *s)
 {
-    fputs("$ ", ostream);
-    fputs(s, ostream);
-    fputs("$", ostream);
+    if (s && *s) {
+    	PutLitStr("$");
+    	PutLitStr(s);
+    	PutLitStr("$");
+    }
 }
 
 static void InsertNewLine(void)
 {
-    PutLitStr("\n");
+    PutLitChar('\n');
     lineIsBlank = true;
 }
 
@@ -1361,6 +1396,7 @@ static void WriteLaTeXHeader(void)
         preambleFilePresent = false;
 
     PutLitStr("%&LaTeX\n");
+    PutLitStr("% !TEX encoding = UTF-8 Unicode\n");
     PutLitStr("\\documentclass");
     PutLitStr(documentclassString);
     InsertNewLine();
@@ -1542,14 +1578,14 @@ static void WriteLaTeXFooter(void)
       /*  PutLitStr("\\usepackage{textgreek}\n");*/
         PutLitStr("\\usepackage{ucs}\n");
     }
-    if (requireLatin1Package) {
+    if (1 || requireLatin1Package) {
     	PutLitStr("\\usepackage[T1]{fontenc}\n");
-    	PutLitStr("\\usepackage[latin1]{inputenc}\n");
+    	//PutLitStr("\\usepackage[latin1]{inputenc}\n");
     }
     if (requireHyperrefPackage) {
         PutLitStr("\\usepackage{hyperref}\n");
     }
-    PutLitStr("\\def\\degree{\\ensuremath{^\\circ}}\n");
+    PutLitStr("\\newcommand{\\degree}{\\ensuremath{^\\circ}}\n");
     fseek(ofp, 0L, 2);          /* go back to end of stream */
 }
 

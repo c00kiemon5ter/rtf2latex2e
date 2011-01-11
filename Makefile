@@ -56,7 +56,8 @@ PREFS        = pref/TeX-map               pref/TeX-map.latin1        pref/cp437.
                pref/TeX-map.cp1252        pref/cp1250.map            pref/pc-sym             \
                pref/TeX-map.default       pref/cp1252.map            pref/pca-sym            \
                pref/TeX-map.german        pref/cp1254.map            pref/r2l-head           \
-               pref/r2l-map               pref/r2l-pref              pref/rtf-ctrl
+               pref/r2l-map               pref/r2l-pref              pref/rtf-ctrl           \
+               pref/next.map
 
 DOCS         = doc/GPL_license            doc/Release-notes.txt      README                  \
                doc/rtf2latex2eSWP.tex     doc/rtfReader.tex          doc/rtf2latex2eDoc.tex

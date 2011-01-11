@@ -3,14 +3,14 @@
 # Rename this file "TeX-map" to use!!
 
 # Encoding used for producing characters between 
-# 127-255: cp1252 (ansi/latin1)
+# 127-255: for unicode
 
 # Use of this file requires the inputenc package with the cp1252 option.
 # You can add a qualifier here to use the cp1252 inputenc package.
 # The '%' is NOT a COMMENT sign, it denotes that rtf2latex2e should treat the 
 # following string as a qualifier.
 
-%\usepackage[cp1252]{inputenc}
+%\usepackage[utf8]{inputenc}
 
 
 # Field 1 is the standard character name.  Field 2 is the output sequence
@@ -24,7 +24,7 @@
 
 space		" "
 exclam		!
-quotedbl	{\tt\char34}
+quotedbl	{\tt\char`\"}
 numbersign	\#
 dollar		\$
 percent		\%
@@ -161,7 +161,7 @@ atilde				ã					# \~{a}
 breve		\u{}
 bracevert	\ensuremath{\bracevert}
 brokenbar	{\textbrokenbar}
-bullet				•					# {\textbullet}
+bullet		{\textbullet}			# {\textbullet}
 carriagereturn	\ensuremath{\hookleftarrow}
 Cacute		"\'{C}"
 Ccaron		\v{C}
@@ -230,8 +230,8 @@ gradient	\ensuremath{\nabla}
 greaterequal	\ensuremath{\geq}
 guillemotleft   	«					# {\guillemotleft}
 guillemotright  	»					# {\guillemotright}
-guilsinglleft   	‹					# {\guilsinglleft}
-guilsinglright  	›					# {\guilsinglright}
+guilsinglleft   	{\guilsinglleft}
+guilsinglright  	{\guilsinglright}
 heart			\ensuremath{\heartsuit}
 hungarumlaut	\H{}
 Iacute				Í					# "\'{I}"
@@ -282,12 +282,12 @@ nabla		\ensuremath{\nabla}
 nacute		"\'{n}"
 ncaron		\v{n}
 nobrkhyphen	{\-}
-nobrkspace	{\nobreakspace}
+nobrkspace	~
 notelement	\ensuremath{\notin}
 notequal	\ensuremath{\neq}
 notsubset	\ensuremath{\not\subset}
 ntilde				ñ					# \~{n}
-OE					Œ					# {\OE}
+OE				\OE{}
 Oacute				Ó					# "\'{O}"
 Oacutedbl	\H{O}
 Ocircumflex			Ô					# \^{O}
@@ -299,7 +299,7 @@ oacute				ó					# "\'{o}"
 oacutedbl	\H{o}
 ocircumflex			ô					# \^{o}
 odieresis			ö					# '\"{o}'
-oe					œ					# {\oe}
+oe					\oe{}
 ograve				ò					# "\`{o}"
 ogonek		\k{}
 onehalf         \ensuremath{\frac12}
@@ -340,10 +340,10 @@ registersans	{\textregistered}
 rfloor		\ensuremath{\rfloor}
 ring		\r{}
 Sacute		"\'{S"
-Scaron				Š					# \v{S}
+Scaron		\v{S}
 Scedilla	\c{S}
 sacute		"\'{s}"
-scaron				š					# \v{s}
+scaron		\v{s}
 scedilla	\c{s}
 second		\ensuremath{"''"}
 section		{\S}
@@ -381,7 +381,7 @@ union		\ensuremath{\cup}
 uring		\r{u}
 weierstrass	\ensuremath{\wp}
 Yacute				Ý					# "\'{Y}"
-Ydieresis			Ÿ					# '\"{Y}'
+Ydieresis			'\"{Y}'
 yacute				ý					# "\'{y}"
 ydieresis			ÿ					# '\"{y}'
 yen			\hbox{\rm\rlap=Y}

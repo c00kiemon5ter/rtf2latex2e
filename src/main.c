@@ -47,9 +47,8 @@ int          g_debug_level     = 0;
 int          g_include_both    = 0;
 int          g_delete_eqn_file = 1;
 int          g_insert_eqn_name = 0;
-int          g_equation_file   = 0;
 int          g_object_width    = 0;
-int			 g_file_is_rtfd    = 0;
+enum INPUT_FILE_TYPE g_input_file_type;
 
 /* Figure out endianness of machine.  Needed for OLE & graphics support */
 static void 
@@ -217,13 +216,190 @@ print_usage(void)
     exit(1);
 }
 
+/*
+ * Copy src to string dst of size siz.  At most siz-1 characters
+ * will be copied.  Always NUL terminates (unless siz == 0).
+ * Returns strlen(src); if retval >= siz, truncation occurred.
+ */
+size_t
+my_strlcpy(char *dst, const char *src, size_t siz)
+{
+        char *d = dst;
+        const char *s = src;
+        size_t n = siz;
+
+        /* Copy as many bytes as will fit */
+        if (n != 0) {
+                while (--n != 0) {
+                        if ((*d++ = *s++) == '\0')
+                                break;
+                }
+        }
+
+        /* Not enough room in dst, add NUL and traverse rest of src */
+        if (n == 0) {
+                if (siz != 0)
+                        *d = '\0';                /* NUL-terminate dst */
+                while (*s++)
+                        ;
+        }
+
+        return(s - src - 1);        /* count does not include NUL */
+}
+
+/*
+ * Appends src to string dst of size siz (unlike strncat, siz is the
+ * full size of dst, not space left).  At most siz-1 characters
+ * will be copied.  Always NUL terminates (unless siz <= strlen(dst)).
+ * Returns strlen(src) + MIN(siz, strlen(initial dst)).
+ * If retval >= siz, truncation occurred.
+ */
+size_t
+my_strlcat(char *dst, const char *src, size_t siz)
+{
+        char *d = dst;
+        const char *s = src;
+        size_t n = siz;
+        size_t dlen;
+
+        /* Find the end of dst and adjust bytes left but don't go past end */
+        while (n-- != 0 && *d != '\0')
+                d++;
+        dlen = d - dst;
+        n = siz - dlen;
+
+        if (n == 0)
+                return(dlen + strlen(s));
+        while (*s != '\0') {
+                if (n != 1) {
+                        *d++ = *s;
+                        n--;
+                }
+                s++;
+        }
+        *d = '\0';
+
+        return(dlen + (s - src));        /* count does not include NUL */
+}
+
+/******************************************************************************
+ purpose:  returns a new string consisting of s+t
+******************************************************************************/
+char *strdup_together(const char *s, const char *t)
+{
+    char *both;
+    size_t siz;
+    
+    if (s == NULL) {
+        if (t == NULL)
+            return NULL;
+        return strdup(t);
+    }
+    if (t == NULL)
+        return strdup(s);
+
+    if (0) fprintf(stderr, "'%s' + '%s'", s, t);
+    siz = strlen(s) + strlen(t) + 1;
+    both = (char *) malloc(siz);
+
+    if (both == NULL)
+        fprintf(stderr, "Could not allocate memory for both strings.");
+
+    my_strlcpy(both, s, siz);
+    my_strlcat(both, t, siz);
+
+    return both;
+}
+
+
+static char * find_filename(char * name)
+{
+	FILE *fp;
+	char *s;
+	
+	if (!name) return NULL;
+	
+	fp = fopen(name, "r");
+	if (fp) {
+		fclose(fp);
+		return strdup(name);
+	}
+	
+	s = strdup_together(name, ".rtf");
+	fp = fopen(s, "r");
+	if (fp) {
+		fclose(fp);
+		return s;
+	}
+
+	free(s);
+	s = strdup_together(name, ".rtfd");
+	fp = fopen(s, "r");
+	if (fp) {
+		fclose(fp);
+		free(s);
+		s = strdup_together(name, ".rtfd/TXT.rtf");
+		fp = fopen(s, "r");
+		if (!fp) 
+			return NULL;
+		
+		fclose(fp);
+		return s;
+	}
+
+	free(s);
+	s = strdup_together(name, ".eqn");
+	fp = fopen(s, "r");
+	if (fp) {
+		fclose(fp);
+		return s;
+	}
+
+	free(s);
+	return NULL;
+}
+
+static char * make_output_filename(char * name)
+{
+	char *s;
+	int i,len;
+	if (!name) return NULL;
+	s = strdup(name);
+	len = strlen(s);
+    for (i = 0; i < len; i++) {
+        if (s[i] == ' ' || s[i] == '_' || s[i] == '.') s[i] = '-';
+    }
+
+	strcpy(s+strlen(s)-4, ".tex");
+	return s;
+}
+
+static enum INPUT_FILE_TYPE identify_filename(char *name)
+{
+	int len;
+	
+	if (!name) return TYPE_UNKNOWN;
+	
+	len = strlen(name);
+	
+	if (len > 5 && strcasecmp(name+len-5,".rtfd")==0)
+		return TYPE_RTFD;
+		
+	if (len > 4 && strcasecmp(name+len-4,".rtf")==0)
+		return TYPE_RTF;
+		
+	if (len > 4 && strcasecmp(name+len-4,".eqn")==0)
+		return TYPE_EQN;
+		
+	return TYPE_UNKNOWN;
+}
+
 int 
 main(int argc, char **argv)
 {
-    char            c, buf[rtfBufSiz], *buf1, buf2[rtfBufSiz];
+    char            c, buf[rtfBufSiz], *input_filename, *output_filename;
     int             fileCounter;
     long            cursorPos;
-    size_t          i,bufLength;
     extern char    *optarg;
     extern int      optind;
 
@@ -280,103 +456,73 @@ main(int argc, char **argv)
 
     for (fileCounter = 0; fileCounter < argc; fileCounter++) {
 
-        fprintf(stderr, "Processing %s\n", argv[fileCounter]);
 
         RTFInit();
         
-        strcpy(buf2, argv[fileCounter]);
-        buf1 = buf2;
-        bufLength = strlen(buf1);
-
-		if (bufLength > 5 && strcasecmp(buf1+bufLength-5,".rtfd")==0) {
-			strcat(buf2,"/TXT.RTF");
-			bufLength = strlen(buf2);
-			g_file_is_rtfd = 1;
-		} else
-			g_file_is_rtfd = 0;
+        input_filename = find_filename(argv[fileCounter]);
+        g_input_file_type = identify_filename(input_filename);
+        			
+        if (g_input_file_type == TYPE_UNKNOWN) {
+            RTFMsg("* Skipping unknown file '%s'\n", input_filename);
+            if (input_filename) free(input_filename);
+			continue;
+		}
 		
-		
+        fprintf(stderr, "Processing %s\n", input_filename);
         /*
          * open first file, set it as the input file, and enable
          * global access to input file name
          */
-
-		ifp = fopen(buf2, "rb");
-
+		ifp = fopen(input_filename, "rb");
         if (!ifp) {
-            RTFPanic("* Cannot open input file %s\n", buf2);
+            RTFPanic("* Cannot open input file %s\n", input_filename);
             exit(1);
         }
         RTFSetStream(ifp);
 
-        /* strip extension and determine if the input file is a .eqn file */
-        g_equation_file = 0;
-
-        if (bufLength > 3) {
-            buf1 += (bufLength - 4);
-            /* strip .rtf by terminating string */
-            if (strcmp(buf1, ".rtf") == 0 || strcmp(buf1, ".RTF") == 0)
-                buf2[bufLength - 4] = '\0';
-            else if (strcmp(buf1, ".eqn") == 0 || strcmp(buf1, ".EQN") == 0) {
-                buf2[bufLength - 4] = '\0';
-                g_equation_file = 1;
-            }
-        }
-
         /* look at second token to check if input file is of type rtf */
-        if (!g_equation_file) {
+        if (g_input_file_type == TYPE_RTF || g_input_file_type == TYPE_RTFD) {
 			cursorPos = ftell(ifp);
 			RTFGetToken();
 			RTFGetToken();
 			if (rtfMajor != rtfVersion) {
-				RTFMsg("* Oops! %s is not an rtf file!\n", argv[fileCounter]);
-				if (fclose(ifp) != 0)
-					printf("* error closing input file %s\n", argv[fileCounter]);
+				RTFMsg("* Oops! %s is not an rtf file!\n", input_filename);
+				fclose(ifp);
+				free(input_filename);
 				continue;
 			}
 			fseek(ifp, cursorPos, 0);
         }
         RTFInit();
         
-        /* replace any spaces in input file name by a dash - */
-        buf1 = strrchr(buf2, PATH_SEP); /* strip away path info */
-        if (buf1 == (char *) NULL)
-            buf1 = buf2;
-        bufLength = strlen(buf1);
-        for (i = 0; i < bufLength; i++) {
-            if (buf1[i] == ' ' || buf1[i] == '_' || buf1[i] == '.')
-                buf1[i] = '-';
+        output_filename = make_output_filename(input_filename);
+
+        ofp = fopen(output_filename, "w+");
+        if (!ofp) {
+            RTFMsg("Cannot open output file %s\n", output_filename);
+            free(input_filename);
+            free(output_filename);
+            continue;
         }
-
-        /* set input name to modified name of input file */
-        if (!g_equation_file) 
-        	RTFSetInputName(buf2);
-
-        /*
-         * open output file, set it as the output file, and enable
-         * global access to output file name
-         */
-        strcpy(buf, buf2);
-        strcat(buf, ".tex");
-
-        if ((ofp = fopen(buf, "w+")) == NULL)
-            RTFPanic("Cannot open output file %s\n", buf);
-
+        
+		output_filename[strlen(output_filename)-4] = '\0';
+        RTFSetInputName(output_filename);
+        
         RTFSetOutputStream(ofp);
         RTFSetOutputName(buf);
 
         if (BeginLaTeXFile()) {
-        	if (g_equation_file) 
-                (void) ConvertEquationFile(argv[fileCounter]);
+        	if (g_input_file_type == TYPE_EQN) 
+                (void) ConvertEquationFile(input_filename);
             else
             	RTFRead();
             EndLaTeXFile();
         }
         
-        if (fclose(ifp) != 0)
-            printf("* error closing input file %s\n", argv[fileCounter]);
-        if (fclose(ofp) != 0)
-            printf("* error closing output file %s\n", buf);
+        fclose(ifp);
+        fclose(ofp);
+		free(input_filename);
+		free(output_filename);
     }
 
     /* printf ("* groupLevel is %d\n", groupLevel); */

@@ -611,7 +611,7 @@ static void _RTFGetToken(void)
         else if (strcmp(&rtfTextBuf[1], "pca") == 0)
             globalCharSet = pcaCharSet;
 
-        if (g_file_is_rtfd)
+        if (g_input_file_type == TYPE_RTFD)
         	globalCharSet = nextCharSet;
 
         ReadCharSetMaps();
@@ -967,7 +967,7 @@ static void ReadCharSetMaps(void)
         genCharCode = cp1252CharCode;
 
     /* use NeXtStep Code Page unless \ansicpg token is encountered */
-	if (g_file_is_rtfd)
+    if (g_input_file_type == TYPE_RTFD)
 		genCharCode = cpNextCharCode;
 
     genCharSetFile = &rtfTextBuf[1];
