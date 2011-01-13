@@ -494,27 +494,34 @@ short ReadPrefFile(char *file)
   (byte & 0x02 ? 1 : 0), \
   (byte & 0x01 ? 1 : 0) 
   
+static void PutIntAsUtf8(int x)
+{
+	x &= 0x0000FFFF;
+    if (x < 0x80){
+    	fputc((char) x, ostream);
+    	return;
+    }
+    if (x < 0xA0) {
+    	fprintf(stderr, "there should be character c='%c'=0x%02x\n",(char) x,x);
+    	return;
+    }
+    if (x<0x07FF) {
+    	unsigned char d, e;
+		d = 0xC0 + (x & 0x07C0)/64;
+		e = 0x80 + (x & 0x003F);
+		fputc(d, ostream);
+		fputc(e, ostream);
+/*
+        fprintf(stderr,"x=%d%d%d%d%d%d%d%d %d%d%d%d%d%d%d%d,", BYTETOBINARY(x/256), BYTETOBINARY(x & 0x00FF));
+		fprintf(stderr,"==> utf8==%d%d%d%d%d%d%d%d,", BYTETOBINARY(d) );
+		fprintf(stderr,"%d%d%d%d%d%d%d%d\n", BYTETOBINARY(e));
+*/
+    }
+}
+
 static void PutLitChar(int c)
 {
-	unsigned char d,e;
-	
-	c &= 0x00ff;
-    if (c < 0x80){
-    	fputc(c, ostream);
-    	return;
-    }
-    if (c < 0xA0) {
-    	fprintf(stderr, "there should be character c='%c'=0x%02x\n",c,c);
-    	return;
-    }
-    d = 0xc0 + (c & 0xC0) /64;
-    e = 0x80 + (c & 0x3F);
-    fputc(d, ostream);
-    fputc(e, ostream);
-//    fprintf(stderr, "c='%c'=0x%02x ===> utf8 is 0x%02x,0x%02x\n",c,c, d,e);
-//	fprintf(stderr,"c=%d%d%d%d%d%d%d%d,", BYTETOBINARY(c));
-//	fprintf(stderr,"==> utf8==%d%d%d%d%d%d%d%d,", BYTETOBINARY(d) );
-//	fprintf(stderr,"%d%d%d%d%d%d%d%d\n", BYTETOBINARY(e));
+	PutIntAsUtf8(c & 0x00ff);
 }
 
 static void PutLitStr(char *s)
@@ -657,10 +664,20 @@ int stdCode;
         return;
     }
     oStr = outMap[stdCode];
-    if (oStr == (char *) NULL) {        /* no output sequence in map */
+    if (!oStr) {        /* no output sequence in map */
         snprintf(buf, rtfBufSiz, "(%s)", RTFStdCharName(stdCode));
         oStr = buf;
+    	PutLitStr(oStr);
+    	wrapCount += (int) strlen(oStr);
+    	return;
     }
+    
+    if (oStr[0] == '0' && oStr[1] == 'x') {
+    	int x = RTFHexStrToInt(oStr);
+    	PutIntAsUtf8(x);
+    	return;
+    }
+        
     PutLitStr(oStr);
     wrapCount += (int) strlen(oStr);
 }
@@ -4330,10 +4347,12 @@ static void ReadUnicode(void)
     	return;
     }
 
-    snprintf(unitext,20,"\\unichar{%d}",(int)rtfParam);
+    PutIntAsUtf8(rtfParam);
+    /*snprintf(unitext,20,"\\unichar{%d}",(int)rtfParam);
     if (0) fprintf(stderr,"unicode --- %s!\n",unitext);
     PutLitStr(unitext);
     wrapCount += (uint32_t) strlen(unitext);
+    */
     requireUnicodePackage = true;
     RTFGetToken();
 }

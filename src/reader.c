@@ -2011,6 +2011,24 @@ short RTFHexToChar(short i)
     return (i - 10 + 'a');
 }
 
+/* string must start with 0x or 0X */
+int RTFHexStrToInt(char * s)
+{
+	int i,x;
+	if (!s) 
+		return 0;
+	if (strlen(s)<3) 
+		return 0;
+	if (s[0] != '0' || (s[1] != 'x' && s[1] != 'X')) 
+		return 0;
+	i=2;
+	x=0;
+	while (s[i] != '\0') {
+		x = x*16 + RTFHexToChar(s[i]);
+		i++;
+	}
+	return x;
+}
 
 /* ---------------------------------------------------------------------- */
 

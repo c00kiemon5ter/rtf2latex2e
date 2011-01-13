@@ -10,7 +10,7 @@
 # The '%' is NOT a COMMENT sign, it denotes that rtf2latex2e should treat the 
 # following string as a qualifier.
 
-%\usepackage[utf8]{inputenc}
+%\usepackage[utf8x]{inputenc}
 
 
 # Field 1 is the standard character name.  Field 2 is the output sequence
@@ -122,43 +122,43 @@ asciitilde	{\textasciitilde}
 
 AE					Æ					# \AE
 Aacute				Á					# "\'{A}"
-Abreve	\u{A}
+Abreve	           	0x0102              # \u{A}
 Acircumflex			Â					# \^{A}
 Adieresis			Ä					# '\"{A}'
 Agrave				À					# "\`{A}"
-Aogonek	\k{A}
+Aogonek	 			0x0104   			# \k{A}
 Aring				Å					# \AA
 Atilde				Ã					# \~{A}
 aacute				á					# "\'{a}"
-abreve	\u{a}
+abreve				0x0103				# \u{a}
 acircumflex			â					# \^{a}
-acute		"'"
-acutedbl	\H{}
+acute				"'"
+acutedbl			0x02dd				# \H{}
 adieresis			ä					# '\"{a}'
 ae					æ					# {\ae}
 agrave				à					# "\`{a}"
-aleph	\ensuremath{\aleph}
-angle		\ensuremath{\angle}
-angleleft	\ensuremath{\langle}
-angleright	\ensuremath{\rangle}
-aogonek		\k{a}
-apple		{\textapplelogo}
-approxequal	\ensuremath{\approx}
+aleph				\ensuremath{\aleph}
+angle				\ensuremath{\angle}
+angleleft			\ensuremath{\langle}
+angleright			\ensuremath{\rangle}
+aogonek				0x0105				# \k{a}
+apple				\textapplelogo{}
+approxequal			\ensuremath{\approx}
 aring				å					# {\aa}
-arrowboth	\ensuremath{\leftrightarrow}
-arrowdown	\ensuremath{\downarrow}
-arrowhorizex	---
-arrowleft	\ensuremath{\leftarrow}
-arrowright	\ensuremath{\rightarrow}
-arrowdblboth	\ensuremath{\Leftrightarrow}
-arrowdbldown	\ensuremath{\Downarrow}
-arrowdblleft	\ensuremath{\Leftarrow}
-arrowdblright	\ensuremath{\Rightarrow}
-arrowdblup	\ensuremath{\Uparrow}
-arrowup		\ensuremath{\uparrow}
-arrowvertex	\ensuremath{\arrowvert}
+arrowboth			\ensuremath{\leftrightarrow}
+arrowdown			\ensuremath{\downarrow}
+arrowhorizex		---
+arrowleft			\ensuremath{\leftarrow}
+arrowright			\ensuremath{\rightarrow}
+arrowdblboth		\ensuremath{\Leftrightarrow}
+arrowdbldown		\ensuremath{\Downarrow}
+arrowdblleft		\ensuremath{\Leftarrow}
+arrowdblright		\ensuremath{\Rightarrow}
+arrowdblup			\ensuremath{\Uparrow}
+arrowup				\ensuremath{\uparrow}
+arrowvertex			\ensuremath{\arrowvert}
 atilde				ã					# \~{a}
-breve		\u{}
+breve				0x02D8				# \u{}
 bracevert	\ensuremath{\bracevert}
 brokenbar	{\textbrokenbar}
 bullet		{\textbullet}			# {\textbullet}

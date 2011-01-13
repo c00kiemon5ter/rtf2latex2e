@@ -358,6 +358,7 @@ char 	    *RTFStrSave(char *s);
 void 		RTFFree(char *p);
 short 	RTFCharToHex(char c);
 short 	RTFHexToChar(short i);
+int RTFHexStrToInt(char * s);
 void 		RTFSetMsgProc(RTFFuncPtr proc);
 void 		RTFSetPanicProc(RTFFuncPtr proc);
 short	RTFPushedChar (void);
