@@ -50,13 +50,13 @@ RTFPREP_SRCS = src/rtf-controls           src/rtfprep.c              src/standar
 
 RTFPREP_OBJS = src/rtfprep.o              src/tokenscan.o
 
-PREFS        = pref/TeX-map               pref/TeX-map.latin1        pref/cp437.map          \
-               pref/TeX-map.applemac      pref/ansi-sym              pref/cp850.map          \
-               pref/TeX-map.cp1250        pref/applemac.map          pref/mac-sym            \
-               pref/TeX-map.cp1252        pref/cp1250.map            pref/pc-sym             \
-               pref/TeX-map.default       pref/cp1252.map            pref/pca-sym            \
-               pref/TeX-map.german        pref/cp1254.map            pref/r2l-head           \
-               pref/r2l-map               pref/r2l-pref              pref/rtf-ctrl           \
+PREFS        = pref/latex-encoding          pref/latex-encoding.latin1 pref/cp437.map          \
+               pref/latex-encoding.applemac pref/ansi-sym              pref/cp850.map          \
+               pref/latex-encoding.cp1250   pref/applemac.map          pref/mac-sym            \
+               pref/latex-encoding.cp1252   pref/cp1250.map            pref/pc-sym             \
+               pref/latex-encoding.default  pref/cp1252.map            pref/pca-sym            \
+               pref/latex-encoding.german   pref/cp1254.map            pref/r2l-head           \
+               pref/r2l-map                 pref/r2l-pref              pref/rtf-ctrl           \
                pref/next.map
 
 DOCS         = doc/GPL_license            doc/Release-notes.txt      README                  \

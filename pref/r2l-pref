@@ -8,10 +8,13 @@
 # preferences.
 
 # specify the output map file to map between RTF and LaTeX characters.
-# Examples are TeX-map (default), Tex-map.applemac (uses applemac input
-# encoding), Tex-map.cp1252 (uses cp1252 input encoding), etc.
+# This is the character set used for the characters in the emitted latex.
+# Examples are 
+#      latex-encoding          (default unicode), 
+#      latex-encoding.applemac (uses applemac input encoding), 
+#      latex-encoding.cp1252   (uses cp1252 input encoding)
 
-outputMapFile	TeX-map
+outputMapFile	latex-encoding
 
 # ignore ruler settings: this will cause rtf2latex2e to skip all visual
 # page and paragraph formatting. Set to true to enable, false to disable.

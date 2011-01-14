@@ -353,12 +353,12 @@ void WriterInit(void)
     if (ReadPrefFile(prefFileName) == 0)
         RTFPanic("Cannot read preferences file %s", prefFileName);
 
-    /* read output map file TeX-map */
+    /* read output map file latex-encoding */
     strcpy(texMapQualifier, "");
 
-    /* if a TeX-map file was not specified, set it to the default */
+    /* if a latex-encoding file was not specified, set it to the default */
     if (strcmp(outputMapName, "") == 0)
-        strcpy(outputMapName, "TeX-map");
+        strcpy(outputMapName, "latex-encoding");
 
     if (RTFReadOutputMap(outputMapName, outMap, 1) == 0)
         RTFPanic("Cannot read output map %s", outputMapName);
@@ -1462,7 +1462,7 @@ static void WriteLaTeXHeader(void)
             printf("¥ error closing preamble file\n");
     }
 
-    /* insert TeX-map qualifier */
+    /* insert latex-encoding qualifier */
     if (strcmp(texMapQualifier, "") != 0)
         PutLitStr(texMapQualifier);
 
@@ -2137,7 +2137,7 @@ static void CheckForParagraph(void)
 /*
  * The reason these use the rtfSC_xxx thingies instead of just writing
  * out ' ', '-', '"', etc., is so that the mapping for these characters
- * can be controlled by the TeX-map file.
+ * can be controlled by the latex-encoding file.
  */
 
 static void SpecialChar(void)
