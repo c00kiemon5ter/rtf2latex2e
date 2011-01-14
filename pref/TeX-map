@@ -24,7 +24,7 @@
 
 space		" "
 exclam		!
-quotedbl	{\tt\char`\"}
+quotedbl	{\tt\char34}
 numbersign	\#
 dollar		\$
 percent		\%
@@ -39,12 +39,12 @@ hyphen		-
 period		.
 slash		/
 zero		0
-one		1
-two		2
+one			1
+two			2
 three		3
 four		4
 five		5
-six		6
+six			6
 seven		7
 eight		8
 nine		9
@@ -120,23 +120,23 @@ asciitilde	{\textasciitilde}
 
 # non-ASCII
 
-AE					Æ					# \AE
-Aacute				Á					# "\'{A}"
+AE					ï¿½					# \AE
+Aacute				ï¿½					# "\'{A}"
 Abreve	           	0x0102              # \u{A}
-Acircumflex			Â					# \^{A}
-Adieresis			Ä					# '\"{A}'
-Agrave				À					# "\`{A}"
+Acircumflex			ï¿½					# \^{A}
+Adieresis			ï¿½					# '\"{A}'
+Agrave				ï¿½					# "\`{A}"
 Aogonek	 			0x0104   			# \k{A}
-Aring				Å					# \AA
-Atilde				Ã					# \~{A}
-aacute				á					# "\'{a}"
+Aring				ï¿½					# \AA
+Atilde				ï¿½					# \~{A}
+aacute				ï¿½					# "\'{a}"
 abreve				0x0103				# \u{a}
-acircumflex			â					# \^{a}
+acircumflex			ï¿½					# \^{a}
 acute				"'"
 acutedbl			0x02dd				# \H{}
-adieresis			ä					# '\"{a}'
-ae					æ					# {\ae}
-agrave				à					# "\`{a}"
+adieresis			ï¿½					# '\"{a}'
+ae					ï¿½					# {\ae}
+agrave				ï¿½					# "\`{a}"
 aleph				\ensuremath{\aleph}
 angle				\ensuremath{\angle}
 angleleft			\ensuremath{\langle}
@@ -144,7 +144,7 @@ angleright			\ensuremath{\rangle}
 aogonek				0x0105				# \k{a}
 apple				\textapplelogo{}
 approxequal			\ensuremath{\approx}
-aring				å					# {\aa}
+aring				ï¿½					# {\aa}
 arrowboth			\ensuremath{\leftrightarrow}
 arrowdown			\ensuremath{\downarrow}
 arrowhorizex		---
@@ -157,57 +157,57 @@ arrowdblright		\ensuremath{\Rightarrow}
 arrowdblup			\ensuremath{\Uparrow}
 arrowup				\ensuremath{\uparrow}
 arrowvertex			\ensuremath{\arrowvert}
-atilde				ã					# \~{a}
-breve				0x02D8				# \u{}
-bracevert	\ensuremath{\bracevert}
-brokenbar	{\textbrokenbar}
-bullet		{\textbullet}			# {\textbullet}
-carriagereturn	\ensuremath{\hookleftarrow}
-Cacute		"\'{C}"
-Ccaron		\v{C}
-Ccedilla			Ç					# \c{C}
-Cdblhorizbar	\hbox{\rm\rlap=C}
-cacute		"\'{c}"
-caron		\v{}
-ccaron		\v{c}
-ccedilla			ç					# \c{c}
-cedilla		\c{}
-cent		\hbox{\rm\rlap/c}
-circlemultiply	\ensuremath{\otimes}
-circleplus		\ensuremath{\oplus}
-circumflex	\^{}
-congruent	\ensuremath{\cong}
-copyright	{\copyright}
-copyrightsans	{\copyright}
-club		\ensuremath{\clubsuit}
-currency	{\textcurrency}
-Dcaron		\v{D}
-Dslash		{\DJ}
-dagger		{\textdagger}
-daggerdbl	{\textdaggerdbl}
-dcaron		\v{d}
-degree		\ensuremath{^\circ}
-diagup		\ensuremath{\diagup}
-diamond		\ensuremath{\diamondsuit}
+atilde				ï¿½					# \~{a}
+breve				0x02D8					# \u{}
+bracevert			\ensuremath{\bracevert}
+brokenbar			\textbrokenbar{}
+bullet				\textbullet{}			# {\textbullet}
+carriagereturn		\ensuremath{\hookleftarrow}
+Cacute				0x0106					#"\'{C}"
+Ccaron				0x010C					# \v{C}
+Ccedilla			0xE7					# \c{C}
+Cdblhorizbar		\hbox{\rm\rlap=C}
+cacute				0x0107					#"\'{c}"
+caron				0x02C7					#\v{}
+ccaron				0x010D					#\v{c}
+ccedilla			0xC7					# \c{c}
+cedilla				0xB8					# \c{}
+cent				0xA2					# \hbox{\rm\rlap/c}
+circlemultiply		\ensuremath{\otimes}
+circleplus			\ensuremath{\oplus}
+circumflex			0x02C6					#\^{}
+congruent			\ensuremath{\cong}
+copyright			0xA9
+copyrightsans		0xA9
+club				\clubsuit{}
+currency			0xA4					#\textcurrency{}
+Dcaron				0x010E					#\v{D}
+Dslash				0x0110					#{\DJ}
+dagger				0x2020					#{\textdagger}
+daggerdbl			0x2021					#{\textdaggerdbl}
+dcaron				0x010D					#\v{d}
+degree				0xB0					#\ensuremath{^\circ}
+diagup				\ensuremath{\diagup}
+diamond				\diamondsuit{}
 dieresis	'\"{}'
 divide		\ensuremath{\div}
 dotaccent	\.{}
 dotlessi	{\i}
 dslash		{\dj}
-Eacute				É					# "\'{E}"
+Eacute				ï¿½					# "\'{E}"
 Ecaron		\v{E}
 Ecircumflex		\^{E}
-Edieresis			Ë					# '\"{E}'
-Egrave				È					# "\`{E}"
+Edieresis			ï¿½					# '\"{E}'
+Egrave				ï¿½					# "\`{E}"
 Eogonek		\k{E}
 Eth			{\DH}
-eacute				é					# "\'{e}"
+eacute				ï¿½					# "\'{e}"
 ecaron		\v{e}
-ecircumflex			ê					# \^{e}
-edieresis			ë					# '\"{e}'
-egrave				è					# "\`{e}"
+ecircumflex			ï¿½					# \^{e}
+edieresis			ï¿½					# '\"{e}'
+egrave				ï¿½					# "\`{e}"
 element		\ensuremath{\in}
-ellipsis	"\dots "
+ellipsis	...
 emdash		---
 emptyset	\ensuremath{\emptyset}
 endash		--
@@ -224,26 +224,26 @@ forall		\ensuremath{\forall}
 fraction	/
 Gbreve		\u{G}
 gbreve		\u{g}
-germandbls			ß					# {\ss}
+germandbls			ï¿½					# {\ss}
 grave		"\`{}"
 gradient	\ensuremath{\nabla}
 greaterequal	\ensuremath{\geq}
-guillemotleft   	«					# {\guillemotleft}
-guillemotright  	»					# {\guillemotright}
+guillemotleft   	ï¿½					# {\guillemotleft}
+guillemotright  	ï¿½					# {\guillemotright}
 guilsinglleft   	{\guilsinglleft}
 guilsinglright  	{\guilsinglright}
 heart			\ensuremath{\heartsuit}
 hungarumlaut	\H{}
-Iacute				Í					# "\'{I}"
-Icircumflex			Î					# \^{I}
-Idieresis			Ï					# '\"{I}'
+Iacute				ï¿½					# "\'{I}"
+Icircumflex			ï¿½					# \^{I}
+Idieresis			ï¿½					# '\"{I}'
 Idotaccent		\.{I}
 Ifraktur		\ensuremath{\mathfrak{I}}
-Igrave				Ì					# "\`{I}"
-iacute				í					# "\'{\i}"
-icircumflex			î					# \^{\i}
-idieresis			ï					# '\"{\i}'
-igrave				ì					# "\`{\i}"
+Igrave				ï¿½					# "\`{I}"
+iacute				ï¿½					# "\'{\i}"
+icircumflex			ï¿½					# \^{\i}
+idieresis			ï¿½					# '\"{\i}'
+igrave				ï¿½					# "\`{\i}"
 infinity	\ensuremath{\infty}
 integral	\ensuremath{\int}
 intersection	\ensuremath{\cap}
@@ -277,7 +277,7 @@ mu			\ensuremath{u}
 multiply	\ensuremath{\times}
 Nacute		"\'{N}"
 Ncaron		\v{N}
-Ntilde				Ñ					# \~{N}
+Ntilde				ï¿½					# \~{N}
 nabla		\ensuremath{\nabla}
 nacute		"\'{n}"
 ncaron		\v{n}
@@ -286,28 +286,28 @@ nobrkspace	~
 notelement	\ensuremath{\notin}
 notequal	\ensuremath{\neq}
 notsubset	\ensuremath{\not\subset}
-ntilde				ñ					# \~{n}
+ntilde				ï¿½					# \~{n}
 OE				\OE{}
-Oacute				Ó					# "\'{O}"
+Oacute				ï¿½					# "\'{O}"
 Oacutedbl	\H{O}
-Ocircumflex			Ô					# \^{O}
-Odieresis			Ö					#'\"{O}'
-Ograve				Ò					# "\`{O}"
-Oslash				Ø					# {\O}
-Otilde				Õ					# \~{O}
-oacute				ó					# "\'{o}"
+Ocircumflex			ï¿½					# \^{O}
+Odieresis			ï¿½					#'\"{O}'
+Ograve				ï¿½					# "\`{O}"
+Oslash				ï¿½					# {\O}
+Otilde				ï¿½					# \~{O}
+oacute				ï¿½					# "\'{o}"
 oacutedbl	\H{o}
-ocircumflex			ô					# \^{o}
-odieresis			ö					# '\"{o}'
+ocircumflex			ï¿½					# \^{o}
+odieresis			ï¿½					# '\"{o}'
 oe					\oe{}
-ograve				ò					# "\`{o}"
+ograve				ï¿½					# "\`{o}"
 ogonek		\k{}
 onehalf         \ensuremath{\frac12}
 onequarter      \ensuremath{\frac14}
 ordfeminine		\ensuremath{^a}
 ordmasculine	\ensuremath{^\circ}
-otilde				õ					# \~{o}
-oslash				ø					# {\o}
+otilde				ï¿½					# \~{o}
+oslash				ï¿½					# {\o}
 paragraph	{\P}
 partialdiff	\ensuremath{\partial}
 periodcentered	{\textperiodcentered}
@@ -366,24 +366,24 @@ threequarters	\ensuremath{\frac34}
 tilde		\~{}
 trademark	{\texttrademark}
 trademarksans	{\texttrademark}
-Uacute				Ú					# "\'{U}"
+Uacute				ï¿½					# "\'{U}"
 Uacutedbl	\H{U}
-Ucircumflex			Û					# \^{U}
-Udieresis			Ü					# '\"{U}'
-Ugrave				Ù					# "\`{U}"
+Ucircumflex			ï¿½					# \^{U}
+Udieresis			ï¿½					# '\"{U}'
+Ugrave				ï¿½					# "\`{U}"
 Uring		\r{U}
-uacute				ú					# "\'{u}"
+uacute				ï¿½					# "\'{u}"
 uacutedbl	\H{u}
-ucircumflex			û					# \^{u}
-udieresis			ü					# '\"{u}'
-ugrave				ù					# "\`{u}"
+ucircumflex			ï¿½					# \^{u}
+udieresis			ï¿½					# '\"{u}'
+ugrave				ï¿½					# "\`{u}"
 union		\ensuremath{\cup}
 uring		\r{u}
 weierstrass	\ensuremath{\wp}
-Yacute				Ý					# "\'{Y}"
+Yacute				ï¿½					# "\'{Y}"
 Ydieresis			'\"{Y}'
-yacute				ý					# "\'{y}"
-ydieresis			ÿ					# '\"{y}'
+yacute				ï¿½					# "\'{y}"
+ydieresis			ï¿½					# '\"{y}'
 yen			\hbox{\rm\rlap=Y}
 # yen			{\textyen} 					# not available in some encodings
 Zacute		"\'{Z}"

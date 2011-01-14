@@ -2024,7 +2024,7 @@ int RTFHexStrToInt(char * s)
 	i=2;
 	x=0;
 	while (s[i] != '\0') {
-		x = x*16 + RTFHexToChar(s[i]);
+		x = x*16 + RTFCharToHex(s[i]);
 		i++;
 	}
 	return x;

@@ -496,50 +496,65 @@ short ReadPrefFile(char *file)
   
 static void PutIntAsUtf8(int x)
 {
-	x &= 0x0000FFFF;
+    x &= 0x0000FFFF;
     if (x < 0x80){
-    	fputc((char) x, ostream);
-    	return;
+        fputc((char) x, ostream);
+        return;
     }
     if (x < 0xA0) {
-    	fprintf(stderr, "there should be character c='%c'=0x%02x\n",(char) x,x);
-    	return;
+        fprintf(stderr, "there should be character c='%c'=0x%02x\n",(char) x,x);
+        return;
     }
     if (x<0x07FF) {
-    	unsigned char d, e;
-		d = 0xC0 + (x & 0x07C0)/64;
-		e = 0x80 + (x & 0x003F);
-		fputc(d, ostream);
-		fputc(e, ostream);
-/*
-        fprintf(stderr,"x=%d%d%d%d%d%d%d%d %d%d%d%d%d%d%d%d,", BYTETOBINARY(x/256), BYTETOBINARY(x & 0x00FF));
-		fprintf(stderr,"==> utf8==%d%d%d%d%d%d%d%d,", BYTETOBINARY(d) );
-		fprintf(stderr,"%d%d%d%d%d%d%d%d\n", BYTETOBINARY(e));
-*/
+        unsigned char d, e;
+        d = 0xC0 + (x & 0x07C0)/64;
+        e = 0x80 + (x & 0x003F);
+        fputc(d, ostream);
+        fputc(e, ostream);
+//      fprintf(stderr,"0x%04x=%d%d%d%d%d%d%d%d %d%d%d%d%d%d%d%d,", x, BYTETOBINARY(x/256), BYTETOBINARY(x & 0x00FF));
+//      fprintf(stderr,"==> utf8==%d%d%d%d%d%d%d%d ", BYTETOBINARY(d) );
+//      fprintf(stderr,"%d%d%d%d%d%d%d%d\n", BYTETOBINARY(e));
+        return;
     }
+    
+    if (x<0xFFFF) {
+        unsigned char c, d, e;
+        c = 0xE0 + (x & 0xF000)/4096;
+        d = 0x80 + (x & 0x0FC0)/64;
+        e = 0x80 + (x & 0x003F);
+        fputc(c, ostream);
+        fputc(d, ostream);
+        fputc(e, ostream);
+//      fprintf(stderr,"0x%04x=%d%d%d%d%d%d%d%d %d%d%d%d%d%d%d%d,", x, BYTETOBINARY(x/256), BYTETOBINARY(x & 0x00FF));
+//      fprintf(stderr,"==> utf8==%d%d%d%d%d%d%d%d ", BYTETOBINARY(c) );
+//      fprintf(stderr,"%d%d%d%d%d%d%d%d ", BYTETOBINARY(d));
+//      fprintf(stderr,"%d%d%d%d%d%d%d%d\n", BYTETOBINARY(e));
+        return;
+    }
+    
 }
 
 static void PutLitChar(int c)
 {
-	PutIntAsUtf8(c & 0x00ff);
+    PutIntAsUtf8(c & 0x00ff);
 }
 
 static void PutLitStr(char *s)
 {
-	char *p = s;
-	if (!s) return;
-	while (*p) {
-		PutLitChar(*p);
-		p++;
-	}
+    char *p = s;
+    if (!s) return;
+    while (*p) {
+        PutLitChar(*p);
+        p++;
+    }
 }
 
 static void PutMathLitStr(char *s)
 {
     if (s && *s) {
-    	PutLitStr("$");
-    	PutLitStr(s);
-    	PutLitStr("$");
+        PutLitStr("$");
+        PutLitStr(s);
+        PutLitStr("$");
     }
 }
 
@@ -667,15 +682,16 @@ int stdCode;
     if (!oStr) {        /* no output sequence in map */
         snprintf(buf, rtfBufSiz, "(%s)", RTFStdCharName(stdCode));
         oStr = buf;
-    	PutLitStr(oStr);
-    	wrapCount += (int) strlen(oStr);
-    	return;
+        PutLitStr(oStr);
+        wrapCount += (int) strlen(oStr);
+        return;
     }
     
     if (oStr[0] == '0' && oStr[1] == 'x') {
-    	int x = RTFHexStrToInt(oStr);
-    	PutIntAsUtf8(x);
-    	return;
+        int x = RTFHexStrToInt(oStr);
+        /*fprintf(stderr,"hex string = '%s' = %d\n",oStr,x);*/
+        PutIntAsUtf8(x);
+        return;
     }
         
     PutLitStr(oStr);
@@ -1572,6 +1588,9 @@ static void WriteLaTeXFooter(void)
     PutLitStr("\n\n\\end{document}\n");
     fseek(ofp, packagePos, 0);
 
+    PutLitStr("\\usepackage[T1]{fontenc}\n");
+    PutLitStr("\\usepackage{textcomp}\n");
+    
     /* load required packages */
     if (requireSetspacePackage)
         PutLitStr("\\usepackage{setspace}\n");
@@ -1591,18 +1610,18 @@ static void WriteLaTeXFooter(void)
         PutLitStr("\\usepackage{ulem}\n");
     if (requireAmsMathPackage)
         PutLitStr("\\usepackage{amsmath}\n");
-    if (requireUnicodePackage) {
+    if (0 || requireUnicodePackage) {
       /*  PutLitStr("\\usepackage{textgreek}\n");*/
         PutLitStr("\\usepackage{ucs}\n");
     }
-    if (1 || requireLatin1Package) {
-    	PutLitStr("\\usepackage[T1]{fontenc}\n");
-    	//PutLitStr("\\usepackage[latin1]{inputenc}\n");
+    if (0 || requireLatin1Package) {
+        PutLitStr("\\usepackage[T1]{fontenc}\n");
+        //PutLitStr("\\usepackage[latin1]{inputenc}\n");
     }
     if (requireHyperrefPackage) {
         PutLitStr("\\usepackage{hyperref}\n");
     }
-    PutLitStr("\\newcommand{\\degree}{\\ensuremath{^\\circ}}\n");
+//    PutLitStr("\\newcommand{\\degree}{\\ensuremath{^\\circ}}\n");
     fseek(ofp, 0L, 2);          /* go back to end of stream */
 }
 
@@ -2182,7 +2201,7 @@ static void SpecialChar(void)
         suppressLineBreak = false;
         break;
     case rtfRDblQuote:
-    	PutLitStr("''");
+        PutLitStr("''");
         /*PutStdChar(rtfSC_quotedblright);*/
         suppressLineBreak = false;
         break;
@@ -2496,12 +2515,12 @@ static void PrescanTable(void)
                 foundColumn = false;
         }
 
-		if (g_debug_table_prescan) fprintf(stderr,"* reached end of row %d\n", table.rows);
+        if (g_debug_table_prescan) fprintf(stderr,"* reached end of row %d\n", table.rows);
 
         table.inside = false;
         table.newRowDef = false;
 
-		/* table row should end with rtfRowDef, rtfParAttr */
+        /* table row should end with rtfRowDef, rtfParAttr */
         while (1) {
 
             RTFGetToken();
@@ -2546,16 +2565,16 @@ static void PrescanTable(void)
             maxCols = table.cols;
 
 
-		if (g_debug_table_prescan) fprintf(stderr,"* read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]);
+        if (g_debug_table_prescan) fprintf(stderr,"* read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]);
         (table.rows)++;
         table.previousColumnValue = PREVIOUS_COLUMN_VALUE;
 
-		if (g_debug_table_prescan) fprintf(stderr,"* inside table is %d, new row def is %d\n", table.inside, table.newRowDef);
+        if (g_debug_table_prescan) fprintf(stderr,"* inside table is %d, new row def is %d\n", table.inside, table.newRowDef);
 
         if (table.inside && !(table.newRowDef)) {
             (table.rows)--;
             InheritTableRowDef();
-		    if (g_debug_table_prescan) fprintf(stderr,"* Inherited: read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]);
+            if (g_debug_table_prescan) fprintf(stderr,"* Inherited: read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]);
             (table.rows)++;
         }
 
@@ -2603,7 +2622,7 @@ static void PrescanTable(void)
 
     /******* Table parsing can be messy, and it is still buggy. *******/
 
-	if (g_debug_table_prescan) fprintf(stderr,"* table has %d rows and %d cols \n", table.rows, table.cols);
+    if (g_debug_table_prescan) fprintf(stderr,"* table has %d rows and %d cols \n", table.rows, table.cols);
 
     (table.columnBorders)[0] = table.leftEdge;
 
@@ -2613,14 +2632,14 @@ static void PrescanTable(void)
      * This is calculated in the function GetColumnSpan.
      */
      
-	if (g_debug_table_prescan) fprintf(stderr,"* sorting borders...\n");
+    if (g_debug_table_prescan) fprintf(stderr,"* sorting borders...\n");
     for (i = 0; i < (table.cols); i++)
         for (j = i + 1; j < (table.cols + 1); j++)
             if ((table.columnBorders)[i] > (table.columnBorders)[j])
                 Swap((table.columnBorders)[i], (table.columnBorders)[j]);
 
-	if (g_debug_table_prescan) fprintf(stderr,"* table left border is at %d\n", (table.columnBorders)[0]);
-	
+    if (g_debug_table_prescan) fprintf(stderr,"* table left border is at %d\n", (table.columnBorders)[0]);
+    
     for (i = 1; i < (table.cols + 1); i++) {
         /* Sometimes RTF does something stupid and assigns two adjoining cell
            the same right border value. Dunno why. If this happens, I move the
@@ -2630,7 +2649,7 @@ static void PrescanTable(void)
         if (table.columnBorders[i] == table.columnBorders[i - 1])
             table.columnBorders[i] += 10;
 
-		if (g_debug_table_prescan) fprintf(stderr,"* cell right border is at %d\n", table.columnBorders[i]); 
+        if (g_debug_table_prescan) fprintf(stderr,"* cell right border is at %d\n", table.columnBorders[i]); 
     }
 
     /* fill in column spans for each cell */
@@ -2645,7 +2664,7 @@ static void PrescanTable(void)
         if (cellPtr->columnSpan > 1)
             table.multiCol = true;
             
-		if (g_debug_table_prescan) fprintf(stderr,"* cell %d spans %d columns\n", cellPtr->index, cellPtr->columnSpan); 
+        if (g_debug_table_prescan) fprintf(stderr,"* cell %d spans %d columns\n", cellPtr->index, cellPtr->columnSpan); 
 
         /* correct the vertical cell position for any multicolumn cells */
         if ((cellPtr->y) != 0) {
@@ -2665,11 +2684,11 @@ static void PrescanTable(void)
 
     }
 
-	if (g_debug_table_prescan) {
+    if (g_debug_table_prescan) {
         for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
-			fprintf(stderr,"* cell #%d (%d, %d) ", cellPtr->index, cellPtr->x, cellPtr->y);
-			fprintf(stderr,"left=%5d right=%5d ", cellPtr->left, cellPtr->right);
-			fprintf(stderr,"and spans %d columns\n", cellPtr->columnSpan);
+            fprintf(stderr,"* cell #%d (%d, %d) ", cellPtr->index, cellPtr->x, cellPtr->y);
+            fprintf(stderr,"left=%5d right=%5d ", cellPtr->left, cellPtr->right);
+            fprintf(stderr,"and spans %d columns\n", cellPtr->columnSpan);
         }
     }
 
@@ -2722,8 +2741,8 @@ static void WriteCellHeader(int cellNum)
     if (wroteCellHeader)
         return;
 
-	if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
-	
+    if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
+
     cellPtr = GetCellInfo(cellNum);
     if (!cellPtr) {
         RTFPanic("WriteCellHeader: Attempting to access invalid cell at index %d\n", cellNum);
@@ -2766,13 +2785,13 @@ static void WriteCellHeader(int cellNum)
     suppressLineBreak = true;
     wroteCellHeader = true;
 
-	if (g_debug_table_writing)  {
-		snprintf(buf, rtfBufSiz, "[cell \\#%d]",cellNum);
+    if (g_debug_table_writing)  {
+        snprintf(buf, rtfBufSiz, "[cell \\#%d]",cellNum);
         PutLitStr(buf);
     }
 }
 
-/* This is where we actually process each table row. */
+/* This is where we translate each table row to latex. */
 static void ProcessTableRow(int rowNum)
 {
     boolean endOfRow = false;
@@ -2783,10 +2802,22 @@ static void ProcessTableRow(int rowNum)
 
     wroteCellHeader = false;
 
-	if (g_debug_table_writing) fprintf(stderr,"* Starting new row\n");
-	
+    if (g_debug_table_writing) fprintf(stderr,"* Starting new row\n");
+    
     while (!endOfRow) {
         RTFGetToken();
+        
+        /* ignore these */
+        if (RTFCheckCM(rtfControl, rtfTblAttr))
+            continue;
+
+        /* ignore unknown destination groups */
+        if (strcmp(rtfTextBuf, "\\*") == 0) {
+        /*ExamineToken();*/
+            RTFSkipGroup();
+            continue;
+        }
+
         if (RTFCheckCM(rtfControl, rtfCharAttr)) {
             switch (rtfMinor) {
             case rtfFontNum:
@@ -2815,80 +2846,49 @@ static void ProcessTableRow(int rowNum)
             continue;
         }
 
-        if (RTFCheckCM(rtfControl, rtfDestination)) {
-            WriteCellHeader(table.cellCount);
-            cellPtr = GetCellInfo(table.cellCount);
-            wrapCount = 1;
-            startCellText = true;
-            RTFRouteToken();
-            continue;
+
+        if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfRow)) {
+            if (g_debug_table_writing) fprintf(stderr,"* end of row\n");
+            return;
         }
 
-        /* ignore unknown destination groups */
-        if (strcmp(rtfTextBuf, "\\*") == 0) {
-            RTFSkipGroup();
-            continue;
-        }
-
-        if (RTFCheckCM(rtfControl, rtfSpecialChar)) {
-            switch (rtfMinor) {
-            case rtfRow:
-				if (g_debug_table_writing) fprintf(stderr,"* end of row\n");
-                return;
-
-            case rtfCell:
-                (table.cellCount)++;
-                cellsInThisRow++;
-                if (!startCellText) {   
-               		/* The cell is empty. */
-                    cellPtr = GetCellInfo(table.cellCount - 1);
-                    WriteCellHeader(table.cellCount - 1);
-                }
-                SetGroupLevels(SAVE_LEVELS);
-                CheckForCharAttr();
-                for (i = 0; i < charAttrCount; i++)
-                    PutLitChar('}');
-                charAttrCount = 0;
-                SetGroupLevels(RESTORE_LEVELS);
-                if (cellPtr->mergePar == first)
-                    PutLitChar('}');
-                PutLitStr("} & ");
-                InsertNewLine();
-                suppressLineBreak = true;
-                startCellText = false;  /* we are not in the text 
-                                         * field of a cell any more */
-                paragraph.alignment = left;
-                wroteCellHeader = false;
-                break;
-
-            default:
-                if (!startCellText) {   
-                    /* the cell is blank */
-                    cellPtr = GetCellInfo(table.cellCount);
-                    WriteCellHeader(table.cellCount);
-                    startCellText = true;
-                }
-                RTFRouteToken();
-                break;
+        if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfCell)) {
+            (table.cellCount)++;
+            cellsInThisRow++;
+            if (!startCellText) {   
+                /* The cell is empty. */
+                cellPtr = GetCellInfo(table.cellCount - 1);
+                WriteCellHeader(table.cellCount - 1);
             }
+            SetGroupLevels(SAVE_LEVELS);
+            CheckForCharAttr();
+            for (i = 0; i < charAttrCount; i++)
+                PutLitChar('}');
+            charAttrCount = 0;
+            SetGroupLevels(RESTORE_LEVELS);
+            if (cellPtr->mergePar == first)
+                PutLitChar('}');
+            PutLitStr("} & ");
+            InsertNewLine();
+            suppressLineBreak = true;
+            startCellText = false;  /* we are not in the text 
+                                     * field of a cell any more */
+            paragraph.alignment = left;
+            wroteCellHeader = false;
             continue;
         }
 
-        if (RTFCheckCM(rtfControl, rtfTblAttr) == 0) {
-            /* if we see text, we are already in the text field of a cell */
-            if (rtfClass == rtfText && !startCellText) {
+        if (!startCellText) {
+            if (rtfMajor == rtfDestination || rtfMajor ==rtfSpecialChar || rtfClass == rtfText) {
                 WriteCellHeader(table.cellCount);
                 cellPtr = GetCellInfo(table.cellCount);
                 wrapCount = 1;
                 startCellText = true;
                 textStyle.newStyle = false;
             }
-            RTFRouteToken();
-            continue;
         }
-
-        if (RTFCheckCM(rtfControl, rtfGroup))
-            RTFRouteToken();
+        
+        RTFRouteToken();
     }
 }
 
@@ -2964,7 +2964,7 @@ static void DoTable(void)
     /* Prescan table */
     table.cellCount = 0;
     PrescanTable();
-/*      printf ("* done prescanning table...\n"); */
+    if (g_debug_table_writing) fprintf(stderr,"* done prescanning table...\n");
     table.cellCount = 0;
 
     table.inside = true;
@@ -3427,13 +3427,13 @@ static void IncludeGraphics(char *pictureType)
         strcpy(suffix, ".eps");
     else if (strcmp(pictureType, "pict") == 0) {
 #ifdef PICT2PDF
-		char *pdfname = WritePictAsPDF(picture.name);
-    	if (pdfname) {
-    		strcpy(picture.name,pdfname);
-    		free(pdfname);
-    	}
+        char *pdfname = WritePictAsPDF(picture.name);
+        if (pdfname) {
+            strcpy(picture.name,pdfname);
+            free(pdfname);
+        }
         strcpy(suffix, ".pdf");
-#endif    		
+#endif          
     }
 
     if (picture.scaleX == 0)
@@ -3792,13 +3792,13 @@ DecodeOLE(char *objectFileName, char *streamType,
 
 static int ishex(char c)
 {
-	if ( '0' <= c && c <= '9' )
-		return 1;
-	if ('a' <= c && c <= 'f') 
-		return 1;
-	if ('A' <= c && c <= 'F') 
-		return 1;
-	return 0;
+    if ( '0' <= c && c <= '9' )
+        return 1;
+    if ('a' <= c && c <= 'f') 
+        return 1;
+    if ('A' <= c && c <= 'F') 
+        return 1;
+    return 0;
 }
 
 /* 
@@ -3842,7 +3842,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     while (i < 8) {
         RTFGetToken();
         if (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d)
-        	continue;
+            continue;
 
         if (rtfTextBuf[0] == OLE_MARK[i])
             i++;
@@ -3851,7 +3851,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
         else if (ishex(rtfTextBuf[0]))
             i = 0;
         else 
-        	break;
+            break;
     }
     
     if (i<8) {
@@ -3859,7 +3859,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
         fclose(objFile);
         return;
     }
-    	
+        
     fputc(0xd0, objFile);
     fputc(0xcf, objFile);
     fputc(0x11, objFile);
@@ -4278,8 +4278,6 @@ static void emitBookmark(void)
 
 static void ReadUnicode(void)
 {
-    char unitext[20];
-
     if (rtfParam == 8212) {
         PutLitStr("---");
         wrapCount+=3;
@@ -4322,29 +4320,29 @@ static void ReadUnicode(void)
         return;
     }
 
-	if (0xC0 <= rtfParam && rtfParam <=0xFF) {
-		PutLitChar(rtfParam);
-		RTFGetToken();
-    	requireLatin1Package = true;
-		return;
-	}
+    if (0xC0 <= rtfParam && rtfParam <=0xFF) {
+        PutLitChar(rtfParam);
+        RTFGetToken();
+        requireLatin1Package = true;
+        return;
+    }
 
     if (rtfParam<0) 
         rtfParam += 65536;
         
     /* directly translate greek */
     if (913 <= rtfParam && rtfParam <= 969) {
-    	PutMathLitStr(UnicodeGreekToLatex[rtfParam-913]);
+        PutMathLitStr(UnicodeGreekToLatex[rtfParam-913]);
         RTFGetToken();
-    	return;
+        return;
     }
 
     /* and also a bunch of wierd codepoints from the Symbol font 
        that end up in a private code area of Unicode */
     if (61472 <= rtfParam && rtfParam <= 61632) {
-    	PutMathLitStr(UnicodeSymbolFontToLatex[rtfParam-61472]);
+        PutMathLitStr(UnicodeSymbolFontToLatex[rtfParam-61472]);
         RTFGetToken();
-    	return;
+        return;
     }
 
     PutIntAsUtf8(rtfParam);
@@ -4707,12 +4705,12 @@ int BeginLaTeXFile(void)
 /* create a PDF file context and draw the picture in that Graphics Context */
 char * WritePictAsPDF(char *pict)
 {
-    CFStringRef 	pict_name, pdf_name;
-    CFURLRef		pict_url, pdf_url;
-    QDPictRef 		pict_ref;
-    CGRect			pict_rect;
-    CGContextRef	pdf_ctx;
-    OSStatus		err;
+    CFStringRef     pict_name, pdf_name;
+    CFURLRef        pict_url, pdf_url;
+    QDPictRef       pict_ref;
+    CGRect          pict_rect;
+    CGContextRef    pdf_ctx;
+    OSStatus        err;
     char *          pdf;
     int             n;
     
@@ -4734,14 +4732,14 @@ char * WritePictAsPDF(char *pict)
     
     pdf_name  = CFStringCreateWithCString(NULL, pdf, kCFStringEncodingMacRoman);
     pdf_url   = CFURLCreateWithFileSystemPath(NULL, pdf_name,  kCFURLPOSIXPathStyle, FALSE);
-	pdf_ctx   = CGPDFContextCreateWithURL(pdf_url, &pict_rect, NULL);
+    pdf_ctx   = CGPDFContextCreateWithURL(pdf_url, &pict_rect, NULL);
 
     pict_rect = QDPictGetBounds(pict_ref);
     CGContextBeginPage(pdf_ctx, &pict_rect);
     err = QDPictDrawToCGContext(pdf_ctx, pict_rect, pict_ref);    
     CGContextEndPage(pdf_ctx);
     CGContextFlush(pdf_ctx);
-	
+    
     CFRelease(pdf_ctx);
     CFRelease(pdf_name);
     CFRelease(pdf_url); 
@@ -4786,7 +4784,7 @@ char *UnicodeSymbolFontToLatex[] = {
     "=",
     ">",
     "?",
-    "\\concruent",
+    "\\congruent",
     "A",
     "B",
     "X",
@@ -4845,9 +4843,9 @@ char *UnicodeSymbolFontToLatex[] = {
     "\\xi",
     "\\psi",
     "\\zeta",
-    "{",
+    "\\lbrace",
     "|",
-    "}",
+    "\\rbrace",
     "\\sim",
     "Y",
     "\\prime",
