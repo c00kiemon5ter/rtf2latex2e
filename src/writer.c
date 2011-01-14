@@ -1588,9 +1588,6 @@ static void WriteLaTeXFooter(void)
     PutLitStr("\n\n\\end{document}\n");
     fseek(ofp, packagePos, 0);
 
-    PutLitStr("\\usepackage[T1]{fontenc}\n");
-    PutLitStr("\\usepackage{textcomp}\n");
-    
     /* load required packages */
     if (requireSetspacePackage)
         PutLitStr("\\usepackage{setspace}\n");

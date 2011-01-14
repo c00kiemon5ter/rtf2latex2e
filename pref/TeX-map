@@ -5,26 +5,27 @@
 # Encoding used for producing characters between 
 # 127-255: for unicode
 
-# Use of this file requires the inputenc package with the cp1252 option.
-# You can add a qualifier here to use the cp1252 inputenc package.
+# Use of this file requires the inputenc package with the utfx option.
 # The '%' is NOT a COMMENT sign, it denotes that rtf2latex2e should treat the 
-# following string as a qualifier.
+# following string as a qualifier.  The following lines are inserted into the 
+# translated latex file
 
+%\usepackage[T1]{fontenc}
 %\usepackage[utf8x]{inputenc}
-
+%\usepackage{textcomp}
 
 # Field 1 is the standard character name.  Field 2 is the output sequence
 # to produce for that character.
 
 # The output sequence is simply a string of characters.  If it contains
-# whitespace, it may be quoted.  If it contains quotes, it may be quoted
+# whitespace, it must be quoted.  If it contains quotes, it must be quoted
 # with a different quote character.
 
 # characters in ASCII range (32-127)
 
 space		" "
 exclam		!
-quotedbl	{\tt\char34}
+quotedbl	'\texttt{"}'
 numbersign	\#
 dollar		\$
 percent		\%
@@ -82,9 +83,9 @@ X		X
 Y		Y
 Z		Z
 bracketleft	[
-backslash	{\textbackslash}
+backslash	\textbackslash{}
 bracketright	]
-asciicircum	{\textasciicircum}
+asciicircum	\textasciicircum{}
 underscore	\_
 quoteleft	"`"
 a		a
@@ -113,38 +114,38 @@ w		w
 x		x
 y		y
 z		z
-braceleft	\{
-bar		{\textbar}
-braceright	\}
-asciitilde	{\textasciitilde}
+braceleft			\{
+bar					\textbar{}
+braceright			\}
+asciitilde			\textasciitilde{}
 
 # non-ASCII
 
-AE					�					# \AE
-Aacute				�					# "\'{A}"
-Abreve	           	0x0102              # \u{A}
-Acircumflex			�					# \^{A}
-Adieresis			�					# '\"{A}'
-Agrave				�					# "\`{A}"
-Aogonek	 			0x0104   			# \k{A}
-Aring				�					# \AA
-Atilde				�					# \~{A}
-aacute				�					# "\'{a}"
-abreve				0x0103				# \u{a}
-acircumflex			�					# \^{a}
+AE					0xC6					# \AE
+Aacute				0xE1					# "\'{A}"
+Abreve	           	0x0102      	        # \u{A}
+Acircumflex			0xC2					# \^{A}
+Adiaeresis			0xC4					# '\"{A}'
+Agrave				0xC0					# "\`{A}"
+Aogonek	 			0x0104   				# \k{A}
+Aring				0xC5					# \AA
+Atilde				0xC3					# \~{A}
+aacute				0xC1					# "\'{a}"
+abreve				0x0103					# \u{a}
+acircumflex			0xE2					# \^{a}
 acute				"'"
-acutedbl			0x02dd				# \H{}
-adieresis			�					# '\"{a}'
-ae					�					# {\ae}
-agrave				�					# "\`{a}"
+acutedbl			0x02dd					# \H{}
+adiaeresis			0xE4					# '\"{a}'
+ae					0xE						# {\ae}
+agrave				0XE0					# "\`{a}"
 aleph				\ensuremath{\aleph}
 angle				\ensuremath{\angle}
 angleleft			\ensuremath{\langle}
 angleright			\ensuremath{\rangle}
-aogonek				0x0105				# \k{a}
+aogonek				0x0105					# \k{a}
 apple				\textapplelogo{}
 approxequal			\ensuremath{\approx}
-aring				�					# {\aa}
+aring				0xE5					# {\aa}
 arrowboth			\ensuremath{\leftrightarrow}
 arrowdown			\ensuremath{\downarrow}
 arrowhorizex		---
@@ -157,7 +158,7 @@ arrowdblright		\ensuremath{\Rightarrow}
 arrowdblup			\ensuremath{\Uparrow}
 arrowup				\ensuremath{\uparrow}
 arrowvertex			\ensuremath{\arrowvert}
-atilde				�					# \~{a}
+atilde				0xE3					# \~{a}
 breve				0x02D8					# \u{}
 bracevert			\ensuremath{\bracevert}
 brokenbar			\textbrokenbar{}
@@ -189,7 +190,7 @@ dcaron				0x010D					#\v{d}
 degree				0xB0					#\ensuremath{^\circ}
 diagup				\ensuremath{\diagup}
 diamond				\diamondsuit{}
-dieresis	'\"{}'
+diaeresis			0xA8					#'\"{}'
 divide		\ensuremath{\div}
 dotaccent	\.{}
 dotlessi	{\i}
@@ -197,14 +198,14 @@ dslash		{\dj}
 Eacute				�					# "\'{E}"
 Ecaron		\v{E}
 Ecircumflex		\^{E}
-Edieresis			�					# '\"{E}'
+Ediaeresis			�					# '\"{E}'
 Egrave				�					# "\`{E}"
 Eogonek		\k{E}
 Eth			{\DH}
 eacute				�					# "\'{e}"
 ecaron		\v{e}
 ecircumflex			�					# \^{e}
-edieresis			�					# '\"{e}'
+ediaeresis			�					# '\"{e}'
 egrave				�					# "\`{e}"
 element		\ensuremath{\in}
 ellipsis	...
@@ -236,13 +237,13 @@ heart			\ensuremath{\heartsuit}
 hungarumlaut	\H{}
 Iacute				�					# "\'{I}"
 Icircumflex			�					# \^{I}
-Idieresis			�					# '\"{I}'
+Idiaeresis			�					# '\"{I}'
 Idotaccent		\.{I}
 Ifraktur		\ensuremath{\mathfrak{I}}
 Igrave				�					# "\`{I}"
 iacute				�					# "\'{\i}"
 icircumflex			�					# \^{\i}
-idieresis			�					# '\"{\i}'
+idiaeresis			�					# '\"{\i}'
 igrave				�					# "\`{\i}"
 infinity	\ensuremath{\infty}
 integral	\ensuremath{\int}
@@ -291,14 +292,14 @@ OE				\OE{}
 Oacute				�					# "\'{O}"
 Oacutedbl	\H{O}
 Ocircumflex			�					# \^{O}
-Odieresis			�					#'\"{O}'
+Odiaeresis			�					#'\"{O}'
 Ograve				�					# "\`{O}"
 Oslash				�					# {\O}
 Otilde				�					# \~{O}
 oacute				�					# "\'{o}"
 oacutedbl	\H{o}
 ocircumflex			�					# \^{o}
-odieresis			�					# '\"{o}'
+odiaeresis			�					# '\"{o}'
 oe					\oe{}
 ograve				�					# "\`{o}"
 ogonek		\k{}
@@ -369,21 +370,21 @@ trademarksans	{\texttrademark}
 Uacute				�					# "\'{U}"
 Uacutedbl	\H{U}
 Ucircumflex			�					# \^{U}
-Udieresis			�					# '\"{U}'
+Udiaeresis			�					# '\"{U}'
 Ugrave				�					# "\`{U}"
 Uring		\r{U}
 uacute				�					# "\'{u}"
 uacutedbl	\H{u}
 ucircumflex			�					# \^{u}
-udieresis			�					# '\"{u}'
+udiaeresis			�					# '\"{u}'
 ugrave				�					# "\`{u}"
 union		\ensuremath{\cup}
 uring		\r{u}
 weierstrass	\ensuremath{\wp}
 Yacute				�					# "\'{Y}"
-Ydieresis			'\"{Y}'
+Ydiaeresis			'\"{Y}'
 yacute				�					# "\'{y}"
-ydieresis			�					# '\"{y}'
+ydiaeresis			�					# '\"{y}'
 yen			\hbox{\rm\rlap=Y}
 # yen			{\textyen} 					# not available in some encodings
 Zacute		"\'{Z}"

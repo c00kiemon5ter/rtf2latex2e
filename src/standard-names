@@ -133,7 +133,7 @@ tilde
 macron
 breve
 dotaccent
-dieresis
+diaeresis
 ring
 cedilla
 hungarumlaut
@@ -154,38 +154,38 @@ oe
 germandbls
 Aacute
 Acircumflex
-Adieresis
+Adiaeresis
 Agrave
 Aring
 Atilde
 Ccedilla
 Eacute
 Ecircumflex
-Edieresis
+Ediaeresis
 Egrave
 Eth
 Iacute
 Icircumflex
-Idieresis
+Idiaeresis
 Igrave
 Ntilde
 Oacute
 Ocircumflex
-Odieresis
+Odiaeresis
 Ograve
 Otilde
 Scaron
 Thorn
 Uacute
 Ucircumflex
-Udieresis
+Udiaeresis
 Ugrave
 Yacute
-Ydieresis
+Ydiaeresis
 # Zcaron
 aacute
 acircumflex
-adieresis
+adiaeresis
 agrave
 aring
 atilde
@@ -196,11 +196,11 @@ degree
 divide
 eacute
 ecircumflex
-edieresis
+ediaeresis
 egrave
 iacute
 icircumflex
-idieresis
+idiaeresis
 igrave
 logicalnot
 minus
@@ -208,7 +208,7 @@ multiply
 ntilde
 oacute
 ocircumflex
-odieresis
+odiaeresis
 ograve
 onesuperior
 otilde
@@ -222,10 +222,10 @@ trademark
 twosuperior
 uacute
 ucircumflex
-udieresis
+udiaeresis
 ugrave
 yacute
-ydieresis
+ydiaeresis
 # zcaron
 
 # greek characters

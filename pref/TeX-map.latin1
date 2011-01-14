@@ -123,7 +123,7 @@ AE					Æ					# \AE
 Aacute				Á					# "\'{A}"
 Abreve	\u{A}
 Acircumflex			Â					# \^{A}
-Adieresis			Ä					# '\"{A}'
+Adiaeresis			Ä					# '\"{A}'
 Agrave				À					# "\`{A}"
 Aogonek	\k{A}
 Aring				Å					# \AA
@@ -133,7 +133,7 @@ abreve	\u{a}
 acircumflex			â					# \^{a}
 acute		"'"
 acutedbl	\H{}
-adieresis			ä					# '\"{a}'
+adiaeresis			ä					# '\"{a}'
 ae					æ					# {\ae}
 agrave				à					# "\`{a}"
 aleph	\ensuremath{\aleph}
@@ -188,7 +188,7 @@ dcaron		\v{d}
 degree		\ensuremath{^\circ}
 diagup		\ensuremath{\diagup}
 diamond		\ensuremath{\diamondsuit}
-dieresis	'\"{}'
+diaeresis	'\"{}'
 divide		\ensuremath{\div}
 dotaccent	\.{}
 dotlessi	{\i}
@@ -196,14 +196,14 @@ dslash		{\dj}
 Eacute				É					# "\'{E}"
 Ecaron		\v{E}
 Ecircumflex		\^{E}
-Edieresis			Ë					# '\"{E}'
+Ediaeresis			Ë					# '\"{E}'
 Egrave				È					# "\`{E}"
 Eogonek		\k{E}
 Eth			{\DH}
 eacute				é					# "\'{e}"
 ecaron		\v{e}
 ecircumflex			ê					# \^{e}
-edieresis			ë					# '\"{e}'
+ediaeresis			ë					# '\"{e}'
 egrave				è					# "\`{e}"
 element		\ensuremath{\in}
 ellipsis	"\dots "
@@ -235,13 +235,13 @@ heart			\ensuremath{\heartsuit}
 hungarumlaut	\H{}
 Iacute				Í					# "\'{I}"
 Icircumflex			Î					# \^{I}
-Idieresis			Ï					# '\"{I}'
+Idiaeresis			Ï					# '\"{I}'
 Idotaccent		\.{I}
 Ifraktur		\ensuremath{\mathfrak{I}}
 Igrave				Ì					# "\`{I}"
 iacute				í					# "\'{\i}"
 icircumflex			î					# \^{\i}
-idieresis			ï					# '\"{\i}'
+idiaeresis			ï					# '\"{\i}'
 igrave				ì					# "\`{\i}"
 infinity	\ensuremath{\infty}
 integral	\ensuremath{\int}
@@ -290,14 +290,14 @@ OE		{\OE}
 Oacute				Ó					# "\'{O}"
 Oacutedbl	\H{O}
 Ocircumflex			Ô					# \^{O}
-Odieresis			Ö					#'\"{O}'
+Odiaeresis			Ö					#'\"{O}'
 Ograve				Ò					# "\`{O}"
 Oslash				Ø					# {\O}
 Otilde				Õ					# \~{O}
 oacute				ó					# "\'{o}"
 oacutedbl	\H{o}
 ocircumflex			ô					# \^{o}
-odieresis			ö					# '\"{o}'
+odiaeresis			ö					# '\"{o}'
 oe		{\oe}
 ograve				ò					# "\`{o}"
 ogonek		\k{}
@@ -369,21 +369,21 @@ trademarksans	{\texttrademark}
 Uacute				Ú					# "\'{U}"
 Uacutedbl	\H{U}
 Ucircumflex			Û					# \^{U}
-Udieresis			Ü					# '\"{U}'
+Udiaeresis			Ü					# '\"{U}'
 Ugrave				Ù					# "\`{U}"
 Uring		\r{U}
 uacute				ú					# "\'{u}"
 uacutedbl	\H{u}
 ucircumflex			û					# \^{u}
-udieresis			ü					# '\"{u}'
+udiaeresis			ü					# '\"{u}'
 ugrave				ù					# "\`{u}"
 union		\ensuremath{\cup}
 uring		\r{u}
 weierstrass	\ensuremath{\wp}
 Yacute				†					# "\'{Y}"
-Ydieresis	'\"{Y}'
+Ydiaeresis	'\"{Y}'
 yacute				‡					# "\'{y}"
-ydieresis			ÿ					# '\"{y}'
+ydiaeresis			ÿ					# '\"{y}'
 yen			\hbox{\rm\rlap=Y}
 # yen			{\textyen} 					# not available in some encodings
 Zacute		"\'{Z}"
