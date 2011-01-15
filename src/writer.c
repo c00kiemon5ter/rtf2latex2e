@@ -327,26 +327,26 @@ static short ReadR2LMap(void)
  */
 void WriterInit(void)
 {
-    /* read character map files */
-    if (RTFReadCharSetMap("cp1252.map", rtfCS1252) == 0)
+    /* read input RTF character map files */
+    if (RTFReadCharSetMap("rtf-encoding.cp1252", rtfCS1252) == 0)
         RTFPanic("Cannot read character set map file cp1252.map for code page 1252!\n");
         
-    if (RTFReadCharSetMap("cp1250.map", rtfCS1250) == 0)
+    if (RTFReadCharSetMap("rtf-encoding.cp1250", rtfCS1250) == 0)
         RTFPanic("Cannot read character set map file cp1250.map for code page 1250!\n");
         
-    if (RTFReadCharSetMap("cp1254.map", rtfCS1254) == 0)
+    if (RTFReadCharSetMap("rtf-encoding.cp1254", rtfCS1254) == 0)
         RTFPanic("Cannot read character set map file cp1254.map for code page 1254!\n");
         
-    if (RTFReadCharSetMap("applemac.map", rtfCSMac) == 0)
+    if (RTFReadCharSetMap("rtf-encoding.mac", rtfCSMac) == 0)
         RTFPanic("Cannot read character set map file applemac.map!\n");
         
-    if (RTFReadCharSetMap("cp437.map", rtfCS437) == 0)
+    if (RTFReadCharSetMap("rtf-encoding.cp437", rtfCS437) == 0)
         RTFPanic("Cannot read character set map file cp437.map for code page 437!\n");
         
-    if (RTFReadCharSetMap("cp850.map", rtfCS850) == 0)
+    if (RTFReadCharSetMap("rtf-encoding.cp850", rtfCS850) == 0)
         RTFPanic("Cannot read character set map file cp850.map for code page 850!\n");
 
-    if (RTFReadCharSetMap("next.map", rtfCSNext) == 0)
+    if (RTFReadCharSetMap("rtf-encoding.next", rtfCSNext) == 0)
         RTFPanic("Cannot read character set map file next.map for code page Next!\n");
 
     /* read preferences */

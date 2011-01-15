@@ -1,8 +1,15 @@
-# Output sequence map for rtf2LaTeX2e
+# Create latex files using only ANSI characters using standard LaTeX notation
 
-# Rename this file "TeX-map" to use!!
+# Rename this file "latex-encoding" to use
 
-# Character representation using standard LaTeX notation
+# The '%' is NOT a COMMENT sign, it indicates that rtf2latex2e should insert the 
+# following string into the preamble of the generated LaTeX file
+
+# Some symbols are not available in the default OT1 encoding
+%\usepackage[T1]{fontenc}
+
+# Access to \textcopyright, \textregistered and \texttrademark
+%\usepackage{textcomp}
 
 # Field 1 is the standard character name.  Field 2 is the output sequence
 # to produce for that character.
@@ -15,7 +22,7 @@
 
 space		" "
 exclam		!
-quotedbl	{\textquotedbl}
+quotedbl	'\texttt{"}'
 numbersign	\#
 dollar		\$
 percent		\%
@@ -303,8 +310,9 @@ paragraph	{\P}
 partialdiff	\ensuremath{\partial}
 periodcentered	{\textperiodcentered}
 perpendicular	\ensuremath{\perp}
-perthousand		{\perthousand}
+perthousand		\textperthousand{}
 plusminus	\ensuremath{\pm}
+powern		\ensuremath{^n}
 powerone	\ensuremath{^1}
 powertwo	\ensuremath{^2}
 powerthree	\ensuremath{^3}
@@ -330,7 +338,7 @@ registered	{\textregistered}
 registersans	{\textregistered}
 rfloor		\ensuremath{\rfloor}
 ring		\r{}
-Sacute		"\'{S"
+Sacute		"\'{S}"
 Scaron		\v{S}
 Scedilla	\c{S}
 sacute		"\'{s}"

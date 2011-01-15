@@ -68,7 +68,7 @@ Theta		Q
 Rho		R
 Sigma		S
 Tau		T
-Y		U
+Upsilon		U
 varsigma	V
 Omega		W
 Xi		X
@@ -113,17 +113,7 @@ mathtilde	~
 
 # non-ASCII characters (128-255)
 
-bullet		0xb7
-ellipsis	0xbc
-
-#stuff added by Ujwal Sathyam for rtf2latex2e
-forall			0x22
-circlemultiply	0x80
-arrowdblleft	0x86
-langle			0x87
-lfloor			0x91
-midbar			0x9c
-rceil			0x9d
+euro			0xa0
 Upsilon			0xa1
 minute			0xa2
 lessequal		0xa3
@@ -192,12 +182,29 @@ registered		0xe2
 copyright		0xe3
 trademark		0xe4
 sum				0xe5
-ccedilla		0xe7		# really??? I saw this in a Word document!!
-lceil			0xe9
-lfloor			0xeb
+
+apple			0xf0
 rangle			0xf1
 integral		0xf2
-ocircumflex		0xf4		# really??? I saw this in a Word document!!
+
+# these aren't quite right because they are just pieces
+lceil			0xe9
+lfloor			0xeb
+midbar			0xf7
 rceil			0xf9
+bracevert		0xfa
 rfloor			0xfb
+
+#these should not be defined  0x80-0x9F is undefined and
+# above 0xe6 everything is just pieces of large delimiters
+
+circlemultiply	0x80
+arrowdblleft	0x86
+langle			0x87
+lfloor			0x91
+midbar			0x9c
+rceil			0x9d
+
+ccedilla		0xe7		# really??? I saw this in a Word document!!
+ocircumflex		0xf4		# really??? I saw this in a Word document!!
 yacute			0xfd		# really??? I saw this in a Word document!!

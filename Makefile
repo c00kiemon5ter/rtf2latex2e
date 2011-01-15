@@ -50,14 +50,15 @@ RTFPREP_SRCS = src/rtf-controls           src/rtfprep.c              src/standar
 
 RTFPREP_OBJS = src/rtfprep.o              src/tokenscan.o
 
-PREFS        = pref/latex-encoding          pref/latex-encoding.latin1 pref/cp437.map          \
-               pref/latex-encoding.applemac pref/ansi-sym              pref/cp850.map          \
-               pref/latex-encoding.cp1250   pref/applemac.map          pref/mac-sym            \
-               pref/latex-encoding.cp1252   pref/cp1250.map            pref/pc-sym             \
-               pref/latex-encoding.default  pref/cp1252.map            pref/pca-sym            \
-               pref/latex-encoding.german   pref/cp1254.map            pref/r2l-head           \
-               pref/r2l-map                 pref/r2l-pref              pref/rtf-ctrl           \
-               pref/next.map
+PREFS        = pref/latex-encoding                pref/latex-encoding.mac            \
+               pref/latex-encoding.cp1250         pref/latex-encoding.cp1252         \
+               pref/latex-encoding.latin1         pref/latex-encoding.german         \
+               pref/rtf-encoding.mac              pref/rtf-encoding.cp437            \
+               pref/rtf-encoding.cp850            pref/rtf-encoding.cp1250           \
+               pref/rtf-encoding.cp1252           pref/rtf-encoding.cp1254           \
+               pref/rtf-encoding.next             pref/rtf-encoding.symbolfont       \
+               pref/rtf-ctrl                      pref/r2l-head                      \
+               pref/r2l-map                       pref/r2l-pref                       
 
 DOCS         = doc/GPL_license            doc/Release-notes.txt      README                  \
                doc/rtf2latex2eSWP.tex     doc/rtfReader.tex          doc/rtf2latex2eDoc.tex

@@ -1,17 +1,17 @@
-# Output sequence map for rtf2LaTeX2e
+# Create latex files using Unicode characters 
 
-# Rename this file "TeX-map" to use!!
+# Rename this file "latex-encoding" to use
 
-# Encoding used for producing characters between 
-# 127-255: for unicode
+# The '%' is NOT a COMMENT sign, it indicates that rtf2latex2e should insert the 
+# following string into the preamble of the generated LaTeX file
 
 # Use of this file requires the inputenc package with the utfx option.
-# The '%' is NOT a COMMENT sign, it denotes that rtf2latex2e should treat the 
-# following string as a qualifier.  The following lines are inserted into the 
-# translated latex file
-
-%\usepackage[T1]{fontenc}
 %\usepackage[utf8x]{inputenc}
+
+# Some symbols are not available in the default OT1 encoding
+%\usepackage[T1]{fontenc}
+
+# Access to \textcopyright, \textregistered and \texttrademark
 %\usepackage{textcomp}
 
 # Field 1 is the standard character name.  Field 2 is the output sequence
@@ -215,6 +215,7 @@ endash		--
 eogonek		\k{e}
 equivalence	\ensuremath{\equiv}
 eth			{\dh}
+euro			0x20AC
 exclamdown	!`
 existential	\ensuremath{\exists}
 fi		fi

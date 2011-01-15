@@ -428,3 +428,4 @@
 "Gbreve",
 "gbreve",
 "Idotaccent",
+"euro",

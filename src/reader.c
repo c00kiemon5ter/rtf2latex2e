@@ -907,6 +907,8 @@ void RTFSetToken(short class, short major, short minor, int32_t param, char *tex
 
 /*
  * Initialize charset stuff.
+ * Keep two charsets active, one to translate the symbol font and 
+ * another for everything else
  */
 
 static void CharSetInit(void)
@@ -926,10 +928,12 @@ static void CharSetInit(void)
 
 
 /*
- * Specify the name of a file to be read when auto-charset-file reading is
- * done.
+ * Specify the name of a file to be read when auto-charset-file reading is done
+ *
+ * The idea is that each font has a pre-defined character set.  Currently
+ * only two character sets are defined ... the default one (ansi/mac/pc/pca)
+ * and that for interpreting characters from the symbol font
  */
-
 void RTFSetCharSetMap(char *name, short csId)
 {
     if ((name = RTFStrSave(name)) == (char *) NULL)     /* make copy */
@@ -954,6 +958,7 @@ void RTFSetCharSetMap(char *name, short csId)
 static void ReadCharSetMaps(void)
 {
     char buf[rtfBufSiz];
+    buf[0]='\0';
 
     if (strcmp(&rtfTextBuf[1], "ansi") == 0)
         genCharCode = cp1252CharCode;
@@ -966,17 +971,17 @@ static void ReadCharSetMaps(void)
     else
         genCharCode = cp1252CharCode;
 
-    /* use NeXtStep Code Page unless \ansicpg token is encountered */
+    /* default to NeXtStep code page until \ansicpg token is encountered */
     if (g_input_file_type == TYPE_RTFD)
 		genCharCode = cpNextCharCode;
 
     genCharSetFile = &rtfTextBuf[1];
     haveGenCharSet = 1;
 
-    if (symCharSetFile != (char *) NULL)
+    if (symCharSetFile)
         (void) strcpy(buf, symCharSetFile);
-    else
-        snprintf(buf, rtfBufSiz, "%s-sym", &rtfTextBuf[1]);
+    else 
+    	(void) strcpy(buf, "rtf-encoding.symbolfont");
         
     if (RTFReadCharSetMap(buf, rtfCSSymbol) == 0)
         RTFPanic("ReadCharSetMaps: Cannot read charset map %s", buf);
@@ -1156,7 +1161,7 @@ short RTFMapChar(short c)
     switch (curCharSet) {
     case rtfCSGeneral:
         if (!haveGenCharSet) {
-            if (RTFReadCharSetMap("cp1252.map", rtfCSGeneral) == 0)
+            if (RTFReadCharSetMap("rtf-encoding.cp1252", rtfCSGeneral) == 0)
                 	RTFPanic("RTFMapChar: cannot read cp1252.map");
         }
         break;

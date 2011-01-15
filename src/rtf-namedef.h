@@ -432,5 +432,6 @@
 #define rtfSC_Gbreve	427
 #define rtfSC_gbreve	428
 #define rtfSC_Idotaccent	429
+#define rtfSC_euro	430
 
-#define rtfSC_MaxChar	430
+#define rtfSC_MaxChar	431
