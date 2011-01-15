@@ -162,7 +162,7 @@ atilde				0xE3					# \~{a}
 breve				0x02D8					# \u{}
 bracevert			\ensuremath{\bracevert}
 brokenbar			\textbrokenbar{}
-bullet				\textbullet{}			# {\textbullet}
+bullet				0x2022					# {\textbullet}
 carriagereturn		\ensuremath{\hookleftarrow}
 Cacute				0x0106					#"\'{C}"
 Ccaron				0x010C					# \v{C}
@@ -191,138 +191,138 @@ degree				0xB0					#\ensuremath{^\circ}
 diagup				\ensuremath{\diagup}
 diamond				\diamondsuit{}
 diaeresis			0xA8					#'\"{}'
-divide		\ensuremath{\div}
-dotaccent	\.{}
-dotlessi	{\i}
-dslash		{\dj}
-Eacute				�					# "\'{E}"
-Ecaron		\v{E}
-Ecircumflex		\^{E}
-Ediaeresis			�					# '\"{E}'
-Egrave				�					# "\`{E}"
-Eogonek		\k{E}
-Eth			{\DH}
-eacute				�					# "\'{e}"
-ecaron		\v{e}
-ecircumflex			�					# \^{e}
-ediaeresis			�					# '\"{e}'
-egrave				�					# "\`{e}"
-element		\ensuremath{\in}
-ellipsis	...
-emdash		---
-emptyset	\ensuremath{\emptyset}
-endash		--
-eogonek		\k{e}
-equivalence	\ensuremath{\equiv}
-eth			{\dh}
-euro			0x20AC
-exclamdown	!`
-existential	\ensuremath{\exists}
-fi		fi
-fl		fl
-# florin		\ensuremath{f}
-florin		\textit{f}
-forall		\ensuremath{\forall}
-fraction	/
-Gbreve		\u{G}
-gbreve		\u{g}
-germandbls			�					# {\ss}
-grave		"\`{}"
-gradient	\ensuremath{\nabla}
-greaterequal	\ensuremath{\geq}
-guillemotleft   	�					# {\guillemotleft}
-guillemotright  	�					# {\guillemotright}
-guilsinglleft   	{\guilsinglleft}
-guilsinglright  	{\guilsinglright}
-heart			\ensuremath{\heartsuit}
-hungarumlaut	\H{}
-Iacute				�					# "\'{I}"
-Icircumflex			�					# \^{I}
-Idiaeresis			�					# '\"{I}'
-Idotaccent		\.{I}
-Ifraktur		\ensuremath{\mathfrak{I}}
-Igrave				�					# "\`{I}"
-iacute				�					# "\'{\i}"
-icircumflex			�					# \^{\i}
-idiaeresis			�					# '\"{\i}'
-igrave				�					# "\`{\i}"
-infinity	\ensuremath{\infty}
-integral	\ensuremath{\int}
-intersection	\ensuremath{\cap}
-jmath		\ensuremath{\jmath}
-Lacute		"\'{L}"
-Lcaron		\v{L}
-Lslash		{\L}
-lacute		"\'{l}"
-langle		\ensuremath{\langle}
-lcaron		\v{l}
-lceil		\ensuremath{\lceil}
-lessequal	\ensuremath{\leq}
-lfloor		\ensuremath{\lfloor}
-logicaland	\ensuremath{\wedge}
-logicalnot	\ensuremath{\neg}
-logicalor	\ensuremath{\vee}
-lozenge		\ensuremath{\lozenge}
-lslash		{\l}
-macron		\={}
-mathasterisk	\ensuremath{\ast}
-mathequal	\ensuremath{=}
-mathminus	\ensuremath{-}
-mathnumbersign	\ensuremath{\#}
-mathplus	+
-mathtilde	\ensuremath{\sim}
-mho			\ensuremath{\mho}
-midbar		\ensuremath{\mid}
-minus		{\textminus}
-minute		\ensuremath{"'"}
-mu			\ensuremath{u}
-multiply	\ensuremath{\times}
-Nacute		"\'{N}"
-Ncaron		\v{N}
-Ntilde				�					# \~{N}
-nabla		\ensuremath{\nabla}
-nacute		"\'{n}"
-ncaron		\v{n}
-nobrkhyphen	{\-}
-nobrkspace	~
-notelement	\ensuremath{\notin}
-notequal	\ensuremath{\neq}
-notsubset	\ensuremath{\not\subset}
-ntilde				�					# \~{n}
-OE				\OE{}
-Oacute				�					# "\'{O}"
-Oacutedbl	\H{O}
-Ocircumflex			�					# \^{O}
-Odiaeresis			�					#'\"{O}'
-Ograve				�					# "\`{O}"
-Oslash				�					# {\O}
-Otilde				�					# \~{O}
-oacute				�					# "\'{o}"
-oacutedbl	\H{o}
-ocircumflex			�					# \^{o}
-odiaeresis			�					# '\"{o}'
-oe					\oe{}
-ograve				�					# "\`{o}"
-ogonek		\k{}
-onehalf         \ensuremath{\frac12}
-onequarter      \ensuremath{\frac14}
-ordfeminine		\ensuremath{^a}
-ordmasculine	\ensuremath{^\circ}
-otilde				�					# \~{o}
-oslash				�					# {\o}
-paragraph	{\P}
-partialdiff	\ensuremath{\partial}
-periodcentered	{\textperiodcentered}
-perpendicular	\ensuremath{\perp}
-perthousand		{\perthousand}
-plusminus	\ensuremath{\pm}
-powerone	\ensuremath{^1}
-powertwo	\ensuremath{^2}
-powerthree	\ensuremath{^3}
-product		\ensuremath{\prod}
-propersubset	\ensuremath{\subset}
-propersuperset	\ensuremath{\supset}
-proportional	\ensuremath{\propto}
+divide		        0xF7                    #\ensuremath{\div}
+dotaccent			\.{}
+dotlessi			0x0131					#{\i}
+dslash				0x0111					#{\dj}
+Eacute				0xC9					# "\'{E}"
+Ecaron				0x011A					#\v{E}
+Ecircumflex		    0xCA					#\^{E}
+Ediaeresis			0xCB					# '\"{E}'
+Egrave				0xC8					# "\`{E}"
+Eogonek				0x0118					#\k{E}
+Eth					0xD0					#{\DH}
+eacute				0xE9					# "\'{e}"
+ecaron				0x011B					# \v{e}
+ecircumflex			0xEA					# \^{e}
+ediaeresis			0xEB					# '\"{e}'
+egrave				0xE8					# "\`{e}"
+element				\ensuremath{\in}
+ellipsis			...
+emdash				---
+emptyset			\ensuremath{\emptyset}
+endash				--
+eogonek				0x0119					#\k{e}
+equivalence			\ensuremath{\equiv}
+eth					0xF0					#{\dh}
+euro				0x20AC
+exclamdown			0xA1					#!`
+existential			\ensuremath{\exists}
+fi					fi
+fl					fl
+florin				0x0192					#\textit{f}
+forall				\ensuremath{\forall}
+fraction			/
+Gbreve				0x011E					#\u{G}
+gbreve				0x011F					#\u{g}
+germandbls			0xDF					# {\ss}
+grave				0x60					#"\`{}"
+gradient			\ensuremath{\nabla}
+greaterequal		\ensuremath{\geq}
+guillemotleft   	0xAB					# {\guillemotleft}
+guillemotright  	0xBB					# {\guillemotright}
+guilsinglleft   	0x2039					# {\guilsinglleft}
+guilsinglright  	0x203A					# {\guilsinglright}
+heart				\heartsuit{}
+hungarumlaut		\H{}
+Iacute				0xCD					# "\'{I}"
+Icircumflex			0xCE					# \^{I}
+Idiaeresis			0xCF					# '\"{I}'
+Idotaccent			\.{I}
+Ifraktur			\ensuremath{\mathfrak{I}}
+Igrave				0xCC					# "\`{I}"
+iacute				0xED					# "\'{\i}"
+icircumflex			0xEE					# \^{\i}
+idiaeresis			0xEF					# '\"{\i}'
+igrave				0xEC					# "\`{\i}"
+infinity			\ensuremath{\infty}
+integral			\ensuremath{\int}
+intersection		\ensuremath{\cap}
+jmath				\ensuremath{\jmath}
+Lacute				0x0139					#"\'{L}"
+Lcaron				0x013D					#\v{L}
+Lslash				0x0141					#{\L}
+lacute				0x013A					#"\'{l}"
+langle				\ensuremath{\langle}
+lcaron				0x013E					#\v{l}
+lceil				\ensuremath{\lceil}
+lessequal			\ensuremath{\leq}
+lfloor				\ensuremath{\lfloor}
+logicaland			\ensuremath{\wedge}
+logicalnot			\ensuremath{\neg}
+logicalor			\ensuremath{\vee}
+lozenge				\ensuremath{\lozenge}
+lslash				0x0142					#{\l}
+macron				\={}
+mathasterisk		\ensuremath{\ast}
+mathequal			\ensuremath{=}
+mathminus			\ensuremath{-}
+mathnumbersign		\ensuremath{\#}
+mathplus			+
+mathtilde			\ensuremath{\sim}
+mho					\ensuremath{\mho}
+midbar				\ensuremath{\mid}
+minus				\ensuremath{-}
+minute				\ensuremath{"'"}
+mu					\ensuremath{\mu}
+multiply			\ensuremath{\times}
+Nacute				0x0143					#"\'{N}"
+Ncaron				0x0147					#\v{N}
+Ntilde				0xD1					# \~{N}
+nabla				\ensuremath{\nabla}
+nacute				0x0144					#"\'{n}"
+ncaron				0x0148					#\v{n}
+nobrkhyphen			\-{}
+nobrkspace			~
+notelement			\ensuremath{\notin}
+notequal			\ensuremath{\neq}
+notsubset			\ensuremath{\not\subset}
+ntilde				0xF1					# \~{n}
+OE					0x0152					#\OE{}
+Oacute				0xD3					# "\'{O}"
+Oacutedbl			0x0150					# \H{O}
+Ocircumflex			0xD4					# \^{O}
+Odiaeresis			0xD6					#'\"{O}'
+Ograve				0xD2					# "\`{O}"
+Oslash				0xD8					# {\O}
+Otilde				0xD5					# \~{O}
+oacute				0xF3					# "\'{o}"
+oacutedbl			0x0151					# \H{o}
+ocircumflex			0xF4					# \^{o}
+odiaeresis			0xF6					# '\"{o}'
+oe					0x0153					# \oe{}
+ograve				0xF2					# "\`{o}"
+ogonek				\k{}
+onehalf         	0xBD					#\ensuremath{\frac12}
+onequarter      	0xBC					#\ensuremath{\frac14}
+ordfeminine			0xAA					#\ensuremath{^a}
+ordmasculine		0xBA					#\ensuremath{^\circ}
+otilde				0xF5					# \~{o}
+oslash				0xD9					# {\o}
+paragraph			\P{}
+partialdiff			\ensuremath{\partial}
+periodcentered		\textperiodcentered{}
+perpendicular		\ensuremath{\perp}
+perthousand			\textperthousand{}
+plusminus			\ensuremath{\pm}
+powern				\ensuremath{^n}
+powerone			\ensuremath{^1}
+powertwo			\ensuremath{^2}
+powerthree			\ensuremath{^3}
+product				\ensuremath{\prod}
+propersubset		\ensuremath{\subset}
+propersuperset		\ensuremath{\supset}
+proportional		\ensuremath{\propto}
 questiondown	?`
 quotedblbase	,,
 quotedblleft	``
@@ -369,13 +369,13 @@ tilde		\~{}
 trademark	{\texttrademark}
 trademarksans	{\texttrademark}
 Uacute				�					# "\'{U}"
-Uacutedbl	\H{U}
+Uacutedbl			0x0170				# \H{U}
 Ucircumflex			�					# \^{U}
 Udiaeresis			�					# '\"{U}'
 Ugrave				�					# "\`{U}"
 Uring		\r{U}
 uacute				�					# "\'{u}"
-uacutedbl	\H{u}
+uacutedbl			0x0171				# \H{u}
 ucircumflex			�					# \^{u}
 udiaeresis			�					# '\"{u}'
 ugrave				�					# "\`{u}"
@@ -386,8 +386,7 @@ Yacute				�					# "\'{Y}"
 Ydiaeresis			'\"{Y}'
 yacute				�					# "\'{y}"
 ydiaeresis			�					# '\"{y}'
-yen			\hbox{\rm\rlap=Y}
-# yen			{\textyen} 					# not available in some encodings
+yen					0xA5				# \hbox{\rm\rlap=Y}
 Zacute		"\'{Z}"
 Zcaron		\v{Z}
 Zdotaccent	\.{Z}

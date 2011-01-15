@@ -31,10 +31,9 @@
 
 
 \title{\rtf2latex2e Documentation\\
-version 1.0 beta} 
-\author{Ujwal S. Sathyam\\ 
-\urltwo{mailto:setlur@bigfoot.com}{setlur@bigfoot.com}} 
-\date{18. March 2000}
+version 2.0.0} 
+\author{Ujwal S. Sathyam\\ Scott Prahl}
+\date{18 Jan 2011}
 
 
 \begin{document} \maketitle
@@ -48,9 +47,8 @@ and comparable word processors such as Star Office and generates a
 complex RTF files containing figures, tables, and starting from
 version 1.0 equations (courtesy Steve Swanson, Mackichan
 Software).  \rtf2latex2e is written using standard $C$ and
-should compile on any platform supporting a $C$ compiler.  I have
-tested it on the Macintosh, Linux (Intel), Linux (PowerPC), Windows
-95/NT, and Solaris.
+should compile on any platform supporting a $C$ compiler.  It has
+been tested on Mac OS X, Linux (Intel), and Windows.
 
 \rtf2latex2e uses the generic
 \urltwo{http://www.primate.wisc.edu/software/RTF/}{RTF reader}
@@ -60,21 +58,20 @@ allow it to be used with a variety of writers generating different
 output formats.  This provides a method for generating RTF-to-XXX
 translators.  Essentially, \rtf2latex2e provides the {\LaTeXe} writer
 code to the RTF reader.  Paul seems to have stopped developing the
-reader code, therefore I had to adapt it quite a bit to handle the
+reader code, therefore Ujwal Sathyam had to adapt it quite a bit to handle the
 latest version of RTF.
 
 \section*{What you will get}
 If you expect a WYSIWYG reproduction of your RTF file, you may be
-disappointed.  My main concerns have been translating the essential
+disappointed.  Our main concern has been translating the essential
 features of the RTF file such as characters, figures, tables, and
-equations.  I have largely ignored visual formatting
+equations.  Visual formatting
 such as ruler positions, tabs (until I figure out a good way of doing
-this), paragraph indentations, and other fluff.  I have always
-expected the output {\LaTeXe} file to require manual editing to put the
-finishing touches.  I just want to make that task a little easier.  In
-my opinion, expecting a WYSIWYG reproduction is not practical and
+this), paragraph indentations, and other fluff has been largely ignored.  
+The translated {\LaTeXe} file will require some manual editing to put the
+finishing touches.  We just want to make that task a little easier.  In
+our opinion, expecting a WYSIWYG reproduction is not practical and
 misses the point entirely.
-
 
 \section{Installation}
 Compiled binaries are available for Macintosh and Windows systems. 
@@ -155,7 +152,7 @@ If the file name contains spaces, enclose the path in double quotes.
 No very useful command line options are supported yet.  There are the
 obvious ``-h'' for help and ``-v'' for version number.  The only other
 supported option is ``-t $<$output-map-file$>$'' where you can specify
-an output map file other than the default ``TeX-map''.
+an output map file other than the default ``latex-encoding''.
 
 \subsection{The r2l-pref preference file}
 \rtf2latex2e reads a preference file ``\textit{r2l-pref}'' where you can
@@ -171,14 +168,14 @@ in the installation directory can be overridden by a file with the same
 name in the current working directory.
 
 \subsection{The output map file}
-The default output map file is ``TeX-map''. The output map file determines
+The default output map file is ``latex-encoding''. The output map file determines
 the {\LaTeXe} representation of characters. You could use a different output
-map file, e.g. ``TeX-map.applemac'' that generates characters in accordance
+map file, e.g. ``latex-encoding.mac'' that generates characters in accordance
 to the Macintosh character set. Obviously, such a LaTeX file might need to
 use an appropriate ``input'' encoding package. Packages required by an
-output map file can be specified in the file itself, so that the packages
+output map file are specified in the file itself, so that the packages
 are always loaded when the output map file is used. For example,
-the ``TeX-map.applemac'' file
+the ``latex-encoding.mac'' file
 specifies ``\%{\textbackslash}usepackage[applemac]\{inputenc\}''.
 The percent sign is not a comment, but tells \rtf2latex2e to treat
 the following string as a output map qualifier.
@@ -215,7 +212,7 @@ handle the following:
 \begin{itemize}
 
 \item 
-{\bf {\underline {Text Style:}}} Some amount of stylized text like
+\textbf{Text Style:} Some amount of stylized text like
 {\color{color6} c}{\color{color2} o}{\color{color4} l}{\color{color10}
 o}r, {\bf bold}, {\em italic}, {\underline {underlined}}, and relative
 size like {\small small}, normal, {\LARGE big}, {\huge very big},
@@ -223,10 +220,8 @@ size like {\small small}, normal, {\LARGE big}, {\huge very big},
 older RTF spec is a little crappier than the newer one.  All other
 font information is disregarded, as TeX can do better anyway.
 
-
-
 \item 
-{\bf {\underline {Figures:}}} \rtf2latex2e can read figures
+\textbf{Figures:} \rtf2latex2e can read figures
 of format PICT, WMF, PNG, and JPEG embedded into RTF files.  These are
 the most common formats encountered in RTF files.  When \rtf2latex2e
 encounters an embedded figure, it reads out the figure into a separate
@@ -298,7 +293,7 @@ LateX commands/environments.
 {\bf {\underline {Character mapping:}}} Character mapping is largely
 complete for the most common latin scripts.  Characters are translated
 by referencing character set maps and the output map file
-``\TeX-map''.  The platform and locale dependent character set, eg. 
+``\latex-encoding''.  The platform and locale dependent character set, eg. 
 latin-2 (Eastern European), is converted to an internal
 platform-independent representation by reading the appropriate
 character map file, in this case cp1250.map.  For example, character
@@ -306,16 +301,16 @@ character map file, in this case cp1250.map.  For example, character
 character set.  \rtf2latex2e maps this character to
 ``\textit{Aacute}''.  This mapping is then finally translated into the
 {\LaTeX} representation ``\textbackslash$'$\{A\}'' using the output
-map file \textit{Tex-map}.  This two-step character mapping allows for
+map file \textit{latex-encoding}.  This two-step character mapping allows for
 easy addition of support for additional character sets such as latin-5
 (Turkish).  Also, some users prefer to use the \textit{inputenc}
 package to represent characters above ASCII value 127, ie.  type
 ``\textit{\'{A}}'' instead of ``\textbackslash$'$\{A\}''. 
 \rtf2latex2e can do this automatically by using the appropriate
-mapping in the Tex-map file.  Sample Tex-map files for cp1252 (ANSI),
+mapping in the latex-encoding file.  Sample latex-encoding files for cp1252 (ANSI),
 cp1250 (latin-2), and applemac (Macintosh) are provided to illustrate
 this approach.  To use any of these files, rename the file to
-``Tex-map''.  The appropriate ``\textbackslash
+``latex-encoding''.  The appropriate ``\textbackslash
 usepackage[\ldots]\{inputenc\}'' entry in the r2l-head file will cause
 the inputenc package to be loaded.
 

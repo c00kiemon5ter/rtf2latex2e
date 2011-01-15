@@ -1,24 +1,24 @@
-# Output sequence map for rtf2LaTeX2e
+# Create latex files using Windows Latin1 characters
 
-# Rename this file "TeX-map" to use!!
+# Rename this file "latex-encoding" to use
 
-# Encoding used for producing characters between 
-# 127-255: cp1252 (ansi/latin1)
+# The '%' is NOT a COMMENT sign, it indicates that rtf2latex2e should insert the 
+# following string into the preamble of the generated LaTeX file
 
 # Use of this file requires the inputenc package with the cp1252 option.
-# You can add a qualifier here to use the cp1252 inputenc package.
-# The '%' is NOT a COMMENT sign, it denotes that rtf2latex2e should treat the 
-# following string as a qualifier.
-
+# This is a more comprehensive set of characters than just the latin1 option
 %\usepackage[cp1252]{inputenc}
 
+# Some symbols are not available in the default OT1 encoding
+%\usepackage[T1]{fontenc}
+
+# Access to \textcopyright, \textregistered and \texttrademark
+%\usepackage{textcomp}
 
 # Field 1 is the standard character name.  Field 2 is the output sequence
-# to produce for that character.
-
-# The output sequence is simply a string of characters.  If it contains
-# whitespace, it may be quoted.  If it contains quotes, it may be quoted
-# with a different quote character.
+# to produce for that character.  The output sequence is simply a string of 
+# characters.  If it contains whitespace, it must be quoted.  If it contains 
+# quotes, it must be quoted with a different quote character.
 
 # characters in ASCII range (32-127)
 
