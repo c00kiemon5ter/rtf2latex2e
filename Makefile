@@ -61,9 +61,9 @@ PREFS        = pref/latex-encoding                pref/latex-encoding.mac       
                pref/r2l-map                       pref/r2l-pref                       
 
 DOCS         = doc/GPL_license            doc/Release-notes.txt      README                  \
-               doc/rtf2latex2eSWP.tex     doc/rtfReader.tex          doc/rtf2latex2eDoc.tex
+               doc/rtf2latexSWP.tex       doc/rtfReader.tex          doc/rtf2latexDoc.tex
                
-PDFS         = doc/rtf2latex2eSWP.pdf     doc/rtfReader.pdf          doc/rtf2latex2eDoc.pdf  
+PDFS         = doc/rtf2latexSWP.pdf       doc/rtfReader.pdf          doc/rtf2latexDoc.pdf  
 
 TEST         = test/Makefile              test/arch.rtf              test/arch-mac.rtf       \
                test/equation.rtf          test/fig-jpeg.rtf          test/multiline.rtf      \
@@ -96,7 +96,7 @@ rtf2latex2e: $(OBJS) $(HDRS)
 src/main.o: Makefile src/main.c
 	$(CC) $(CFLAGS) -DLIBDIR=\"$(SUPPORT_INSTALL)\" -c src/main.c -o src/main.o
 
-doc : doc/rtf2latex2eSWP.tex doc/rtfReader.tex doc/rtf2latex2eDoc.tex
+doc : doc/rtf2latexSWP.tex doc/rtfReader.tex doc/rtf2latexDoc.tex
 	cd doc && $(MAKE)
 
 test: rtf2latex2e
