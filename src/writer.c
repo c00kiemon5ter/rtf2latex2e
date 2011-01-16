@@ -204,7 +204,6 @@ struct EQN_OLE_FILE_HDR {
 static int codePage;
 char fileCreator[10];
 
-
 static char *outMap[rtfSC_MaxChar];
 
 #define NumberOfR2LMappings     11
@@ -2302,6 +2301,8 @@ static void ReadCell(void)
         exit(1);
     }
 
+	/*fprintf(stderr,"creating cell %d, (x,y)=(%d,%d), right=%d\n", 
+	          table.cellCount, table.rows, (table.rowInfo)[table.rows], rtfParam);*/
     cellPtr->nextCell = table.cellInfo;
     cellPtr->x = table.rows;
     cellPtr->y = (table.rowInfo)[table.rows];
@@ -2432,7 +2433,7 @@ static void InheritTableRowDef(void)
 }
 
 /*
- * This function figures out how many columns the cell spans. 
+ * This function figures out how many columns a cell spans. 
  * This is done by comparing the cell's left and right edges 
  * to the sorted column border array. If the left and right 
  * edges of the cell are not consecutive entries in the array, 
@@ -2446,13 +2447,15 @@ static int GetColumnSpan(cell * cellPtr)
     if (cellPtr->y == ((table.rowInfo)[cellPtr->x]) - 1)
         cellPtr->right = (table.columnBorders)[table.cols];
 
-    for (i = 0; i < table.cols; i++)
+    for (i = 0; i < table.cols; i++) {
         if ((table.columnBorders)[i] == cellPtr->left)
             break;
+    }
             
-    for (j = i; j < table.cols + 1; j++)
+    for (j = i; j < table.cols + 1; j++){
         if ((table.columnBorders)[j] == cellPtr->right)
             break;
+    }
 
     return (j - i);
 }
@@ -2481,6 +2484,8 @@ static void PrescanTable(void)
     short prevChar;
     int maxCols = 0;
     int tableLeft, tableRight, tableWidth;
+	int *rightBorders;
+	boolean enteredValue;
 
     RTFStoreStack();
     prevChar = RTFPushedChar();
@@ -2496,6 +2501,9 @@ static void PrescanTable(void)
     table.cellInfo = (cell *) NULL;
 
     /* Prescan each row until end of the table. */
+//	if (RTFCheckCM(rtfControl, rtfTblAttr))
+  //      RTFRouteToken();    
+            
     while (foundRow) {
         table.cols = 0;
         (table.rowInfo)[table.rows] = 0;
@@ -2548,7 +2556,6 @@ static void PrescanTable(void)
                 break;
         }
 
-
         if (!(table.inside))
             foundRow = false;
         else
@@ -2581,41 +2588,49 @@ static void PrescanTable(void)
 
     table.cols = maxCols;
 
-    {
-        int *rightBorders;
-        boolean enteredValue;
+	/*************************************************************************
+	 * Determine the number of columns and positions in the table by creating
+	 * a list containing one entry for each unique right border 
+	 * This list is retained as table.columnBorders
+     * The number of columns is table.cols
+    */
+	
+	/* largest possible list */	
+	rightBorders = (int *) RTFAlloc((table.cellCount) * sizeof(int));
+	if (!rightBorders) {
+		RTFPanic("%s: cannot allocate array for cell borders\n", fn);
+		exit(1);
+	}
 
-        rightBorders = (int *) RTFAlloc((table.cellCount) * sizeof(int));
-        if (!rightBorders) {
-            RTFPanic("%s: cannot allocate array for cell borders\n", fn);
-            exit(1);
-        }
+	table.cols = 0;
+	for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
+	
+		enteredValue = false;
+		for (j = 0; j < table.cols; j++) 
+			if (rightBorders[j] == cellPtr->right) enteredValue=true;
 
-        table.cols = 0;
-        for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
-            enteredValue = false;
-            for (j = 0; j < table.cols; j++)
-                if (rightBorders[j] == cellPtr->right)
-                    enteredValue = true;
-            if (!enteredValue)
-                rightBorders[(table.cols)++] = cellPtr->right;
-            if (cellPtr->y == 0)
-                cellPtr->left = table.leftEdge;
-        }
+		if (!enteredValue) {
+			rightBorders[table.cols] = cellPtr->right;
+			(table.cols)++;
+		}
+			
+		if (cellPtr->y == 0)
+			cellPtr->left = table.leftEdge;
+	}
 
-        /* allocate array for column border entries. */
-        table.columnBorders = (int *) RTFAlloc(((table.cols) + 1) * sizeof(int));
-        
-        if (!table.columnBorders) {
-            RTFPanic("%s: cannot allocate array for cell borders\n", fn);
-            exit(1);
-        }
+	/* allocate array for column border entries. */
+	table.columnBorders = (int *) RTFAlloc(((table.cols) + 1) * sizeof(int));
+	
+	if (!table.columnBorders) {
+		RTFPanic("%s: cannot allocate array for column borders\n", fn);
+		exit(1);
+	}
 
-        for (i = 0; i < table.cols; i++)
-            (table.columnBorders)[i + 1] = rightBorders[i];
+	for (i = 0; i < table.cols; i++)
+		(table.columnBorders)[i + 1] = rightBorders[i];
 
-        RTFFree((char *)rightBorders);
-    }
+	RTFFree((char *)rightBorders);
+
 
     /******* Table parsing can be messy, and it is still buggy. *******/
 
@@ -2623,7 +2638,7 @@ static void PrescanTable(void)
 
     (table.columnBorders)[0] = table.leftEdge;
 
-    /*
+    /***************************************************************************
      * sort the column border array in ascending order. 
      * This is important for figuring out whether a cell spans multiple columns. 
      * This is calculated in the function GetColumnSpan.
@@ -2798,8 +2813,6 @@ static void ProcessTableRow(int rowNum)
     int i;
 
     wroteCellHeader = false;
-
-    if (g_debug_table_writing) fprintf(stderr,"* Starting new row\n");
     
     while (!endOfRow) {
         RTFGetToken();
@@ -2854,6 +2867,7 @@ static void ProcessTableRow(int rowNum)
             cellsInThisRow++;
             if (!startCellText) {   
                 /* The cell is empty. */
+            	if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n",table.cellCount - 1);
                 cellPtr = GetCellInfo(table.cellCount - 1);
                 WriteCellHeader(table.cellCount - 1);
             }
@@ -3007,6 +3021,7 @@ static void DoTable(void)
         PutLitStr(buf);
         InsertNewLine();
 
+    	if (g_debug_table_writing) fprintf(stderr,"* Starting new row #%d\n",i);
         ProcessTableRow(rowNum);
 
         fseek(ofp, -4, 2);      /* erase the "& \n" at the end of the last cell of the row */
@@ -3182,6 +3197,7 @@ static void ControlClass(void)
         break;
     case rtfTblAttr:            /* trigger for reading table */
         if (rtfMinor == rtfRowDef && !(table.inside)) {
+        	RTFUngetToken();
             DoTable();          /* if we are not already inside a table, get into it */
         } else
             DoTableAttr();      /* if we are already inside 
