@@ -686,7 +686,7 @@ int stdCode;
         return;
     }
     
-    if (oStr[0] == '0' && oStr[1] == 'x') {
+    if (oStr[0] == '0' && (oStr[1] == 'x' || oStr[1] == 'X')) {
         int x = RTFHexStrToInt(oStr);
         /*fprintf(stderr,"hex string = '%s' = %d\n",oStr,x);*/
         PutIntAsUtf8(x);
@@ -3372,7 +3372,8 @@ static void ConvertHexPicture(char *pictureType)
     if (pictureType == (char *) NULL)
         strcpy(pictureType, "unknown");
 
-    strcpy(picture.name, RTFGetInputName());
+    strcpy(picture.name, RTFGetOutputName());
+    picture.name[strlen(picture.name)-4] = '\0';
     snprintf(dummyBuf, rtfBufSiz, "Fig%03d.%s", picture.count, pictureType);
     strcat(picture.name, dummyBuf);
 
@@ -3832,8 +3833,9 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     } else
         snprintf(dummyBuf, 20, ".obj");
 
-    /* construct full path of file name */
-    strcpy(objectFileName, RTFGetInputName());
+    /* construct full path of file name (without .tex) */
+    strcpy(objectFileName, RTFGetOutputName());
+    objectFileName[strlen(objectFileName)-4]='\0';
     strcat(objectFileName, dummyBuf);
 
     /* open object file */
