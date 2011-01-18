@@ -235,9 +235,11 @@ static boolean startFootnoteText = false;
 static boolean continueTextStyle = false;
 static boolean lineIsBlank = true;
 
-int g_debug_par_start = 0;
+int g_debug_par_start       = 0;
 int g_debug_table_prescan   = 0;
 int g_debug_table_writing   = 0;
+int g_last_firstIndent      = -99;
+int g_last_leftIndent       = -99;
 
 char *UnicodeSymbolFontToLatex[];
 char *UnicodeGreekToLatex[];
@@ -1562,8 +1564,6 @@ static void DoParagraphCleanUp(void)
     paragraph.firstIndent = 0;
     paragraph.leftIndent = 0;
     paragraph.rightIndent = 0;
-
-
 }
 
 static void DoSectionCleanUp(void)
@@ -1787,6 +1787,24 @@ static void TextClass(void)
     else
         justWroteFootnote = false;
 
+	if (lastCharWasLineBreak && (g_last_leftIndent != paragraph.leftIndent || g_last_firstIndent != paragraph.firstIndent)) {
+		char buff[100];
+		
+		snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
+		PutLitStr(buff);
+		snprintf(buff, 100, "\\parindent=%dpt\n", paragraph.firstIndent/20);
+		PutLitStr(buff);
+
+		if (g_debug_par_start) {
+			snprintf(buff, 100, "[fi=%d, li=%d][fi=%d, li=%d]", 
+			g_last_firstIndent, g_last_leftIndent,
+			paragraph.firstIndent, paragraph.leftIndent);
+			PutLitStr(buff);
+		}
+
+		g_last_leftIndent = paragraph.leftIndent;
+		g_last_firstIndent = paragraph.firstIndent;
+	}
     lastCharWasLineBreak = false;
 
 
@@ -2106,9 +2124,13 @@ static void CheckForParagraph(void)
             blankLineCount += 2;
         } else if (!suppressLineBreak && !(textStyle.open) && !lineIsBlank) {
             if (g_debug_par_start) PutLitStr("[**ah ha**]");
-            PutLitStr("\\\\{}");  /* braces because next line may start with [ */
-            InsertNewLine();
-            InsertNewLine();
+//            PutLitStr("\\\\{}");  /* braces because next line may start with [ */
+//            InsertNewLine();
+//            InsertNewLine();
+        lastCharWasLineBreak = true;
+		InsertNewLine();
+		InsertNewLine();
+		blankLineCount += 2;
         } else 
             PutLitStr("[NO NEW PARAGRAPH !!]");
         
@@ -2123,9 +2145,14 @@ static void CheckForParagraph(void)
     }
 
     if (rtfClass != rtfEOF && !(textStyle.open) && !lineIsBlank) {
-            if (g_debug_par_start) PutLitStr("[line break]"); 
-        PutLitStr("\\\\{}");
-        InsertNewLine();
+		if (g_debug_par_start) PutLitStr("[line break]"); 
+        wrapCount = 0;
+        lastCharWasLineBreak = true;
+		InsertNewLine();
+		InsertNewLine();
+		blankLineCount += 2;
+//        PutLitStr("\\\\{}");
+//        InsertNewLine();
     }
     
     wrapCount = 0;

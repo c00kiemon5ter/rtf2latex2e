@@ -180,7 +180,7 @@ circumflex			0x02C6					#\^{}
 congruent			\ensuremath{\cong}
 copyright			0xA9
 copyrightsans		0xA9
-club				\clubsuit{}
+club				\ensuremath{\clubsuit}
 currency			0xA4					#\textcurrency{}
 Dcaron				0x010E					#\v{D}
 Dslash				0x0110					#{\DJ}
@@ -189,7 +189,7 @@ daggerdbl			0x2021					#{\textdaggerdbl}
 dcaron				0x010D					#\v{d}
 degree				0xB0					#\ensuremath{^\circ}
 diagup				\ensuremath{\diagup}
-diamond				\diamondsuit{}
+diamond				\ensuremath{\diamondsuit}
 diaeresis			0xA8					#'\"{}'
 divide		        0xF7                    #\ensuremath{\div}
 dotaccent			\.{}
@@ -233,7 +233,7 @@ guillemotleft   	0xAB					# {\guillemotleft}
 guillemotright  	0xBB					# {\guillemotright}
 guilsinglleft   	0x2039					# {\guilsinglleft}
 guilsinglright  	0x203A					# {\guilsinglright}
-heart				\heartsuit{}
+heart				\ensuremath{\heartsuit}
 hungarumlaut		\H{}
 Iacute				0xCD					# "\'{I}"
 Icircumflex			0xCE					# \^{I}
@@ -349,7 +349,7 @@ scaron				0x0161					#\v{s}
 scedilla			0x015F					#\c{s}
 second				\ensuremath{"''"}
 section				\S{}
-spade				\spadesuit{}
+spade				\ensuremath{\spadesuit}
 sterling			0xA3					#{\pounds}
 subset				\ensuremath{\subset}
 subseteq			\ensuremath{\subseteq}
