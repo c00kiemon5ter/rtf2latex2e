@@ -30,6 +30,8 @@
 #include     "rtf2latex2e.h"
 #include     "eqn.h"
 
+int mkdir (const char *filename, mode_t mode);
+
 extern char  outputMapName[];
 FILE         *OpenLibFile(char *name, char *mode);
 
