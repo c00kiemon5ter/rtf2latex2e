@@ -2268,7 +2268,8 @@ void RTFSetDefaultFont(int fontNumber)
 # define        MAX_STACK             100
 
 short csStack[MAX_STACK], savedCSStack[MAX_STACK];
-struct parStyle parStack[MAX_STACK], parWrittenStack[MAX_STACK], parSavedStack[MAX_STACK];
+parStyleStruct parStack[MAX_STACK], parWrittenStack[MAX_STACK], parSavedStack[MAX_STACK];
+textStyleStruct textStyleStack[MAX_STACK], textStyleWrittenStack[MAX_STACK];
 
 int groupLevel;
 int savedGroupLevel;
@@ -2276,9 +2277,9 @@ int savedGroupLevel;
 void RTFInitStack(void)
 {
 	groupLevel=0;
-	written_paragraph.firstIndent      = -99;
-	written_paragraph.leftIndent       = -99;
-	written_paragraph.lineSpacing      = -99;
+	paragraphWritten.firstIndent      = -99;
+	paragraphWritten.leftIndent       = -99;
+	paragraphWritten.lineSpacing      = -99;
 	paragraph.firstIndent      = 720;
 	paragraph.leftIndent       = 0;
 	paragraph.lineSpacing      = 240;
@@ -2289,7 +2290,8 @@ void RTFPushStack(void)
 {
     csStack[groupLevel] = curCharSet;
     parStack[groupLevel] = paragraph;
-    parWrittenStack[groupLevel] = written_paragraph;
+    parWrittenStack[groupLevel] = paragraphWritten;
+    
     groupLevel++;
     if (groupLevel >= MAX_STACK) {
         RTFMsg("Exceeding stack capacity of %d items\n",MAX_STACK);
@@ -2305,9 +2307,13 @@ void RTFPopStack(void)
         groupLevel = 0;
     }
     curCharSet = csStack[groupLevel];
-    paragraph = parStack[groupLevel];
-    written_paragraph = parWrittenStack[groupLevel];
     RTFSetCharSet(curCharSet);
+    
+    paragraph = parStack[groupLevel];
+    paragraphWritten = parWrittenStack[groupLevel];
+    
+    textStyle = textStyleStack[groupLevel];
+    textStyleWritten = textStyleWrittenStack[groupLevel];   
 }
 
 void RTFStoreStack(void)

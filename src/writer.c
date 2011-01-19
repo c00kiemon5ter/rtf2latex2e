@@ -124,7 +124,8 @@ static struct pageStyleStruct {
     double rightMargin;
 } page;
 
-struct parStyle paragraph, written_paragraph;
+parStyleStruct paragraph, paragraphWritten;
+textStyleStruct textStyle, textStyleWritten;
 
 static struct {
     boolean newStyle;
@@ -213,7 +214,6 @@ static char *tableString;
 static short itemNumber;
 
 static FILE *ostream;
-static textStyleStruct textStyle;
 static pictureStruct picture;
 static equationStruct oleEquation;
 static tableStruct table;
@@ -615,7 +615,6 @@ static void DefineColors(void)
     }
 }
 
-
 /* 
  * a useful diagnostic function to examine the token just read.
  */
@@ -810,7 +809,7 @@ static void InitializeTextStyle(void)
 static void setParagraphBaseline(void)
 {
 	char buff[100];
-	if (written_paragraph.lineSpacing == paragraph.lineSpacing) 
+	if (paragraphWritten.lineSpacing == paragraph.lineSpacing) 
 		return;
 		
 	snprintf(buff, 100, "\\baselineskip=%dpt\n", abs(paragraph.lineSpacing)/20);
@@ -821,7 +820,7 @@ static void setParagraphBaseline(void)
 		PutLitStr(buff);
 	}
 
-	written_paragraph.lineSpacing = paragraph.lineSpacing;
+	paragraphWritten.lineSpacing = paragraph.lineSpacing;
 }
 
 /*
@@ -1793,8 +1792,8 @@ static void TextClass(void)
         justWroteFootnote = false;
 
 	if (lastCharWasLineBreak && 
-	(  written_paragraph.leftIndent != paragraph.leftIndent 
-	|| written_paragraph.firstIndent != paragraph.firstIndent)) {
+	(  paragraphWritten.leftIndent != paragraph.leftIndent 
+	|| paragraphWritten.firstIndent != paragraph.firstIndent)) {
 		char buff[100];
 		
 		snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
@@ -1808,8 +1807,8 @@ static void TextClass(void)
 			PutLitStr(buff);
 		}
 
-		written_paragraph.leftIndent = paragraph.leftIndent;
-		written_paragraph.firstIndent = paragraph.firstIndent;
+		paragraphWritten.leftIndent = paragraph.leftIndent;
+		paragraphWritten.firstIndent = paragraph.firstIndent;
 	}
     lastCharWasLineBreak = false;
 

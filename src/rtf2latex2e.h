@@ -130,6 +130,23 @@ typedef struct
 	boolean	open;
 } textStyleStruct;
 
+typedef struct
+{
+    int newStyle;
+    int alignment;
+    int wroteAlignment;
+    int oldSpacing;
+    int lineSpacing;
+    int wroteSpacing;
+    int firstIndent;
+    int leftIndent;
+    int rightIndent;
+    int spaceBefore;
+    int spaceAfter;
+    int parbox;
+} parStyleStruct;
+
+
 
 typedef struct cell
 {
@@ -166,5 +183,8 @@ typedef struct
 } tableStruct;
 
 short ReadPrefFile (char *file);
+
+extern parStyleStruct paragraph, paragraphWritten;
+extern textStyleStruct textStyle, textStyleWritten;
 
 
