@@ -136,7 +136,7 @@ install: rtf2latex2e doc
 	$(MKDIR)                   $(SUPPORT_INSTALL)
 	cp $(BINARY_NAME)          $(BIN_INSTALL)
 	cp $(PREFS)                $(SUPPORT_INSTALL)
-	cp doc/rtf2latex2eDoc.pdf  $(SUPPORT_INSTALL)
+	cp doc/rtf2latexDoc.pdf    $(SUPPORT_INSTALL)
 	@echo "******************************************************************"
 	@echo "*** rtf2latex2e successfully installed as \"$(BINARY_NAME)\""
 	@echo "*** in directory \"$(BIN_INSTALL)\""

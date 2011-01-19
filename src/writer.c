@@ -124,18 +124,7 @@ static struct pageStyleStruct {
     double rightMargin;
 } page;
 
-static struct {
-    boolean newStyle;
-    int alignment;
-    boolean wroteAlignment;
-    int oldSpacing;
-    int lineSpacing;
-    boolean wroteSpacing;
-    int firstIndent;
-    int leftIndent;
-    int rightIndent;
-    boolean parbox;
-} paragraph;
+struct parStyle paragraph, written_paragraph;
 
 static struct {
     boolean newStyle;
@@ -238,8 +227,6 @@ static boolean lineIsBlank = true;
 int g_debug_par_start       = 0;
 int g_debug_table_prescan   = 0;
 int g_debug_table_writing   = 0;
-int g_last_firstIndent      = -99;
-int g_last_leftIndent       = -99;
 
 char *UnicodeSymbolFontToLatex[];
 char *UnicodeGreekToLatex[];
@@ -818,6 +805,23 @@ static void InitializeTextStyle(void)
     paragraph.rightIndent = 0;
 
     InitializeGroupLevels();
+}
+
+static void setParagraphBaseline(void)
+{
+	char buff[100];
+	if (written_paragraph.lineSpacing == paragraph.lineSpacing) 
+		return;
+		
+	snprintf(buff, 100, "\\baselineskip=%dpt\n", abs(paragraph.lineSpacing)/20);
+	PutLitStr(buff);
+
+	if (g_debug_par_start) {
+		snprintf(buff, 100, "[ls=%d]", paragraph.lineSpacing);
+		PutLitStr(buff);
+	}
+
+	written_paragraph.lineSpacing = paragraph.lineSpacing;
 }
 
 /*
@@ -1535,7 +1539,7 @@ static void DoParagraphCleanUp(void)
         suppressLineBreak = true;
     }
 
-    if (paragraph.lineSpacing != paragraph.oldSpacing && paragraph.wroteSpacing) {
+    if (0 && paragraph.lineSpacing != paragraph.oldSpacing && paragraph.wroteSpacing) {
         PutLitStr("\\end{spacing}");
         InsertNewLine();
        /* paragraph.lineSpacing = singleSpace;*/
@@ -1651,6 +1655,7 @@ static void WriteParagraphStyle(void)
     int temp1, temp2, temp3;
     double textWidth = page.width - page.leftMargin - page.rightMargin;
 
+return;
     temp1 = paragraph.firstIndent;
     temp2 = paragraph.leftIndent;
     temp3 = paragraph.rightIndent;
@@ -1696,7 +1701,7 @@ static void WriteParagraphStyle(void)
         paragraph.wroteAlignment = true;
     }
 
-    if (paragraph.lineSpacing != paragraph.oldSpacing &&
+    if (0 && paragraph.lineSpacing != paragraph.oldSpacing &&
         !preferenceValue[GetPreferenceNum("ignoreSpacing")]) {
         snprintf(buf, rtfBufSiz, "\\begin{spacing}{%1.1f}", spacing);
         PutLitStr(buf);
@@ -1787,7 +1792,9 @@ static void TextClass(void)
     else
         justWroteFootnote = false;
 
-	if (lastCharWasLineBreak && (g_last_leftIndent != paragraph.leftIndent || g_last_firstIndent != paragraph.firstIndent)) {
+	if (lastCharWasLineBreak && 
+	(  written_paragraph.leftIndent != paragraph.leftIndent 
+	|| written_paragraph.firstIndent != paragraph.firstIndent)) {
 		char buff[100];
 		
 		snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
@@ -1796,14 +1803,13 @@ static void TextClass(void)
 		PutLitStr(buff);
 
 		if (g_debug_par_start) {
-			snprintf(buff, 100, "[fi=%d, li=%d][fi=%d, li=%d]", 
-			g_last_firstIndent, g_last_leftIndent,
-			paragraph.firstIndent, paragraph.leftIndent);
+			snprintf(buff, 100, "[fi=%d, li=%d, ls=%d]", 
+			paragraph.firstIndent, paragraph.leftIndent, paragraph.lineSpacing);
 			PutLitStr(buff);
 		}
 
-		g_last_leftIndent = paragraph.leftIndent;
-		g_last_firstIndent = paragraph.firstIndent;
+		written_paragraph.leftIndent = paragraph.leftIndent;
+		written_paragraph.firstIndent = paragraph.firstIndent;
 	}
     lastCharWasLineBreak = false;
 
@@ -1994,11 +2000,19 @@ static void CheckForParagraph(void)
     }
 
 
+	/* multiple blank lines in a row ... convert to \vspace on day */
     if (lastCharWasLineBreak) {
+    	char buff[100];
+    	
+    	snprintf(buff,100,"\\vspace{%dpt}\n", abs(paragraph.lineSpacing/20));
+    	PutLitStr(buff);
+    	return;
+    	
         if (charAttrCount > 0) {
             SetGroupLevels(SAVE_LEVELS);
             continueTextStyle = true;
         }
+        
         
         CheckForCharAttr();
         for (i = 0; i < charAttrCount; i++)
@@ -2023,9 +2037,10 @@ static void CheckForParagraph(void)
         return;
     }
 
-    RTFGetToken();
+	setParagraphBaseline();
+//    RTFGetToken();
 
-    while (1) {
+    while (0) {
         /* stop if we see a line break */
         if (RTFCheckMM(rtfSpecialChar, rtfPar)) {
             if (g_debug_par_start) PutLitStr("\\fbox{rtfPar}"); 
@@ -2103,61 +2118,41 @@ static void CheckForParagraph(void)
         RTFGetToken();
     }
 
-    /* if we saw a line break or a paragraph definition, the paragraph has ended. */
-    if (newParagraph) {
+    /* no matter what, end the paragraph. */
 
-        if (charAttrCount > 0) {
-            SetGroupLevels(SAVE_LEVELS);
-            continueTextStyle = true;
-        }
-        
-        CheckForCharAttr();
-        for (i = 0; i < charAttrCount; i++)
-            PutLitChar('}');
-        charAttrCount = 0;
-        
-        if (groupLevel <= storeGroupLevel && blankLineCount < MAX_BLANK_LINES) {
-            if (g_debug_par_start) PutLitStr("[usual]");
-            CheckForCharAttr();
-            InsertNewLine();
-            InsertNewLine();
-            blankLineCount += 2;
-        } else if (!suppressLineBreak && !(textStyle.open) && !lineIsBlank) {
-            if (g_debug_par_start) PutLitStr("[**ah ha**]");
-//            PutLitStr("\\\\{}");  /* braces because next line may start with [ */
-//            InsertNewLine();
-//            InsertNewLine();
-        lastCharWasLineBreak = true;
-		InsertNewLine();
-		InsertNewLine();
-		blankLineCount += 2;
-        } else 
-            PutLitStr("[NO NEW PARAGRAPH !!]");
-        
-        wrapCount = 0;
-        lastCharWasLineBreak = true;
-        RTFUngetToken();
-        if (continueTextStyle) {
-            SetGroupLevels(RESTORE_LEVELS);
-            textStyle.newStyle = true;
-        }
-        return;
-    }
+	if (charAttrCount > 0) {
+		SetGroupLevels(SAVE_LEVELS);
+		continueTextStyle = true;
+	}
+	
+	CheckForCharAttr();
+	for (i = 0; i < charAttrCount; i++)
+		PutLitChar('}');
+	charAttrCount = 0;
+	
+	if (0 && g_debug_par_start) {
+		if (groupLevel <= storeGroupLevel && blankLineCount < MAX_BLANK_LINES) {
+			PutLitStr("[usual]");
+		} else if (!suppressLineBreak && !(textStyle.open) && !lineIsBlank) {
+			PutLitStr("[**hmmm**]");
+		} else if (rtfClass != rtfEOF && !(textStyle.open) && !lineIsBlank) {
+			PutLitStr("[line break]"); 
+		} else
+			PutLitStr("[NO NEW PARAGRAPH !!]");
+	}
+	
+	InsertNewLine();
+	InsertNewLine();
+	blankLineCount += 2;
+	wrapCount = 0;
+	lastCharWasLineBreak = true;
 
-    if (rtfClass != rtfEOF && !(textStyle.open) && !lineIsBlank) {
-		if (g_debug_par_start) PutLitStr("[line break]"); 
-        wrapCount = 0;
-        lastCharWasLineBreak = true;
-		InsertNewLine();
-		InsertNewLine();
-		blankLineCount += 2;
-//        PutLitStr("\\\\{}");
-//        InsertNewLine();
-    }
-    
-    wrapCount = 0;
-    RTFUngetToken();
-    return;
+	if (continueTextStyle) {
+		SetGroupLevels(RESTORE_LEVELS);
+		textStyle.newStyle = true;
+	}
+	
+//	RTFUngetToken();
 }
 
 /*
@@ -3097,12 +3092,7 @@ static void ParAttr(void)
         switch (rtfMinor) {
         case rtfSpaceBetween:
             paragraph.oldSpacing = paragraph.lineSpacing;
-            if (rtfParam == 240)
-                paragraph.lineSpacing = singleSpace;
-            else if (rtfParam == 360)
-                paragraph.lineSpacing = oneAndAHalfSpace;
-            else if (rtfParam == 480)
-                paragraph.lineSpacing = doubleSpace;
+            paragraph.lineSpacing = rtfParam;
             break;
         case rtfQuadCenter:
             paragraph.alignment = center;
@@ -3160,6 +3150,12 @@ static void ParAttr(void)
         case rtfRightIndent:
             paragraph.rightIndent = rtfParam;
             break;
+        case rtfSpaceBefore:
+        	paragraph.spaceBefore = rtfParam;
+        	break;
+        case rtfSpaceAfter:
+        	paragraph.spaceAfter = rtfParam;
+        	break;
         }
     } else {
         switch (rtfMinor) {
@@ -4600,8 +4596,6 @@ int BeginLaTeXFile(void)
     codePage = 0;
     wrapCount = 0;
     charAttrCount = 0;
-    groupLevel = 0;
-    paragraph.alignment = left;
     textStyle.newStyle = 0;
     lastCharWasLineBreak = true;
     seenLeftDoubleQuotes = false;
@@ -4616,7 +4610,8 @@ int BeginLaTeXFile(void)
     insideFootnote = false;
     justWroteFootnote = false;
     insideHyperlink = false;
-    paragraph.lineSpacing = singleSpace;
+    paragraph.alignment = left;
+    paragraph.lineSpacing = -99;
     paragraph.newStyle = false;
     paragraph.parbox = false;
     paragraph.wroteAlignment = false;

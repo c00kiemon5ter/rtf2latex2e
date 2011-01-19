@@ -1,20 +1,20 @@
 SRCS = Makefile Release-notes.txt GPL_license \
-       rtf2latex2eDoc.tex rtf2latex2eSWP.tex rtfReader.tex
-PDF  = rtf2latex2eDoc.pdf rtf2latex2eSWP.pdf rtfReader.pdf
+       rtf2latexDoc.tex rtf2latexSWP.tex rtfReader.tex
+PDF  = rtf2latexDoc.pdf rtf2latexSWP.pdf rtfReader.pdf
 
 all: $(PDF)
 
 %.pdf:	%.tex
 	pdflatex $<
 
-rtf2latex2eSWP.pdf : rtf2latex2eSWP.tex
-	pdflatex rtf2latex2eSWP
+rtf2latexSWP.pdf : rtf2latexSWP.tex
+	pdflatex rtf2latexSWP
 
 rtfReader.pdf : rtfReader.tex
 	pdflatex rtfReader
 
-rtf2latex2eDoc.pdf : rtf2latex2eDoc.tex
-	pdflatex rtf2latex2eDoc
+rtf2latexDoc.pdf : rtf2latexDoc.tex
+	pdflatex rtf2latexDoc
 
 clean:
 	$(RM) *.log *.aux *.out

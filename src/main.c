@@ -30,13 +30,11 @@
 #include     "rtf2latex2e.h"
 #include     "eqn.h"
 
-extern long  groupLevel;
 extern char  outputMapName[];
 FILE         *OpenLibFile(char *name, char *mode);
 
 FILE         *ifp, *ofp;
 extern char  fileCreator[];
-extern long  groupLevel;
 
 #if RTF2LATEX2E_DOS
 #include <Windows.h>

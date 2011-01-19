@@ -84,22 +84,6 @@ extern char     texMapQualifier[];
 
 # define        charSetSize             256
 
-/* charset stack size */
-
-# define        maxCSStack              1000    /* increased by Ujwal Sathyam from 10 to 1000 */
-
-/*
- * Stack for keeping track of text style on group begin/end.  This is
- * necessary because group termination reverts the text style to the previous
- * value, which may implicitly change it.
- * Added by Ujwal Sathyam
- */
-/*
-# define        maxTSStack              1000
-extern textStyleStruct textStyle;
-static textStyleStruct  tsStack[maxTSStack];
-static short    tsTop = 0;
-*/
 
 static void _RTFGetToken(void);
 static void _RTFGetToken2(void);
@@ -117,12 +101,8 @@ static void CharSetInit(void);
 static void ReadCharSetMaps(void);
 void DebugMessage(void);
 
-/* these functions added by Ujwal Sathyam */
 static void RTFSwitchCharSet(uint32_t enc);
 void CheckForCharAttr(void);
-void RTFPushTextStyle(void);
-void RTFPopTextStyle(void);
-/* end addition */
 
 /*
  * Public variables (listed in rtf.h)
@@ -211,7 +191,6 @@ static short *genCharCode = cp1252CharCode;
 
 static int globalCharSet;
 static int defaultFontNumber;
-extern int32_t groupLevel;
 
 /* end additions by Ujwal Sathyam */
 
@@ -231,19 +210,6 @@ static short *curCharCode = cp1252CharCode;     /* changed by Ujwal Sathyam from
  */
 
 static short autoCharSetFlags;
-
-/*
- * Stack for keeping track of charset map on group begin/end.  This is
- * necessary because group termination reverts the font to the previous
- * value, which may implicitly change it.
- */
-
-static short csStack[maxCSStack];
-static short csTop = 0;
-/* added by Ujwal Sathyam */
-static short savedCSStack[maxCSStack];
-static short savedCSTop;
-static int32_t savedGroupLevel;
 
 /*
  * Initialize the reader.  This may be called multiple times,
@@ -330,7 +296,7 @@ void RTFInit(void)
     }
 
     CharSetInit();
-    csTop = 0;
+    RTFInitStack();
 }
 
 
@@ -654,24 +620,15 @@ static void _RTFGetToken(void)
              && RTFCheckCMM(rtfControl, rtfCharAttr, rtfCharCharSet)) {
         RTFSwitchCharSet(rtfParam);
     }
-    /* end addition by Ujwal Sathyam */
-    else if ((autoCharSetFlags & rtfSwitchCharSet) && rtfClass == rtfGroup) {
+
+    else if (rtfClass == rtfGroup) {
         switch (rtfMajor) {
         case rtfBeginGroup:
-            if (csTop >= maxCSStack)
-                RTFMsg("_RTFGetToken: stack overflow\n");
-            csStack[csTop++] = curCharSet;
-/*                      RTFPushTextStyle (); */
-            groupLevel++;
+			RTFPushStack();
             break;
         case rtfEndGroup:
-            if (csTop <= 0)
-                RTFMsg("_RTFGetToken: stack underflow\n");
-            curCharSet = csStack[--csTop];
-            RTFSetCharSet(curCharSet);
             CheckForCharAttr();
-            groupLevel--;
-/*                      RTFPopTextStyle (); */
+			RTFPopStack();
             break;
         }
     }
@@ -2302,31 +2259,67 @@ void RTFSetDefaultFont(int fontNumber)
     defaultFontNumber = fontNumber;
 }
 
-/* Stack operations */
+/*
+ * Stack for keeping track of text style on group begin/end.  This is
+ * necessary because group termination reverts the text style to the previous
+ * value, which may implicitly change it.
+ */
+
+# define        MAX_STACK             100
+
+short csStack[MAX_STACK], savedCSStack[MAX_STACK];
+struct parStyle parStack[MAX_STACK], parWrittenStack[MAX_STACK], parSavedStack[MAX_STACK];
+
+int groupLevel;
+int savedGroupLevel;
+
+void RTFInitStack(void)
+{
+	groupLevel=0;
+	written_paragraph.firstIndent      = -99;
+	written_paragraph.leftIndent       = -99;
+	written_paragraph.lineSpacing      = -99;
+	paragraph.firstIndent      = 720;
+	paragraph.leftIndent       = 0;
+	paragraph.lineSpacing      = 240;
+	RTFPushStack();
+}
 
 void RTFPushStack(void)
 {
-    csStack[csTop++] = curCharSet;
+    csStack[groupLevel] = curCharSet;
+    parStack[groupLevel] = paragraph;
+    parWrittenStack[groupLevel] = written_paragraph;
     groupLevel++;
+    if (groupLevel >= MAX_STACK) {
+        RTFMsg("Exceeding stack capacity of %d items\n",MAX_STACK);
+        groupLevel = MAX_STACK - 1;
+    }
 }
 
 void RTFPopStack(void)
 {
-    curCharSet = csStack[--csTop];
     groupLevel--;
+    if (groupLevel < 0) {
+        RTFMsg("Too many '}'.  Stack Underflow\n");
+        groupLevel = 0;
+    }
+    curCharSet = csStack[groupLevel];
+    paragraph = parStack[groupLevel];
+    written_paragraph = parWrittenStack[groupLevel];
+    RTFSetCharSet(curCharSet);
 }
 
 void RTFStoreStack(void)
 {
-    memcpy(savedCSStack, csStack, maxCSStack * sizeof(short));
-    savedCSTop = csTop;
+    memcpy(savedCSStack, csStack, MAX_STACK * sizeof(short));
     savedGroupLevel = groupLevel;
 }
 
 void RTFRestoreStack(void)
 {
-    memcpy(csStack, savedCSStack, maxCSStack * sizeof(short));
-    csTop = savedCSTop;
-    RTFSetCharSet(csStack[csTop]);
+    memcpy(csStack, savedCSStack, MAX_STACK * sizeof(short));
     groupLevel = savedGroupLevel;
+    curCharSet = csStack[groupLevel];
+    RTFSetCharSet(curCharSet);
 }

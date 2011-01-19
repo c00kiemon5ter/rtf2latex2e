@@ -28,7 +28,7 @@ PDF     = arch-mac.pdf arch.pdf equation.pdf mapping.pdf \
           testeqn05.pdf  testeqn06.pdf  testeqn07.pdf  testeqn08.pdf  \
           testeqn09.pdf  testeqn10.pdf
 
-all: $(TEX) $(PDF)
+all: $(TEX)
 
 eqn: $(TEX_EQN)
 

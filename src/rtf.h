@@ -400,4 +400,30 @@ extern int g_delete_eqn_file;
 extern int g_insert_eqn_name;
 extern int g_object_width;
 
+struct parStyle
+{
+    int newStyle;
+    int alignment;
+    int wroteAlignment;
+    int oldSpacing;
+    int lineSpacing;
+    int wroteSpacing;
+    int firstIndent;
+    int leftIndent;
+    int rightIndent;
+    int spaceBefore;
+    int spaceAfter;
+    int parbox;
+};
+
+extern struct parStyle paragraph, written_paragraph;
+extern int groupLevel;
+
+void RTFInitStack(void);
+void RTFPushStack(void);
+void RTFPopStack(void);
+void RTFStoreStack(void);
+void RTFRestoreStack(void);
+
+
 #endif /* _RTF_H */
