@@ -2271,61 +2271,69 @@ short csStack[MAX_STACK], savedCSStack[MAX_STACK];
 parStyleStruct parStack[MAX_STACK], parWrittenStack[MAX_STACK], parSavedStack[MAX_STACK];
 textStyleStruct textStyleStack[MAX_STACK], textStyleWrittenStack[MAX_STACK];
 
-int groupLevel;
-int savedGroupLevel;
+int braceLevel;
+int savedbraceLevel;
 
 void RTFInitStack(void)
 {
-	groupLevel=0;
-	paragraphWritten.firstIndent      = -99;
-	paragraphWritten.leftIndent       = -99;
-	paragraphWritten.lineSpacing      = -99;
+	braceLevel=0;
+	paragraphWritten.firstIndent      = UNINITIALIZED;
+	paragraphWritten.leftIndent       = UNINITIALIZED;
+	paragraphWritten.lineSpacing      = UNINITIALIZED;
+	paragraphWritten.alignment        = UNINITIALIZED;
+	
 	paragraph.firstIndent      = 720;
 	paragraph.leftIndent       = 0;
 	paragraph.lineSpacing      = 240;
+	paragraph.alignment        = 0;
+	textStyle.foreColor = -1;
+    textStyle.backColor = -1;
+    textStyle.fontSize = normalSize;
+
 	RTFPushStack();
 }
 
 void RTFPushStack(void)
 {
-    csStack[groupLevel] = curCharSet;
-    parStack[groupLevel] = paragraph;
-    parWrittenStack[groupLevel] = paragraphWritten;
+    csStack[braceLevel] = curCharSet;
+    parStack[braceLevel] = paragraph;
+    textStyleStack[braceLevel] = textStyle;
     
-    groupLevel++;
-    if (groupLevel >= MAX_STACK) {
+//    fprintf(stderr, "push [%d] alignment now written=%d, set=%d\n",braceLevel, paragraphWritten.alignment, paragraph.alignment);
+    braceLevel++;
+    if (braceLevel >= MAX_STACK) {
         RTFMsg("Exceeding stack capacity of %d items\n",MAX_STACK);
-        groupLevel = MAX_STACK - 1;
+        braceLevel = MAX_STACK - 1;
     }
 }
 
 void RTFPopStack(void)
 {
-    groupLevel--;
-    if (groupLevel < 0) {
+    int i;
+    braceLevel--;
+    i=braceLevel;
+    
+    if (i < 0) {
         RTFMsg("Too many '}'.  Stack Underflow\n");
-        groupLevel = 0;
+        i = 0;
     }
-    curCharSet = csStack[groupLevel];
+    curCharSet = csStack[i];
     RTFSetCharSet(curCharSet);
     
-    paragraph = parStack[groupLevel];
-    paragraphWritten = parWrittenStack[groupLevel];
-    
-    textStyle = textStyleStack[groupLevel];
-    textStyleWritten = textStyleWrittenStack[groupLevel];   
+    paragraph = parStack[i];
+    textStyle = textStyleStack[i];
 }
 
 void RTFStoreStack(void)
 {
     memcpy(savedCSStack, csStack, MAX_STACK * sizeof(short));
-    savedGroupLevel = groupLevel;
+    savedbraceLevel = braceLevel;
 }
 
 void RTFRestoreStack(void)
 {
     memcpy(csStack, savedCSStack, MAX_STACK * sizeof(short));
-    groupLevel = savedGroupLevel;
-    curCharSet = csStack[groupLevel];
+    braceLevel = savedbraceLevel;
+    curCharSet = csStack[braceLevel];
     RTFSetCharSet(curCharSet);
 }

@@ -23,6 +23,8 @@
 # define	WRAP_LIMIT	120
 # define	PACKAGES	9
 
+# define    UNINITIALIZED -99
+
 #ifndef boolean
 typedef unsigned char boolean;
 #endif
@@ -89,43 +91,43 @@ typedef struct
 typedef struct
 {
 	boolean	newStyle;
-	int		boldGroupLevel;
-	int		noBoldGroupLevel;
+	int		boldBraceLevel;
+	int		noBoldBraceLevel;
 	boolean	wroteBold;
 	boolean	wroteNoBold;
-	int		italicGroupLevel;
-	int		noItalicGroupLevel;
+	int		italicBraceLevel;
+	int		noItalicBraceLevel;
 	boolean	wroteItalic;
 	boolean	wroteNoItalic;
-	int		underlinedGroupLevel;
-	int		noUnderlinedGroupLevel;
+	int		underlinedBraceLevel;
+	int		noUnderlinedBraceLevel;
 	boolean	wroteUnderlined;
-	int		dbUnderlinedGroupLevel;
-	int		noDbUnderlinedGroupLevel;
+	int		dbUnderlinedBraceLevel;
+	int		noDbUnderlinedBraceLevel;
 	boolean	wroteDbUnderlined;
-	int		shadowedGroupLevel;
-	int		noShadowedGroupLevel;
+	int		shadowedBraceLevel;
+	int		noShadowedBraceLevel;
 	boolean	wroteShadowed;
-	int		allCapsGroupLevel;
+	int		allCapsBraceLevel;
 	boolean	wroteAllcaps;
-	int		smallCapsGroupLevel;
+	int		smallCapsBraceLevel;
 	boolean	wroteSmallCaps;
 	long	foreColor;
-	int		foreColorGroupLevel;
+	int		foreColorBraceLevel;
 	boolean	wroteForeColor;
 	long	backColor;
-	int		backColorGroupLevel;
+	int		backColorBraceLevel;
 	boolean	wroteBackColor;
-	int		subScriptGroupLevel;
-	int		noSubScriptGroupLevel;
+	int		subScriptBraceLevel;
+	int		noSubScriptBraceLevel;
 	boolean	wroteSubScript;
 	boolean	wroteNoSubScript;
-	int		superScriptGroupLevel;
-	int		noSuperScriptGroupLevel;
+	int		superScriptBraceLevel;
+	int		noSuperScriptBraceLevel;
 	boolean wroteSuperScript;
 	boolean wroteNoSuperScript;
 	long	fontSize;
-	int		fontSizeGroupLevel;
+	int		fontSizeBraceLevel;
 	boolean	wroteFontSize;
 	boolean	open;
 } textStyleStruct;
@@ -144,6 +146,8 @@ typedef struct
     int spaceBefore;
     int spaceAfter;
     int parbox;
+    int heading;
+    int extraIndent;
 } parStyleStruct;
 
 
