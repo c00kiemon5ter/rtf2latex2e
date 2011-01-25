@@ -167,7 +167,6 @@ static boolean requireAmsMathPackage;
 static boolean requireUnicodePackage;
 static boolean requireLatin1Package;
 static size_t packagePos;
-static boolean writingHeading1, writingHeading2, writingHeading3;
 static boolean insideFootnote;
 static boolean insideHyperlink;
 
@@ -861,6 +860,7 @@ static void InitializeTextStyle(void)
     paragraph.firstIndent = 0;
     paragraph.leftIndent = 0;
     paragraph.rightIndent = 0;
+    paragraph.headingString = NULL;
 
 }
 
@@ -895,19 +895,11 @@ static void StartNewParagraph(void)
         paragraph.spaceBefore = 0;
     }
     
-    if (!paragraphWritten.heading && (writingHeading1 || writingHeading2 || writingHeading3)) {
-        
-        if (writingHeading1)
-            PutLitStr(heading1String);
-        else if (writingHeading2)
-            PutLitStr(heading2String);
-        else
-            PutLitStr(heading3String);
-        
-        paragraphWritten.heading = true;
+    if (paragraphWritten.headingString != paragraph.headingString) {
+        PutLitStr(paragraph.headingString);        
+        paragraphWritten.headingString = paragraph.headingString;
         suppressLineBreak = true;
-
-        return; 
+        return;
     } 
 
     if (paragraphWritten.alignment != paragraph.alignment) {
@@ -964,19 +956,11 @@ static void EndLastParagraph(void)
         return;
     }
     
-    if (paragraphWritten.heading) {
-        if (writingHeading1)
-            n = CountCharInString(heading1String, '{');
-        else if (writingHeading2)
-            n = CountCharInString(heading2String, '{');
-        else
-            n = CountCharInString(heading3String, '{');     
+    if (paragraphWritten.headingString) {
+        n = CountCharInString(paragraphWritten.headingString, '{');
         for (i = 0; i < n; i++) PutLitStr("}");
-        writingHeading1 = false;
-        writingHeading2 = false;
-        writingHeading3 = false;
         suppressLineBreak = false;
-        paragraphWritten.heading=false;
+        paragraphWritten.headingString=NULL;
         InsertNewLine();
         InsertNewLine();
         return;
@@ -1451,7 +1435,7 @@ static void WriteTextStyle(void)
     int smallCapsGL;
 /*  int allCapsGL; */
 
-    if (writingHeading1 || writingHeading2 || writingHeading3 || insideHyperlink)
+    if (paragraph.headingString || insideHyperlink)
         return;
 
     italicGL = textStyle.italicBraceLevel;
@@ -1939,31 +1923,12 @@ static void SpecialChar(void)
         break;
     case rtfPage:
         if (0 && !(table.inside)) {
-            if (writingHeading1) {
-                for (i = 0; i < CountCharInString(heading1String, '{');
-                     i++)
+            if (paragraphWritten.headingString) {
+                for (i = 0; i < CountCharInString(paragraphWritten.headingString, '{'); i++)
                     PutLitStr("}");
-                InsertNewLine();
-                writingHeading1 = false;
+                paragraphWritten.headingString = NULL;
                 suppressLineBreak = false;
-                blankLineCount++;
-            } else if (writingHeading2) {
-                for (i = 0; i < CountCharInString(heading2String, '{');
-                     i++)
-                    PutLitStr("}");
-                InsertNewLine();
-                writingHeading2 = false;
-                suppressLineBreak = false;
-                blankLineCount++;
-            } else if (writingHeading3) {
-                for (i = 0; i < CountCharInString(heading3String, '{');
-                     i++)
-                    PutLitStr("}");
-                InsertNewLine();
-                writingHeading3 = false;
-                suppressLineBreak = false;
-                blankLineCount++;
-            }
+            } 
             CheckForCharAttr();
             if (blankLineCount < MAX_BLANK_LINES) {
                 PutLitStr("\n\n");
@@ -2803,31 +2768,29 @@ static void ParAttr(void)
             paragraph.leftIndent = 0;
             paragraph.extraIndent = 0;
             paragraph.alignment = left;
+            paragraph.headingString = NULL;
             break;
         case rtfStyleNum:
             if ((stylePtr = RTFGetStyle(rtfParam)) == (RTFStyle *) NULL)
                 break;
             if (strcmp(stylePtr->rtfSName, "heading 1") == 0) {
-                if (paragraphWritten.heading)
-                    EndLastParagraph();
-                writingHeading1 = true;
-                paragraphWritten.heading = false;
+                if (paragraphWritten.headingString) EndLastParagraph();
+                paragraph.headingString=heading1String;
                 nowBetweenParagraphs = true;
                 suppressLineBreak = true;
+                DoSectionCleanUp();
             } else if (strcmp(stylePtr->rtfSName, "heading 2") == 0) {
-                if (paragraphWritten.heading)
-                    EndLastParagraph();
-                writingHeading2 = true;
-                paragraphWritten.heading = false;
+                if (paragraphWritten.headingString) EndLastParagraph();
+                paragraph.headingString=heading2String;
                 nowBetweenParagraphs = true;
                 suppressLineBreak = true;
+                DoSectionCleanUp();
             } else if (strcmp(stylePtr->rtfSName, "heading 3") == 0) {
-                if (paragraphWritten.heading)
-                    EndLastParagraph();
-                writingHeading3 = true;
-                paragraphWritten.heading = false;
+                if (paragraphWritten.headingString) EndLastParagraph();
+                paragraph.headingString=heading3String;
                 nowBetweenParagraphs = true;
                 suppressLineBreak = true;
+                DoSectionCleanUp();
             }
             break;
         case rtfFirstIndent:
@@ -4262,9 +4225,6 @@ int BeginLaTeXFile(void)
     blankLineCount = 0;
     suppressLineBreak = false;
     continueTextStyle = false;
-    writingHeading1 = false;
-    writingHeading2 = false;
-    writingHeading3 = false;
     insideFootnote = false;
     insideHyperlink = false;
     paragraph.alignment = left;

@@ -146,11 +146,9 @@ typedef struct
     int spaceBefore;
     int spaceAfter;
     int parbox;
-    int heading;
+    char *headingString;
     int extraIndent;
 } parStyleStruct;
-
-
 
 typedef struct cell
 {
