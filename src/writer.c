@@ -515,22 +515,25 @@ static void PutIntAsUtf8(int x)
    
 static void PutLitChar(int c)
 {
-	static int lf_in_a_row = 0;
+	static int lf_in_succession = 0;
+	static int no_chars_in_row = true;
 	
     if (c != '\n') {
-    	lf_in_a_row = 0;
+    	lf_in_succession = 0;
+    	if (c != ' ') no_chars_in_row=false;
     	PutIntAsUtf8(c & 0x00ff);
     	return;
     }
 	
-	if (suppressLineBreak) {
-		lf_in_a_row = 0;
+	if (suppressLineBreak && no_chars_in_row) {
+		lf_in_succession = 0;
 		PutIntAsUtf8((int) ' ');
 		return;
 	} 
 	
-	lf_in_a_row++;
-	if (lf_in_a_row > 2) 
+	lf_in_succession++;
+	no_chars_in_row = true;
+	if (lf_in_succession > 2) 
 		return;
 	
 	wrapCount = 0;
@@ -828,6 +831,8 @@ static void StartNewParagraph(void)
 {
 	char buff[100];
 		
+    nowBetweenParagraphs = false;
+
 	if (insideFootnote) return;
 
 	if (paragraph.spaceBefore) {
@@ -894,6 +899,11 @@ static void EndLastParagraph(void)
 
     CheckForBeginDocument();
 
+    if (table.inside) {
+        PutLitStr(" \\linebreak\n");
+        return;
+    }
+	
 	if (insideFootnote) {
 		InsertNewLine();
 		InsertNewLine();
@@ -1610,6 +1620,8 @@ static void WriteColors(void)
 static void DoSectionCleanUp(void)
 {
     if (section.cols > 1) {
+    	if (nowBetweenParagraphs)  /*finish paragraph before multicols */
+        	EndLastParagraph();
         PutLitStr("\n\\end{multicols}");
         InsertNewLine();
         section.cols = 1;
@@ -1714,7 +1726,6 @@ static void TextClass(void)
 
 		EndLastParagraph();
 		StartNewParagraph();
-    	nowBetweenParagraphs = false;
 	}
 
 	if (insideHyperlink) {
@@ -1801,10 +1812,7 @@ static void ReadFootnote(void)
 static void CheckForParagraph(void)
 {
     if (table.inside) {
-        if (!suppressLineBreak) {
-            PutLitStr(" \\linebreak");
-            InsertNewLine();
-        }
+        PutLitStr(" \\linebreak\n");
         return;
     }
 
@@ -1837,7 +1845,6 @@ static void SpecialChar(void)
 
 		EndLastParagraph();
 		StartNewParagraph();
-		nowBetweenParagraphs = false;
 	}
 		
     switch (rtfMinor) {
@@ -2465,7 +2472,7 @@ static void WriteCellHeader(int cellNum)
     if (cellPtr->mergePar == first)
         DoMergedCells(cellPtr);
 
-    suppressLineBreak = true;
+//    suppressLineBreak = true;
     wroteCellHeader = true;
 
     if (g_debug_table_writing)  {
@@ -2552,7 +2559,7 @@ static void ProcessTableRow(int rowNum)
                 PutLitChar('}');
             PutLitStr("} & ");
             InsertNewLine();
-            suppressLineBreak = true;
+//            suppressLineBreak = true;
             startCellText = false;  /* we are not in the text field of a cell any more */
             paragraph.alignment = left;
             wroteCellHeader = false;
@@ -2650,12 +2657,7 @@ static void DoTable(void)
     table.inside = true;
 
     EndLastParagraph();
-
-    if (blankLineCount < MAX_BLANK_LINES) {
-        InsertNewLine();
-        InsertNewLine();
-        blankLineCount++;
-    }
+    StartNewParagraph();
 
     PutLitStr("\\begin{");
     PutLitStr(tableString);
@@ -2705,12 +2707,8 @@ static void DoTable(void)
 
     PutLitStr("\\hline\n");
     snprintf(buf, 100, "\\end{%s}\n", tableString);
-    PutLitStr(buf);
-    InsertNewLine();
+    PutLitStr(buf);    
     nowBetweenParagraphs = true;
-    suppressLineBreak = true;
-
-
 
     RTFFree((char *) table.columnBorders);
     table.inside = false;       /* end of table */
@@ -2751,8 +2749,6 @@ static void ParAttr(void)
             paragraph.leftIndent = 0;
             paragraph.extraIndent = 0;
             paragraph.alignment = left;
-            paragraph.newStyle = true;
-            nowBetweenParagraphs = true;
             break;
         case rtfStyleNum:
             if ((stylePtr = RTFGetStyle(rtfParam)) == (RTFStyle *) NULL)
@@ -2819,7 +2815,6 @@ static void SectAttr(void)
         section.newStyle = true;
         break;
     case rtfSectDef:
-        EndLastParagraph();
         DoSectionCleanUp();
         section.cols = 1;
 /*                       section.newStyle = true; */
@@ -3179,7 +3174,6 @@ static void IncludeGraphics(char *pictureType)
                 InsertNewLine();
                 InsertNewLine();
             }
-            suppressLineBreak = true;
         }
     } else {                    /* this is for compatibility with Scientific Word */
 
@@ -3207,7 +3201,6 @@ static void IncludeGraphics(char *pictureType)
         PutLitStr(specialBuf);
         PutLitStr("}}");
         InsertNewLine();
-        suppressLineBreak = true;
     }
 }
 
@@ -3619,6 +3612,7 @@ boolean ConvertEquationFile(char *objectFileName)
             requireHyperrefPackage = true;
         }
 
+        /* this actually writes the equation */
         Eqn_TranslateObjectList(theEquation, ostream, 0);
         Eqn_Destroy(theEquation);
     }
