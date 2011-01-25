@@ -167,46 +167,35 @@ static char *stdCharName[] = {
 
 static char *genCharSetFile = (char *) NULL;
 static short haveGenCharSet = 0;
-/* commented out by Ujwal Sathyam for rtf2latex2e. genCharCode made array pointer
-static short    genCharCode[charSetSize];
-*/
-
 
 static char *symCharSetFile = (char *) NULL;
 static short symCharCode[charSetSize];  /* symbol */
 static short haveSymCharSet = 0;
 
-/* The following character set arrays added by Ujwal Sathyam for rtf2latex2e */
 static short cp1250CharCode[charSetSize];       /* code page 1250 */
 static short cp1252CharCode[charSetSize];       /* code page 1252 */
 static short cp1253CharCode[charSetSize];       /* code page 1253 */
 static short cp1254CharCode[charSetSize];       /* code page 1254 */
 static short cp437CharCode[charSetSize];        /* code page 437 */
 static short cp850CharCode[charSetSize];        /* code page 850 */
-static short cpMacCharCode[charSetSize];  		/* mac character set */
-static short cpNextCharCode[charSetSize];  		/* NeXt character set */
+static short cpMacCharCode[charSetSize];        /* mac character set */
+static short cpNextCharCode[charSetSize];       /* NeXt character set */
 
 static short *genCharCode = cp1252CharCode;
-
 
 static int globalCharSet;
 static int defaultFontNumber;
 
-/* end additions by Ujwal Sathyam */
-
 static short curCharSet = rtfCSGeneral;
-static short *curCharCode = cp1252CharCode;     /* changed by Ujwal Sathyam from genCharCode */
+static short *curCharCode = cp1252CharCode;
 
 
 
 /*
  * By default, the reader is configured to handle charset mapping invisibly,
  * including reading the charset files and switching charset maps as necessary
- * for Symbol font.
- */
-
-/* Additions by Ujwal Sathyam now support automatic switching character set 
-   maps for other encodings such latin1, latin2, etc...
+ * for Symbol font.  Now supports automatic switching character set 
+ * maps for other encodings such latin1, latin2, etc...
  */
 
 static short autoCharSetFlags;
@@ -239,8 +228,8 @@ void RTFInit(void)
         pushedTextBuf = RTFAlloc(rtfBufSiz);
         if (!rtfTextBuf || !pushedTextBuf) {
             RTFPanic("Cannot allocate text buffers.");
-			exit(1);
-		}
+            exit(1);
+        }
         rtfTextBuf[0] = '\0';
         pushedTextBuf[0] = '\0';
     }
@@ -304,7 +293,6 @@ void RTFInit(void)
  * Set the reader's input stream to the given stream.  Can
  * be used to redirect to other than the default (stdin).
  */
-
 void RTFSetStream(FILE *stream)
 {
     rtffp = stream;
@@ -315,7 +303,6 @@ void RTFSetStream(FILE *stream)
  * Set or get the input or output file name.  These are never guaranteed
  * to be accurate, only insofar as the calling program makes them so.
  */
-
 void RTFSetInputName(char *name)
 {
     if ((inputName = RTFStrSave(name)) == (char *) NULL)
@@ -343,14 +330,9 @@ char *RTFGetOutputName(void)
 
 
 
-/* ---------------------------------------------------------------------- */
-
-/*
+/* ---------------------------------------------------------------------- 
  * Callback table manipulation routines
- */
-
-
-/*
+ *
  * Install or return a writer callback for a token class
  */
 
@@ -578,7 +560,7 @@ static void _RTFGetToken(void)
             globalCharSet = pcaCharSet;
 
         if (g_input_file_type == TYPE_RTFD)
-        	globalCharSet = nextCharSet;
+            globalCharSet = nextCharSet;
 
         ReadCharSetMaps();
 
@@ -624,11 +606,11 @@ static void _RTFGetToken(void)
     else if (rtfClass == rtfGroup) {
         switch (rtfMajor) {
         case rtfBeginGroup:
-			RTFPushStack();
+            RTFPushStack();
             break;
         case rtfEndGroup:
             CheckForCharAttr();
-			RTFPopStack();
+            RTFPopStack();
             break;
         }
     }
@@ -930,7 +912,7 @@ static void ReadCharSetMaps(void)
 
     /* default to NeXtStep code page until \ansicpg token is encountered */
     if (g_input_file_type == TYPE_RTFD)
-		genCharCode = cpNextCharCode;
+        genCharCode = cpNextCharCode;
 
     genCharSetFile = &rtfTextBuf[1];
     haveGenCharSet = 1;
@@ -938,7 +920,7 @@ static void ReadCharSetMaps(void)
     if (symCharSetFile)
         (void) strcpy(buf, symCharSetFile);
     else 
-    	(void) strcpy(buf, "rtf-encoding.symbolfont");
+        (void) strcpy(buf, "rtf-encoding.symbolfont");
         
     if (RTFReadCharSetMap(buf, rtfCSSymbol) == 0)
         RTFPanic("ReadCharSetMaps: Cannot read charset map %s", buf);
@@ -1119,7 +1101,7 @@ short RTFMapChar(short c)
     case rtfCSGeneral:
         if (!haveGenCharSet) {
             if (RTFReadCharSetMap("rtf-encoding.cp1252", rtfCSGeneral) == 0)
-                	RTFPanic("RTFMapChar: cannot read cp1252.map");
+                    RTFPanic("RTFMapChar: cannot read cp1252.map");
         }
         break;
     case rtfCSSymbol:
@@ -1235,12 +1217,12 @@ static void ReadFontTbl(void)
                 RTFPanic("%s: missing \"{\"", fn);
             (void) RTFGetToken();       /* yes, skip to next token */
         }
-		
+        
         fp = New(RTFFont);
-		if (!fp) {
+        if (!fp) {
             RTFPanic("%s: cannot allocate font entry", fn);
-			exit(1);
-		}
+            exit(1);
+        }
 
         fp->rtfNextFont = fontList;
         fontList = fp;
@@ -1363,12 +1345,12 @@ void ReadColorTbl(void)
         if (RTFCheckCM(rtfGroup, rtfEndGroup))
             break;
         
-		cp = New(RTFColor);
-		if (!cp) {
+        cp = New(RTFColor);
+        if (!cp) {
             RTFPanic("%s: cannot allocate color entry", fn);
-			exit(1);
-		}
-			
+            exit(1);
+        }
+            
         cp->rtfCNum = cnum++;
         cp->rtfCRed = cp->rtfCGreen = cp->rtfCBlue = -1;
         cp->rtfNextColor = colorList;
@@ -1416,16 +1398,16 @@ static void ReadStyleSheet(void)
 
     for (;;) {
         (void) RTFGetToken();
-		
+        
         if (RTFCheckCM(rtfGroup, rtfEndGroup))
             break;
-		
-		sp = New(RTFStyle);
+        
+        sp = New(RTFStyle);
         if (!sp) {
             RTFPanic("%s: cannot allocate stylesheet entry", fn);
-			exit(1);
-		}
-		
+            exit(1);
+        }
+        
         sp->rtfSName = (char *) NULL;
         sp->rtfSNum = -1;
         sp->rtfSType = rtfParStyle;
@@ -1477,13 +1459,13 @@ static void ReadStyleSheet(void)
                     sp->rtfSType = rtfTableStyle;
                     continue;
                 }
-				
-				sep = New(RTFStyleElt);
+                
+                sep = New(RTFStyleElt);
                 if (!sep) {
                     RTFPanic("%s: cannot allocate style element", fn);
-					exit(1);
-				}
-				
+                    exit(1);
+                }
+                
                 sep->rtfSEClass = rtfClass;
                 sep->rtfSEMajor = rtfMajor;
                 sep->rtfSEMinor = rtfMinor;
@@ -1768,26 +1750,26 @@ static void LookupInit(void)
             rtfCtrl = (RTFCtrl **) RTFAlloc(nCtrls * sizeof(RTFCtrl *));
             if (!rtfCtrl) {
                 RTFPanic("%s: out of memory.", fn);
-				exit(1);
-			}
-			
+                exit(1);
+            }
+            
             for (i = 0; i < nCtrls; i++) {
                 rp = (RTFCtrl *) RTFAlloc(sizeof(RTFCtrl));
                 if (!rp) {
                     RTFPanic("%s: out of memory.", fn);
-					exit(1);
-				}
+                    exit(1);
+                }
                 rtfCtrl[i] = rp;
             }
-			
+            
             /*
              * Allocate a buffer into which to copy all the tokens
              */
             tokBuf = RTFAlloc(tokBytes);
             if (!tokBuf) {
                 RTFPanic("%s: out of memory.", fn);
-				exit(1);
-			}
+                exit(1);
+            }
             tokBufEnd = tokBuf;
         } else {
             if (p3 == (char *) NULL)    /* malformed */
@@ -1799,7 +1781,7 @@ static void LookupInit(void)
             rp->minor = atoi(p2);
             rp->str = tokBufEnd;
             rp->index = line - 2;
-			
+            
             /* process string to remove embedded escapes */
             p1 = p3;
             while ((c = *p1++) != '\0') {
@@ -1810,8 +1792,8 @@ static void LookupInit(void)
                  */
                 if (c == '\\') {
                     c = *p1++;
-					if (c == 'n') c = '\n';
-					if (c == 'r') c = '\r';
+                    if (c == 'n') c = '\n';
+                    if (c == 'r') c = '\r';
                 }
                 *tokBufEnd++ = c;
             }
@@ -1880,8 +1862,8 @@ static void Lookup(char *s)
 void DebugMessage(void) 
 {
     if (0 && g_debug_level > 0)
-    	if (strcmp(rtfCtrl[rtfTokenIndex]->str,"objdata"))
-    		fprintf(stderr, "%s (%d,%d,%d)\n",rtfCtrl[rtfTokenIndex]->str,rtfClass,rtfMajor,rtfMinor);
+        if (strcmp(rtfCtrl[rtfTokenIndex]->str,"objdata"))
+            fprintf(stderr, "%s (%d,%d,%d)\n",rtfCtrl[rtfTokenIndex]->str,rtfClass,rtfMajor,rtfMinor);
 }
 /* ---------------------------------------------------------------------- */
 
@@ -1976,20 +1958,20 @@ short RTFHexToChar(short i)
 /* string must start with 0x or 0X */
 int RTFHexStrToInt(char * s)
 {
-	int i,x;
-	if (!s) 
-		return 0;
-	if (strlen(s)<3) 
-		return 0;
-	if (s[0] != '0' || (s[1] != 'x' && s[1] != 'X')) 
-		return 0;
-	i=2;
-	x=0;
-	while (s[i] != '\0') {
-		x = x*16 + RTFCharToHex(s[i]);
-		i++;
-	}
-	return x;
+    int i,x;
+    if (!s) 
+        return 0;
+    if (strlen(s)<3) 
+        return 0;
+    if (s[0] != '0' || (s[1] != 'x' && s[1] != 'X')) 
+        return 0;
+    i=2;
+    x=0;
+    while (s[i] != '\0') {
+        x = x*16 + RTFCharToHex(s[i]);
+        i++;
+    }
+    return x;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -2276,21 +2258,21 @@ int savedbraceLevel;
 
 void RTFInitStack(void)
 {
-	braceLevel=0;
-	paragraphWritten.firstIndent      = UNINITIALIZED;
-	paragraphWritten.leftIndent       = UNINITIALIZED;
-	paragraphWritten.lineSpacing      = UNINITIALIZED;
-	paragraphWritten.alignment        = UNINITIALIZED;
-	
-	paragraph.firstIndent      = 720;
-	paragraph.leftIndent       = 0;
-	paragraph.lineSpacing      = 240;
-	paragraph.alignment        = 0;
-	textStyle.foreColor = -1;
+    braceLevel=0;
+    paragraphWritten.firstIndent      = UNINITIALIZED;
+    paragraphWritten.leftIndent       = UNINITIALIZED;
+    paragraphWritten.lineSpacing      = UNINITIALIZED;
+    paragraphWritten.alignment        = UNINITIALIZED;
+    
+    paragraph.firstIndent      = 720;
+    paragraph.leftIndent       = 0;
+    paragraph.lineSpacing      = 240;
+    paragraph.alignment        = 0;
+    textStyle.foreColor = -1;
     textStyle.backColor = -1;
     textStyle.fontSize = normalSize;
 
-	RTFPushStack();
+    RTFPushStack();
 }
 
 void RTFPushStack(void)

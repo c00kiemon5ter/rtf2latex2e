@@ -161,25 +161,25 @@ char *strdup_together(const char *s, const char *t)
 
 static char * append_file_to_path(char *path, char *file)
 {
-	char *s, *t;
-	int len;
-	
-	if (file == NULL) return NULL;
-		
-	if (path == NULL) return strdup(file);
-	
-	len = strlen(path);
-	if (path[len] == PATH_SEP)
-		return strdup_together(path,file);
-	
-	/* need to insert PATH_SEP */
-	s = malloc(len+2);
-	strcpy(s,path);
-	s[len]=PATH_SEP;
-	s[len+1]='\0';
-	t = strdup_together(s,file);
-	free(s);
-	return t;	
+    char *s, *t;
+    int len;
+    
+    if (file == NULL) return NULL;
+        
+    if (path == NULL) return strdup(file);
+    
+    len = strlen(path);
+    if (path[len] == PATH_SEP)
+        return strdup_together(path,file);
+    
+    /* need to insert PATH_SEP */
+    s = malloc(len+2);
+    strcpy(s,path);
+    s[len]=PATH_SEP;
+    s[len+1]='\0';
+    t = strdup_together(s,file);
+    free(s);
+    return t;   
 }
 
 
@@ -320,134 +320,134 @@ print_usage(void)
 
 static enum INPUT_FILE_TYPE identify_filename(char *name)
 {
-	int len;
-	
-	if (!name) return TYPE_UNKNOWN;
-	
-	len = strlen(name);
-	
-	if (len > 5 && strcasecmp(name+len-5,".rtfd")==0)
-		return TYPE_RTFD;
-		
-	if (len > 4 && strcasecmp(name+len-4,".rtf")==0)
-		return TYPE_RTF;
-		
-	if (len > 4 && strcasecmp(name+len-4,".eqn")==0)
-		return TYPE_EQN;
-		
-	return TYPE_UNKNOWN;
+    int len;
+    
+    if (!name) return TYPE_UNKNOWN;
+    
+    len = strlen(name);
+    
+    if (len > 5 && strcasecmp(name+len-5,".rtfd")==0)
+        return TYPE_RTFD;
+        
+    if (len > 4 && strcasecmp(name+len-4,".rtf")==0)
+        return TYPE_RTF;
+        
+    if (len > 4 && strcasecmp(name+len-4,".eqn")==0)
+        return TYPE_EQN;
+        
+    return TYPE_UNKNOWN;
 }
 
 
 static char * establish_filename(char * name)
 {
-	FILE *fp;
-	char *s;
-	int len;
-	
-	g_input_file_type = TYPE_UNKNOWN;
-	if (!name) return NULL;
-	
-	/* try .rtfd case first because simple fopen() test below misses this case */
-	len = strlen(name) - 5;
-	if (len > 0 && strcasecmp(name + len,".rtfd") == 0) {
-		s = append_file_to_path(name, "TXT.rtf");
-		fp = fopen(name, "r");
-		if (fp) {
-			fclose(fp);
-			g_input_file_type = TYPE_RTFD;
-			return s;
-		}
-		free(s);
-		fprintf(stderr,"* RTFD directory found, but no TXT.rtf file inside!\n");
-		return NULL;
-	}
-	
-	fp = fopen(name, "r");
-	if (fp) {
-		fclose(fp);
-		g_input_file_type = identify_filename(name);
-		return strdup(name);
-	}
-	
-	s = strdup_together(name, ".rtf");
-	fp = fopen(s, "r");
-	if (fp) {
-		fclose(fp);
-		g_input_file_type = TYPE_RTF;
-		return s;
-	}
+    FILE *fp;
+    char *s;
+    int len;
+    
+    g_input_file_type = TYPE_UNKNOWN;
+    if (!name) return NULL;
+    
+    /* try .rtfd case first because simple fopen() test below misses this case */
+    len = strlen(name) - 5;
+    if (len > 0 && strcasecmp(name + len,".rtfd") == 0) {
+        s = append_file_to_path(name, "TXT.rtf");
+        fp = fopen(name, "r");
+        if (fp) {
+            fclose(fp);
+            g_input_file_type = TYPE_RTFD;
+            return s;
+        }
+        free(s);
+        fprintf(stderr,"* RTFD directory found, but no TXT.rtf file inside!\n");
+        return NULL;
+    }
+    
+    fp = fopen(name, "r");
+    if (fp) {
+        fclose(fp);
+        g_input_file_type = identify_filename(name);
+        return strdup(name);
+    }
+    
+    s = strdup_together(name, ".rtf");
+    fp = fopen(s, "r");
+    if (fp) {
+        fclose(fp);
+        g_input_file_type = TYPE_RTF;
+        return s;
+    }
 
-	free(s);
-	s = strdup_together(name, ".rtfd");
-	fp = fopen(s, "r");
-	if (fp) {
-		fclose(fp);
-		free(s);
-		s = strdup_together(name, ".rtfd/TXT.rtf");
-		fp = fopen(s, "r");
-		if (fp) {
-			fclose(fp);
-			g_input_file_type = TYPE_RTFD;
-			return s;
-		}
-		
-		return s;
-		fprintf(stderr,"* RTFD directory found, but no TXT.rtf file inside!\n");
-		return NULL;
-	}
+    free(s);
+    s = strdup_together(name, ".rtfd");
+    fp = fopen(s, "r");
+    if (fp) {
+        fclose(fp);
+        free(s);
+        s = strdup_together(name, ".rtfd/TXT.rtf");
+        fp = fopen(s, "r");
+        if (fp) {
+            fclose(fp);
+            g_input_file_type = TYPE_RTFD;
+            return s;
+        }
+        
+        return s;
+        fprintf(stderr,"* RTFD directory found, but no TXT.rtf file inside!\n");
+        return NULL;
+    }
 
-	free(s);
-	s = strdup_together(name, ".eqn");
-	fp = fopen(s, "r");
-	if (fp) {
-		fclose(fp);
-		g_input_file_type = TYPE_EQN;
-		return s;
-	}
+    free(s);
+    s = strdup_together(name, ".eqn");
+    fp = fopen(s, "r");
+    if (fp) {
+        fclose(fp);
+        g_input_file_type = TYPE_EQN;
+        return s;
+    }
 
-	free(s);
-	return NULL;
+    free(s);
+    return NULL;
 }
 
 
 char * short_name(char *path)
 {
-	char *s;
-	s = strrchr(path,PATH_SEP);
-	if (s == NULL) 
-		return strdup(path);
-	else
-		return strdup(s+1);
+    char *s;
+    s = strrchr(path,PATH_SEP);
+    if (s == NULL) 
+        return strdup(path);
+    else
+        return strdup(s+1);
 }
 
 static char * make_output_filename(char * name)
 {
-	char *s, *dir, *file, *out;
-	if (!name) return NULL;
-	
-	if (!g_create_new_directory 
-	    || g_input_file_type == TYPE_RTFD
-	    || g_input_file_type == TYPE_EQN) {
-		s = strdup(name);
-		strcpy(s+strlen(s)-4, ".tex");
-		return s;
-	} 
-	
-	if (g_input_file_type == TYPE_RTF) {
-		file = short_name(name);		
-		strcpy(file+strlen(file)-4, ".tex");
+    char *s, *dir, *file, *out;
+    if (!name) return NULL;
+    
+    if (!g_create_new_directory 
+        || g_input_file_type == TYPE_RTFD
+        || g_input_file_type == TYPE_EQN) {
+        s = strdup(name);
+        strcpy(s+strlen(s)-4, ".tex");
+        return s;
+    } 
+    
+    if (g_input_file_type == TYPE_RTF) {
+        file = short_name(name);        
+        strcpy(file+strlen(file)-4, ".tex");
 
-		dir = malloc(strlen(name)+strlen("-latex"));
-		strcpy(dir,name);
-		strcpy(dir+strlen(dir)-4,"-latex");
-		
-		mkdir(dir, 0755);
-		out = append_file_to_path(dir,file);
-		return out;
-	}
-	
-	return NULL;
+        dir = malloc(strlen(name)+strlen("-latex"));
+        strcpy(dir,name);
+        strcpy(dir+strlen(dir)-4,"-latex");
+        
+        mkdir(dir, 0755);
+        out = append_file_to_path(dir,file);
+        return out;
+    }
+    
+    return NULL;
 }
 
 int 
@@ -476,7 +476,7 @@ main(int argc, char **argv)
             break;
 
         case 'E':
-        	g_insert_eqn_name = 1;
+            g_insert_eqn_name = 1;
             g_delete_eqn_file = 0;
             break;
 
@@ -519,17 +519,17 @@ main(int argc, char **argv)
         RTFInit();
         
         input_filename = establish_filename(argv[fileCounter]);
-        			
+                    
         if (g_input_file_type == TYPE_UNKNOWN) {
             if (!input_filename)
-            	RTFMsg("* Skipping non-existent file '%s'\n", argv[fileCounter]);
+                RTFMsg("* Skipping non-existent file '%s'\n", argv[fileCounter]);
             else 
-            	RTFMsg("* Skipping non-RTF file '%s'\n", argv[fileCounter]);
+                RTFMsg("* Skipping non-RTF file '%s'\n", argv[fileCounter]);
             if (input_filename) free(input_filename);
-			continue;
-		}
-		
-		ifp = fopen(input_filename, "rb");
+            continue;
+        }
+        
+        ifp = fopen(input_filename, "rb");
         if (!ifp) {
             RTFPanic("* Cannot open input file %s\n", input_filename);
             exit(1);
@@ -539,17 +539,18 @@ main(int argc, char **argv)
 
         /* look at second token to check if input file is of type rtf */
         if (g_input_file_type != TYPE_EQN) {
-			cursorPos = ftell(ifp);
-			RTFGetToken();
-			RTFGetToken();
-			if (rtfMajor != rtfVersion) {
-				RTFMsg("* Yikes! '%s' is not actually a RTF file!  Skipping....\n", input_filename);
-				fclose(ifp);
-				free(input_filename);
-				continue;
-			}
-			fseek(ifp, cursorPos, 0);
+            cursorPos = ftell(ifp);
+            RTFGetToken();
+            RTFGetToken();
+            if (rtfMajor != rtfVersion) {
+                RTFMsg("* Yikes! '%s' is not actually a RTF file!  Skipping....\n", input_filename);
+                fclose(ifp);
+                free(input_filename);
+                continue;
+            }
+            fseek(ifp, cursorPos, 0);
         }
+        RTFInit();
         
         output_filename = make_output_filename(input_filename);
 
@@ -565,17 +566,17 @@ main(int argc, char **argv)
 
         fprintf(stderr, "Processing %s\n", input_filename);
         if (BeginLaTeXFile()) {
-        	if (g_input_file_type == TYPE_EQN) 
+            if (g_input_file_type == TYPE_EQN) 
                 (void) ConvertEquationFile(input_filename);
             else
-            	RTFRead();
+                RTFRead();
             EndLaTeXFile();
         }
         
         fclose(ifp);
         fclose(ofp);
-		free(input_filename);
-		free(output_filename);
+        free(input_filename);
+        free(output_filename);
     }
 
     return (0);

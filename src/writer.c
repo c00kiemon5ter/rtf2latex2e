@@ -1,6 +1,7 @@
 /*
  * RTF-to-LaTeX2e translation writer code.
  * (c) 1999 Ujwal S. Sathyam
+ * (c) 2011 Scott Prahl
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -515,28 +516,28 @@ static void PutIntAsUtf8(int x)
    
 static void PutLitChar(int c)
 {
-	static int lf_in_succession = 0;
-	static int no_chars_in_row = true;
-	
+    static int lf_in_succession = 0;
+    static int no_chars_in_row = true;
+    
     if (c != '\n') {
-    	lf_in_succession = 0;
-    	if (c != ' ') no_chars_in_row=false;
-    	PutIntAsUtf8(c & 0x00ff);
-    	return;
+        lf_in_succession = 0;
+        if (c != ' ') no_chars_in_row=false;
+        PutIntAsUtf8(c & 0x00ff);
+        return;
     }
-	
-	if (suppressLineBreak && no_chars_in_row) {
-		lf_in_succession = 0;
-		PutIntAsUtf8((int) ' ');
-		return;
-	} 
-	
-	lf_in_succession++;
-	no_chars_in_row = true;
-	if (lf_in_succession > 2) 
-		return;
-	
-	wrapCount = 0;
+    
+    if (suppressLineBreak && no_chars_in_row) {
+        lf_in_succession = 0;
+        PutIntAsUtf8((int) ' ');
+        return;
+    } 
+    
+    lf_in_succession++;
+    no_chars_in_row = true;
+    if (lf_in_succession > 2) 
+        return;
+    
+    wrapCount = 0;
     
     PutIntAsUtf8(c & 0x00ff);
 }
@@ -630,10 +631,63 @@ static void DefineColors(void)
 void ExamineToken(void)
 {
     printf("* Token is %s\n", rtfTextBuf);
-    printf("* Class is %d\n", rtfClass);
-    printf("* Major is %d\n", rtfMajor);
-    printf("* Minor is %d\n", rtfMinor);
-    printf("* Param is %d\n\n", (int) rtfParam);
+    printf("* Class is %3d", rtfClass);
+    switch (rtfClass) {
+    case rtfUnknown: printf(" (rtfUnknown)\n"); break;
+    case rtfGroup: printf(" (rtfGroup)\n"); break;
+    case rtfText: printf(" (rtfText)\n"); break;
+    case rtfControl: printf(" (rtfControl)\n"); break;
+    case rtfEOF: printf(" (rtfEOF)\n"); break;
+    default: printf(" (not one of the basic five)\n"); break;
+    }
+    
+    printf("* Major is %3d", rtfMajor);
+    if (rtfClass == rtfText) {
+        printf(" raw='%c' \n", rtfMajor);
+    } else {
+        switch (rtfMajor) {
+            case rtfVersion: printf(" (rtfVersion)\n"); break;
+            case rtfDefFont: printf(" (rtfDefFont)\n"); break;
+            case rtfCharSet: printf(" (rtfCharSet)\n"); break;
+            case rtfDestination: printf(" (rtfDestination)\n"); break;
+            case rtfFontFamily: printf(" (rtfFontFamily)\n"); break;
+            case rtfFontAttr: printf(" (rtfFontAttr)\n"); break;
+            case rtfColorName: printf(" (rtfColorName)\n"); break;
+            case rtfFileAttr: printf(" (rtfFileAttr)\n"); break;
+            case rtfFileSource: printf(" (rtfFileSource)\n"); break;
+            case rtfStyleAttr: printf(" (rtfStyleAttr)\n"); break;
+            case rtfKeyCodeAttr: printf(" (rtfKeyCodeAttr)\n"); break;
+            case rtfDocAttr: printf(" (rtfDocAttr)\n"); break;
+            case rtfSectAttr: printf(" (rtfSectAttr)\n"); break;
+            case rtfParAttr: printf(" (rtfParAttr)\n"); break;
+            case rtfPosAttr: printf(" (rtfPosAttr)\n"); break;
+            case rtfTblAttr: printf(" (rtfTblAttr)\n"); break;
+            case rtfCharAttr: printf(" (rtfCharAttr)\n"); break;
+            case rtfACharAttr: printf(" (rtfACharAttr)\n"); break;
+            case rtfSpecialChar: printf(" (rtfSpecialChar)\n"); break;
+            case rtfBookmarkAttr: printf(" (rtfBookmarkAttr)\n"); break;
+            case rtfPictAttr: printf(" (rtfPictAttr)\n"); break;
+            case rtfObjAttr: printf(" (rtfObjAttr)\n"); break;
+            case rtfDrawAttr: printf(" (rtfDrawAttr)\n"); break;
+            case rtfFNoteAttr: printf(" (rtfFNoteAttr)\n"); break;
+            case rtfFieldAttr: printf(" (rtfFieldAttr)\n"); break;
+            case rtfIndexAttr: printf(" (rtfIndexAttr)\n"); break;
+            case rtfTOCAttr: printf(" (rtfTOCAttr)\n"); break;
+            case rtfNeXTGrAttr: printf(" (rtfNeXTGrAttr)\n"); break;
+            case rtfListAttr: printf(" (rtfListAttr)\n"); break;
+            case rtfWord97ObjAttr: printf(" (rtfWord97ObjAttr)\n"); break;
+            case rtfAnsiCharAttr: printf(" (rtfAnsiCharAttr)\n"); break;
+            default: printf(" (unknown)\n"); break;
+        }
+    }
+
+    printf("* Minor is %3d", rtfMinor);
+    if (rtfClass == rtfText) {
+        printf(" std=0x%2x\n", rtfMinor);
+    } else {
+        printf("\n");
+    }
+    printf("* Param is %3d\n\n", (int) rtfParam);
 }
 
 
@@ -812,79 +866,79 @@ static void InitializeTextStyle(void)
 
 static void setParagraphBaseline(void)
 {
-	char buff[100];
-	if (paragraphWritten.lineSpacing == paragraph.lineSpacing) 
-		return;
-		
-	snprintf(buff, 100, "\\baselineskip=%dpt\n", abs(paragraph.lineSpacing)/20);
-	PutLitStr(buff);
+    char buff[100];
+    if (paragraphWritten.lineSpacing == paragraph.lineSpacing) 
+        return;
+        
+    snprintf(buff, 100, "\\baselineskip=%dpt\n", abs(paragraph.lineSpacing)/20);
+    PutLitStr(buff);
 
-	if (g_debug_par_start) {
-		snprintf(buff, 100, "[ls=%d]", paragraph.lineSpacing);
-		PutLitStr(buff);
-	}
+    if (g_debug_par_start) {
+        snprintf(buff, 100, "[ls=%d]", paragraph.lineSpacing);
+        PutLitStr(buff);
+    }
 
-	paragraphWritten.lineSpacing = paragraph.lineSpacing;
+    paragraphWritten.lineSpacing = paragraph.lineSpacing;
 }
 
 static void StartNewParagraph(void)
 {
-	char buff[100];
-		
+    char buff[100];
+        
     nowBetweenParagraphs = false;
 
-	if (insideFootnote) return;
+    if (insideFootnote) return;
 
-	if (paragraph.spaceBefore) {
-    	snprintf(buff,100,"\\vspace{%dpt}\n", paragraph.spaceBefore/20);
-    	PutLitStr(buff);
-    	paragraph.spaceBefore = 0;
+    if (paragraph.spaceBefore) {
+        snprintf(buff,100,"\\vspace{%dpt}\n", paragraph.spaceBefore/20);
+        PutLitStr(buff);
+        paragraph.spaceBefore = 0;
     }
-	
-	if (!paragraphWritten.heading && (writingHeading1 || writingHeading2 || writingHeading3)) {
-		
-		if (writingHeading1)
-			PutLitStr(heading1String);
-		else if (writingHeading2)
-			PutLitStr(heading2String);
-		else
-			PutLitStr(heading3String);
-		
-		paragraphWritten.heading = true;
-		suppressLineBreak = true;
+    
+    if (!paragraphWritten.heading && (writingHeading1 || writingHeading2 || writingHeading3)) {
+        
+        if (writingHeading1)
+            PutLitStr(heading1String);
+        else if (writingHeading2)
+            PutLitStr(heading2String);
+        else
+            PutLitStr(heading3String);
+        
+        paragraphWritten.heading = true;
+        suppressLineBreak = true;
 
-		return;	
-	} 
+        return; 
+    } 
 
-	if (paragraphWritten.alignment != paragraph.alignment) {
-		
-		if (paragraph.alignment == right)
-			PutLitStr("\\begin{flushright}\n");
+    if (paragraphWritten.alignment != paragraph.alignment) {
+        
+        if (paragraph.alignment == right)
+            PutLitStr("\\begin{flushright}\n");
 
-		if (paragraph.alignment == center)
-			PutLitStr("\\begin{center}\n");
-		
-		paragraphWritten.alignment = paragraph.alignment;
-	}
+        if (paragraph.alignment == center)
+            PutLitStr("\\begin{center}\n");
+        
+        paragraphWritten.alignment = paragraph.alignment;
+    }
 
-	if (paragraphWritten.leftIndent != paragraph.leftIndent) {
-		snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
-		PutLitStr(buff);
-		paragraphWritten.leftIndent = paragraph.leftIndent;
-	}
-	
-	if (paragraphWritten.firstIndent != paragraph.firstIndent+paragraph.extraIndent) {
-		snprintf(buff, 100, "\\parindent=%dpt\n", (paragraph.firstIndent+paragraph.extraIndent)/20);
-		PutLitStr(buff);
-		paragraphWritten.firstIndent = paragraph.firstIndent+paragraph.extraIndent;
-		paragraph.extraIndent=0;
-	}
+    if (paragraphWritten.leftIndent != paragraph.leftIndent) {
+        snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
+        PutLitStr(buff);
+        paragraphWritten.leftIndent = paragraph.leftIndent;
+    }
+    
+    if (paragraphWritten.firstIndent != paragraph.firstIndent+paragraph.extraIndent) {
+        snprintf(buff, 100, "\\parindent=%dpt\n", (paragraph.firstIndent+paragraph.extraIndent)/20);
+        PutLitStr(buff);
+        paragraphWritten.firstIndent = paragraph.firstIndent+paragraph.extraIndent;
+        paragraph.extraIndent=0;
+    }
 
-	if (section.cols > 1) {
-		snprintf(buff, 100, "\n\\begin{multicols}{%d}\n", section.cols);
-		PutLitStr(buff);
-		requireMultiColPackage = true;
-	}
+    if (section.cols > 1) {
+        snprintf(buff, 100, "\n\\begin{multicols}{%d}\n", section.cols);
+        PutLitStr(buff);
+        requireMultiColPackage = true;
+    }
 
 }
 
@@ -903,30 +957,30 @@ static void EndLastParagraph(void)
         PutLitStr(" \\linebreak\n");
         return;
     }
-	
-	if (insideFootnote) {
-		InsertNewLine();
-		InsertNewLine();
-		return;
-	}
-	
-	if (paragraphWritten.heading) {
-		if (writingHeading1)
-			n = CountCharInString(heading1String, '{');
-		else if (writingHeading2)
-			n = CountCharInString(heading2String, '{');
-		else
-			n = CountCharInString(heading3String, '{');		
-		for (i = 0; i < n; i++) PutLitStr("}");
-		writingHeading1 = false;
-		writingHeading2 = false;
-		writingHeading3 = false;
-		suppressLineBreak = false;
-		paragraphWritten.heading=false;
-		InsertNewLine();
-		InsertNewLine();
-		return;
-	}
+    
+    if (insideFootnote) {
+        InsertNewLine();
+        InsertNewLine();
+        return;
+    }
+    
+    if (paragraphWritten.heading) {
+        if (writingHeading1)
+            n = CountCharInString(heading1String, '{');
+        else if (writingHeading2)
+            n = CountCharInString(heading2String, '{');
+        else
+            n = CountCharInString(heading3String, '{');     
+        for (i = 0; i < n; i++) PutLitStr("}");
+        writingHeading1 = false;
+        writingHeading2 = false;
+        writingHeading3 = false;
+        suppressLineBreak = false;
+        paragraphWritten.heading=false;
+        InsertNewLine();
+        InsertNewLine();
+        return;
+    }
 
 /*    if (charAttrCount > 0)
         CheckForCharAttr();
@@ -935,29 +989,29 @@ static void EndLastParagraph(void)
     charAttrCount = 0;
 */
 
-	setParagraphBaseline();
+    setParagraphBaseline();
 
-	if (paragraphWritten.alignment != paragraph.alignment) {
-	
-		if (g_debug_par_start) {
-			snprintf(buf, rtfBufSiz, "[oldalign=%d, newalign=%d]", paragraphWritten.alignment, paragraph.alignment);
-			PutLitStr(buf);
-		}
+    if (paragraphWritten.alignment != paragraph.alignment) {
+    
+        if (g_debug_par_start) {
+            snprintf(buf, rtfBufSiz, "[oldalign=%d, newalign=%d]", paragraphWritten.alignment, paragraph.alignment);
+            PutLitStr(buf);
+        }
 
-		if (paragraphWritten.alignment == right)
-			PutLitStr("\n\\end{flushright}");
+        if (paragraphWritten.alignment == right)
+            PutLitStr("\n\\end{flushright}");
 
-		if (paragraphWritten.alignment == center)
-			PutLitStr("\n\\end{center}");
-	}
+        if (paragraphWritten.alignment == center)
+            PutLitStr("\n\\end{center}");
+    }
 
     if (paragraph.parbox) {
         PutLitStr("}");
         paragraph.parbox = false;
     }
 
-	InsertNewLine();
-	InsertNewLine();
+    InsertNewLine();
+    InsertNewLine();
 }
 
 /*
@@ -1531,8 +1585,8 @@ static void WriteTextStyle(void)
     }
     if (textStyle.fontSize != normalSize && mathMode==MATH_NONE_MODE && !(textStyle.wroteFontSize)) {
         if (g_debug_char_style) {
-        	snprintf(buf, rtfBufSiz, "[fs=%ld]", textStyle.fontSize);
-        	PutLitStr(buf);
+            snprintf(buf, rtfBufSiz, "[fs=%ld]", textStyle.fontSize);
+            PutLitStr(buf);
         }
         snprintf(buf, rtfBufSiz, "{%s ", fontSizeList[textStyle.fontSize]);
         PutLitStr(buf);
@@ -1620,8 +1674,8 @@ static void WriteColors(void)
 static void DoSectionCleanUp(void)
 {
     if (section.cols > 1) {
-    	if (nowBetweenParagraphs)  /*finish paragraph before multicols */
-        	EndLastParagraph();
+        if (nowBetweenParagraphs)  /*finish paragraph before multicols */
+            EndLastParagraph();
         PutLitStr("\n\\end{multicols}");
         InsertNewLine();
         section.cols = 1;
@@ -1701,8 +1755,8 @@ static void WrapText(void)
 {    
     if (wrapCount < WRAP_LIMIT) return;
     
-	if (rtfMinor == rtfSC_space)
-		PutLitChar('\n');
+    if (rtfMinor == rtfSC_space)
+        PutLitChar('\n');
 }
 
 
@@ -1717,34 +1771,34 @@ static void WrapText(void)
 static void TextClass(void)
 {
 
-	if (nowBetweenParagraphs) {
+    if (nowBetweenParagraphs) {
 
-		if (rtfMinor == rtfSC_space) {
-			paragraph.extraIndent += 72;
-			return;
-		}
+        if (rtfMinor == rtfSC_space) {
+            paragraph.extraIndent += 72;
+            return;
+        }
 
-		EndLastParagraph();
-		StartNewParagraph();
-	}
+        EndLastParagraph();
+        StartNewParagraph();
+    }
 
-	if (insideHyperlink) {
-		switch (rtfMinor) {
-		case rtfSC_underscore:
-			PutLitChar('H');
-			return;
-		case rtfSC_backslash:
-			RTFGetToken();  /* ignore backslash */
-			RTFGetToken();  /* and next character */
-			return;
-		}
-	}
+    if (insideHyperlink) {
+        switch (rtfMinor) {
+        case rtfSC_underscore:
+            PutLitChar('H');
+            return;
+        case rtfSC_backslash:
+            RTFGetToken();  /* ignore backslash */
+            RTFGetToken();  /* and next character */
+            return;
+        }
+    }
 
-	if (rtfMinor >= rtfSC_therefore && rtfMinor < rtfSC_currency)
-		requireAmsSymbPackage = true;
+    if (rtfMinor >= rtfSC_therefore && rtfMinor < rtfSC_currency)
+        requireAmsSymbPackage = true;
 
-	PutStdChar(rtfMinor);
-	WrapText();
+    PutStdChar(rtfMinor);
+    WrapText();
 }
 
 /*
@@ -1816,11 +1870,11 @@ static void CheckForParagraph(void)
         return;
     }
 
-	/* multiple blank lines in a row ...  */
-    if (nowBetweenParagraphs)     	
-    	paragraph.spaceBefore += abs(paragraph.lineSpacing);
+    /* multiple blank lines in a row ...  */
+    if (nowBetweenParagraphs)       
+        paragraph.spaceBefore += abs(paragraph.lineSpacing);
 
-	nowBetweenParagraphs = true;
+    nowBetweenParagraphs = true;
 }
 
 /*
@@ -1833,20 +1887,20 @@ static void SpecialChar(void)
 {
     int i;
 
-	if (nowBetweenParagraphs) {
-		if (rtfMinor == rtfTab) {
-			paragraph.extraIndent += 360;
-			return;
-		}
-		if (rtfMinor == rtfNoBrkSpace) {
-			paragraph.extraIndent += 72;
-			return;
-		}
+    if (nowBetweenParagraphs) {
+        if (rtfMinor == rtfTab) {
+            paragraph.extraIndent += 360;
+            return;
+        }
+        if (rtfMinor == rtfNoBrkSpace) {
+            paragraph.extraIndent += 72;
+            return;
+        }
 
-		EndLastParagraph();
-		StartNewParagraph();
-	}
-		
+        EndLastParagraph();
+        StartNewParagraph();
+    }
+        
     switch (rtfMinor) {
     case rtfSect:
     case rtfLine:
@@ -1979,8 +2033,8 @@ static void ReadCell(void)
         exit(1);
     }
 
-	/*fprintf(stderr,"creating cell %d, (x,y)=(%d,%d), right=%d\n", 
-	          table.cellCount, table.rows, (table.rowInfo)[table.rows], rtfParam);*/
+    /*fprintf(stderr,"creating cell %d, (x,y)=(%d,%d), right=%d\n", 
+              table.cellCount, table.rows, (table.rowInfo)[table.rows], rtfParam);*/
     cellPtr->nextCell = table.cellInfo;
     cellPtr->x = table.rows;
     cellPtr->y = (table.rowInfo)[table.rows];
@@ -2162,8 +2216,8 @@ static void PrescanTable(void)
     short prevChar;
     int maxCols = 0;
     int tableLeft, tableRight, tableWidth;
-	int *rightBorders;
-	boolean enteredValue;
+    int *rightBorders;
+    boolean enteredValue;
 
     RTFStoreStack();
     prevChar = RTFPushedChar();
@@ -2179,7 +2233,7 @@ static void PrescanTable(void)
     table.cellInfo = (cell *) NULL;
 
     /* Prescan each row until end of the table. */
-//	if (RTFCheckCM(rtfControl, rtfTblAttr))
+//  if (RTFCheckCM(rtfControl, rtfTblAttr))
   //      RTFRouteToken();    
             
     while (foundRow) {
@@ -2266,48 +2320,48 @@ static void PrescanTable(void)
 
     table.cols = maxCols;
 
-	/*************************************************************************
-	 * Determine the number of columns and positions in the table by creating
-	 * a list containing one entry for each unique right border 
-	 * This list is retained as table.columnBorders
+    /*************************************************************************
+     * Determine the number of columns and positions in the table by creating
+     * a list containing one entry for each unique right border 
+     * This list is retained as table.columnBorders
      * The number of columns is table.cols
     */
-	
-	/* largest possible list */	
-	rightBorders = (int *) RTFAlloc((table.cellCount) * sizeof(int));
-	if (!rightBorders) {
-		RTFPanic("%s: cannot allocate array for cell borders\n", fn);
-		exit(1);
-	}
+    
+    /* largest possible list */ 
+    rightBorders = (int *) RTFAlloc((table.cellCount) * sizeof(int));
+    if (!rightBorders) {
+        RTFPanic("%s: cannot allocate array for cell borders\n", fn);
+        exit(1);
+    }
 
-	table.cols = 0;
-	for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
-	
-		enteredValue = false;
-		for (j = 0; j < table.cols; j++) 
-			if (rightBorders[j] == cellPtr->right) enteredValue=true;
+    table.cols = 0;
+    for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
+    
+        enteredValue = false;
+        for (j = 0; j < table.cols; j++) 
+            if (rightBorders[j] == cellPtr->right) enteredValue=true;
 
-		if (!enteredValue) {
-			rightBorders[table.cols] = cellPtr->right;
-			(table.cols)++;
-		}
-			
-		if (cellPtr->y == 0)
-			cellPtr->left = table.leftEdge;
-	}
+        if (!enteredValue) {
+            rightBorders[table.cols] = cellPtr->right;
+            (table.cols)++;
+        }
+            
+        if (cellPtr->y == 0)
+            cellPtr->left = table.leftEdge;
+    }
 
-	/* allocate array for column border entries. */
-	table.columnBorders = (int *) RTFAlloc(((table.cols) + 1) * sizeof(int));
-	
-	if (!table.columnBorders) {
-		RTFPanic("%s: cannot allocate array for column borders\n", fn);
-		exit(1);
-	}
+    /* allocate array for column border entries. */
+    table.columnBorders = (int *) RTFAlloc(((table.cols) + 1) * sizeof(int));
+    
+    if (!table.columnBorders) {
+        RTFPanic("%s: cannot allocate array for column borders\n", fn);
+        exit(1);
+    }
 
-	for (i = 0; i < table.cols; i++)
-		(table.columnBorders)[i + 1] = rightBorders[i];
+    for (i = 0; i < table.cols; i++)
+        (table.columnBorders)[i + 1] = rightBorders[i];
 
-	RTFFree((char *)rightBorders);
+    RTFFree((char *)rightBorders);
 
 
     /******* Table parsing can be messy, and it is still buggy. *******/
@@ -2545,7 +2599,7 @@ static void ProcessTableRow(int rowNum)
             cellsInThisRow++;
             if (!startCellText) {   
                 /* The cell is empty. */
-            	if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n",table.cellCount - 1);
+                if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n",table.cellCount - 1);
                 cellPtr = GetCellInfo(table.cellCount - 1);
                 WriteCellHeader(table.cellCount - 1);
             }
@@ -2691,7 +2745,7 @@ static void DoTable(void)
         PutLitStr(buf);
         InsertNewLine();
 
-    	if (g_debug_table_writing) fprintf(stderr,"* Starting new row #%d\n",i);
+        if (g_debug_table_writing) fprintf(stderr,"* Starting new row #%d\n",i);
         ProcessTableRow(rowNum);
 
         fseek(ofp, -4, 2);      /* erase the "& \n" at the end of the last cell of the row */
@@ -2754,26 +2808,26 @@ static void ParAttr(void)
             if ((stylePtr = RTFGetStyle(rtfParam)) == (RTFStyle *) NULL)
                 break;
             if (strcmp(stylePtr->rtfSName, "heading 1") == 0) {
-		        if (paragraphWritten.heading)
-		        	EndLastParagraph();
+                if (paragraphWritten.heading)
+                    EndLastParagraph();
                 writingHeading1 = true;
                 paragraphWritten.heading = false;
-            	nowBetweenParagraphs = true;
-            	suppressLineBreak = true;
+                nowBetweenParagraphs = true;
+                suppressLineBreak = true;
             } else if (strcmp(stylePtr->rtfSName, "heading 2") == 0) {
-		        if (paragraphWritten.heading)
-		        	EndLastParagraph();
+                if (paragraphWritten.heading)
+                    EndLastParagraph();
                 writingHeading2 = true;
                 paragraphWritten.heading = false;
-            	nowBetweenParagraphs = true;
-            	suppressLineBreak = true;
+                nowBetweenParagraphs = true;
+                suppressLineBreak = true;
             } else if (strcmp(stylePtr->rtfSName, "heading 3") == 0) {
-		        if (paragraphWritten.heading)
-		        	EndLastParagraph();
+                if (paragraphWritten.heading)
+                    EndLastParagraph();
                 writingHeading3 = true;
                 paragraphWritten.heading = false;
-            	nowBetweenParagraphs = true;
-            	suppressLineBreak = true;
+                nowBetweenParagraphs = true;
+                suppressLineBreak = true;
             }
             break;
         case rtfFirstIndent:
@@ -2786,11 +2840,11 @@ static void ParAttr(void)
             paragraph.rightIndent = rtfParam;
             break;
         case rtfSpaceBefore:
-        	paragraph.spaceBefore = rtfParam;
-        	break;
+            paragraph.spaceBefore = rtfParam;
+            break;
         case rtfSpaceAfter:
-        	paragraph.spaceAfter = rtfParam;
-        	break;
+            paragraph.spaceAfter = rtfParam;
+            break;
         }
     } else {
         switch (rtfMinor) {
@@ -2854,7 +2908,7 @@ static void ControlClass(void)
         break;
     case rtfTblAttr:            /* trigger for reading table */
         if (rtfMinor == rtfRowDef && !(table.inside)) {
-        	RTFUngetToken();
+            RTFUngetToken();
             DoTable();          /* if we are not already inside a table, get into it */
         } else
             DoTableAttr();      /* if we are already inside 
@@ -4252,7 +4306,6 @@ int BeginLaTeXFile(void)
     table.multiCol = false;
     table.multiRow = false;
     InitializeTextStyle();
-
 
     /* install class callbacks */
     RTFSetClassCallback(rtfText, TextClass);
