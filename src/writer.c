@@ -1259,6 +1259,98 @@ static void ForceCloseCharAttr(void)
 }
 
 /*
+ * Compares text style that has been written with current style
+ * returns true if changed otherwise false
+ */
+static void NewWriteTextStyle(void)
+{
+	if (textStyleWritten.italicBraceLevel != textStyle.italicBraceLevel) {
+		if (textStyle.italicBraceLevel)
+			PutLitStr("\\it ");
+		else {
+			PutLitStr("\\rm ");
+		}
+		textStyleWritten.boldBraceLevel=false;
+		textStyleWritten.italicBraceLevel=textStyle.italicBraceLevel;
+	}
+
+	if (textStyleWritten.boldBraceLevel != textStyle.boldBraceLevel) {
+		if (textStyle.boldBraceLevel)
+			PutLitStr("\\bf ");
+		else {
+			PutLitStr("\\rm ");
+		}
+		textStyleWritten.italicBraceLevel=false;
+		textStyleWritten.boldBraceLevel=textStyle.boldBraceLevel;
+	}
+}
+
+/*
+ * This function stores the text style.
+ */
+static void NewSetTextStyle(void)
+{
+    if (insideHyperlink)
+        return;
+
+    switch (rtfMinor) {
+    case rtfSmallCaps:
+        textStyle.smallCapsBraceLevel = (rtfParam) ? true : false;
+        break;
+    case rtfAllCaps:
+        textStyle.allCapsBraceLevel = (rtfParam) ? true : false;
+        break;
+    case rtfItalic:
+        textStyle.italicBraceLevel = (rtfParam) ? true : false;
+        break;
+    case rtfBold:
+        textStyle.boldBraceLevel = (rtfParam) ? true : false;
+        break;
+    case rtfUnderline:
+        textStyle.underlinedBraceLevel = (rtfParam) ? true : false;
+        break;
+    case rtfDbUnderline:
+        textStyle.dbUnderlinedBraceLevel = (rtfParam) ? true : false;
+        break;
+    case rtfForeColor:
+        textStyle.foreColorBraceLevel = braceLevel;
+        textStyle.foreColor = rtfParam;
+        break;
+    case rtfSubScrShrink:
+    case rtfSubScript:
+        textStyle.subScriptBraceLevel = (rtfParam) ? true : false;
+        break;
+    case rtfSuperScript:
+        textStyle.superScriptBraceLevel = (rtfParam) ? true : false;
+        break;
+    case rtfSuperScrShrink:
+        RTFGetToken();
+        if (strcmp(rtfTextBuf, "\\chftn") && !RTFCheckCM(rtfGroup, rtfEndGroup))
+            textStyle.superScriptBraceLevel = (rtfParam) ? true : false;
+        RTFUngetToken();
+        break;
+    case rtfFontSize:
+        if (rtfParam <= 12)
+            textStyle.fontSize = scriptSize;
+        else if (rtfParam <= 14) 
+            textStyle.fontSize = footNoteSize;
+        else if (rtfParam <= 18)
+            textStyle.fontSize = smallSize;
+        else if (rtfParam >= 28)
+            textStyle.fontSize = largeSize;
+        else if (rtfParam >= 32)
+            textStyle.fontSize = LargeSize;
+        else if (rtfParam >= 36)
+            textStyle.fontSize = LARGESize;
+        else if (rtfParam >= 48) 
+            textStyle.fontSize = giganticSize;
+        else if (rtfParam >= 72) 
+            textStyle.fontSize = GiganticSize;
+        break;
+    }
+}
+
+/*
  * This function stores the text style.
  */
 static void SetTextStyle(void)
@@ -1781,6 +1873,7 @@ static void TextClass(void)
     if (rtfMinor >= rtfSC_therefore && rtfMinor < rtfSC_currency)
         requireAmsSymbPackage = true;
 
+	NewWriteTextStyle();
     PutStdChar(rtfMinor);
     WrapText();
 }
@@ -1958,17 +2051,17 @@ static void CharAttr(void)
     case rtfAllCaps:
     case rtfDbUnderline:
         if (!(int) preferenceValue[GetPreferenceNum("ignoreTextStyle")])
-            SetTextStyle();
+            NewSetTextStyle();
         break;
     case rtfSubScript:
     case rtfSubScrShrink:
     case rtfSuperScript:
     case rtfSuperScrShrink:
-        SetTextStyle();
+        NewSetTextStyle();
         break;
     case rtfForeColor:
         if (requireColorPackage)
-            SetTextStyle();
+            NewSetTextStyle();
         break;
     case rtfPlain:
         CheckForCharAttr();     /* suggested by Jens Ricky */
@@ -2491,7 +2584,6 @@ static void WriteCellHeader(int cellNum)
     if (cellPtr->mergePar == first)
         DoMergedCells(cellPtr);
 
-//    suppressLineBreak = true;
     wroteCellHeader = true;
 
     if (g_debug_table_writing)  {
@@ -2769,6 +2861,7 @@ static void ParAttr(void)
             paragraph.extraIndent = 0;
             paragraph.alignment = left;
             paragraph.headingString = NULL;
+            InitializeTextStyle();
             break;
         case rtfStyleNum:
             if ((stylePtr = RTFGetStyle(rtfParam)) == (RTFStyle *) NULL)
