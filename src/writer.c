@@ -145,13 +145,9 @@ float preferenceValue[NumberOfPreferences];
  * Flags global to LaTeX2e-writer.c
  */
 static int wrapCount = 0;
-static int mathMode = 0;
 static int word97ObjectType;
 static boolean nowBetweenParagraphs = true;
 static boolean seenLeftDoubleQuotes = false;
-static boolean wroteBeginDocument = false;
-static int spaceCount = 0;
-static int blankLineCount = 0;
 static boolean suppressLineBreak;
 static boolean requireColorPackage;
 static boolean requireSetspacePackage;
@@ -174,12 +170,6 @@ static boolean insideHyperlink;
 #ifdef PICT2PDF
 char * WritePictAsPDF(char *pict);
 #endif
-
-/*
-static int mathGroup = 0;
-static int colorChange = 0;
-static boolean requireFontEncPackage;
-*/
 
 struct EQN_OLE_FILE_HDR {
     uint16_t   cbHdr;     /* length of header, sizeof(EQNOLEFILEHDR) = 28 bytes */
@@ -219,14 +209,12 @@ static pictureStruct picture;
 static equationStruct oleEquation;
 static tableStruct table;
 
-static boolean dblQuoteLeft = false;
-static boolean wroteCellHeader = false;
-static boolean continueTextStyle = false;
-
 int g_debug_par_start       = 0;
 int g_debug_table_prescan   = 0;
 int g_debug_table_writing   = 0;
 int g_debug_char_style      = 0;
+
+int suppressBaseLine = false;
 
 char *UnicodeSymbolFontToLatex[];
 char *UnicodeGreekToLatex[];
@@ -732,97 +720,20 @@ char buf[rtfBufSiz];
 static void CheckForBeginDocument(void)
 {
     char buf[100];
-
+    static int wroteBeginDocument = false;
+    
     if (!wroteBeginDocument) {
-        if (!preferenceValue[GetPreferenceNum("ignoreRulerSettings")]) {
+        if (1 || !preferenceValue[GetPreferenceNum("ignoreRulerSettings")]) {
             snprintf(buf, 100, "\\setlength{\\oddsidemargin}{%3.2fin}\n", 1 - page.leftMargin);
             PutLitStr(buf);
             snprintf(buf, 100, "\\setlength{\\evensidemargin}{%3.2fin}\n", 1 - page.rightMargin);
             PutLitStr(buf);
             snprintf(buf, 100, "\\setlength{\\textwidth}{%3.2fin}\n", page.width - page.leftMargin - page.rightMargin);
             PutLitStr(buf);
-            blankLineCount++;
-        }
-        if (blankLineCount < MAX_BLANK_LINES) {
-            InsertNewLine();
-            blankLineCount++;
         }
 
         PutLitStr("\\begin{document}\n\n");
-        blankLineCount++;
-    }
-
-    wroteBeginDocument = true;
-}
-
-static void setParagraphBaseline(void)
-{
-    char buff[100];
-    if (paragraphWritten.lineSpacing == paragraph.lineSpacing)
-        return;
-
-    snprintf(buff, 100, "\\baselineskip=%dpt\n", abs(paragraph.lineSpacing)/20);
-    PutLitStr(buff);
-
-    if (g_debug_par_start) {
-        snprintf(buff, 100, "[ls=%d]", paragraph.lineSpacing);
-        PutLitStr(buff);
-    }
-
-    paragraphWritten.lineSpacing = paragraph.lineSpacing;
-}
-
-static void NewParagraph(void)
-{
-    char buff[100];
-
-    nowBetweenParagraphs = false;
-
-    if (insideFootnote || insideTable) return;
-
-    if (paragraph.spaceBefore) {
-        snprintf(buff,100,"\\vspace{%dpt}\n", paragraph.spaceBefore/20);
-        PutLitStr(buff);
-        paragraph.spaceBefore = 0;
-    }
-
-    if (paragraphWritten.headingString != paragraph.headingString) {
-        PutLitStr(paragraph.headingString);
-        paragraphWritten.headingString = paragraph.headingString;
-        suppressLineBreak = true;
-        return;
-    }
-
-    if (paragraphWritten.alignment != paragraph.alignment) {
-
-        if (paragraph.alignment == right)
-            PutLitStr("\\begin{flushright}\n");
-
-        if (paragraph.alignment == center)
-            PutLitStr("\\begin{center}\n");
-
-        paragraphWritten.alignment = paragraph.alignment;
-    }
-
-    if (paragraphWritten.leftIndent != paragraph.leftIndent) {
-        snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
-        if (paragraph.alignment != right && paragraph.alignment != center)
-            PutLitStr(buff);
-        paragraphWritten.leftIndent = paragraph.leftIndent;
-    }
-
-    if (paragraphWritten.firstIndent != paragraph.firstIndent+paragraph.extraIndent) {
-        snprintf(buff, 100, "\\parindent=%dpt\n", (paragraph.firstIndent+paragraph.extraIndent)/20);
-        if (paragraph.alignment != right && paragraph.alignment != center)
-            PutLitStr(buff);
-        paragraphWritten.firstIndent = paragraph.firstIndent+paragraph.extraIndent;
-        paragraph.extraIndent=0;
-    }
-
-    if (section.cols > 1) {
-        snprintf(buff, 100, "\n\\begin{multicols}{%d}\n", section.cols);
-        PutLitStr(buff);
-        requireMultiColPackage = true;
+    	wroteBeginDocument = true;
     }
 
 }
@@ -1050,8 +961,85 @@ static void SetTextStyle(void)
     }
 }
 
-/* Everything that is emitted is in some sort of environment
-   This routine just closes the environments that have been written
+static void setParagraphBaseline(void)
+{
+    char buff[100];
+    
+    if (suppressBaseLine) return;
+    
+    if (paragraphWritten.lineSpacing == paragraph.lineSpacing)
+        return;
+
+    snprintf(buff, 100, "\\baselineskip=%dpt\n", abs(paragraph.lineSpacing)/20);
+    PutLitStr(buff);
+
+    if (g_debug_par_start) {
+        snprintf(buff, 100, "[ls=%d]", paragraph.lineSpacing);
+        PutLitStr(buff);
+    }
+
+    paragraphWritten.lineSpacing = paragraph.lineSpacing;
+}
+
+static void NewParagraph(void)
+{
+    char buff[100];
+
+    nowBetweenParagraphs = false;
+
+    if (insideFootnote || insideTable) return;
+
+    if (paragraph.spaceBefore) {
+        snprintf(buff,100,"\\vspace{%dpt}\n", paragraph.spaceBefore/20);
+        PutLitStr(buff);
+        paragraph.spaceBefore = 0;
+    }
+
+    if (paragraphWritten.headingString != paragraph.headingString) {
+        PutLitStr(paragraph.headingString);
+        paragraphWritten.headingString = paragraph.headingString;
+        suppressLineBreak = true;
+        return;
+    }
+
+    if (paragraphWritten.alignment != paragraph.alignment) {
+
+        if (paragraph.alignment == right)
+            PutLitStr("\\begin{flushright}\n");
+
+        if (paragraph.alignment == center)
+            PutLitStr("\\begin{center}\n");
+
+        paragraphWritten.alignment = paragraph.alignment;
+    }
+
+    if (paragraphWritten.leftIndent != paragraph.leftIndent) {
+        snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
+        if (paragraph.alignment != right && paragraph.alignment != center) {
+            PutLitStr(buff);
+        	paragraphWritten.leftIndent = paragraph.leftIndent;
+        }
+    }
+
+    if (paragraphWritten.firstIndent != paragraph.firstIndent+paragraph.extraIndent) {
+        snprintf(buff, 100, "\\parindent=%dpt\n", (paragraph.firstIndent+paragraph.extraIndent)/20);
+        if (paragraph.alignment != right && paragraph.alignment != center) {
+            PutLitStr(buff);
+        	paragraphWritten.firstIndent = paragraph.firstIndent+paragraph.extraIndent;
+        }
+        paragraph.extraIndent=0;
+    }
+
+    if (section.cols > 1) {
+        snprintf(buff, 100, "\n\\begin{multicols}{%d}\n", section.cols);
+        PutLitStr(buff);
+        requireMultiColPackage = true;
+    }
+}
+
+/* 
+ * Everything that is emitted is in some sort of paragraph
+ * This routine just closes the environments that have been written
  */
 
 static void EndParagraph(void)
@@ -1068,7 +1056,7 @@ static void EndParagraph(void)
         return;
     }
 
-    if (insideFootnote || insideTable) {
+    if (insideFootnote) {
         InsertNewLine();
         InsertNewLine();
         return;
@@ -1174,7 +1162,6 @@ static void WriteLaTeXHeader(void)
     }
 
     PutLitStr("\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
-    blankLineCount++;
 }
 
 static void WriteColors(void)
@@ -1361,9 +1348,6 @@ static void SpecialChar(void)
             paragraph.extraIndent += 72;
             return;
         }
-
-        EndParagraph();
-        NewParagraph();
     }
 
     switch (rtfMinor) {
@@ -1406,7 +1390,7 @@ static void SpecialChar(void)
         break;
     case rtfPage:
         if (!insideTable)
-            PutLitStr("\\newpage{}");
+            PutLitStr("\\pagebreak{}");
         break;
     }
 }
@@ -1628,9 +1612,6 @@ static void PrescanTable(void)
     table.cellInfo = (cell *) NULL;
 
     /* Prescan each row until end of the table. */
-//  if (RTFCheckCM(rtfControl, rtfTblAttr))
-  //      RTFRouteToken();
-
     while (foundRow) {
         table.cols = 0;
         (table.rowInfo)[table.rows] = 0;
@@ -1877,9 +1858,6 @@ static void WriteCellHeader(int cellNum)
     char buf[rtfBufSiz];
     cell *cellPtr;
 
-    if (wroteCellHeader)
-        return;
-
     if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
 
     cellPtr = GetCellInfo(cellNum);
@@ -1918,8 +1896,6 @@ static void WriteCellHeader(int cellNum)
     if (cellPtr->mergePar == first)
         DoMergedCells(cellPtr);
 
-    wroteCellHeader = true;
-
     if (g_debug_table_writing)  {
         snprintf(buf, rtfBufSiz, "[cell \\#%d]",cellNum);
         PutLitStr(buf);
@@ -1929,64 +1905,62 @@ static void WriteCellHeader(int cellNum)
 /* This is where we translate each table row to latex. */
 static void ProcessTableRow(int rowNum)
 {
-    boolean endOfRow = false;
-    boolean startCellText = false;
+    boolean cellIsEmpty = true;
+    boolean firstCellInRow = true;
     cell *cellPtr;
-    int cellsInThisRow = 0;
 
-    wroteCellHeader = false;
-
-    while (!endOfRow) {
+    suppressLineBreak = true;
+    while (1) {
         RTFGetToken();
 
         /* ignore these */
         if (RTFCheckCM(rtfControl, rtfTblAttr))
             continue;
 
-        /* ignore unknown destination groups */
-        if (strcmp(rtfTextBuf, "\\*") == 0) {
-            RTFSkipGroup();
-            continue;
-        }
-
+		/* token that signals end of the row */
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfRow)) {
             if (g_debug_table_writing) fprintf(stderr,"* end of row\n");
-            suppressLineBreak=false;
+    		suppressLineBreak = false;
             return;
         }
 
+		/* token that signals the end of the current cell */
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfCell)) {
             (table.cellCount)++;
-            cellsInThisRow++;
-            if (!startCellText) {
-                /* The cell is empty. */
-                if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n",table.cellCount - 1);
+
+            if (cellIsEmpty) {
+                if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount - 1);
+                if (!firstCellInRow) PutLitStr(" & ");
                 cellPtr = GetCellInfo(table.cellCount - 1);
                 WriteCellHeader(table.cellCount - 1);
-            }
+                firstCellInRow = false;
+            } 
+            
             StopTextStyle();
+            PutLitStr("}");
+            	
             if (cellPtr->mergePar == first)
                 PutLitChar('}');
-            PutLitStr("} & ");
-            InsertNewLine();
-            startCellText = false;  /* we are not in the text field of a cell any more */
+
+            cellIsEmpty = true;
             paragraph.alignment = left;
-            wroteCellHeader = false;
             continue;
         }
 
-        if (!startCellText) {
+        if (cellIsEmpty) {
             if (rtfMajor == rtfDestination || rtfMajor ==rtfSpecialChar || rtfClass == rtfText) {
+                if (!firstCellInRow)
+            		PutLitStr(" & ");
+            	
                 WriteCellHeader(table.cellCount);
                 cellPtr = GetCellInfo(table.cellCount);
-                startCellText = true;
-                suppressLineBreak = true;
+                cellIsEmpty = false;
+                firstCellInRow = false;
             }
         }
 
         RTFRouteToken();
     }
-    suppressLineBreak = false;
 }
 
 /*
@@ -2104,7 +2078,6 @@ static void DoTable(void)
         if (g_debug_table_writing) fprintf(stderr,"* Starting new row #%d\n",i);
         ProcessTableRow(rowNum);
 
-        fseek(ofp, -4, 2);      /* erase the "& \n" at the end of the last cell of the row */
         PutLitStr("\\\\");
         InsertNewLine();
         if (i < (table.rows - 1))
@@ -2137,7 +2110,6 @@ static void ParAttr(void)
         return;
 
     if (!insideTable) {
-        CheckForBeginDocument();
 
         switch (rtfMinor) {
         case rtfSpaceBetween:
@@ -2160,7 +2132,6 @@ static void ParAttr(void)
             paragraph.extraIndent = 0;
             paragraph.alignment = left;
             paragraph.headingString = NULL;
-            InitTextStyle();
             break;
         case rtfStyleNum:
             if ((stylePtr = RTFGetStyle(rtfParam)) == (RTFStyle *) NULL)
@@ -2169,19 +2140,16 @@ static void ParAttr(void)
                 if (paragraphWritten.headingString) EndParagraph();
                 paragraph.headingString=heading1String;
                 nowBetweenParagraphs = true;
-                suppressLineBreak = true;
                 DoSectionCleanUp();
             } else if (strcmp(stylePtr->rtfSName, "heading 2") == 0) {
                 if (paragraphWritten.headingString) EndParagraph();
                 paragraph.headingString=heading2String;
                 nowBetweenParagraphs = true;
-                suppressLineBreak = true;
                 DoSectionCleanUp();
             } else if (strcmp(stylePtr->rtfSName, "heading 3") == 0) {
                 if (paragraphWritten.headingString) EndParagraph();
                 paragraph.headingString=heading3String;
                 nowBetweenParagraphs = true;
-                suppressLineBreak = true;
                 DoSectionCleanUp();
             }
             break;
@@ -2496,10 +2464,9 @@ static void ConvertHexPicture(char *pictureType)
 static void IncludeGraphics(char *pictureType)
 {
     char *figPtr, *suffix;
-    char dummyBuf[rtfBufSiz], specialBuf[rtfBufSiz];
-    double scaleX, scaleY, scale;
+    char dummyBuf[rtfBufSiz];
+    double scaleX, scaleY;
     double width, height;
-    int llx, lly, urx, ury;
 
 
     suffix = strrchr(picture.name, '.');
@@ -2519,21 +2486,20 @@ static void IncludeGraphics(char *pictureType)
     if (picture.scaleX == 0)
         scaleX = 1;
     else
-        scaleX = (double) (picture.scaleX) / 100;
+        scaleX = picture.scaleX / 100.0;
+        
     if (picture.scaleY == 0)
         scaleY = 1;
     else
-        scaleY = (double) (picture.scaleY) / 100;
+        scaleY = picture.scaleY / 100.0;
 
     if (picture.goalHeight == 0) {
-        width = (double) ((double) picture.width * scaleX);
-        height = (double) ((double) picture.height * scaleY);
+        width = picture.width * scaleX;
+        height = picture.height * scaleY;
     } else {
-        width = (double) ((double) picture.goalWidth * scaleX / 20);
-        height = (double) ((double) picture.goalHeight * scaleY / 20);
+        width = picture.goalWidth * scaleX / 20.0;
+        height = picture.goalHeight * scaleY / 20.0;
     }
-
-    EndParagraph();
 
     figPtr = strrchr(picture.name, PATH_SEP);
     if (!figPtr)
@@ -2542,47 +2508,33 @@ static void IncludeGraphics(char *pictureType)
         figPtr++;
 
     if (!(int) preferenceValue[GetPreferenceNum("swpMode")]) {
-        if (strcmp(pictureType, "eps") == 0) {
-
-            llx = picture.llx;
-            lly = picture.lly;
-            urx = picture.urx;
-            ury = picture.ury;
-            scale = (double) ((double) (height) / ((double) (ury - lly)));
-            snprintf(dummyBuf, rtfBufSiz, "\\includegraphics[bb = %d %d %d %d, scale=%2.2f]{%s}",
-                    llx, lly, urx, ury, scale, figPtr);
-
-        } else
-            snprintf(dummyBuf, rtfBufSiz, "\\includegraphics[width=%2.3fin, height=%2.3fin]{%s}",
-                    width / 72, height / 72, figPtr);
 
         if (!insideTable && !insideFootnote) {
-            if (height > 50) {
+        
+        	EndParagraph();
+
+            if (height > 50) 
                 PutLitStr("\\begin{figure}[htbp]");
-            }
-            if (height > 20) {
+            
+            if (height > 20)
                 PutLitStr("\n\\begin{center}");
-                InsertNewLine();
-            }
+            
+			snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%2.3fin, height=%2.3fin]{%s}", width / 72, height / 72, figPtr);
             PutLitStr(dummyBuf);
+            
             if (height > 50) {
-                snprintf(dummyBuf, rtfBufSiz, "\n\\caption{%s about here.}", figPtr);
+                snprintf(dummyBuf, rtfBufSiz, "\n\\caption{This should be the caption for \\texttt{%s}.}", figPtr);
                 PutLitStr(dummyBuf);
             }
-            if (height > 20) {
+            
+            if (height > 20)
                 PutLitStr("\n\\end{center}");
-                InsertNewLine();
-                if (height <= 50) {
-                    InsertNewLine();
-                    InsertNewLine();
-                }
-                blankLineCount++;
-            }
-            if (height > 50) {
-                PutLitStr("\\end{figure}");
-                InsertNewLine();
-                InsertNewLine();
-            }
+
+            if (height > 50) 
+                PutLitStr("\n\\end{figure}");
+                
+            nowBetweenParagraphs = true;
+
         }
     } else {                    /* this is for compatibility with Scientific Word */
 
@@ -2592,22 +2544,22 @@ static void IncludeGraphics(char *pictureType)
         PutLitStr(dummyBuf);
         PutLitStr("{");
         InsertNewLine();
-        snprintf(specialBuf,rtfBufSiz,
+        snprintf(dummyBuf,rtfBufSiz,
                 "\\special{language \"Scientific Word\";type \"GRAPHIC\";maintain-aspect-ratio TRUE; display \"USEDEF\";valid_file \"T\";");
-        PutLitStr(specialBuf);
+        PutLitStr(dummyBuf);
         InsertNewLine();
-        snprintf(specialBuf, rtfBufSiz, "height %2.3fpt;width %2.3fpt;depth 0pt;",
+        snprintf(dummyBuf, rtfBufSiz, "height %2.3fpt;width %2.3fpt;depth 0pt;",
                 width, height);
-        PutLitStr(specialBuf);
+        PutLitStr(dummyBuf);
         InsertNewLine();
-        snprintf(specialBuf,rtfBufSiz,
+        snprintf(dummyBuf,rtfBufSiz,
                 "cropleft \"0\";croptop \"1\";cropright \"1\";cropbottom \"0\";");
-        PutLitStr(specialBuf);
+        PutLitStr(dummyBuf);
         InsertNewLine();
-        snprintf(specialBuf,rtfBufSiz,
+        snprintf(dummyBuf,rtfBufSiz,
                 "tempfilename '%s';tempfile-properties \"XPNEU\";",
                 figPtr);
-        PutLitStr(specialBuf);
+        PutLitStr(dummyBuf);
         PutLitStr("}}");
         InsertNewLine();
     }
@@ -3595,11 +3547,7 @@ int BeginLaTeXFile(void)
     codePage = 0;
     nowBetweenParagraphs = true;
     seenLeftDoubleQuotes = false;
-    wroteBeginDocument = false;
-    spaceCount = 0;
-    blankLineCount = 0;
     suppressLineBreak = false;
-    continueTextStyle = false;
     insideFootnote = false;
     insideHyperlink = false;
     insideTable = false;
@@ -3611,7 +3559,6 @@ int BeginLaTeXFile(void)
     paragraph.wroteSpacing = false;
     section.newStyle = false;
     section.cols = 1;
-    dblQuoteLeft = false;
 
     if (preferenceValue[GetPreferenceNum("ignoreColor")])
         requireColorPackage = false;
@@ -3629,7 +3576,6 @@ int BeginLaTeXFile(void)
     requireAmsMathPackage = false;
     requireUnicodePackage = false;
     requireLatin1Package = false;
-
 
     picture.count = 0;
     picture.type = unknownPict;
