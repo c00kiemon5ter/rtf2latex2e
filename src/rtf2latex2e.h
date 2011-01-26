@@ -18,9 +18,9 @@
  */
 
 
-# define    rtf2latex2e_version "1.2"
+# define    rtf2latex2e_version "2.0"
 
-# define    WRAP_LIMIT  120
+# define    WRAP_LIMIT  80
 # define    PACKAGES    9
 
 # define    UNINITIALIZED -99

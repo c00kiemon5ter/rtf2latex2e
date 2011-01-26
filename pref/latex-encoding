@@ -166,12 +166,12 @@ bullet				0x2022					# {\textbullet}
 carriagereturn		\ensuremath{\hookleftarrow}
 Cacute				0x0106					#"\'{C}"
 Ccaron				0x010C					# \v{C}
-Ccedilla			0xE7					# \c{C}
+Ccedilla			0xC7					# \c{C}
 Cdblhorizbar		\hbox{\rm\rlap=C}
 cacute				0x0107					#"\'{c}"
 caron				0x02C7					#\v{}
 ccaron				0x010D					#\v{c}
-ccedilla			0xC7					# \c{c}
+ccedilla			0xE7					# \c{c}
 cedilla				0xB8					# \c{}
 cent				0xA2					# \hbox{\rm\rlap/c}
 circlemultiply		\ensuremath{\otimes}

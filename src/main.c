@@ -31,8 +31,9 @@
 #include     "eqn.h"
 
 int mkdir (const char *filename, mode_t mode);
+void PrefsInit(void);
 
-extern char  outputMapName[];
+extern char  outputMapFile[];
 FILE         *OpenLibFile(char *name, char *mode);
 
 FILE         *ifp, *ofp;
@@ -459,7 +460,8 @@ main(int argc, char **argv)
     extern char    *optarg;
     extern int      optind;
 
-
+	PrefsInit();   /* first so that command line can override file prefs */
+	
     while ((c = my_getopt(argc, argv, "bhDeEvVt:P:")) != EOF) {
         switch (c) {
 
@@ -486,7 +488,7 @@ main(int argc, char **argv)
             return (0);
 
         case 't':
-            strcpy(outputMapName, optarg);
+            strcpy(outputMapFile, optarg);
             break;
 
         case 'P':   /* -P path/to/cfg:path/to/script or -P
@@ -507,7 +509,7 @@ main(int argc, char **argv)
     /* Initialize stuff */
     if (argc > 0) {
         SetEndianness();                    /* needed for cole routines */
-        strcpy(outputMapName, "");          /* assume special TeX-Map is not used */
+        strcpy(outputMapFile, "");          /* assume special TeX-Map is not used */
         RTFSetOpenLibFileProc(OpenLibFile); /* install routine for opening library files */
         WriterInit();                       /* one time writer initialization */
     } else {

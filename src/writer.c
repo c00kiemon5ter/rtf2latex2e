@@ -31,14 +31,14 @@
 # include "eqn.h"
 void __cole_dump(void *_m, void *_start, uint32_t length, char *msg);
 
-char outputMapName[255];
-# define        prefFileName    "r2l-pref"
-# define        MAX_BLANK_LINES       2
-# define        MATH_NONE_MODE        0
-# define        MATH_INLINE_MODE      1
-# define        MATH_DISPLAY_MODE     2
+char outputMapFile[255];
+# define  prefFileName    "r2l-pref"
+# define  MAX_BLANK_LINES       2
+# define  MATH_NONE_MODE        0
+# define  MATH_INLINE_MODE      1
+# define  MATH_DISPLAY_MODE     2
 
-# define        PREVIOUS_COLUMN_VALUE -10000
+# define  PREVIOUS_COLUMN_VALUE -10000
 char texMapQualifier[rtfBufSiz];
 
 void RTFSetOutputStream(FILE * stream);
@@ -49,27 +49,45 @@ extern FILE *ifp, *ofp;
 
 # define EQUATION_OFFSET 35
 # define MTEF_HEADER_SIZE 28
-# define RESTORE_LEVELS 1
-# define SAVE_LEVELS    0
-# define        NumberOfPreferences 16
 
-const char *preferenceList[] = {
+/* These should match prefList below */
+enum prefName {
+    pOutputMapFile,
+    pPageWidth,
+    pPageLeft,
+    pPageRight,
+    pConvertColor,
+    pConvertPageSize,
+    pConvertTextSize,
+    pConvertTextStyle,
+    pConvertParagraphStyle,
+    pConvertParagraphIndent,
+    pConvertInterParagraphSpace,
+    pConvertLineSpacing,
+    pConvertHypertext,
+    pConvertPict,
+    pConvertEquation,
+    pConvertAsDirectory,
+    pLast
+};
+
+const char *prefString[] = {
     "outputMapFile",
-    "ignoreRulerSettings",
-    "paperWidth",
-    "leftMargin",
-    "rightMargin",
-    "ignoreColor",
-    "ignoreParagraphAlignment",
-    "ignoreTextStyle",
-    "ignoreHypertext",
-    "ignoreSpacing",
-    "convertEquations",
-    "pict2eps_translate",
-    "pict2eps_fonts",
-    "pict2eps_preview",
-    "fileCreator",
-    "swpMode"
+    "pageWidth",
+    "pageLeft",
+    "pageRight",
+    "convertColor",
+    "convertPageSize",
+    "convertTextSize",
+    "convertTextStyle",
+    "convertParagraphStyle",
+    "convertParagraphIndent",
+    "convertInterParagraphSpace",
+    "convertLineSpacing",
+    "convertHypertext",
+    "convertPict",
+    "convertEquation",
+    "convertAsDirectory",
 };
 
 const char *objectClassList[] = {
@@ -77,7 +95,7 @@ const char *objectClassList[] = {
     "Equation",
     "Word.Picture",
     "MSGraph.Chart",
-    (char *) NULL
+    NULL
 };
 
 const char *justificationList[] = {
@@ -107,26 +125,11 @@ const char *fontSizeList[] = {
 
 const char *r2lList[] = {
     "documentclass",
-    "bold",
-    "nobold",
-    "italic",
-    "noitalic",
-    "underline",
-    "smallcaps",
     "heading1",
     "heading2",
     "heading3",
     "table"
 };
-
-static struct pageStyleStruct {
-    double width;
-    double leftMargin;
-    double rightMargin;
-} page;
-
-parStyleStruct paragraph, paragraphWritten;
-textStyleStruct textStyle, textStyleWritten;
 
 static struct {
     boolean newStyle;
@@ -139,17 +142,13 @@ static struct {
     int word97;
 } object;
 
-float preferenceValue[NumberOfPreferences];
-
 /*
  * Flags global to LaTeX2e-writer.c
  */
 static int wrapCount = 0;
 static int word97ObjectType;
 static boolean nowBetweenParagraphs = true;
-static boolean seenLeftDoubleQuotes = false;
 static boolean suppressLineBreak;
-static boolean requireColorPackage;
 static boolean requireSetspacePackage;
 static boolean requireTablePackage;
 static boolean requireMultirowPackage;
@@ -160,8 +159,6 @@ static boolean requireUlemPackage;
 static boolean requireFixLtx2ePackage;
 static boolean requireHyperrefPackage;
 static boolean requireAmsMathPackage;
-static boolean requireUnicodePackage;
-static boolean requireLatin1Package;
 static size_t packagePos;
 static boolean insideTable;
 static boolean insideFootnote;
@@ -171,50 +168,30 @@ static boolean insideHyperlink;
 char * WritePictAsPDF(char *pict);
 #endif
 
-struct EQN_OLE_FILE_HDR {
-    uint16_t   cbHdr;     /* length of header, sizeof(EQNOLEFILEHDR) = 28 bytes */
-    uint32_t   version;   /* hiword = 2, loword = 0 */
-    uint16_t   format;
-    uint32_t   size;
-    uint32_t   reserved1;
-    uint32_t   reserved2;
-    uint32_t   reserved3;
-    uint32_t   reserved4;
-};
-
-static int codePage;
-char fileCreator[10];
-
 static char *outMap[rtfSC_MaxChar];
 
-#define NumberOfR2LMappings     11
+#define NumberOfR2LMappings     5
 static char *r2lMap[NumberOfR2LMappings];
 static boolean r2lMapPresent = true;
 
-static char *boldString;
-static char *noBoldString;
-static char *italicString;
-static char *noItalicString;
-static char *underlineString;
-static char *smallcapsString;
-static char *documentclassString;
-static char *heading1String;
-static char *heading2String;
-static char *heading3String;
-static char *tableString;
-static short itemNumber;
+char *documentclassString = "{article}";
+char *heading1String = "\\section*{";
+char *heading2String = "\\subsection*{";
+char *heading3String = "\\subsubsection*{";
+char *tableString = "longtable";
 
-static FILE *ostream;
-static pictureStruct picture;
-static equationStruct oleEquation;
-static tableStruct table;
+FILE *ostream;
+parStyleStruct paragraph, paragraphWritten;
+textStyleStruct textStyle, textStyleWritten;
+pictureStruct picture;
+equationStruct oleEquation;
+tableStruct table;
+int prefs[pLast];
 
 int g_debug_par_start       = 0;
 int g_debug_table_prescan   = 0;
 int g_debug_table_writing   = 0;
 int g_debug_char_style      = 0;
-
-int suppressBaseLine = false;
 
 char *UnicodeSymbolFontToLatex[];
 char *UnicodeGreekToLatex[];
@@ -224,7 +201,7 @@ static short R2LItem(char *name)
     short i;
 
     for (i = 0; i < NumberOfR2LMappings; i++) {
-        if (strcmp(name, r2lList[i]) == 0)
+        if (strcasecmp(name, r2lList[i]) == 0)
             return (i);
     }
     printf("R2LItem: invalid preference %s!\n", name);
@@ -245,12 +222,11 @@ static short ReadR2LMap(void)
     /* clobber current mapping */
     for (i = 0; i < NumberOfR2LMappings; i++) {
         RTFFree(r2lMap[i]);
-        r2lMap[i] = (char *) NULL;
+        r2lMap[i] = NULL;
     }
 
-
-    if ((f = RTFOpenLibFile("r2l-map", "r")) == (FILE *) NULL)
-        return (0);
+    f = RTFOpenLibFile("r2l-map", "r");
+    if (!f) return 0;
 
     /*
      * Turn off scanner's backslash escape mechanism while reading
@@ -263,26 +239,25 @@ static short ReadR2LMap(void)
 
     /* read file */
 
-    while (fgets(buf, (int) sizeof(buf), f) != (char *) NULL) {
-        if (buf[0] == '#')      /* skip comment lines */
-            continue;
+    while (fgets(buf, (int) sizeof(buf), f)) {
+        if (buf[0] == '#') continue;     /* skip comment lines */
 
         TSScanInit(buf);
-
-        if ((name = TSScan()) == (char *) NULL)
-            continue;           /* skip blank lines */
+        
+        name = TSScan();
+        if (!name) continue;             /* skip blank lines */
 
         if ((stdCode = R2LItem(name)) < 0) {
             RTFMsg("%s: unknown preference: %s\n", fn, name);
             continue;
         }
 
-        if ((seq = TSScan()) == (char *) NULL) {
+        if ((seq = TSScan()) == NULL) {
             RTFMsg("%s: malformed output sequence line for preference %s\n", fn, name);
             continue;
         }
 
-        if ((seq = RTFStrSave(seq)) == (char *) NULL)
+        if ((seq = RTFStrSave(seq)) == NULL)
             RTFPanic("%s: out of memory", fn);
 
         r2lMap[stdCode] = seq;
@@ -290,10 +265,7 @@ static short ReadR2LMap(void)
     scanner.scanEscape = scanEscape;
     TSSetScanner(&scanner);
     fclose(f);
-/*
-        for (i = 0; i < NumberOfR2LMappings; i++)
-                printf ("%s\n", r2lMap[i]);
-*/
+
     return (1);
 }
 
@@ -333,63 +305,79 @@ void WriterInit(void)
     strcpy(texMapQualifier, "");
 
     /* if a latex-encoding file was not specified, set it to the default */
-    if (strcmp(outputMapName, "") == 0)
-        strcpy(outputMapName, "latex-encoding");
+    if (strcmp(outputMapFile, "") == 0)
+        strcpy(outputMapFile, "latex-encoding");
 
-    if (RTFReadOutputMap(outputMapName, outMap, 1) == 0)
-        RTFPanic("Cannot read output map %s", outputMapName);
+    if (RTFReadOutputMap(outputMapFile, outMap, 1) == 0)
+        RTFPanic("Cannot read output map %s", outputMapFile);
 
     /* read r2l mapping file if present */
-    if (ReadR2LMap() == 0)
-        r2lMapPresent = false;
+    r2lMapPresent = ReadR2LMap();
 }
 
-static boolean IsValidPref(char *name, char *pref)
+static int GetPreferenceNum(const char *name)
 {
     short i;
 
-    if (!strcmp(name, "fileCreator") || !strcmp(name, "outputMapFile"))
-        return true;
+    for (i = 0; i < pLast; i++)
+        if (strcasecmp(name, prefString[i]) == 0) return (i);
 
-    if (strcmp(pref, "true") == 0 || strcmp(pref, "false") == 0)
-        return true;
-
-    for (i = 0; i < strlen(pref); i++)
-        if (!(isdigit(pref[i]) || pref[i] == '.')) return false;
-
-    return true;
-}
-
-static int GetPreferenceNum(char *name)
-{
-    short i;
-
-    for (i = 0; i < NumberOfPreferences; i++)
-        if (strcmp(name, preferenceList[i]) == 0) return (i);
-
-    printf("GetPreferenceNum: invalid preference %s!\n", name);
+    fprintf(stderr,"Could not locate preference '%s'\n", name);
 
     return (-1);
 }
 
+void PrefsInit(void)
+{
+    prefs[pOutputMapFile]=0;
+    prefs[pPageWidth] = 8.5 * 20 * 72;  /*twips*/
+    prefs[pPageLeft] = 1.0 * 20 * 72;
+    prefs[pPageRight] = 1.0 * 20 * 72;
+    prefs[pConvertColor] = true;
+    prefs[pConvertPageSize] = true;
+    prefs[pConvertTextStyle] = true;
+    prefs[pConvertTextSize] = true;
+    prefs[pConvertParagraphStyle] = true;
+    prefs[pConvertParagraphIndent] = true;
+    prefs[pConvertInterParagraphSpace] = true;
+    prefs[pConvertLineSpacing] = true;
+    prefs[pConvertHypertext] = true;
+    prefs[pConvertPict] = true;
+    prefs[pConvertEquation] = true;
+    prefs[pConvertAsDirectory] = true;
+}
+
+static void setPref(const char *name, const char *value)
+{
+    int n = GetPreferenceNum(name);
+
+    if (n == -1) return;
+    
+    if (n == pOutputMapFile) {
+        strcpy(outputMapFile, value);
+        return;
+    }
+
+    if (n == pPageWidth || n == pPageLeft || n == pPageRight) {
+        prefs[n] = (int) 20.0 * 72.0 * atof(value);
+        return;
+    }
+
+    prefs[n] = strcasecmp(value,"true")==0 ? 1 : 0;
+}
+
 short ReadPrefFile(char *file)
 {
-    char *fn = "ReadPrefFile";
     FILE *f;
     char buf[rtfBufSiz];
     char *name, *seq;
     TSScanner scanner;
     char *scanEscape;
-    int whichPref;
-    short i;
 
-    /* initialize preferences */
-    for (i = 0; i < NumberOfPreferences; i++)
-        preferenceValue[i] = 0;
-
-    if ((f = RTFOpenLibFile(file, "r")) == (FILE *) NULL) {
-        RTFMsg("can't open file %s\n", file);
-        return (0);
+    f = RTFOpenLibFile(file, "r");
+    if (!f) {
+        RTFMsg("can't open file preference file %s\n", file);
+        return 0;
     }
 
     /*
@@ -401,62 +389,25 @@ short ReadPrefFile(char *file)
     scanner.scanEscape = "";
     TSSetScanner(&scanner);
 
-    /* read file */
-
-    while (fgets(buf, (int) sizeof(buf), f) != (char *) NULL) {
-        if (buf[0] == '#')      /* skip comment lines */
-            continue;
+    while (fgets(buf, rtfBufSiz, f)) {
+        if (buf[0] == '#') continue;    /* skip comment lines */
 
         TSScanInit(buf);
+        name = TSScan();
+        if (!name) continue;           /* skip blank lines */
 
-        if ((name = TSScan()) == (char *) NULL)
-            continue;           /* skip blank lines */
+        seq = TSScan();
+        if (!seq) continue;            /* skip empty settings */
 
-        if ((whichPref = GetPreferenceNum(name)) < 0) {
-            RTFMsg("%s: unkown preference: %s\n", fn, name);
-            continue;
-        }
-
-        if ((seq = TSScan()) == (char *) NULL || !IsValidPref(name, seq)) {
-            RTFMsg("%s: malformed preference setting for %s\n", fn, name);
-            continue;
-        }
-
-        if (strcmp(name, "fileCreator") == 0) {
-            strcpy(fileCreator, seq);
-            strcpy(seq, "true");
-        }
-
-        if (strcmp(name, "outputMapFile") == 0) {
-            if (!strcmp(outputMapName, ""))
-                strcpy(outputMapName, seq);
-            strcpy(seq, "true");
-        }
-
-        if (strcmp(seq, "true") == 0)
-            strcpy(seq, "1");
-        else if (strcmp(seq, "false") == 0)
-            strcpy(seq, "0");
-
-        preferenceValue[whichPref] = (int) atof(seq);
+        setPref(name,seq);
     }
+    
     scanner.scanEscape = scanEscape;
     TSSetScanner(&scanner);
     if (fclose(f) != 0)
         printf("¥ error closing pref file %s\n", file);
 
-    /* set the preferences here to values in file or to default */
-    if ((page.width = preferenceValue[GetPreferenceNum("paperWidth")]) == 0)
-        page.width = 8.5;
-
-    if ((page.leftMargin = preferenceValue[GetPreferenceNum("leftMargin")]) == 0)
-        page.leftMargin = 1.0;
-
-    if ((page.rightMargin = preferenceValue[GetPreferenceNum("rightMargin")]) == 0)
-        page.rightMargin = 1.0;
-
-    return (1);
-
+    return 1;
 }
 
 static void PutIntAsUtf8(int x)
@@ -497,11 +448,21 @@ static void PutIntAsUtf8(int x)
 
 }
 
-/* some environments fail if there is a blank line in
-   the argument ... e.g., \section{} which sets suppressLineBreak
-   esthetically, only emit two linefeeds at a time
-*/
-
+/* 
+ * Some environments fail if there is a blank line in
+ * the argument ... e.g., \section{} will set suppressLineBreak
+ * so, in this case, make sure that there is at least one char
+ * on each line before writing a '\n' to the latex file.
+ * We can't use wrapCount for this purpose because an "empty"
+ * line of spaces will also cause these environments grief.
+ *
+ * Furthermore, make sure that at most two '\n' are output
+ * to the latex file at a time just for esthetic reasons.
+ *
+ * Finally, reset wrapCount to zero every time a '\n' is 
+ * written to the LaTeX file so that WrapText() below can
+ * work properly
+ */
 static void PutLitChar(int c)
 {
     static int lf_in_succession = 0;
@@ -563,16 +524,16 @@ static void DefineColors(void)
 {
     RTFColor *rtfColorPtr;
     int i = 1;
-    float textRed, textBlue, textGreen;
+    float Red, Blue, Green;
     char buf[rtfBufSiz];
 
-    while ((rtfColorPtr = RTFGetColor(i)) != (RTFColor *) NULL) {
-        textRed = (float) ((rtfColorPtr->rtfCRed) / 255.0);
-        textGreen = (float) ((rtfColorPtr->rtfCGreen) / 255.0);
-        textBlue = (float) ((rtfColorPtr->rtfCBlue) / 255.0);
+    while ((rtfColorPtr = RTFGetColor(i)) != NULL) {
+        Red = rtfColorPtr->rtfCRed / 255.0;
+        Green = rtfColorPtr->rtfCGreen / 255.0;
+        Blue = rtfColorPtr->rtfCBlue / 255.0;
 
         snprintf(buf, rtfBufSiz, "\\definecolor{color%02d}{rgb}{%1.3f,%1.3f,%1.3f}\n",
-                i, textRed, textGreen, textBlue);
+                i, Red, Green, Blue);
         PutLitStr(buf);
 
         i++;
@@ -581,20 +542,10 @@ static void DefineColors(void)
 
 static void WriteColors(void)
 {
+    if (!prefs[pConvertColor]) return;
     ReadColorTbl();
-    if (1 || requireColorPackage)
-        DefineColors();
+    DefineColors();
 }
-
-
-static void WriteColor (void)
-{
-    char buf[50];
-    if (!requireColorPackage) return;
-    snprintf(buf, 50, "{\\color{color%02d} ", textStyle.foreColor);
-    PutLitStr(buf);
-}
-
 
 /*
  * a useful diagnostic function to examine the token just read.
@@ -688,7 +639,7 @@ static uint32_t CountCharInString(char *theString, char theChar)
 static void PutStdChar(stdCode)
 int stdCode;
 {
-    char *oStr = (char *) NULL;
+    char *oStr = NULL;
     char buf[rtfBufSiz];
 
     if (stdCode == rtfSC_nothing) {
@@ -727,19 +678,19 @@ static void CheckForBeginDocument(void)
     static int wroteBeginDocument = false;
     
     if (!wroteBeginDocument) {
-        if (1 || !preferenceValue[GetPreferenceNum("ignoreRulerSettings")]) {
-            snprintf(buf, 100, "\\setlength{\\oddsidemargin}{%3.2fin}\n", 1 - page.leftMargin);
+        if (prefs[pConvertPageSize]) {
+            snprintf(buf, 100, "\\setlength{\\oddsidemargin}{%dpt}\n", 72 - prefs[pPageLeft]/20);
             PutLitStr(buf);
-            snprintf(buf, 100, "\\setlength{\\evensidemargin}{%3.2fin}\n", 1 - page.rightMargin);
+            snprintf(buf, 100, "\\setlength{\\evensidemargin}{%dpt}\n", 72 - prefs[pPageRight]/20);
             PutLitStr(buf);
-            snprintf(buf, 100, "\\setlength{\\textwidth}{%3.2fin}\n", page.width - page.leftMargin - page.rightMargin);
+            snprintf(buf, 100, "\\setlength{\\textwidth}{%dpt}\n", 
+                      (prefs[pPageWidth] - prefs[pPageLeft] - prefs[pPageRight])/20);
             PutLitStr(buf);
         }
 
         PutLitStr("\\begin{document}\n\n");
-    	wroteBeginDocument = true;
+        wroteBeginDocument = true;
     }
-
 }
 
 /*
@@ -769,8 +720,16 @@ static void InitTextStyle(void)
 
 static int SameTextStyle(void)
 {
-    if (textStyleWritten.fontSize != textStyle.fontSize) return false;
+    if (prefs[pConvertTextSize] && textStyleWritten.fontSize != textStyle.fontSize) return false;
 
+    if (prefs[pConvertColor] && textStyleWritten.foreColor != textStyle.foreColor) return false;
+
+    if (textStyleWritten.superScript != textStyle.superScript) return false;
+
+    if (textStyleWritten.subScript != textStyle.subScript) return false;
+
+    if (!prefs[pConvertTextStyle]) return true;
+    
     if (textStyleWritten.italic != textStyle.italic) return false;
     
     if (textStyleWritten.bold != textStyle.bold)  return false;
@@ -781,12 +740,6 @@ static int SameTextStyle(void)
 
     if (textStyleWritten.dbUnderlined != textStyle.dbUnderlined) return false;
 
-    if (textStyleWritten.superScript != textStyle.superScript) return false;
-
-    if (textStyleWritten.subScript != textStyle.subScript) return false;
-
-    if (requireColorPackage && textStyleWritten.foreColor != textStyle.foreColor) return false;
-    
     return true;
 }
 
@@ -795,10 +748,27 @@ static int SameTextStyle(void)
  */
 static void StopTextStyle(void)
 {
-    if (textStyleWritten.fontSize != normalSize) {
+    if (prefs[pConvertTextSize] && textStyleWritten.fontSize != normalSize) {
         PutLitStr("}");
         textStyleWritten.fontSize=normalSize;
     }
+
+    if (prefs[pConvertColor] && textStyleWritten.foreColor) {
+        PutLitStr("}");
+        textStyleWritten.foreColor=0;
+    }
+
+    if (textStyleWritten.subScript) {
+        PutLitStr("}");
+        textStyleWritten.subScript=false;
+    }
+
+    if (textStyleWritten.superScript) {
+        PutLitStr("}");
+        textStyleWritten.superScript=false;
+    }
+
+    if (!prefs[pConvertTextStyle]) return;
 
     if (textStyleWritten.italic) {
         PutLitStr("}");
@@ -824,21 +794,6 @@ static void StopTextStyle(void)
         PutLitStr("}");
         textStyleWritten.dbUnderlined=false;
     }
-
-    if (textStyleWritten.subScript) {
-        PutLitStr("}");
-        textStyleWritten.subScript=false;
-    }
-
-    if (textStyleWritten.superScript) {
-        PutLitStr("}");
-        textStyleWritten.superScript=false;
-    }
-
-    if (textStyleWritten.foreColor) {
-        PutLitStr("}");
-        textStyleWritten.foreColor=0;
-    }
 }
 
 /*
@@ -849,17 +804,40 @@ static void WriteTextStyle(void)
 {
     char buf[100];
 
-	if (SameTextStyle()) return;
-	
-	StopTextStyle();
-	
-    if (textStyleWritten.fontSize != textStyle.fontSize) {
+    if (SameTextStyle()) return;
+    
+    StopTextStyle();
+    
+    if (prefs[pConvertTextSize] && textStyleWritten.fontSize != textStyle.fontSize) {
         if (textStyle.fontSize != normalSize) {
             snprintf(buf, 100, "{%s ", fontSizeList[textStyle.fontSize]);
             PutLitStr(buf);
         }
         textStyleWritten.fontSize=textStyle.fontSize;
     }
+
+    if (textStyleWritten.superScript != textStyle.superScript) {
+        if (textStyle.superScript)
+            PutLitStr("\\textsuperscript{");
+        textStyleWritten.superScript=textStyle.superScript;
+    }
+
+    if (textStyleWritten.subScript != textStyle.subScript) {
+        if (textStyle.subScript)
+            PutLitStr("\\textsubscript{");
+        textStyleWritten.subScript=textStyle.subScript;
+        requireFixLtx2ePackage = true;
+    }
+
+    if (prefs[pConvertColor] && textStyleWritten.foreColor != textStyle.foreColor) {
+        if (textStyle.foreColor) {
+            snprintf(buf, 100, "{\\color{color%02d} ", textStyle.foreColor);
+            PutLitStr(buf);
+        }
+        textStyleWritten.foreColor=textStyle.foreColor;
+    }
+
+    if (!prefs[pConvertTextStyle]) return;
 
     if (textStyleWritten.italic != textStyle.italic) {
         if (textStyle.italic)
@@ -891,27 +869,6 @@ static void WriteTextStyle(void)
             PutLitStr("\\uuline{");
         requireUlemPackage = true;
         textStyleWritten.dbUnderlined=textStyle.dbUnderlined;
-    }
-
-    if (textStyleWritten.superScript != textStyle.superScript) {
-        if (textStyle.superScript)
-            PutLitStr("\\textsuperscript{");
-        textStyleWritten.superScript=textStyle.superScript;
-    }
-
-    if (textStyleWritten.subScript != textStyle.subScript) {
-        if (textStyle.subScript)
-            PutLitStr("\\textsubscript{");
-        textStyleWritten.subScript=textStyle.subScript;
-        requireFixLtx2ePackage = true;
-    }
-
-    if (requireColorPackage && textStyleWritten.foreColor != textStyle.foreColor) {
-        if (textStyle.foreColor) {
-    		snprintf(buf, 100, "{\\color{color%02d} ", textStyle.foreColor);
-    		PutLitStr(buf);
-        }
-        textStyleWritten.foreColor=textStyle.foreColor;
     }
 }
 
@@ -983,11 +940,11 @@ static void SetTextStyle(void)
     }
 }
 
-static void setParagraphBaseline(void)
+static void setLineSpacing(void)
 {
     char buff[100];
     
-    if (suppressBaseLine) return;
+    if (!prefs[pConvertLineSpacing]) return;
     
     if (paragraphWritten.lineSpacing == paragraph.lineSpacing)
         return;
@@ -1011,17 +968,19 @@ static void NewParagraph(void)
 
     if (insideFootnote || insideTable) return;
 
-    if (paragraph.spaceBefore) {
+    if (prefs[pConvertInterParagraphSpace] && paragraph.spaceBefore) {
         snprintf(buff,100,"\\vspace{%dpt}\n", paragraph.spaceBefore/20);
         PutLitStr(buff);
         paragraph.spaceBefore = 0;
     }
 
-    if (paragraphWritten.headingString != paragraph.headingString) {
-        PutLitStr(paragraph.headingString);
-        paragraphWritten.headingString = paragraph.headingString;
-        suppressLineBreak = true;
-        return;
+    if (prefs[pConvertParagraphStyle]) {
+        if (paragraphWritten.headingString != paragraph.headingString) {
+            PutLitStr(paragraph.headingString);
+            paragraphWritten.headingString = paragraph.headingString;
+            suppressLineBreak = true;
+            return;
+        }
     }
 
     if (paragraphWritten.alignment != paragraph.alignment) {
@@ -1039,17 +998,19 @@ static void NewParagraph(void)
         snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
         if (paragraph.alignment != right && paragraph.alignment != center) {
             PutLitStr(buff);
-        	paragraphWritten.leftIndent = paragraph.leftIndent;
+            paragraphWritten.leftIndent = paragraph.leftIndent;
         }
     }
 
-    if (paragraphWritten.firstIndent != paragraph.firstIndent+paragraph.extraIndent) {
-        snprintf(buff, 100, "\\parindent=%dpt\n", (paragraph.firstIndent+paragraph.extraIndent)/20);
-        if (paragraph.alignment != right && paragraph.alignment != center) {
-            PutLitStr(buff);
-        	paragraphWritten.firstIndent = paragraph.firstIndent+paragraph.extraIndent;
+    if (prefs[pConvertParagraphIndent]) {
+        if (paragraphWritten.firstIndent != paragraph.firstIndent+paragraph.extraIndent) {
+            snprintf(buff, 100, "\\parindent=%dpt\n", (paragraph.firstIndent+paragraph.extraIndent)/20);
+            if (paragraph.alignment != right && paragraph.alignment != center) {
+                PutLitStr(buff);
+                paragraphWritten.firstIndent = paragraph.firstIndent+paragraph.extraIndent;
+            }
+            paragraph.extraIndent=0;
         }
-        paragraph.extraIndent=0;
     }
 
     if (section.cols > 1) {
@@ -1084,7 +1045,7 @@ static void EndParagraph(void)
         return;
     }
 
-    if (paragraphWritten.headingString) {
+    if (prefs[pConvertParagraphStyle] && paragraphWritten.headingString) {
         n = CountCharInString(paragraphWritten.headingString, '{');
         for (i = 0; i < n; i++) PutLitStr("}");
         suppressLineBreak = false;
@@ -1094,7 +1055,7 @@ static void EndParagraph(void)
         return;
     }
 
-    setParagraphBaseline();
+    setLineSpacing();
 
     if (paragraphWritten.alignment != paragraph.alignment) {
 
@@ -1132,7 +1093,7 @@ static void WriteLaTeXHeader(void)
     int i, j;
     boolean preambleFilePresent = true;
 
-    if ((f = RTFOpenLibFile("r2l-head", "r")) == (FILE *) NULL)
+    if ((f = RTFOpenLibFile("r2l-head", "r")) == NULL)
         preambleFilePresent = false;
 
     PutLitStr("%&LaTeX\n");
@@ -1151,11 +1112,11 @@ static void WriteLaTeXHeader(void)
         scanner.scanEscape = "";
         TSSetScanner(&scanner);
 
-        while (fgets(buf, (int) sizeof(buf), f) != (char *) NULL) {
+        while (fgets(buf, (int) sizeof(buf), f) != NULL) {
             if (buf[0] == '#')  /* skip comment lines */
                 continue;
             TSScanInit(buf);
-            if ((item = TSScan()) == (char *) NULL)
+            if ((item = TSScan()) == NULL)
                 continue;       /* skip blank lines */
 
             PutLitStr(item);
@@ -1208,7 +1169,7 @@ static void WriteLaTeXFooter(void)
     /* load required packages */
     if (requireSetspacePackage)
         PutLitStr("\\usepackage{setspace}\n");
-    if (requireColorPackage)
+    if (prefs[pConvertColor])
         PutLitStr("\\usepackage{color}\n");
     if (requireGraphicxPackage)
         PutLitStr("\\usepackage{graphicx}\n");
@@ -1226,13 +1187,6 @@ static void WriteLaTeXFooter(void)
         PutLitStr("\\usepackage{fixltx2e}\n");
     if (requireAmsMathPackage)
         PutLitStr("\\usepackage{amsmath}\n");
-    if (0 || requireUnicodePackage) {
-      /*  PutLitStr("\\usepackage{textgreek}\n");*/
-        PutLitStr("\\usepackage{ucs}\n");
-    }
-    if (0 || requireLatin1Package) {
-        PutLitStr("\\usepackage[T1]{fontenc}\n");
-    }
     if (requireHyperrefPackage) {
         PutLitStr("\\usepackage{hyperref}\n");
     }
@@ -1624,7 +1578,7 @@ static void PrescanTable(void)
     table.rows = 0;
     table.cols = 0;
     insideTable = true;
-    table.cellInfo = (cell *) NULL;
+    table.cellInfo = NULL;
 
     /* Prescan each row until end of the table. */
     while (foundRow) {
@@ -1804,7 +1758,7 @@ static void PrescanTable(void)
         /* correct the vertical cell position for any multicolumn cells */
         if ((cellPtr->y) != 0) {
             cellPtr1 = GetCellInfo(i - 1);
-            if (cellPtr == (cell *) NULL)
+            if (cellPtr == NULL)
                 RTFPanic ("%s: Attempting to access invalid cell at index %d\n", fn, i);
             cellPtr->y = cellPtr1->y + cellPtr1->columnSpan;
         }
@@ -1932,14 +1886,14 @@ static void ProcessTableRow(int rowNum)
         if (RTFCheckCM(rtfControl, rtfTblAttr))
             continue;
 
-		/* token that signals end of the row */
+        /* token that signals end of the row */
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfRow)) {
             if (g_debug_table_writing) fprintf(stderr,"* end of row\n");
-    		suppressLineBreak = false;
+            suppressLineBreak = false;
             return;
         }
 
-		/* token that signals the end of the current cell */
+        /* token that signals the end of the current cell */
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfCell)) {
             (table.cellCount)++;
 
@@ -1953,7 +1907,7 @@ static void ProcessTableRow(int rowNum)
             
             StopTextStyle();
             PutLitStr("}");
-            	
+                
             if (cellPtr->mergePar == first)
                 PutLitChar('}');
 
@@ -1965,8 +1919,8 @@ static void ProcessTableRow(int rowNum)
         if (cellIsEmpty) {
             if (rtfMajor == rtfDestination || rtfMajor ==rtfSpecialChar || rtfClass == rtfText) {
                 if (!firstCellInRow)
-            		PutLitStr(" & ");
-            	
+                    PutLitStr(" & ");
+                
                 WriteCellHeader(table.cellCount);
                 cellPtr = GetCellInfo(table.cellCount);
                 cellIsEmpty = false;
@@ -2148,23 +2102,25 @@ static void ParAttr(void)
             paragraph.headingString = NULL;
             break;
         case rtfStyleNum:
-            if ((stylePtr = RTFGetStyle(rtfParam)) == (RTFStyle *) NULL)
+            if ((stylePtr = RTFGetStyle(rtfParam)) == NULL)
                 break;
-            if (strcmp(stylePtr->rtfSName, "heading 1") == 0) {
-                if (paragraphWritten.headingString) EndParagraph();
-                paragraph.headingString=heading1String;
-                nowBetweenParagraphs = true;
-                DoSectionCleanUp();
-            } else if (strcmp(stylePtr->rtfSName, "heading 2") == 0) {
-                if (paragraphWritten.headingString) EndParagraph();
-                paragraph.headingString=heading2String;
-                nowBetweenParagraphs = true;
-                DoSectionCleanUp();
-            } else if (strcmp(stylePtr->rtfSName, "heading 3") == 0) {
-                if (paragraphWritten.headingString) EndParagraph();
-                paragraph.headingString=heading3String;
-                nowBetweenParagraphs = true;
-                DoSectionCleanUp();
+            if (prefs[pConvertParagraphIndent]) {
+                if (strcmp(stylePtr->rtfSName, "heading 1") == 0) {
+                    if (paragraphWritten.headingString) EndParagraph();
+                    paragraph.headingString=heading1String;
+                    nowBetweenParagraphs = true;
+                    DoSectionCleanUp();
+                } else if (strcmp(stylePtr->rtfSName, "heading 2") == 0) {
+                    if (paragraphWritten.headingString) EndParagraph();
+                    paragraph.headingString=heading2String;
+                    nowBetweenParagraphs = true;
+                    DoSectionCleanUp();
+                } else if (strcmp(stylePtr->rtfSName, "heading 3") == 0) {
+                    if (paragraphWritten.headingString) EndParagraph();
+                    paragraph.headingString=heading3String;
+                    nowBetweenParagraphs = true;
+                    DoSectionCleanUp();
+                }
             }
             break;
         case rtfFirstIndent:
@@ -2226,7 +2182,7 @@ static void ControlClass(void)
         switch (rtfMinor) {
         case rtfAnsiCodePage:
         case rtfFontCodePage:
-            codePage = rtfParam;
+            /* codePage = rtfParam;*/
             break;
         }
         break;
@@ -2417,7 +2373,7 @@ static void ConvertHexPicture(char *pictureType)
     strcpy(dummyBuf, "");
 
     /* get input file name and create corresponding picture file name */
-    if (pictureType == (char *) NULL)
+    if (pictureType == NULL)
         strcpy(pictureType, "unknown");
 
     strcpy(picture.name, RTFGetOutputName());
@@ -2484,7 +2440,7 @@ static void IncludeGraphics(char *pictureType)
 
 
     suffix = strrchr(picture.name, '.');
-    if (suffix != (char *) NULL && strcmp(pictureType, "eps") == 0)
+    if (suffix != NULL && strcmp(pictureType, "eps") == 0)
         strcpy(suffix, ".eps");
     else if (strcmp(pictureType, "pict") == 0) {
 #ifdef PICT2PDF
@@ -2521,61 +2477,32 @@ static void IncludeGraphics(char *pictureType)
     else
         figPtr++;
 
-    if (!(int) preferenceValue[GetPreferenceNum("swpMode")]) {
+    if (!insideTable && !insideFootnote) {
+    
+        EndParagraph();
 
-        if (!insideTable && !insideFootnote) {
+        if (height > 50) 
+            PutLitStr("\\begin{figure}[htbp]");
         
-        	EndParagraph();
-
-            if (height > 50) 
-                PutLitStr("\\begin{figure}[htbp]");
-            
-            if (height > 20)
-                PutLitStr("\n\\begin{center}");
-            
-			snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%2.3fin, height=%2.3fin]{%s}", width / 72, height / 72, figPtr);
+        if (height > 20)
+            PutLitStr("\n\\begin{center}");
+        
+        snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%2.3fin, height=%2.3fin]{%s}", width / 72, height / 72, figPtr);
+        PutLitStr(dummyBuf);
+        
+        if (height > 50) {
+            snprintf(dummyBuf, rtfBufSiz, "\n\\caption{This should be the caption for \\texttt{%s}.}", figPtr);
             PutLitStr(dummyBuf);
-            
-            if (height > 50) {
-                snprintf(dummyBuf, rtfBufSiz, "\n\\caption{This should be the caption for \\texttt{%s}.}", figPtr);
-                PutLitStr(dummyBuf);
-            }
-            
-            if (height > 20)
-                PutLitStr("\n\\end{center}");
-
-            if (height > 50) 
-                PutLitStr("\n\\end{figure}");
-                
-            nowBetweenParagraphs = true;
-
         }
-    } else {                    /* this is for compatibility with Scientific Word */
+        
+        if (height > 20)
+            PutLitStr("\n\\end{center}");
 
-        snprintf(dummyBuf, rtfBufSiz,
-                "\\FRAME{ftbpxFU}{%2.3fpt}{%2.3fpt}{0pt}{}{}{Figure %s}",
-                width, height, figPtr);
-        PutLitStr(dummyBuf);
-        PutLitStr("{");
-        InsertNewLine();
-        snprintf(dummyBuf,rtfBufSiz,
-                "\\special{language \"Scientific Word\";type \"GRAPHIC\";maintain-aspect-ratio TRUE; display \"USEDEF\";valid_file \"T\";");
-        PutLitStr(dummyBuf);
-        InsertNewLine();
-        snprintf(dummyBuf, rtfBufSiz, "height %2.3fpt;width %2.3fpt;depth 0pt;",
-                width, height);
-        PutLitStr(dummyBuf);
-        InsertNewLine();
-        snprintf(dummyBuf,rtfBufSiz,
-                "cropleft \"0\";croptop \"1\";cropright \"1\";cropbottom \"0\";");
-        PutLitStr(dummyBuf);
-        InsertNewLine();
-        snprintf(dummyBuf,rtfBufSiz,
-                "tempfilename '%s';tempfile-properties \"XPNEU\";",
-                figPtr);
-        PutLitStr(dummyBuf);
-        PutLitStr("}}");
-        InsertNewLine();
+        if (height > 50) 
+            PutLitStr("\n\\end{figure}");
+            
+        nowBetweenParagraphs = true;
+
     }
 }
 
@@ -2712,8 +2639,8 @@ static void GetObjectClass(int *groupCounter)
     }
 
 /* do we recognize this object class? */
-    for (i = 0; objectClassList[i] != (char *) NULL; i++) {
-        if (my_strcasestr(object.className, objectClassList[i]) != (char *) NULL) {
+    for (i = 0; objectClassList[i] != NULL; i++) {
+        if (my_strcasestr(object.className, objectClassList[i]) != NULL) {
             object.class = i;
             break;
         }
@@ -2796,7 +2723,7 @@ DecodeOLE(char *objectFileName, char *streamType,
 
     *nativeStream = (unsigned char *) malloc(*size);
 
-    if (*nativeStream == (unsigned char *) NULL) {
+    if (*nativeStream == NULL) {
         RTFMsg("* DecodeOLE: memory allocation failed for native stream!\n");
         cole_fclose(coleFile, &colerrno);
         cole_umount(cfs, NULL);
@@ -3069,7 +2996,7 @@ static void ReadObject(void)
     case EquationClass:
         /* RTFMsg("%s: * equation object '%s', processing...\n", fn, object.className); */
 
-        if ((int) preferenceValue[GetPreferenceNum("convertEquations")])
+        if (prefs[pConvertEquation])
             res = ReadEquation(&groupCounter);
         else
             res = false;
@@ -3335,7 +3262,6 @@ static void ReadUnicode(void)
     if (0xC0 <= rtfParam && rtfParam <=0xFF) {
         PutLitChar(rtfParam);
         RTFGetToken();
-        requireLatin1Package = true;
         return;
     }
 
@@ -3362,7 +3288,6 @@ static void ReadUnicode(void)
     if (0) fprintf(stderr,"unicode --- %s!\n",unitext);
     PutLitStr(unitext);
     */
-    requireUnicodePackage = true;
     RTFGetToken();
 }
 
@@ -3516,7 +3441,7 @@ static void ReadFieldInst(void)
 /*    RTFMsg("%s: FIELD type is %s\n",fn,buf);*/
 
     if (0 && strcmp(buf, "HYPERLINK") == 0 )
-        if (!(int) preferenceValue[GetPreferenceNum("ignoreHypertext")]) {
+        if (prefs[pConvertHypertext]) {
             ReadHyperlink();
             return;
         }
@@ -3558,9 +3483,7 @@ int BeginLaTeXFile(void)
     /* set some globals */
 
     RTFSetDefaultFont(-1);
-    codePage = 0;
     nowBetweenParagraphs = true;
-    seenLeftDoubleQuotes = false;
     suppressLineBreak = false;
     insideFootnote = false;
     insideHyperlink = false;
@@ -3571,12 +3494,6 @@ int BeginLaTeXFile(void)
     section.newStyle = false;
     section.cols = 1;
 
-    if (preferenceValue[GetPreferenceNum("ignoreColor")])
-        requireColorPackage = false;
-    else
-        requireColorPackage = true;
-        
-    requireColorPackage = true;
     requireSetspacePackage = false;
     requireTablePackage = false;
     requireGraphicxPackage = false;
@@ -3587,8 +3504,6 @@ int BeginLaTeXFile(void)
     requireHyperrefPackage = false;
     requireMultirowPackage = false;
     requireAmsMathPackage = false;
-    requireUnicodePackage = false;
-    requireLatin1Package = false;
 
     picture.count = 0;
     picture.type = unknownPict;
@@ -3596,7 +3511,7 @@ int BeginLaTeXFile(void)
     object.class = unknownObjClass;
     object.word97 = 0;
     table.cellCount = 0;
-    table.cellInfo = (cell *) NULL;
+    table.cellInfo = NULL;
     table.cellMergePar = none;
     table.multiCol = false;
     table.multiRow = false;
@@ -3632,57 +3547,27 @@ int BeginLaTeXFile(void)
 
     /* use r2l-map if present */
     /* defaults */
-    documentclassString = "{article}";
-    boldString = "\\textbf{";
-    noBoldString = "\\textmd{";
-    italicString = "\\textit{";
-    noItalicString = "\\textup{";
-    underlineString = "{\\underline {";
-    smallcapsString = "\\textsc{";
-    heading1String = "\\section*{";
-    heading2String = "\\subsection*{";
-    heading3String = "\\subsubsection*{";
-    tableString = "longtable";
 
     if (r2lMapPresent) {
+        int itemNumber;
         itemNumber = R2LItem("documentclass");
-        if (r2lMap[itemNumber] != (char *) NULL)
+        if (r2lMap[itemNumber] != NULL)
             documentclassString = r2lMap[itemNumber];
-        itemNumber = R2LItem("bold");
-        if (r2lMap[itemNumber] != (char *) NULL)
-            boldString = r2lMap[itemNumber];
-        itemNumber = R2LItem("nobold");
-        if (r2lMap[itemNumber] != (char *) NULL)
-            noBoldString = r2lMap[itemNumber];
-        itemNumber = R2LItem("italic");
-        if (r2lMap[itemNumber] != (char *) NULL)
-            italicString = r2lMap[itemNumber];
-        itemNumber = R2LItem("noitalic");
-        if (r2lMap[itemNumber] != (char *) NULL)
-            noItalicString = r2lMap[itemNumber];
-        itemNumber = R2LItem("underline");
-        if (r2lMap[itemNumber] != (char *) NULL)
-            underlineString = r2lMap[itemNumber];
-        itemNumber = R2LItem("smallcaps");
-        if (r2lMap[itemNumber] != (char *) NULL)
-            smallcapsString = r2lMap[itemNumber];
         itemNumber = R2LItem("heading1");
-        if (r2lMap[itemNumber] != (char *) NULL)
+        if (r2lMap[itemNumber] != NULL)
             heading1String = r2lMap[itemNumber];
         itemNumber = R2LItem("heading2");
-        if (r2lMap[itemNumber] != (char *) NULL)
+        if (r2lMap[itemNumber] != NULL)
             heading2String = r2lMap[itemNumber];
         itemNumber = R2LItem("heading3");
-        if (r2lMap[itemNumber] != (char *) NULL)
+        if (r2lMap[itemNumber] != NULL)
             heading3String = r2lMap[itemNumber];
         itemNumber = R2LItem("table");
-        if (r2lMap[itemNumber] != (char *) NULL)
+        if (r2lMap[itemNumber] != NULL)
             tableString = r2lMap[itemNumber];
     }
 
-    /* write LaTeX header */
     WriteLaTeXHeader();
-
     return (1);
 }
 

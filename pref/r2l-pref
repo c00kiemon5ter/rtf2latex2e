@@ -16,79 +16,62 @@
 
 outputMapFile	latex-encoding
 
-# ignore ruler settings: this will cause rtf2latex2e to skip all visual
-# page and paragraph formatting. Set to true to enable, false to disable.
+# Default page width in inches.  US Letter is 8.5, A4 paper is 8.3 
+# ignored if convertPageSize is false
+pageWidth	8.5
 
-ignoreRulerSettings		true
+# Default left margin of page in inches, ignored if convertPageSize is false
+pageLeft	1.0
 
-# set paper width in inches.
-# Currently set for US Letter.
+# Default right margin of page in inches, ignored if convertPageSize is false
+pageRight	1.0
 
-paperWidth		8.5
+# use above sizes to set the extent of the LaTeX page
+convertPageSize	false
 
-# set left margin from left border of paper in inches. 
-# Currently set for US Letter. Ignored if ignoreRulerSettings is true.
+# translate color text formatting.  This is annoying because the entire RTF color table
+# always gets written to the LaTeX file and therefore inserts a bunch of noise at
+# in the preamble
+convertColor	false
 
-leftMargin		1.0
+# convert RTF heading 1, 2, & 3. For example, 'heading 2' --> \subsection{...}
+convertParagraphStyle	true
 
-# set right margin from right border of paper in inches. 
-# Currently set for US Letter. Ignored if ignoreRulerSettings is true.
+# convert paragraph indenting using \parindent
+# this adds some extra markup, but does a decent job of making sure that
+# non-indented and multiply-indented paragraphs get indented properly
+convertParagraphIndent	true
 
-rightMargin		1.0
+# convert space between paragraphs using \vspace{} 
+convertInterParagraphSpace	false
 
-# set flag to ignore color information.
+# convert line spacing using \baselineskip ... eventually will use \setspace{}
+convertLineSpacing	false
 
-ignoreColor		true
+# convert changes in the font size.  This is not unreasonable because
+# LaTeX often makes reasonable assumptions about the font size.
+# and it is a nuisance if every paragraph is bracketed with {\Large ... }
+# because the RTF document was written in 14 point font.
+convertTextSize	false
 
-# set flag to ignore paragraph alignment.
+#convert text styles.  includes bold, italics, smallcaps, underline, doubleunderline
+convertTextStyle	true
 
-ignoreParagraphAlignment		false
+#convert hypertext links using url package
+convertHypertext	false
 
-ignoreTextStyle		false
+# convert embedded Equation Editor objects. If false or if the conversion 
+# fails, the image associated with the equation inserted in the latex file.
+convertEquation	true
 
-# set flag to ignore spacing.
-
-ignoreSpacing		false
-
-# set flag to ignore hypertext.
-
-ignoreHypertext		false
-
-# set flag convert equations.
-
-# If true, rtf2latex2e will try to convert embedded Equation Editor objects.
-# If false or if the conversion fails, the equation will be read as an image.
-
-convertEquations		true
+# when converting an RTF file that contains embedded images, these all must
+# be extracted into the local directory.  This can create a huge number of
+# files in the current directory.  If this option is true, then a new directory
+# called 'file-latex' is created and the converted images and the converted
+# latex file are placed inside
+convertAsDirectory false
 
 # Macintosh only
-# Convert embedded macintosh PICT files to EPS files
-# This requires Apple's Laserwriter driver to be the current
-# printer driver
-
-pict2eps_translate	false
-
-# The fonts to include in the EPS file
-#	1	(no fonts)
-# 	2  	(all fonts)
-#	3	(all but standard 13)
-# 	4  	(all but those in the selected printer)
-
-pict2eps_fonts	3
-
-# The preview to include in the EPS file
-#	2	(bitmap preview)
-#	3	(pict preview)
-# 	4  	(no preview)
-
-pict2eps_preview	3
-
-# Creator for output TeX file
-# Examples are , eg. OTEX for OzTeX, *TEX for Textures, R*ch for BBEdit, and ALFA for Alpha.
-
-fileCreator	OTEX
-
-# Generate LateX for Scientific Workplace compatibility.
-
-swpMode	false
+# Convert embedded macintosh PICT files to PDF files
+convertPict	true
 

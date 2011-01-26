@@ -2,15 +2,11 @@ Security
    Incorporate all the SafeBuf stuff
 
 Improvements
-   handle space directives in equations
-   improve paragraph breaking
    clean up table formatting
    handle latin1 characters between 0xA0 and 0xBF directly
 
 Other
-   automatically create directory for entire translation
    document CLI options
-   automatically append .rtf?
    
 Packaging
    Revise README

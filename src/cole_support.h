@@ -83,8 +83,8 @@ void hexdump(void *ptr, void *zero, uint32_t length, char *msg);
   }
 #define report_bug(prog)                                                 \
   {                                                                      \
-    fprintf (stderr, #prog": A bug have been found: %s:%d\n"#prog        \
-             ":Please, download a most recent version and try again\n",  \
+    fprintf (stderr, #prog": Yikes! A bug have been found: %s:%d\n"#prog        \
+             ":This is in the OLE code so a fix is unlikely ;-( \n",  \
              __FILE__, __LINE__);                                        \
   }
 #define assert_return(prog,t,retval)                                  \

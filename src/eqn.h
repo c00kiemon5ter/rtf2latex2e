@@ -5,6 +5,17 @@
 # define DISPLAY_EQUATION 0
 # define INLINE_EQUATION 1
 
+struct EQN_OLE_FILE_HDR {
+    uint16_t   cbHdr;     /* length of header, sizeof(EQNOLEFILEHDR) = 28 bytes */
+    uint32_t   version;   /* hiword = 2, loword = 0 */
+    uint16_t   format;
+    uint32_t   size;
+    uint32_t   reserved1;
+    uint32_t   reserved2;
+    uint32_t   reserved3;
+    uint32_t   reserved4;
+};
+
 typedef struct {
     int mathattr;
     int do_lookup;

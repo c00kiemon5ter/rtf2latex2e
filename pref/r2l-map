@@ -19,18 +19,8 @@
 # Parameter		Value					Default
 
 documentclass	{article}				# {article}
-bold			\textbf{				# \textbf{
-nobold			\textmd{				# \textmd{
-italic			\textit{				# \textit{
-noitalic		\textup{				# \textup{
-underline		"{\underline {"			# "{\underline {"
-smallcaps		\textsc{				# \textsc{
 heading1		\section*{				# \section*{
 heading2		\subsection*{			# \subsection*{
 heading3		\subsubsection*{		# \subsubsection*{
-# additional mappings so the rtf2latex2e outputs LateX code that
-# Scientific Workplace can digest.
 table			longtable				# longtable (use tabular as alternative)
-
-
 
