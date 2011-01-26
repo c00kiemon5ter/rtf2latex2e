@@ -18,40 +18,40 @@
  */
 
 
-# define	rtf2latex2e_version "1.2"
+# define    rtf2latex2e_version "1.2"
 
-# define	WRAP_LIMIT	120
-# define	PACKAGES	9
+# define    WRAP_LIMIT  120
+# define    PACKAGES    9
 
 # define    UNINITIALIZED -99
 
 #ifndef boolean
 typedef unsigned char boolean;
 #endif
-# define	New(t)	((t *) RTFAlloc (sizeof (t)))
-# define	Swap(a, b) {int tmp;\
-						tmp = a;\
-						a = b;\
-						b = tmp;}
+# define    New(t)  ((t *) RTFAlloc (sizeof (t)))
+# define    Swap(a, b) {int tmp;\
+                        tmp = a;\
+                        a = b;\
+                        b = tmp;}
 
 #if defined(UNIX)
-	# define	PATH_SEP	'/'
+    # define    PATH_SEP    '/'
     # define    ENV_SEP     ':'
 #else 
-	# define	PATH_SEP	'\\'
+    # define    PATH_SEP    '\\'
     # define    ENV_SEP     ';'
 #endif
 
 #ifndef false
-	#define false 0
+    #define false 0
 #endif
 
 #ifndef true
-	#define true 1
+    #define true 1
 #endif
 
-void	WriterInit (void);
-int	BeginLaTeXFile (void);
+void    WriterInit (void);
+int BeginLaTeXFile (void);
 void EndLaTeXFile (void);
 
 void RTFSetOutputStream (FILE *ofp);
@@ -62,74 +62,46 @@ enum word97ObjectClass {unknownWord97Object, word97Object, standardObject, word9
 enum {left, center, right};
 enum {singleSpace, oneAndAHalfSpace, doubleSpace};
 typedef enum {tinySize, scriptSize, footNoteSize, smallSize, normalSize, 
-			largeSize, LargeSize, LARGESize, giganticSize, GiganticSize} fontSize;
+            largeSize, LargeSize, LARGESize, giganticSize, GiganticSize} fontSize;
 enum cellMergeFlag {none, first, previous};
 
 typedef struct 
 {
-	int	count;
-	int	type;
-	int32_t	width;
-	int32_t	height;
-	int32_t	goalWidth;
-	int32_t	goalHeight;
-	int32_t	scaleX;
-	int32_t	scaleY;
-	int		llx;
-	int		lly;
-	int		urx;
-	int		ury;
-	char	name[rtfBufSiz];
+    int count;
+    int type;
+    int32_t width;
+    int32_t height;
+    int32_t goalWidth;
+    int32_t goalHeight;
+    int32_t scaleX;
+    int32_t scaleY;
+    int     llx;
+    int     lly;
+    int     urx;
+    int     ury;
+    char    name[rtfBufSiz];
 } pictureStruct;
 
 typedef struct
 {
-	int count;
+    int count;
 } equationStruct;
 
 
 typedef struct
 {
-	boolean	newStyle;
-	int		boldBraceLevel;
-	int		noBoldBraceLevel;
-	boolean	wroteBold;
-	boolean	wroteNoBold;
-	int		italicBraceLevel;
-	int		noItalicBraceLevel;
-	boolean	wroteItalic;
-	boolean	wroteNoItalic;
-	int		underlinedBraceLevel;
-	int		noUnderlinedBraceLevel;
-	boolean	wroteUnderlined;
-	int		dbUnderlinedBraceLevel;
-	int		noDbUnderlinedBraceLevel;
-	boolean	wroteDbUnderlined;
-	int		shadowedBraceLevel;
-	int		noShadowedBraceLevel;
-	boolean	wroteShadowed;
-	int		allCapsBraceLevel;
-	boolean	wroteAllcaps;
-	int		smallCapsBraceLevel;
-	boolean	wroteSmallCaps;
-	long	foreColor;
-	int		foreColorBraceLevel;
-	boolean	wroteForeColor;
-	long	backColor;
-	int		backColorBraceLevel;
-	boolean	wroteBackColor;
-	int		subScriptBraceLevel;
-	int		noSubScriptBraceLevel;
-	boolean	wroteSubScript;
-	boolean	wroteNoSubScript;
-	int		superScriptBraceLevel;
-	int		noSuperScriptBraceLevel;
-	boolean wroteSuperScript;
-	boolean wroteNoSuperScript;
-	long	fontSize;
-	int		fontSizeBraceLevel;
-	boolean	wroteFontSize;
-	boolean	open;
+    int bold;
+    int italic;
+    int underlined;
+    int dbUnderlined;
+    int shadowed;
+    int allCaps;
+    int smallCaps;
+    int subScript;
+    int superScript;
+    int fontSize;
+    long foreColor;
+    long backColor;
 } textStyleStruct;
 
 typedef struct
@@ -152,34 +124,34 @@ typedef struct
 
 typedef struct cell
 {
-	int	x;
-	int	y;
-	int	left;
-	int	right;
-	double	width;
-	int		columnSpan;
-	int		index;
-	int		mergePar;	
-	long	textColor;
-	boolean	textBold;
-	boolean	textItalic;
-	boolean	textUnderlined;
-	struct cell	*nextCell;
+    int x;
+    int y;
+    int left;
+    int right;
+    double  width;
+    int     columnSpan;
+    int     index;
+    int     mergePar;   
+    long    textColor;
+    boolean textBold;
+    boolean textItalic;
+    boolean textUnderlined;
+    struct cell *nextCell;
 } cell;
 
 typedef struct
 {
-	boolean	inside;
-	int		rows;
-	int		cols;
-	int		cellCount;
-	int 	leftEdge;
-	cell	*cellInfo;
-	int		rowInfo[rtfBufSiz];
-	int  	*columnBorders;
-	int		cellMergePar;
-	int 	previousColumnValue;
-	boolean	newRowDef;
+    boolean inside;
+    int     rows;
+    int     cols;
+    int     cellCount;
+    int     leftEdge;
+    cell    *cellInfo;
+    int     rowInfo[rtfBufSiz];
+    int     *columnBorders;
+    int     cellMergePar;
+    int     previousColumnValue;
+    boolean newRowDef;
     boolean multiCol;
     boolean multiRow;
 } tableStruct;

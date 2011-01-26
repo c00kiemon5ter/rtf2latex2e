@@ -12,7 +12,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -36,7 +36,7 @@ char outputMapName[255];
 # define        MAX_BLANK_LINES       2
 # define        MATH_NONE_MODE        0
 # define        MATH_INLINE_MODE      1
-# define        MATH_DISPLAY_MODE     2 
+# define        MATH_DISPLAY_MODE     2
 
 # define        PREVIOUS_COLUMN_VALUE -10000
 char texMapQualifier[rtfBufSiz];
@@ -53,7 +53,7 @@ extern FILE *ifp, *ofp;
 # define SAVE_LEVELS    0
 # define        NumberOfPreferences 16
 
-const char *preferenceList[] = { 
+const char *preferenceList[] = {
     "outputMapFile",
     "ignoreRulerSettings",
     "paperWidth",
@@ -72,7 +72,7 @@ const char *preferenceList[] = {
     "swpMode"
 };
 
-const char *objectClassList[] = { 
+const char *objectClassList[] = {
     "Unknown",
     "Equation",
     "Word.Picture",
@@ -81,18 +81,18 @@ const char *objectClassList[] = {
 };
 
 const char *justificationList[] = {
-    "\\raggedright", 
-    "\\centering", 
-    "\\raggedleft" 
+    "\\raggedright",
+    "\\centering",
+    "\\raggedleft"
 };
 
-const char *environmentList[] = { 
-    "flushleft", 
-    "center", 
-    "flushright" 
+const char *environmentList[] = {
+    "flushleft",
+    "center",
+    "flushright"
 };
 
-const char *fontSizeList[] = { 
+const char *fontSizeList[] = {
     "\\tiny",
     "\\scriptsize",
     "\\footnotesize",
@@ -105,7 +105,7 @@ const char *fontSizeList[] = {
     "\\Huge"
 };
 
-const char *r2lList[] = { 
+const char *r2lList[] = {
     "documentclass",
     "bold",
     "nobold",
@@ -162,11 +162,13 @@ static boolean requireGraphicxPackage;
 static boolean requireAmsSymbPackage;
 static boolean requireMultiColPackage;
 static boolean requireUlemPackage;
+static boolean requireFixLtx2ePackage;
 static boolean requireHyperrefPackage;
 static boolean requireAmsMathPackage;
 static boolean requireUnicodePackage;
 static boolean requireLatin1Package;
 static size_t packagePos;
+static boolean insideTable;
 static boolean insideFootnote;
 static boolean insideHyperlink;
 
@@ -185,10 +187,10 @@ struct EQN_OLE_FILE_HDR {
     uint32_t   version;   /* hiword = 2, loword = 0 */
     uint16_t   format;
     uint32_t   size;
-    uint32_t   reserved1; 
-    uint32_t   reserved2; 
-    uint32_t   reserved3; 
-    uint32_t   reserved4; 
+    uint32_t   reserved1;
+    uint32_t   reserved2;
+    uint32_t   reserved3;
+    uint32_t   reserved4;
 };
 
 static int codePage;
@@ -301,7 +303,7 @@ static short ReadR2LMap(void)
     scanner.scanEscape = scanEscape;
     TSSetScanner(&scanner);
     fclose(f);
-/*      
+/*
         for (i = 0; i < NumberOfR2LMappings; i++)
                 printf ("%s\n", r2lMap[i]);
 */
@@ -317,19 +319,19 @@ void WriterInit(void)
     /* read input RTF character map files */
     if (RTFReadCharSetMap("rtf-encoding.cp1252", rtfCS1252) == 0)
         RTFPanic("Cannot read character set map file cp1252.map for code page 1252!\n");
-        
+
     if (RTFReadCharSetMap("rtf-encoding.cp1250", rtfCS1250) == 0)
         RTFPanic("Cannot read character set map file cp1250.map for code page 1250!\n");
-        
+
     if (RTFReadCharSetMap("rtf-encoding.cp1254", rtfCS1254) == 0)
         RTFPanic("Cannot read character set map file cp1254.map for code page 1254!\n");
-        
+
     if (RTFReadCharSetMap("rtf-encoding.mac", rtfCSMac) == 0)
         RTFPanic("Cannot read character set map file applemac.map!\n");
-        
+
     if (RTFReadCharSetMap("rtf-encoding.cp437", rtfCS437) == 0)
         RTFPanic("Cannot read character set map file cp437.map for code page 437!\n");
-        
+
     if (RTFReadCharSetMap("rtf-encoding.cp850", rtfCS850) == 0)
         RTFPanic("Cannot read character set map file cp850.map for code page 850!\n");
 
@@ -417,17 +419,17 @@ short ReadPrefFile(char *file)
     while (fgets(buf, (int) sizeof(buf), f) != (char *) NULL) {
         if (buf[0] == '#')      /* skip comment lines */
             continue;
-            
+
         TSScanInit(buf);
-        
+
         if ((name = TSScan()) == (char *) NULL)
             continue;           /* skip blank lines */
-            
+
         if ((whichPref = GetPreferenceNum(name)) < 0) {
             RTFMsg("%s: unkown preference: %s\n", fn, name);
             continue;
         }
-        
+
         if ((seq = TSScan()) == (char *) NULL || !IsValidPref(name, seq)) {
             RTFMsg("%s: malformed preference setting for %s\n", fn, name);
             continue;
@@ -459,10 +461,10 @@ short ReadPrefFile(char *file)
     /* set the preferences here to values in file or to default */
     if ((page.width = preferenceValue[GetPreferenceNum("paperWidth")]) == 0)
         page.width = 8.5;
-        
+
     if ((page.leftMargin = preferenceValue[GetPreferenceNum("leftMargin")]) == 0)
         page.leftMargin = 1.0;
-        
+
     if ((page.rightMargin = preferenceValue[GetPreferenceNum("rightMargin")]) == 0)
         page.rightMargin = 1.0;
 
@@ -478,12 +480,12 @@ static void PutIntAsUtf8(int x)
         wrapCount++;
         return;
     }
-    
+
     if (x < 0xA0) {
         fprintf(stderr, "there should be no such character c='%c'=0x%02x\n",(char) x,x);
         return;
     }
-    
+
     if (x<0x07FF) {
         unsigned char d, e;
         d = 0xC0 + (x & 0x07C0)/64;
@@ -493,7 +495,7 @@ static void PutIntAsUtf8(int x)
         wrapCount+=2;
         return;
     }
-    
+
     if (x<0xFFFF) {
         unsigned char c, d, e;
         c = 0xE0 + (x & 0xF000)/4096;
@@ -505,39 +507,39 @@ static void PutIntAsUtf8(int x)
         wrapCount+=3;
         return;
     }
-    
+
 }
 
-/* some environments fail if there is a blank line in 
+/* some environments fail if there is a blank line in
    the argument ... e.g., \section{} which sets suppressLineBreak
    esthetically, only emit two linefeeds at a time
 */
-   
+
 static void PutLitChar(int c)
 {
     static int lf_in_succession = 0;
     static int no_chars_in_row = true;
-    
+
     if (c != '\n') {
         lf_in_succession = 0;
         if (c != ' ') no_chars_in_row=false;
         PutIntAsUtf8(c & 0x00ff);
         return;
     }
-    
+
     if (suppressLineBreak && no_chars_in_row) {
         lf_in_succession = 0;
         PutIntAsUtf8((int) ' ');
         return;
-    } 
-    
+    }
+
     lf_in_succession++;
     no_chars_in_row = true;
-    if (lf_in_succession > 2) 
+    if (lf_in_succession > 2)
         return;
-    
+
     wrapCount = 0;
-    
+
     PutIntAsUtf8(c & 0x00ff);
 }
 
@@ -565,43 +567,9 @@ static void InsertNewLine(void)
     PutLitChar('\n');
 }
 
-static void EnsureInlineMathMode(void)
-{
-    switch (mathMode) {
-    case MATH_INLINE_MODE:
-        break;
-        
-    case MATH_DISPLAY_MODE:
-        break;
-   
-    case MATH_NONE_MODE:
-        PutLitStr("$ ");
-        mathMode = MATH_INLINE_MODE;
-    }
-}
-
-static void EnsureNoMathMode(void)
-{
-    switch (mathMode) {
-    case MATH_INLINE_MODE:
-        PutLitStr(" $ ");
-        mathMode = MATH_NONE_MODE;
-        break;
-        
-    case MATH_DISPLAY_MODE:
-        PutLitStr("$$\n");
-        mathMode = MATH_NONE_MODE;
-        break;
-   
-    case MATH_NONE_MODE:
-        break;
-    }
-}
-
-
-/* 
- * This function reads colors from the color table and defines them in 
- * LaTeX format to be included in the 
+/*
+ * This function reads colors from the color table and defines them in
+ * LaTeX format to be included in the
  * LaTeX preamble. This is done after the color table has been read (see above).
 */
 static void DefineColors(void)
@@ -624,7 +592,7 @@ static void DefineColors(void)
     }
 }
 
-/* 
+/*
  * a useful diagnostic function to examine the token just read.
  */
 void ExamineToken(void)
@@ -639,7 +607,7 @@ void ExamineToken(void)
     case rtfEOF: printf(" (rtfEOF)\n"); break;
     default: printf(" (not one of the basic five)\n"); break;
     }
-    
+
     printf("* Major is %3d", rtfMajor);
     if (rtfClass == rtfText) {
         printf(" raw='%c' \n", rtfMajor);
@@ -693,7 +661,7 @@ void ExamineToken(void)
 static uint32_t CountCharInString(char *theString, char theChar)
 {
     uint32_t i, count, length;
-    
+
     count = 0;
     length = (uint32_t) strlen(theString);
 
@@ -734,14 +702,14 @@ int stdCode;
         PutLitStr(oStr);
         return;
     }
-    
+
     if (oStr[0] == '0' && (oStr[1] == 'x' || oStr[1] == 'X')) {
         int x = RTFHexStrToInt(oStr);
         /*fprintf(stderr,"hex string = '%s' = %d\n",oStr,x);*/
         PutIntAsUtf8(x);
         return;
     }
-        
+
     PutLitStr(oStr);
 }
 
@@ -753,13 +721,13 @@ char buf[rtfBufSiz];
 
 
         snprintf(buf, rtfBufSiz, "{\\color{color%ld} ", (int)rtfParam);
-        PutLitStr (buf);        
+        PutLitStr (buf);
 
 }
 */
 
-/* 
- * make sure we write this all important stuff. This routine is called 
+/*
+ * make sure we write this all important stuff. This routine is called
  * whenever something is written to the output file.
  */
 static void CheckForBeginDocument(void)
@@ -788,88 +756,12 @@ static void CheckForBeginDocument(void)
     wroteBeginDocument = true;
 }
 
-
-static void SetBraceLevels(int flag)
-{
-    static textStyleStruct restoreStyle;
-
-    if (flag == SAVE_LEVELS) {
-        restoreStyle = textStyle;
-        return;
-    }
-    
- //   textStyle = restoreStyle;
-
-    textStyle.boldBraceLevel = restoreStyle.boldBraceLevel;
-    textStyle.italicBraceLevel = restoreStyle.italicBraceLevel;
-    textStyle.underlinedBraceLevel = restoreStyle.underlinedBraceLevel;
-    textStyle.foreColorBraceLevel = restoreStyle.foreColorBraceLevel;
-    textStyle.backColorBraceLevel = restoreStyle.backColorBraceLevel;
-    textStyle.subScriptBraceLevel = restoreStyle.subScriptBraceLevel;
-    textStyle.superScriptBraceLevel = restoreStyle.superScriptBraceLevel;
-    textStyle.fontSizeBraceLevel = restoreStyle.fontSizeBraceLevel;
-    textStyle.noBoldBraceLevel = restoreStyle.noBoldBraceLevel;
-    textStyle.noItalicBraceLevel = restoreStyle.noItalicBraceLevel;
-    textStyle.fontSize = restoreStyle.fontSize;
-}
-
-/*
- * This function initializes the text style. Pretty much self-explanatory.
- */
-static void InitializeTextStyle(void)
-{
-    textStyle.foreColor = -1;
-    textStyle.backColor = -1;
-    textStyle.fontSize = normalSize;
-    textStyle.newStyle = false;
-    textStyle.wroteBold = false;
-    textStyle.wroteNoBold = false;
-    textStyle.wroteItalic = false;
-    textStyle.wroteNoItalic = false;
-    textStyle.wroteUnderlined = false;
-    textStyle.wroteDbUnderlined = false;
-    textStyle.wroteShadowed = false;
-    textStyle.wroteAllcaps = false;
-    textStyle.wroteSmallCaps = false;
-    textStyle.wroteForeColor = false;
-    textStyle.wroteFontSize = false;
-    textStyle.wroteSubScript = false;
-    textStyle.wroteNoSubScript = false;
-    textStyle.wroteSuperScript = false;
-    textStyle.wroteNoSuperScript = false;
-
-    textStyle.boldBraceLevel = 0;
-    textStyle.noBoldBraceLevel = 0;
-    textStyle.italicBraceLevel = 0;
-    textStyle.noItalicBraceLevel = 0;
-    textStyle.underlinedBraceLevel = 0;
-    textStyle.noUnderlinedBraceLevel = 0;
-    textStyle.dbUnderlinedBraceLevel = 0;
-    textStyle.noDbUnderlinedBraceLevel = 0;
-    textStyle.foreColorBraceLevel = 0;
-    textStyle.backColorBraceLevel = 0;
-    textStyle.subScriptBraceLevel = 0;
-    textStyle.noSubScriptBraceLevel = 0;
-    textStyle.superScriptBraceLevel = 0;
-    textStyle.noSuperScriptBraceLevel = 0;
-    textStyle.fontSizeBraceLevel = 0;
-    textStyle.allCapsBraceLevel = 0;
-    textStyle.smallCapsBraceLevel = 0;
-    textStyle.open = false;
-
-    paragraph.firstIndent = 0;
-    paragraph.leftIndent = 0;
-    paragraph.rightIndent = 0;
-    paragraph.headingString = NULL;
-
-}
-
 static void setParagraphBaseline(void)
 {
     char buff[100];
-    if (paragraphWritten.lineSpacing == paragraph.lineSpacing) 
+    if (paragraphWritten.lineSpacing == paragraph.lineSpacing)
         return;
-        
+
     snprintf(buff, 100, "\\baselineskip=%dpt\n", abs(paragraph.lineSpacing)/20);
     PutLitStr(buff);
 
@@ -881,47 +773,49 @@ static void setParagraphBaseline(void)
     paragraphWritten.lineSpacing = paragraph.lineSpacing;
 }
 
-static void StartNewParagraph(void)
+static void NewParagraph(void)
 {
     char buff[100];
-        
+
     nowBetweenParagraphs = false;
 
-    if (insideFootnote) return;
+    if (insideFootnote || insideTable) return;
 
     if (paragraph.spaceBefore) {
         snprintf(buff,100,"\\vspace{%dpt}\n", paragraph.spaceBefore/20);
         PutLitStr(buff);
         paragraph.spaceBefore = 0;
     }
-    
+
     if (paragraphWritten.headingString != paragraph.headingString) {
-        PutLitStr(paragraph.headingString);        
+        PutLitStr(paragraph.headingString);
         paragraphWritten.headingString = paragraph.headingString;
         suppressLineBreak = true;
         return;
-    } 
+    }
 
     if (paragraphWritten.alignment != paragraph.alignment) {
-        
+
         if (paragraph.alignment == right)
             PutLitStr("\\begin{flushright}\n");
 
         if (paragraph.alignment == center)
             PutLitStr("\\begin{center}\n");
-        
+
         paragraphWritten.alignment = paragraph.alignment;
     }
 
     if (paragraphWritten.leftIndent != paragraph.leftIndent) {
         snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
-        PutLitStr(buff);
+        if (paragraph.alignment != right && paragraph.alignment != center)
+            PutLitStr(buff);
         paragraphWritten.leftIndent = paragraph.leftIndent;
     }
-    
+
     if (paragraphWritten.firstIndent != paragraph.firstIndent+paragraph.extraIndent) {
         snprintf(buff, 100, "\\parindent=%dpt\n", (paragraph.firstIndent+paragraph.extraIndent)/20);
-        PutLitStr(buff);
+        if (paragraph.alignment != right && paragraph.alignment != center)
+            PutLitStr(buff);
         paragraphWritten.firstIndent = paragraph.firstIndent+paragraph.extraIndent;
         paragraph.extraIndent=0;
     }
@@ -934,28 +828,255 @@ static void StartNewParagraph(void)
 
 }
 
+/*
+ * This function initializes the text style.
+ */
+static void InitTextStyle(void)
+{
+    textStyle.fontSize = normalSize;
+
+    textStyle.bold = 0;
+    textStyle.italic = 0;
+    textStyle.underlined = 0;
+    textStyle.dbUnderlined = 0;
+    textStyle.smallCaps = 0;
+    textStyle.subScript = 0;
+    textStyle.superScript = 0;
+
+    textStyle.allCaps = 0;
+    textStyle.foreColor = -1;
+    textStyle.backColor = -1;
+
+    paragraph.firstIndent = 0;
+    paragraph.leftIndent = 0;
+    paragraph.rightIndent = 0;
+    paragraph.headingString = NULL;
+}
+
+/*
+ * This function ends all text styles
+ */
+static void StopTextStyle(void)
+{
+    if (textStyleWritten.fontSize != normalSize) {
+        PutLitStr("}");
+        textStyleWritten.fontSize=normalSize;
+    }
+
+    if (textStyleWritten.italic) {
+        PutLitStr("}");
+        textStyleWritten.italic=false;
+    }
+
+    if (textStyleWritten.bold) {
+        PutLitStr("}");
+        textStyleWritten.bold=false;
+    }
+
+    if (textStyleWritten.smallCaps) {
+        PutLitStr("}");
+        textStyleWritten.smallCaps=false;
+    }
+
+    if (textStyleWritten.underlined) {
+        PutLitStr("}");
+        textStyleWritten.underlined=false;
+    }
+
+    if (textStyleWritten.dbUnderlined) {
+        PutLitStr("}");
+        textStyleWritten.dbUnderlined=false;
+    }
+
+    if (textStyleWritten.subScript) {
+        PutLitStr("}");
+        textStyleWritten.subScript=false;
+    }
+
+    if (textStyleWritten.superScript) {
+        PutLitStr("}");
+        textStyleWritten.superScript=false;
+    }
+}
+
+/*
+ * Alters the written latex style so it matches the current RTF style
+ * This should only be called right before emitting a character
+ */
+static void WriteTextStyle(void)
+{
+    char buf[100];
+
+    if (textStyleWritten.fontSize != textStyle.fontSize) {
+        if (textStyleWritten.fontSize != normalSize)
+            PutLitStr("}");
+        if (textStyle.fontSize != normalSize) {
+            snprintf(buf, 100, "{%s ", fontSizeList[textStyle.fontSize]);
+            PutLitStr(buf);
+        }
+        textStyleWritten.fontSize=textStyle.fontSize;
+    }
+
+    if (textStyleWritten.italic != textStyle.italic) {
+        if (textStyle.italic)
+            PutLitStr("\\textit{");
+        else
+            PutLitStr("}");
+        textStyleWritten.italic=textStyle.italic;
+    }
+
+    if (textStyleWritten.bold != textStyle.bold) {
+        if (textStyle.bold)
+            PutLitStr("\\textbf{");
+        else {
+            PutLitStr("}");
+        }
+        textStyleWritten.bold=textStyle.bold;
+    }
+
+    if (textStyleWritten.underlined != textStyle.underlined) {
+        if (textStyle.underlined)
+            PutLitStr("\\emph{");
+        else {
+            PutLitStr("}");
+        }
+        requireUlemPackage = true;
+        textStyleWritten.underlined=textStyle.underlined;
+    }
+
+    if (textStyleWritten.smallCaps != textStyle.smallCaps) {
+        if (textStyle.smallCaps)
+            PutLitStr("\\textsc{");
+        else {
+            PutLitStr("}");
+        }
+        textStyleWritten.smallCaps=textStyle.smallCaps;
+    }
+
+    if (textStyleWritten.dbUnderlined != textStyle.dbUnderlined) {
+        if (textStyle.dbUnderlined)
+            PutLitStr("\\uuline{");
+        else {
+            PutLitStr("}");
+        }
+        requireUlemPackage = true;
+        textStyleWritten.dbUnderlined=textStyle.dbUnderlined;
+    }
+
+    if (textStyleWritten.superScript != textStyle.superScript) {
+        if (textStyle.superScript)
+            PutLitStr("\\textsuperscript{");
+        else {
+            PutLitStr("}");
+        }
+        textStyleWritten.superScript=textStyle.superScript;
+    }
+
+    if (textStyleWritten.subScript != textStyle.subScript) {
+        if (textStyle.subScript)
+            PutLitStr("\\textsubscript{");
+        else {
+            PutLitStr("}");
+        }
+        textStyleWritten.subScript=textStyle.subScript;
+        requireFixLtx2ePackage = true;
+    }
+}
+
+/*
+ * This function stores the text style.  Should be merged into CharAttr()
+ */
+static void SetTextStyle(void)
+{
+    if (insideHyperlink)
+        return;
+
+    switch (rtfMinor) {
+    case rtfPlain:
+        InitTextStyle();
+        break;
+    case rtfSmallCaps:
+        textStyle.smallCaps = (rtfParam) ? true : false;
+        break;
+    case rtfAllCaps:
+        textStyle.allCaps = (rtfParam) ? true : false;
+        break;
+    case rtfItalic:
+        textStyle.italic = (rtfParam) ? true : false;
+        break;
+    case rtfBold:
+        textStyle.bold = (rtfParam) ? true : false;
+        break;
+    case rtfUnderline:
+        textStyle.underlined = (rtfParam) ? true : false;
+        break;
+    case rtfDbUnderline:
+        textStyle.dbUnderlined = (rtfParam) ? true : false;
+        break;
+    case rtfForeColor:
+        textStyle.foreColor = rtfParam;
+        break;
+    case rtfSubScrShrink:
+    case rtfSubScript:
+        textStyle.subScript = (rtfParam) ? true : false;
+        break;
+    case rtfSuperScript:
+        textStyle.superScript = (rtfParam) ? true : false;
+        break;
+    case rtfSuperScrShrink:
+        RTFGetToken();
+        if (strcmp(rtfTextBuf, "\\chftn") && !RTFCheckCM(rtfGroup, rtfEndGroup))
+            textStyle.superScript = (rtfParam) ? true : false;
+        RTFUngetToken();
+        break;
+    case rtfFontSize:
+        textStyle.fontSize = normalSize;
+        if (rtfParam <= 12)
+            textStyle.fontSize = scriptSize;
+        else if (rtfParam <= 14)
+            textStyle.fontSize = footNoteSize;
+        else if (rtfParam <= 18)
+            textStyle.fontSize = smallSize;
+        else if (rtfParam <= 24)
+            textStyle.fontSize = normalSize;
+        else if (rtfParam <= 28)
+            textStyle.fontSize = largeSize;
+        else if (rtfParam <= 32)
+            textStyle.fontSize = LargeSize;
+        else if (rtfParam <= 36)
+            textStyle.fontSize = LARGESize;
+        else if (rtfParam <= 48)
+            textStyle.fontSize = giganticSize;
+        else if (rtfParam <= 72)
+            textStyle.fontSize = GiganticSize;
+        break;
+    }
+}
+
 /* Everything that is emitted is in some sort of environment
    This routine just closes the environments that have been written
  */
-   
-static void EndLastParagraph(void)
+
+static void EndParagraph(void)
 {
     char buf[rtfBufSiz];
     int i,n;
 
     CheckForBeginDocument();
 
-    if (table.inside) {
-        PutLitStr(" \\linebreak\n");
+    StopTextStyle();
+
+    if (insideTable) {
+        PutLitStr("\\linebreak\n");
         return;
     }
-    
-    if (insideFootnote) {
+
+    if (insideFootnote || insideTable) {
         InsertNewLine();
         InsertNewLine();
         return;
     }
-    
+
     if (paragraphWritten.headingString) {
         n = CountCharInString(paragraphWritten.headingString, '{');
         for (i = 0; i < n; i++) PutLitStr("}");
@@ -966,17 +1087,10 @@ static void EndLastParagraph(void)
         return;
     }
 
-/*    if (charAttrCount > 0)
-        CheckForCharAttr();
-    for (i = 0; i < charAttrCount; i++)
-        PutLitChar('}');
-    charAttrCount = 0;
-*/
-
     setParagraphBaseline();
 
     if (paragraphWritten.alignment != paragraph.alignment) {
-    
+
         if (g_debug_par_start) {
             snprintf(buf, rtfBufSiz, "[oldalign=%d, newalign=%d]", paragraphWritten.alignment, paragraph.alignment);
             PutLitStr(buf);
@@ -996,680 +1110,6 @@ static void EndLastParagraph(void)
 
     InsertNewLine();
     InsertNewLine();
-}
-
-/*
- * This function makes sure any braces opened for text styles are closed;
- * rather messy, but it will do for now.
- */
-void CheckForCharAttr(void)
-{
-    int italicGL, noItalicGL;
-    int boldGL, noBoldGL;
-    int underlinedGL;
-/*  int noUnderlinedGL; */
-    int dbUnderlinedGL;
-/*  int noDbUnderlinedGL; */
-    int foreColorGL, backColorGL;
-    int subScriptGL, superScriptGL;
-/*     int noSubScriptGL, noSuperScriptGL; */
-    int fontSizeGL;
-/*  int allCapsGL; */
-    int smallCapsGL;
-    int i;
-
-    italicGL         = textStyle.italicBraceLevel;
-    noItalicGL       = textStyle.noItalicBraceLevel;
-    boldGL           = textStyle.boldBraceLevel;
-    noBoldGL         = textStyle.noBoldBraceLevel;
-    underlinedGL     = textStyle.underlinedBraceLevel;
-/*     noUnderlinedGL   = textStyle.noUnderlinedBraceLevel; */
-    dbUnderlinedGL   = textStyle.dbUnderlinedBraceLevel;
-/*     noDbUnderlinedGL = textStyle.noDbUnderlinedBraceLevel; */
-    foreColorGL      = textStyle.foreColorBraceLevel;
-    backColorGL      = textStyle.backColorBraceLevel;
-    subScriptGL      = textStyle.subScriptBraceLevel;
-/*     noSubScriptGL    = textStyle.noSubScriptBraceLevel; */
-    superScriptGL    = textStyle.superScriptBraceLevel;
-/*     noSuperScriptGL  = textStyle.noSuperScriptBraceLevel; */
-    fontSizeGL       = textStyle.fontSizeBraceLevel;
- /*    allCapsGL        = textStyle.allCapsBraceLevel; */
-    smallCapsGL      = textStyle.smallCapsBraceLevel;
-
-    if (smallCapsGL == braceLevel && smallCapsGL > 0) {
-        if (charAttrCount > 0 && textStyle.wroteSmallCaps) {
-            for (i = 0; i < CountCharInString(smallcapsString, '{'); i++)
-                PutLitStr("}");
-            charAttrCount -= CountCharInString(smallcapsString, '{');
-        }
-        textStyle.smallCapsBraceLevel = 0;
-        textStyle.wroteSmallCaps = false;
-    }
-    if (underlinedGL == braceLevel && underlinedGL > 0) {
-        if (charAttrCount > 0 && textStyle.wroteUnderlined) {
-            for (i = 0; i < CountCharInString(underlineString, '{'); i++)
-                PutLitStr("}");
-            charAttrCount -= CountCharInString(underlineString, '{');
-        }
-        textStyle.underlinedBraceLevel = 0;
-        textStyle.wroteUnderlined = false;
-    }
-    if (dbUnderlinedGL == braceLevel && dbUnderlinedGL > 0) {
-        if (charAttrCount > 0 && textStyle.wroteDbUnderlined) {
-            PutLitStr("}}");
-            charAttrCount -= 2;
-        }
-        textStyle.dbUnderlinedBraceLevel = 0;
-        textStyle.wroteDbUnderlined = false;
-    }
-    if (noItalicGL == braceLevel && noItalicGL > 0) {
-        if (charAttrCount > 0 && textStyle.wroteNoItalic) {
-            for (i = 0; i < CountCharInString(noItalicString, '{'); i++)
-                PutLitStr("}");
-            charAttrCount -= CountCharInString(noItalicString, '{');
-        }
-        textStyle.noItalicBraceLevel = 0;
-        textStyle.wroteNoItalic = false;
-    }
-    if (italicGL == braceLevel && italicGL > 0) {
-        if (charAttrCount > 0 && textStyle.wroteItalic) {
-            for (i = 0; i < CountCharInString(italicString, '{'); i++)
-                PutLitStr("}");
-            charAttrCount -= CountCharInString(italicString, '{');
-        }
-        textStyle.italicBraceLevel = 0;
-        textStyle.wroteItalic = false;
-    }
-    if (noBoldGL == braceLevel && noBoldGL > 0) {
-        if (charAttrCount > 0 && textStyle.wroteNoBold) {
-            for (i = 0; i < CountCharInString(noBoldString, '{'); i++)
-                PutLitStr("}");
-            charAttrCount -= CountCharInString(noBoldString, '{');
-        }
-        textStyle.noBoldBraceLevel = 0;
-        textStyle.wroteNoBold = false;
-    }
-    if (boldGL == braceLevel && boldGL > 0) {
-        if (charAttrCount > 0 && textStyle.wroteBold) {
-            for (i = 0; i < CountCharInString(boldString, '{'); i++)
-                PutLitStr("}");
-            charAttrCount -= CountCharInString(boldString, '{');
-        }
-        textStyle.boldBraceLevel = 0;
-        textStyle.wroteBold = false;
-    }
-    if (superScriptGL == braceLevel && superScriptGL > 0) {
-        if (boldGL < superScriptGL && boldGL > 0 && textStyle.wroteBold) {
-            PutLitStr("}");
-            charAttrCount--;
-            textStyle.newStyle = true;
-            textStyle.wroteBold = false;
-        }
-        if (italicGL < superScriptGL && italicGL > 0
-            && textStyle.wroteItalic) {
-            PutLitStr("}");
-            charAttrCount--;
-            textStyle.newStyle = true;
-            textStyle.wroteItalic = false;
-        }
-        if (charAttrCount > 0) {
-            PutLitStr("}");
-            charAttrCount -= 1;
-            EnsureNoMathMode();
-        }
-        textStyle.superScriptBraceLevel = 0;
-        textStyle.wroteSuperScript = false;
-    }
-    if (subScriptGL == braceLevel && subScriptGL > 0) {
-        if (boldGL < superScriptGL && boldGL > 0 && textStyle.wroteBold) {
-            PutLitStr("}");
-            charAttrCount--;
-            textStyle.newStyle = true;
-            textStyle.wroteBold = false;
-        }
-        if (italicGL < superScriptGL && italicGL > 0
-            && textStyle.wroteItalic) {
-            PutLitStr("}");
-            charAttrCount--;
-            textStyle.newStyle = true;
-            textStyle.wroteItalic = false;
-        }
-        if (charAttrCount > 0) {
-            PutLitStr("}");
-            charAttrCount -= 1;
-            EnsureNoMathMode();
-        }
-        textStyle.subScriptBraceLevel = 0;
-        textStyle.wroteSubScript = false;
-    }
-    if (foreColorGL == braceLevel && foreColorGL > 0) {
-        if (charAttrCount > 0 && textStyle.wroteForeColor) {
-            PutLitStr("}");
-            charAttrCount--;
-        }
-        textStyle.foreColorBraceLevel = 0;
-        textStyle.wroteForeColor = false;
-    }
-    if (backColorGL == braceLevel && backColorGL > 0) {
-        if (charAttrCount > 0 && textStyle.wroteBackColor) {
-            PutLitStr("}");
-            charAttrCount--;
-        }
-        textStyle.backColorBraceLevel = 0;
-        textStyle.wroteBackColor = false;
-    }
-    if (fontSizeGL == braceLevel && fontSizeGL > 0) {
-        if (charAttrCount > 0 && textStyle.wroteFontSize) {
-            PutLitStr("}");
-            charAttrCount--;
-        }
-        textStyle.fontSizeBraceLevel = 0;
-        textStyle.fontSize = normalSize;
-        textStyle.wroteFontSize = false;
-    }
-    if (charAttrCount == 0)
-        textStyle.open = false;
-
-}
-
-static void ForceCloseCharAttr(void)
-{
-    int i;
-    if (charAttrCount > 0 && textStyle.wroteSmallCaps) {
-        for (i = 0; i < CountCharInString(smallcapsString, '{'); i++)
-            PutLitStr("}");
-        charAttrCount -= CountCharInString(smallcapsString, '{');
-    }
-    textStyle.smallCapsBraceLevel = 0;
-    textStyle.wroteSmallCaps = false;
-
-    if (charAttrCount > 0 && textStyle.wroteUnderlined) {
-        for (i = 0; i < CountCharInString(underlineString, '{'); i++)
-            PutLitStr("}");
-        charAttrCount -= CountCharInString(underlineString, '{');
-    }
-    textStyle.underlinedBraceLevel = 0;
-    textStyle.wroteUnderlined = false;
-
-    if (charAttrCount > 0 && textStyle.wroteNoItalic) {
-        for (i = 0; i < CountCharInString(noItalicString, '{'); i++)
-            PutLitStr("}");
-        charAttrCount -= CountCharInString(noItalicString, '{');
-    }
-    textStyle.noItalicBraceLevel = 0;
-    textStyle.wroteNoItalic = false;
-
-    if (charAttrCount > 0 && textStyle.wroteItalic) {
-        for (i = 0; i < CountCharInString(italicString, '{'); i++)
-            PutLitStr("}");
-        charAttrCount -= CountCharInString(italicString, '{');
-    }
-    textStyle.italicBraceLevel = 0;
-    textStyle.wroteItalic = false;
-
-    if (charAttrCount > 0 && textStyle.wroteBold) {
-        for (i = 0; i < CountCharInString(boldString, '{'); i++)
-            PutLitStr("}");
-        charAttrCount -= CountCharInString(boldString, '{');
-    }
-    textStyle.boldBraceLevel = 0;
-    textStyle.wroteBold = false;
-
-    if (charAttrCount > 0 && textStyle.wroteSuperScript) {
-        PutLitStr("}");
-        charAttrCount -= 1;
-        EnsureNoMathMode();
-        textStyle.superScriptBraceLevel = 0;
-        textStyle.wroteSuperScript = false;
-    }
-
-    if (charAttrCount > 0 && textStyle.wroteSubScript) {
-        PutLitStr("}");
-        charAttrCount -= 1;
-        EnsureNoMathMode();
-        textStyle.subScriptBraceLevel = 0;
-        textStyle.wroteSubScript = false;
-    }
-
-    if (charAttrCount > 0 && textStyle.wroteForeColor) {
-        PutLitStr("}");
-        charAttrCount--;
-    }
-    textStyle.foreColorBraceLevel = 0;
-    textStyle.wroteForeColor = false;
-
-    if (charAttrCount > 0 && textStyle.wroteBackColor) {
-        PutLitStr("}");
-        charAttrCount--;
-    }
-    textStyle.backColorBraceLevel = 0;
-    textStyle.wroteBackColor = false;
-
-    if (charAttrCount > 0 && textStyle.wroteFontSize) {
-        PutLitStr("}");
-        charAttrCount--;
-    }
-    textStyle.fontSizeBraceLevel = 0;
-    textStyle.fontSize = normalSize;
-    textStyle.wroteFontSize = false;
-
-    for (i = 0; i < charAttrCount; i++)
-        PutLitStr("}");
-    charAttrCount = 0;
-}
-
-/*
- * Compares text style that has been written with current style
- * returns true if changed otherwise false
- */
-static void NewWriteTextStyle(void)
-{
-	if (textStyleWritten.italicBraceLevel != textStyle.italicBraceLevel) {
-		if (textStyle.italicBraceLevel)
-			PutLitStr("\\it ");
-		else {
-			PutLitStr("\\rm ");
-		}
-		textStyleWritten.boldBraceLevel=false;
-		textStyleWritten.italicBraceLevel=textStyle.italicBraceLevel;
-	}
-
-	if (textStyleWritten.boldBraceLevel != textStyle.boldBraceLevel) {
-		if (textStyle.boldBraceLevel)
-			PutLitStr("\\bf ");
-		else {
-			PutLitStr("\\rm ");
-		}
-		textStyleWritten.italicBraceLevel=false;
-		textStyleWritten.boldBraceLevel=textStyle.boldBraceLevel;
-	}
-}
-
-/*
- * This function stores the text style.
- */
-static void NewSetTextStyle(void)
-{
-    if (insideHyperlink)
-        return;
-
-    switch (rtfMinor) {
-    case rtfSmallCaps:
-        textStyle.smallCapsBraceLevel = (rtfParam) ? true : false;
-        break;
-    case rtfAllCaps:
-        textStyle.allCapsBraceLevel = (rtfParam) ? true : false;
-        break;
-    case rtfItalic:
-        textStyle.italicBraceLevel = (rtfParam) ? true : false;
-        break;
-    case rtfBold:
-        textStyle.boldBraceLevel = (rtfParam) ? true : false;
-        break;
-    case rtfUnderline:
-        textStyle.underlinedBraceLevel = (rtfParam) ? true : false;
-        break;
-    case rtfDbUnderline:
-        textStyle.dbUnderlinedBraceLevel = (rtfParam) ? true : false;
-        break;
-    case rtfForeColor:
-        textStyle.foreColorBraceLevel = braceLevel;
-        textStyle.foreColor = rtfParam;
-        break;
-    case rtfSubScrShrink:
-    case rtfSubScript:
-        textStyle.subScriptBraceLevel = (rtfParam) ? true : false;
-        break;
-    case rtfSuperScript:
-        textStyle.superScriptBraceLevel = (rtfParam) ? true : false;
-        break;
-    case rtfSuperScrShrink:
-        RTFGetToken();
-        if (strcmp(rtfTextBuf, "\\chftn") && !RTFCheckCM(rtfGroup, rtfEndGroup))
-            textStyle.superScriptBraceLevel = (rtfParam) ? true : false;
-        RTFUngetToken();
-        break;
-    case rtfFontSize:
-        if (rtfParam <= 12)
-            textStyle.fontSize = scriptSize;
-        else if (rtfParam <= 14) 
-            textStyle.fontSize = footNoteSize;
-        else if (rtfParam <= 18)
-            textStyle.fontSize = smallSize;
-        else if (rtfParam >= 28)
-            textStyle.fontSize = largeSize;
-        else if (rtfParam >= 32)
-            textStyle.fontSize = LargeSize;
-        else if (rtfParam >= 36)
-            textStyle.fontSize = LARGESize;
-        else if (rtfParam >= 48) 
-            textStyle.fontSize = giganticSize;
-        else if (rtfParam >= 72) 
-            textStyle.fontSize = GiganticSize;
-        break;
-    }
-}
-
-/*
- * This function stores the text style.
- */
-static void SetTextStyle(void)
-{
-    if (insideHyperlink)
-        return;
-
-    switch (rtfMinor) {
-    case rtfSmallCaps:
-        textStyle.smallCapsBraceLevel = braceLevel;
-        break;
-    case rtfAllCaps:
-        textStyle.allCapsBraceLevel = braceLevel;
-        break;
-    case rtfItalic:
-        if (rtfParam != 0) {
-            textStyle.italicBraceLevel = braceLevel;
-            if (textStyle.noItalicBraceLevel == braceLevel)
-                textStyle.noItalicBraceLevel = 0;
-        } else if (textStyle.wroteItalic) {
-            textStyle.noItalicBraceLevel = braceLevel;
-            if (textStyle.italicBraceLevel == braceLevel) {
-                SetBraceLevels(SAVE_LEVELS);
-                CheckForCharAttr();
-                SetBraceLevels(RESTORE_LEVELS);
-                textStyle.italicBraceLevel = 0;
-            }
-        }
-        break;
-    case rtfBold:
-        if (rtfParam != 0) {
-            textStyle.boldBraceLevel = braceLevel;
-            if (textStyle.noBoldBraceLevel == braceLevel)
-                textStyle.noBoldBraceLevel = 0;
-        } else if (textStyle.wroteBold) {
-            textStyle.noBoldBraceLevel = braceLevel;
-            if (textStyle.boldBraceLevel == braceLevel) {
-                SetBraceLevels(SAVE_LEVELS);
-                CheckForCharAttr();
-                SetBraceLevels(RESTORE_LEVELS);
-                textStyle.boldBraceLevel = 0;
-            }
-        }
-        break;
-    case rtfUnderline:
-        if (rtfParam != 0) {
-            textStyle.underlinedBraceLevel = braceLevel;
-            if (textStyle.noUnderlinedBraceLevel == braceLevel)
-                textStyle.noUnderlinedBraceLevel = 0;
-        } else if (textStyle.wroteUnderlined) {
-            textStyle.noUnderlinedBraceLevel = braceLevel;
-            if (textStyle.underlinedBraceLevel == braceLevel) {
-                SetBraceLevels(SAVE_LEVELS);
-                CheckForCharAttr();
-                SetBraceLevels(RESTORE_LEVELS);
-                textStyle.underlinedBraceLevel = 0;
-            }
-        }
-        break;
-    case rtfDbUnderline:
-        if (rtfParam != 0) {
-            textStyle.dbUnderlinedBraceLevel = braceLevel;
-            if (textStyle.noDbUnderlinedBraceLevel == braceLevel)
-                textStyle.noDbUnderlinedBraceLevel = 0;
-        } else if (textStyle.wroteDbUnderlined) {
-            textStyle.noDbUnderlinedBraceLevel = braceLevel;
-            if (textStyle.dbUnderlinedBraceLevel == braceLevel) {
-                SetBraceLevels(SAVE_LEVELS);
-                CheckForCharAttr();
-                SetBraceLevels(RESTORE_LEVELS);
-                textStyle.dbUnderlinedBraceLevel = 0;
-            }
-        }
-        break;
-    case rtfForeColor:
-        textStyle.foreColor = rtfParam;
-        textStyle.foreColorBraceLevel = braceLevel;
-        textStyle.foreColor = rtfParam;
-        break;
-    case rtfSubScrShrink:
-    case rtfSubScript:
-        if (rtfParam != 0) {
-            textStyle.subScriptBraceLevel = braceLevel;
-            if (textStyle.noSubScriptBraceLevel == braceLevel)
-                textStyle.noSubScriptBraceLevel = 0;
-        } else if (textStyle.wroteSubScript) {
-            textStyle.noSubScriptBraceLevel = braceLevel;
-            if (textStyle.subScriptBraceLevel == braceLevel) {
-                SetBraceLevels(SAVE_LEVELS);
-                CheckForCharAttr();
-                SetBraceLevels(RESTORE_LEVELS);
-                textStyle.subScriptBraceLevel = 0;
-            }
-        }
-/*                       textStyle.subScriptBraceLevel = braceLevel; */
-        break;
-    case rtfSuperScript:
-        if (rtfParam != 0) {
-            textStyle.superScriptBraceLevel = braceLevel;
-            if (textStyle.noSuperScriptBraceLevel == braceLevel)
-                textStyle.noSuperScriptBraceLevel = 0;
-        } else if (textStyle.wroteSuperScript) {
-            textStyle.noSuperScriptBraceLevel = braceLevel;
-            if (textStyle.superScriptBraceLevel == braceLevel) {
-                SetBraceLevels(SAVE_LEVELS);
-                CheckForCharAttr();
-                SetBraceLevels(RESTORE_LEVELS);
-                textStyle.superScriptBraceLevel = 0;
-            }
-        }
-        break;
-    case rtfSuperScrShrink:
-        RTFGetToken();
-        if (strcmp(rtfTextBuf, "\\chftn") != 0
-            && !RTFCheckCM(rtfGroup, rtfEndGroup))
-            textStyle.superScriptBraceLevel = braceLevel;
-        RTFUngetToken();
-        break;
-    case rtfFontSize:
-        if (rtfParam <= 18) {
-            textStyle.fontSize = smallSize;
-            textStyle.fontSizeBraceLevel = braceLevel;
-        }
-        if (rtfParam <= 14) {
-            textStyle.fontSize = footNoteSize;
-            textStyle.fontSizeBraceLevel = braceLevel;
-        }
-        if (rtfParam <= 12) {
-            textStyle.fontSize = scriptSize;
-            textStyle.fontSizeBraceLevel = braceLevel;
-        }
-        if (rtfParam >= 28) {
-            textStyle.fontSize = largeSize;
-            textStyle.fontSizeBraceLevel = braceLevel;
-        }
-        if (rtfParam >= 32) {
-            textStyle.fontSize = LargeSize;
-            textStyle.fontSizeBraceLevel = braceLevel;
-        }
-        if (rtfParam >= 36) {
-            textStyle.fontSize = LARGESize;
-            textStyle.fontSizeBraceLevel = braceLevel;
-        }
-        if (rtfParam >= 48) {
-            textStyle.fontSize = giganticSize;
-            textStyle.fontSizeBraceLevel = braceLevel;
-        }
-        if (rtfParam >= 72) {
-            textStyle.fontSize = GiganticSize;
-            textStyle.fontSizeBraceLevel = braceLevel;
-        }
-        break;
-
-    }
-    textStyle.newStyle = true;
-}
-
-/*
- * This function writes the text style.
- */
-static void WriteTextStyle(void)
-{
-    char buf[rtfBufSiz];
-    int italicGL, noItalicGL;
-    int boldGL, noBoldGL;
-    int underlinedGL;
-/*  int noUnderlinedGL; */
-    int dbUnderlinedGL;
-/*  int noDbUnderlinedGL; */
-    int foreColorGL;
-/*  int backColorGL; */
-    int subScriptGL, superScriptGL;
-/*     int fontSizeGL; */
-    int smallCapsGL;
-/*  int allCapsGL; */
-
-    if (paragraph.headingString || insideHyperlink)
-        return;
-
-    italicGL = textStyle.italicBraceLevel;
-    noItalicGL = textStyle.noItalicBraceLevel;
-    boldGL = textStyle.boldBraceLevel;
-    noBoldGL = textStyle.noBoldBraceLevel;
-    underlinedGL = textStyle.underlinedBraceLevel;
-/*     noUnderlinedGL = textStyle.noUnderlinedBraceLevel; */
-    dbUnderlinedGL = textStyle.dbUnderlinedBraceLevel;
-/*     noDbUnderlinedGL = textStyle.noDbUnderlinedBraceLevel; */
-    foreColorGL = textStyle.foreColorBraceLevel;
-/*     backColorGL = textStyle.backColorBraceLevel; */
-    subScriptGL = textStyle.subScriptBraceLevel;
-    superScriptGL = textStyle.superScriptBraceLevel;
-/*     fontSizeGL = textStyle.fontSizeBraceLevel; */
-/*     allCapsGL = textStyle.allCapsBraceLevel; */
-    smallCapsGL = textStyle.smallCapsBraceLevel;
-
-    CheckForBeginDocument();
-
-    if (rtfClass == 2 && rtfMajor == 32)
-        PutLitChar(' ');
-
-    if (foreColorGL <= braceLevel && foreColorGL > 0
-        && (textStyle.foreColor) > 0 && !(textStyle.wroteForeColor)) {
-
-        snprintf(buf, rtfBufSiz, "{\\color{color%d} ", (int) (textStyle.foreColor));
-        PutLitStr(buf);
-        charAttrCount++;
-        textStyle.wroteForeColor = true;
-
-    }
-    
-    if (subScriptGL <= braceLevel && subScriptGL > 0 && !(textStyle.wroteSubScript)) {
-        if (boldGL <= superScriptGL && boldGL > 0 && textStyle.wroteBold) {
-            PutLitStr("}");
-            charAttrCount--;
-            textStyle.wroteBold = false;
-        }
-        if (italicGL <= superScriptGL && italicGL > 0
-            && textStyle.wroteItalic) {
-            PutLitStr("}");
-            charAttrCount--;
-            textStyle.wroteItalic = false;
-        }
-        EnsureInlineMathMode();
-        PutLitStr("_{");
-        charAttrCount += 1;
-        textStyle.wroteSubScript = true;
-        textStyle.open = true;
-    }
-    
-    if (superScriptGL <= braceLevel && superScriptGL > 0 &&
-        !(textStyle.wroteSuperScript)) {
-        if (boldGL <= superScriptGL && boldGL > 0 && textStyle.wroteBold) {
-            PutLitStr("}");
-            charAttrCount--;
-            textStyle.wroteBold = false;
-        }
-        if (italicGL <= superScriptGL && italicGL > 0
-            && textStyle.wroteItalic) {
-            PutLitStr("}");
-            charAttrCount--;
-            textStyle.wroteItalic = false;
-        }
-        EnsureInlineMathMode();
-        PutLitStr("^{");
-        charAttrCount += 1;
-        textStyle.wroteSuperScript = true;
-        textStyle.open = true;
-    }
-    
-    if (boldGL <= braceLevel && boldGL > 0 && !(textStyle.wroteBold)) {
-        if (mathMode == MATH_NONE_MODE) {
-            PutLitStr(boldString);
-            charAttrCount += CountCharInString(boldString, '{');
-        } else {
-            PutLitStr("\\mathbf{");
-            charAttrCount++;
-        }
-        textStyle.wroteBold = true;
-/*               textStyle.open = true; */
-    }
-    
-    if (noBoldGL <= braceLevel && noBoldGL > 0 && !(textStyle.wroteNoBold)
-        && textStyle.wroteBold && mathMode == MATH_NONE_MODE) {
-        PutLitStr(noBoldString);
-        charAttrCount += CountCharInString(noBoldString, '{');
-        textStyle.wroteNoBold = true;
-    }
-    
-    if (italicGL <= braceLevel && italicGL > 0 && !(textStyle.wroteItalic)) {
-        if (mathMode==MATH_NONE_MODE) {
-            PutLitStr(italicString);
-            charAttrCount += CountCharInString(italicString, '{');
-        } else {
-            PutLitStr("\\mathit{");
-            charAttrCount++;
-        }
-        textStyle.wroteItalic = true;
-/*               textStyle.open = true; */
-    }
-    if (noItalicGL <= braceLevel && noItalicGL > 0
-        && !(textStyle.wroteNoItalic)
-        && textStyle.wroteItalic && mathMode==MATH_NONE_MODE) {
-        PutLitStr(noItalicString);
-        charAttrCount += CountCharInString(noItalicString, '{');
-        textStyle.wroteNoItalic = true;
-    }
-    if (underlinedGL <= braceLevel && underlinedGL > 0
-        && !(textStyle.wroteUnderlined) && mathMode==MATH_NONE_MODE) {
-        PutLitStr(underlineString);
-        charAttrCount += CountCharInString(underlineString, '{');
-        textStyle.wroteUnderlined = true;
-        textStyle.open = true;
-
-    }
-    if (dbUnderlinedGL <= braceLevel && dbUnderlinedGL > 0
-        && !(textStyle.wroteDbUnderlined) && mathMode==MATH_NONE_MODE) {
-        PutLitStr("{\\uuline {");
-        charAttrCount += 2;
-        textStyle.wroteDbUnderlined = true;
-        textStyle.open = true;
-        requireUlemPackage = true;
-    }
-    if (smallCapsGL <= braceLevel && smallCapsGL > 0
-        && !(textStyle.wroteSmallCaps) && mathMode==MATH_NONE_MODE) {
-        PutLitStr(smallcapsString);
-        charAttrCount += CountCharInString(smallcapsString, '{');
-        textStyle.wroteSmallCaps = true;
-    }
-    if (textStyle.fontSize != normalSize && mathMode==MATH_NONE_MODE && !(textStyle.wroteFontSize)) {
-        if (g_debug_char_style) {
-            snprintf(buf, rtfBufSiz, "[fs=%ld]", textStyle.fontSize);
-            PutLitStr(buf);
-        }
-        snprintf(buf, rtfBufSiz, "{%s ", fontSizeList[textStyle.fontSize]);
-        PutLitStr(buf);
-        charAttrCount++;
-        textStyle.wroteFontSize = true;
-    }
-
 }
 
 /*
@@ -1751,7 +1191,7 @@ static void DoSectionCleanUp(void)
 {
     if (section.cols > 1) {
         if (nowBetweenParagraphs)  /*finish paragraph before multicols */
-            EndLastParagraph();
+            EndParagraph();
         PutLitStr("\n\\end{multicols}");
         InsertNewLine();
         section.cols = 1;
@@ -1760,8 +1200,7 @@ static void DoSectionCleanUp(void)
 
 static void WriteLaTeXFooter(void)
 {
-
-    EndLastParagraph();
+    EndParagraph();
     DoSectionCleanUp();
 
     PutLitStr("\n\n\\end{document}\n");
@@ -1784,6 +1223,8 @@ static void WriteLaTeXFooter(void)
         PutLitStr("\\usepackage{multicol}\n");
     if (requireUlemPackage)
         PutLitStr("\\usepackage{ulem}\n");
+    if (requireFixLtx2ePackage)
+        PutLitStr("\\usepackage{fixltx2e}\n");
     if (requireAmsMathPackage)
         PutLitStr("\\usepackage{amsmath}\n");
     if (0 || requireUnicodePackage) {
@@ -1792,12 +1233,10 @@ static void WriteLaTeXFooter(void)
     }
     if (0 || requireLatin1Package) {
         PutLitStr("\\usepackage[T1]{fontenc}\n");
-        //PutLitStr("\\usepackage[latin1]{inputenc}\n");
     }
     if (requireHyperrefPackage) {
         PutLitStr("\\usepackage{hyperref}\n");
     }
-//    PutLitStr("\\newcommand{\\degree}{\\ensuremath{^\\circ}}\n");
     fseek(ofp, 0L, 2);          /* go back to end of stream */
 }
 
@@ -1808,33 +1247,16 @@ static void SkipGroup(void)
     RTFRouteToken();
 }
 
-static void IndentParagraph(void)
-{
-    char buf[100];
-
-    if (paragraph.firstIndent == 0) {
-        PutLitStr("\n\\noindent");
-        InsertNewLine();
-    } else {
-        snprintf(buf, 100, "\n\\setlength{\\parindent}{%2.3fin}",
-                (double) ((double) (paragraph.leftIndent) /
-                          (double) rtfTpi));
-        PutLitStr(buf);
-        InsertNewLine();
-    }
-}
-
-/* This function make sure that the output TeX file does not 
+/* This function make sure that the output TeX file does not
  * contain one very, very long line of text.
  */
 static void WrapText(void)
-{    
+{
     if (wrapCount < WRAP_LIMIT) return;
-    
+
     if (rtfMinor == rtfSC_space)
         PutLitChar('\n');
 }
-
 
 /*
  * Write out a character.  rtfMajor contains the input character, rtfMinor
@@ -1846,7 +1268,6 @@ static void WrapText(void)
 
 static void TextClass(void)
 {
-
     if (nowBetweenParagraphs) {
 
         if (rtfMinor == rtfSC_space) {
@@ -1854,8 +1275,8 @@ static void TextClass(void)
             return;
         }
 
-        EndLastParagraph();
-        StartNewParagraph();
+        EndParagraph();
+        NewParagraph();
     }
 
     if (insideHyperlink) {
@@ -1873,7 +1294,7 @@ static void TextClass(void)
     if (rtfMinor >= rtfSC_therefore && rtfMinor < rtfSC_currency)
         requireAmsSymbPackage = true;
 
-	NewWriteTextStyle();
+    WriteTextStyle();
     PutStdChar(rtfMinor);
     WrapText();
 }
@@ -1914,10 +1335,7 @@ static void ReadFootnote(void)
 {
     int footnoteGL;
 
-    SetBraceLevels(SAVE_LEVELS);
-
-    ForceCloseCharAttr();
-
+    StopTextStyle();
     footnoteGL = braceLevel;
     PutLitStr("\\footnote{");
     insideFootnote = true;
@@ -1928,30 +1346,6 @@ static void ReadFootnote(void)
     }
     PutLitStr("}");
     insideFootnote = false;
-
-    SetBraceLevels(RESTORE_LEVELS);
-    textStyle.newStyle = true;
-}
-
-/*
- * This function gets called when a \par token meaning is encountered.
- * We need to figure out if the \par is just an ordinary line break or the
- * end of a paragraph, since LaTeX treats paragraph endings differently from line 
- * breaks. We do this by scanning forward for a \par or \pard token.  If these
- * are found first, then the paragraph ends, otherwise it is just a line break.
- */
-static void CheckForParagraph(void)
-{
-    if (table.inside) {
-        PutLitStr(" \\linebreak\n");
-        return;
-    }
-
-    /* multiple blank lines in a row ...  */
-    if (nowBetweenParagraphs)       
-        paragraph.spaceBefore += abs(paragraph.lineSpacing);
-
-    nowBetweenParagraphs = true;
 }
 
 /*
@@ -1959,11 +1353,8 @@ static void CheckForParagraph(void)
  * out ' ', '-', '"', etc., is so that the mapping for these characters
  * can be controlled by the latex-encoding file.
  */
-
 static void SpecialChar(void)
 {
-    int i;
-
     if (nowBetweenParagraphs) {
         if (rtfMinor == rtfTab) {
             paragraph.extraIndent += 360;
@@ -1974,15 +1365,17 @@ static void SpecialChar(void)
             return;
         }
 
-        EndLastParagraph();
-        StartNewParagraph();
+        EndParagraph();
+        NewParagraph();
     }
-        
+
     switch (rtfMinor) {
     case rtfSect:
     case rtfLine:
     case rtfPar:
-        CheckForParagraph();
+        if (nowBetweenParagraphs)
+            paragraph.spaceBefore += abs(paragraph.lineSpacing);
+        nowBetweenParagraphs = true;
         break;
     case rtfNoBrkSpace:
         PutStdChar(rtfSC_nobrkspace);
@@ -2015,24 +1408,8 @@ static void SpecialChar(void)
         PutLitStr("''");
         break;
     case rtfPage:
-        if (0 && !(table.inside)) {
-            if (paragraphWritten.headingString) {
-                for (i = 0; i < CountCharInString(paragraphWritten.headingString, '{'); i++)
-                    PutLitStr("}");
-                paragraphWritten.headingString = NULL;
-                suppressLineBreak = false;
-            } 
-            CheckForCharAttr();
-            if (blankLineCount < MAX_BLANK_LINES) {
-                PutLitStr("\n\n");
-                blankLineCount++;
-            }
-
-            PutLitStr("\\newpage\n");
-            if (!preferenceValue[GetPreferenceNum("ignoreRulerSettings")])
-                IndentParagraph();
-            suppressLineBreak = false;
-        }
+        if (!insideTable)
+            PutLitStr("\\newpage{}");
         break;
     }
 }
@@ -2043,6 +1420,7 @@ static void CharAttr(void)
 {
     switch (rtfMinor) {
 
+    case rtfPlain:
     case rtfItalic:
     case rtfBold:
     case rtfUnderline:
@@ -2051,21 +1429,17 @@ static void CharAttr(void)
     case rtfAllCaps:
     case rtfDbUnderline:
         if (!(int) preferenceValue[GetPreferenceNum("ignoreTextStyle")])
-            NewSetTextStyle();
+            SetTextStyle();
         break;
     case rtfSubScript:
     case rtfSubScrShrink:
     case rtfSuperScript:
     case rtfSuperScrShrink:
-        NewSetTextStyle();
+        SetTextStyle();
         break;
     case rtfForeColor:
         if (requireColorPackage)
-            NewSetTextStyle();
-        break;
-    case rtfPlain:
-        CheckForCharAttr();     /* suggested by Jens Ricky */
-        InitializeTextStyle();
+            SetTextStyle();
         break;
     case rtfDeleted:
         RTFSkipGroup();
@@ -2075,10 +1449,10 @@ static void CharAttr(void)
 
 }
 
-/* 
- * This routine sets attributes for the detected cell and 
- * adds it to the table.cellInfo list. Memory for cells is 
- * allocated dynamically as each cell is encountered. 
+/*
+ * This routine sets attributes for the detected cell and
+ * adds it to the table.cellInfo list. Memory for cells is
+ * allocated dynamically as each cell is encountered.
  */
 static void ReadCell(void)
 {
@@ -2091,7 +1465,7 @@ static void ReadCell(void)
         exit(1);
     }
 
-    /*fprintf(stderr,"creating cell %d, (x,y)=(%d,%d), right=%d\n", 
+    /*fprintf(stderr,"creating cell %d, (x,y)=(%d,%d), right=%d\n",
               table.cellCount, table.rows, (table.rowInfo)[table.rows], rtfParam);*/
     cellPtr->nextCell = table.cellInfo;
     cellPtr->x = table.rows;
@@ -2136,8 +1510,8 @@ static void DoTableAttr(void)
 }
 
 
-/* 
- * This function searches the cell list by cell index 
+/*
+ * This function searches the cell list by cell index
  * returns NULL if not found
  */
 static cell *GetCellInfo(int cellNum)
@@ -2146,21 +1520,21 @@ static cell *GetCellInfo(int cellNum)
 
     if (cellNum == -1)
         return (table.cellInfo);
-        
+
     for (cellPtr = (table.cellInfo); cellPtr != NULL; cellPtr = cellPtr->nextCell) {
         if (cellPtr->index == cellNum)
             return cellPtr;
     }
-    
+
     if (!cellPtr)
         RTFPanic("GetCellInfo: Attempting to access invalid cell at index %d\n", cellNum);
-        
+
     return NULL;
 }
 
 
-/* 
- * This function searches the cell list by cell coordinates 
+/*
+ * This function searches the cell list by cell coordinates
  * returns NULL if not found
  */
 static cell *GetCellByPos(int x, int y)
@@ -2174,13 +1548,13 @@ static cell *GetCellByPos(int x, int y)
         if (cellPtr->x == x && cellPtr->y == y)
             return cellPtr;
     }
-    
+
     return NULL;
 }
 
 
 
-/* 
+/*
  * In RTF, each table row need not start with a table row definition.
  * The next row may decide to use the row definition of the previous
  * row. In that case, I need to call this InheritTableRowDef function
@@ -2223,10 +1597,10 @@ static void InheritTableRowDef(void)
 }
 
 /*
- * This function figures out how many columns a cell spans. 
- * This is done by comparing the cell's left and right edges 
- * to the sorted column border array. If the left and right 
- * edges of the cell are not consecutive entries in the array, 
+ * This function figures out how many columns a cell spans.
+ * This is done by comparing the cell's left and right edges
+ * to the sorted column border array. If the left and right
+ * edges of the cell are not consecutive entries in the array,
  * the cell spans multiple columns.
  */
 static int GetColumnSpan(cell * cellPtr)
@@ -2241,7 +1615,7 @@ static int GetColumnSpan(cell * cellPtr)
         if ((table.columnBorders)[i] == cellPtr->left)
             break;
     }
-            
+
     for (j = i; j < table.cols + 1; j++){
         if ((table.columnBorders)[j] == cellPtr->right)
             break;
@@ -2251,11 +1625,11 @@ static int GetColumnSpan(cell * cellPtr)
 }
 
 
-/* 
+/*
  * This routine prescans the table.
- 
- * This is tricky because RTF does not really have a table construct.  Instead, each 
- * row is laid out as a series of cells with markup for each.  
+
+ * This is tricky because RTF does not really have a table construct.  Instead, each
+ * row is laid out as a series of cells with markup for each.
  * It figures out how many rows there are in the table
  * and the number of cells in each row. It also calculates the cell widths. Finally, it
  * builds an array of column borders that is useful in figuring out whether a cell spans
@@ -2287,13 +1661,13 @@ static void PrescanTable(void)
 
     table.rows = 0;
     table.cols = 0;
-    table.inside = true;
+    insideTable = true;
     table.cellInfo = (cell *) NULL;
 
     /* Prescan each row until end of the table. */
 //  if (RTFCheckCM(rtfControl, rtfTblAttr))
-  //      RTFRouteToken();    
-            
+  //      RTFRouteToken();
+
     while (foundRow) {
         table.cols = 0;
         (table.rowInfo)[table.rows] = 0;
@@ -2312,7 +1686,7 @@ static void PrescanTable(void)
 
         if (g_debug_table_prescan) fprintf(stderr,"* reached end of row %d\n", table.rows);
 
-        table.inside = false;
+        insideTable = false;
         table.newRowDef = false;
 
         /* table row should end with rtfRowDef, rtfParAttr */
@@ -2326,7 +1700,7 @@ static void PrescanTable(void)
             }
 
             if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
-                table.inside = true;
+                insideTable = true;
                 table.newRowDef = true;
                 break;
             }
@@ -2334,19 +1708,19 @@ static void PrescanTable(void)
             if (rtfClass == rtfText)
                 break;
 
-            if (RTFCheckCM(rtfControl, rtfSpecialChar)) 
+            if (RTFCheckCM(rtfControl, rtfSpecialChar))
                 break;
 
             if (RTFCheckMM(rtfParAttr, rtfInTable)) {
-                table.inside = true;
+                insideTable = true;
                 break;
             }
 
-            if (rtfClass == rtfEOF) 
+            if (rtfClass == rtfEOF)
                 break;
         }
 
-        if (!(table.inside))
+        if (!insideTable)
             foundRow = false;
         else
             foundRow = true;
@@ -2363,9 +1737,9 @@ static void PrescanTable(void)
         (table.rows)++;
         table.previousColumnValue = PREVIOUS_COLUMN_VALUE;
 
-        if (g_debug_table_prescan) fprintf(stderr,"* inside table is %d, new row def is %d\n", table.inside, table.newRowDef);
+        if (g_debug_table_prescan) fprintf(stderr,"* inside table is %d, new row def is %d\n", insideTable, table.newRowDef);
 
-        if (table.inside && !(table.newRowDef)) {
+        if (insideTable && !(table.newRowDef)) {
             (table.rows)--;
             InheritTableRowDef();
             if (g_debug_table_prescan) fprintf(stderr,"* Inherited: read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]);
@@ -2380,12 +1754,12 @@ static void PrescanTable(void)
 
     /*************************************************************************
      * Determine the number of columns and positions in the table by creating
-     * a list containing one entry for each unique right border 
+     * a list containing one entry for each unique right border
      * This list is retained as table.columnBorders
      * The number of columns is table.cols
     */
-    
-    /* largest possible list */ 
+
+    /* largest possible list */
     rightBorders = (int *) RTFAlloc((table.cellCount) * sizeof(int));
     if (!rightBorders) {
         RTFPanic("%s: cannot allocate array for cell borders\n", fn);
@@ -2394,23 +1768,23 @@ static void PrescanTable(void)
 
     table.cols = 0;
     for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
-    
+
         enteredValue = false;
-        for (j = 0; j < table.cols; j++) 
+        for (j = 0; j < table.cols; j++)
             if (rightBorders[j] == cellPtr->right) enteredValue=true;
 
         if (!enteredValue) {
             rightBorders[table.cols] = cellPtr->right;
             (table.cols)++;
         }
-            
+
         if (cellPtr->y == 0)
             cellPtr->left = table.leftEdge;
     }
 
     /* allocate array for column border entries. */
     table.columnBorders = (int *) RTFAlloc(((table.cols) + 1) * sizeof(int));
-    
+
     if (!table.columnBorders) {
         RTFPanic("%s: cannot allocate array for column borders\n", fn);
         exit(1);
@@ -2429,11 +1803,11 @@ static void PrescanTable(void)
     (table.columnBorders)[0] = table.leftEdge;
 
     /***************************************************************************
-     * sort the column border array in ascending order. 
-     * This is important for figuring out whether a cell spans multiple columns. 
+     * sort the column border array in ascending order.
+     * This is important for figuring out whether a cell spans multiple columns.
      * This is calculated in the function GetColumnSpan.
      */
-     
+
     if (g_debug_table_prescan) fprintf(stderr,"* sorting borders...\n");
     for (i = 0; i < (table.cols); i++)
         for (j = i + 1; j < (table.cols + 1); j++)
@@ -2441,17 +1815,17 @@ static void PrescanTable(void)
                 Swap((table.columnBorders)[i], (table.columnBorders)[j]);
 
     if (g_debug_table_prescan) fprintf(stderr,"* table left border is at %d\n", (table.columnBorders)[0]);
-    
+
     for (i = 1; i < (table.cols + 1); i++) {
         /* Sometimes RTF does something stupid and assigns two adjoining cell
            the same right border value. Dunno why. If this happens, I move the
-           second cell's right border by 10 twips. Microsoft really has some 
+           second cell's right border by 10 twips. Microsoft really has some
            morons!
          */
         if (table.columnBorders[i] == table.columnBorders[i - 1])
             table.columnBorders[i] += 10;
 
-        if (g_debug_table_prescan) fprintf(stderr,"* cell right border is at %d\n", table.columnBorders[i]); 
+        if (g_debug_table_prescan) fprintf(stderr,"* cell right border is at %d\n", table.columnBorders[i]);
     }
 
     /* fill in column spans for each cell */
@@ -2461,12 +1835,12 @@ static void PrescanTable(void)
             RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn, i);
             exit(1);
         }
-        
+
         cellPtr->columnSpan = GetColumnSpan(cellPtr);
         if (cellPtr->columnSpan > 1)
             table.multiCol = true;
-            
-        if (g_debug_table_prescan) fprintf(stderr,"* cell %d spans %d columns\n", cellPtr->index, cellPtr->columnSpan); 
+
+        if (g_debug_table_prescan) fprintf(stderr,"* cell %d spans %d columns\n", cellPtr->index, cellPtr->columnSpan);
 
         /* correct the vertical cell position for any multicolumn cells */
         if ((cellPtr->y) != 0) {
@@ -2531,7 +1905,7 @@ static void DoMergedCells(cell * cellPtr)
 }
 
 
-/* 
+/*
  * Writes cell information for each cell. Each cell is defined in a multicolumn
  * environment for maximum flexibility. Useful when we have merged rows and columns.
  */
@@ -2554,15 +1928,15 @@ static void WriteCellHeader(int cellNum)
     if (table.multiCol) {
         snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{", cellPtr->columnSpan);
         PutLitStr(buf);
-        
+
         if (cellPtr->columnSpan < 1)
             RTFMsg("* Warning: nonsensical table encountered...cell %d spans %d columns.\nProceed with caution!\n",
                    cellPtr->index, cellPtr->columnSpan);
-                   
+
         /* this check is to draw the left vertical boundary of the table */
         if (cellPtr->y == 0)
             PutLitChar('|');
-            
+
         if (cellPtr->mergePar == first) {
             snprintf(buf, rtfBufSiz, "p{%1.3fin}|}\n{", cellPtr->width);
             PutLitStr(buf);
@@ -2577,9 +1951,6 @@ static void WriteCellHeader(int cellNum)
     } else {
         PutLitStr("{");
     }
-
-//    if (rtfClass == rtfText)
-    WriteTextStyle();
 
     if (cellPtr->mergePar == first)
         DoMergedCells(cellPtr);
@@ -2599,10 +1970,9 @@ static void ProcessTableRow(int rowNum)
     boolean startCellText = false;
     cell *cellPtr;
     int cellsInThisRow = 0;
-    int i;
 
     wroteCellHeader = false;
-    
+
     while (!endOfRow) {
         RTFGetToken();
 
@@ -2612,65 +1982,30 @@ static void ProcessTableRow(int rowNum)
 
         /* ignore unknown destination groups */
         if (strcmp(rtfTextBuf, "\\*") == 0) {
-        /*ExamineToken();*/
             RTFSkipGroup();
             continue;
         }
 
-        if (RTFCheckCM(rtfControl, rtfCharAttr)) {
-            switch (rtfMinor) {
-            case rtfFontNum:
-                RTFRouteToken();
-                break;
-                
-            case rtfPlain:
-                CheckForCharAttr();
-                InitializeTextStyle();
-                break;
-                
-            case rtfBold:
-            case rtfItalic:
-            case rtfUnderline:
-            case rtfAllCaps:
-            case rtfSubScrShrink:
-            case rtfSuperScrShrink:
-            case rtfForeColor:
-            case rtfBackColor:
-            case rtfFontSize:
-                CharAttr();
-                if (startCellText && (cellsInThisRow < (table.rowInfo)[rowNum]))
-                    RTFRouteToken();
-                break;
-            }
-            continue;
-        }
-
-
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfRow)) {
             if (g_debug_table_writing) fprintf(stderr,"* end of row\n");
+            suppressLineBreak=false;
             return;
         }
 
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfCell)) {
             (table.cellCount)++;
             cellsInThisRow++;
-            if (!startCellText) {   
+            if (!startCellText) {
                 /* The cell is empty. */
                 if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n",table.cellCount - 1);
                 cellPtr = GetCellInfo(table.cellCount - 1);
                 WriteCellHeader(table.cellCount - 1);
             }
-            SetBraceLevels(SAVE_LEVELS);
-            CheckForCharAttr();
-            for (i = 0; i < charAttrCount; i++)
-                PutLitChar('}');
-            charAttrCount = 0;
-            SetBraceLevels(RESTORE_LEVELS);
+            StopTextStyle();
             if (cellPtr->mergePar == first)
                 PutLitChar('}');
             PutLitStr("} & ");
             InsertNewLine();
-//            suppressLineBreak = true;
             startCellText = false;  /* we are not in the text field of a cell any more */
             paragraph.alignment = left;
             wroteCellHeader = false;
@@ -2682,17 +2017,18 @@ static void ProcessTableRow(int rowNum)
                 WriteCellHeader(table.cellCount);
                 cellPtr = GetCellInfo(table.cellCount);
                 startCellText = true;
-                textStyle.newStyle = false;
+                suppressLineBreak = true;
             }
         }
-        
+
         RTFRouteToken();
     }
+    suppressLineBreak = false;
 }
 
 /*
- This function draws horizontal lines within a table. It looks 
- for vertically merged rows that do not have any bottom border
+ * This function draws horizontal lines within a table. It looks
+ * for vertically merged rows that do not have any bottom border
  */
 static void DrawTableRowLine(int rowNum)
 {
@@ -2734,8 +2070,7 @@ static void DrawTableRowLine(int rowNum)
 }
 
 
-
-/* All right, the big monster. When we reach a table, 
+/* All right, the big monster. When we reach a table,
  * we don't know anything about it, i.e., number of rows
  * and columns, whether any rows or columns are merged,
  * etc. We have to prescan the table first, where we
@@ -2765,10 +2100,12 @@ static void DoTable(void)
     if (g_debug_table_writing) fprintf(stderr,"* done prescanning table...\n");
     table.cellCount = 0;
 
-    table.inside = true;
+    insideTable = false;
 
-    EndLastParagraph();
-    StartNewParagraph();
+    EndParagraph();
+    NewParagraph();
+
+    insideTable = true;
 
     PutLitStr("\\begin{");
     PutLitStr(tableString);
@@ -2798,31 +2135,30 @@ static void DoTable(void)
 
 /*      printf ("* processing table rows...\n");        */
     for (i = 0; i < table.rows; i++) {
-        snprintf(buf, 100, "%% ROW %d", i + 1);
+        snprintf(buf, 100, "%% ROW %d\n", i + 1);
         PutLitStr(buf);
-        InsertNewLine();
 
         if (g_debug_table_writing) fprintf(stderr,"* Starting new row #%d\n",i);
         ProcessTableRow(rowNum);
 
         fseek(ofp, -4, 2);      /* erase the "& \n" at the end of the last cell of the row */
-        PutLitStr("\\\\");    
+        PutLitStr("\\\\");
         InsertNewLine();
         if (i < (table.rows - 1))
             DrawTableRowLine(rowNum);
         paragraph.alignment = left;
         rowNum++;
 
-        InitializeTextStyle();
+        InitTextStyle();
     }
 
     PutLitStr("\\hline\n");
     snprintf(buf, 100, "\\end{%s}\n", tableString);
-    PutLitStr(buf);    
+    PutLitStr(buf);
     nowBetweenParagraphs = true;
 
     RTFFree((char *) table.columnBorders);
-    table.inside = false;       /* end of table */
+    insideTable = false;       /* end of table */
     table.previousColumnValue = PREVIOUS_COLUMN_VALUE;
     table.multiCol = false;
     table.multiRow = false;
@@ -2837,7 +2173,7 @@ static void ParAttr(void)
     if (insideFootnote || insideHyperlink)
         return;
 
-    if (!(table.inside)) {
+    if (!insideTable) {
         CheckForBeginDocument();
 
         switch (rtfMinor) {
@@ -2861,25 +2197,25 @@ static void ParAttr(void)
             paragraph.extraIndent = 0;
             paragraph.alignment = left;
             paragraph.headingString = NULL;
-            InitializeTextStyle();
+            InitTextStyle();
             break;
         case rtfStyleNum:
             if ((stylePtr = RTFGetStyle(rtfParam)) == (RTFStyle *) NULL)
                 break;
             if (strcmp(stylePtr->rtfSName, "heading 1") == 0) {
-                if (paragraphWritten.headingString) EndLastParagraph();
+                if (paragraphWritten.headingString) EndParagraph();
                 paragraph.headingString=heading1String;
                 nowBetweenParagraphs = true;
                 suppressLineBreak = true;
                 DoSectionCleanUp();
             } else if (strcmp(stylePtr->rtfSName, "heading 2") == 0) {
-                if (paragraphWritten.headingString) EndLastParagraph();
+                if (paragraphWritten.headingString) EndParagraph();
                 paragraph.headingString=heading2String;
                 nowBetweenParagraphs = true;
                 suppressLineBreak = true;
                 DoSectionCleanUp();
             } else if (strcmp(stylePtr->rtfSName, "heading 3") == 0) {
-                if (paragraphWritten.headingString) EndLastParagraph();
+                if (paragraphWritten.headingString) EndParagraph();
                 paragraph.headingString=heading3String;
                 nowBetweenParagraphs = true;
                 suppressLineBreak = true;
@@ -2963,11 +2299,11 @@ static void ControlClass(void)
         RTFRouteToken();
         break;
     case rtfTblAttr:            /* trigger for reading table */
-        if (rtfMinor == rtfRowDef && !(table.inside)) {
+        if (rtfMinor == rtfRowDef && !(insideTable)) {
             RTFUngetToken();
             DoTable();          /* if we are not already inside a table, get into it */
         } else
-            DoTableAttr();      /* if we are already inside 
+            DoTableAttr();      /* if we are already inside
                                  * a table, set table attributes */
         break;
     case rtfParAttr:
@@ -3007,15 +2343,15 @@ static int HexData(void)
         RTFPeekToken();
         if ((int) (rtfTextBuf[0]) == 10) {
             RTFGetToken();      /* skip any carriage returns */
-            RTFPeekToken();     /* look at the next token to 
+            RTFPeekToken();     /* look at the next token to
                                  * check if there is another row */
         }
 
-        /* 
+        /*
          * there are some groups within the header that contain text data that should not
          * be confused with hex data
          */
-        if (RTFCheckMM(rtfDestination, rtfSp) != 0 || strcmp(rtfTextBuf, "\\*") == 0) 
+        if (RTFCheckMM(rtfDestination, rtfSp) != 0 || strcmp(rtfTextBuf, "\\*") == 0)
         {
             RTFSkipGroup();
             return (0);
@@ -3073,8 +2409,8 @@ static void WritePictureHeader(FILE * pictureFile)
     unsigned char wmfhead[22] = {
         /* key      = */ 0xd7, 0xcd, 0xc6, 0x9a,
         /* hmf      = */ 0x00, 0x00,
-        /* bbox     = */ 0xfc, 0xff, 0xfc, 0xff, 
-        /* width    = */ 0x00, 0x00, 
+        /* bbox     = */ 0xfc, 0xff, 0xfc, 0xff,
+        /* width    = */ 0x00, 0x00,
         /* height   = */ 0x00, 0x00,
         /* inch     = */ 0x60, 0x00,
         /* reserved = */ 0x00, 0x00, 0x00, 0x00,
@@ -3151,7 +2487,7 @@ static void ConvertHexPicture(char *pictureType)
     /* write appropriate header */
     WritePictureHeader(pictureFile);
 
-    /* now we have to read the hex code in pairs of two 
+    /* now we have to read the hex code in pairs of two
      * (1 byte total) such as ff, a1, 4c, etc...*/
     while (!groupEnd) {
         RTFGetToken();
@@ -3162,7 +2498,7 @@ static void ConvertHexPicture(char *pictureType)
 
         if (rtfClass == rtfGroup)
             break;
-        
+
         if (!groupEnd) {
             hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
             hexEvenOdd++;
@@ -3171,10 +2507,10 @@ static void ConvertHexPicture(char *pictureType)
         RTFGetToken();
         if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
             RTFGetToken();
-            
+
         if (rtfClass == rtfGroup)
             break;
-        
+
         if (!groupEnd) {
             hexNumber += RTFCharToHex(rtfTextBuf[0]);   /* this is the the number */
             hexEvenOdd--;
@@ -3192,7 +2528,7 @@ static void ConvertHexPicture(char *pictureType)
 }
 
 
-/* This function writes the appropriate LaTeX2e commands to include the picture 
+/* This function writes the appropriate LaTeX2e commands to include the picture
    into the LaTeX file */
 static void IncludeGraphics(char *pictureType)
 {
@@ -3214,7 +2550,7 @@ static void IncludeGraphics(char *pictureType)
             free(pdfname);
         }
         strcpy(suffix, ".pdf");
-#endif          
+#endif
     }
 
     if (picture.scaleX == 0)
@@ -3234,7 +2570,7 @@ static void IncludeGraphics(char *pictureType)
         height = (double) ((double) picture.goalHeight * scaleY / 20);
     }
 
-    EndLastParagraph();
+    EndParagraph();
 
     figPtr = strrchr(picture.name, PATH_SEP);
     if (!figPtr)
@@ -3257,7 +2593,7 @@ static void IncludeGraphics(char *pictureType)
             snprintf(dummyBuf, rtfBufSiz, "\\includegraphics[width=%2.3fin, height=%2.3fin]{%s}",
                     width / 72, height / 72, figPtr);
 
-        if (!(table.inside) && !insideFootnote) {
+        if (!insideTable && !insideFootnote) {
             if (height > 50) {
                 PutLitStr("\\begin{figure}[htbp]");
             }
@@ -3390,7 +2726,7 @@ char *my_strcasestr(const char *haystack, const char *needle)
     size_t hay_len = strlen(haystack);
     size_t needle_len = strlen(needle);
     while (hay_len >= needle_len) {
-        if (strncasecmp(haystack, needle, needle_len) == 0) 
+        if (strncasecmp(haystack, needle, needle_len) == 0)
             return (char *) haystack;
 
         haystack++;
@@ -3406,7 +2742,7 @@ static void ReadObjWidth(void)
 }
 
 
-/* 
+/*
 * parses \objectclass and adds the class type to the global variable 'object'
 */
 static void GetObjectClass(int *groupCounter)
@@ -3457,7 +2793,7 @@ static void GetObjectClass(int *groupCounter)
 }
 
 
-/* 
+/*
  * The result section of an \object usually contains a picture of the object
  */
 static int ReachedResult(int *groupCount)
@@ -3486,7 +2822,7 @@ static int ReachedResult(int *groupCount)
             word97ObjectType = word97Object;
         else if (RTFCheckMM(rtfWord97ObjAttr, rtfWord97ObjText) != 0)
             word97ObjectType = word97ObjText;
-        (*groupCount)--;        /* account for opening brace just 
+        (*groupCount)--;        /* account for opening brace just
                                  * before result control word */
         return (1);
     }
@@ -3499,9 +2835,9 @@ static int ReachedResult(int *groupCount)
     return (0);
 }
 
-/* 
+/*
  * Decodes the OLE and extract the specified stream type into a buffer.
- * This function uses the cole library 
+ * This function uses the cole library
  */
 static int
 DecodeOLE(char *objectFileName, char *streamType,
@@ -3518,7 +2854,7 @@ DecodeOLE(char *objectFileName, char *streamType,
     }
 
 #ifdef COLE_VERBOSE
-    cole_print_tree (cfs, &colerrno); 
+    cole_print_tree (cfs, &colerrno);
 #endif
 
     if ((coleFile = cole_fopen(cfs, streamType, &colerrno)) == NULL) {
@@ -3565,15 +2901,15 @@ static int ishex(char c)
 {
     if ( '0' <= c && c <= '9' )
         return 1;
-    if ('a' <= c && c <= 'f') 
+    if ('a' <= c && c <= 'f')
         return 1;
-    if ('A' <= c && c <= 'F') 
+    if ('A' <= c && c <= 'F')
         return 1;
     return 0;
 }
 
-/* 
- * Save the hex-encoded object data and as binary bytes in objectFileName 
+/*
+ * Save the hex-encoded object data and as binary bytes in objectFileName
  */
 static void ReadObjectData(char *objectFileName, int type, int offset)
 {
@@ -3600,16 +2936,16 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     if (!objFile)
         RTFPanic("Cannot open input file %s\n", objectFileName);
 
-/* 
+/*
  * The offset to the data should be a constant, but it seems to
- * vary from one RTF file to the next.  Perhaps there is some 
+ * vary from one RTF file to the next.  Perhaps there is some
  * Microsoft documentation that explains how many bytes exactly
  * there is before we get to the chewy nuguat.  After adding
  * several hacks to shift and squirm, the simplest thing is just
  * to skip to a sequence of bytes that should start each OLE
  * object.  This is what is done now.
  */
-       
+
     i = 0;
     while (i < 8) {
         RTFGetToken();
@@ -3622,21 +2958,21 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
             i = 1;
         else if (ishex(rtfTextBuf[0]))
             i = 0;
-        else 
+        else
             break;
     }
-    
+
     if (i<8) {
         RTFMsg("* OLE object does not have proper header\n");
         fclose(objFile);
         return;
     }
-        
+
     fputc(0xd0, objFile);
     fputc(0xcf, objFile);
     fputc(0x11, objFile);
     fputc(0xe0, objFile);
-        
+
     /* each byte is encoded as two hex chars ... ff, a1, 4c, ...*/
     while (1) {
         RTFGetToken();
@@ -3671,24 +3007,24 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
         printf ("* Warning! Odd number of hex characters read for object!\n");
 }
 
-/* 
- * Convert OLE file containing equation 
+/*
+ * Convert OLE file containing equation
  */
- 
+
 boolean ConvertEquationFile(char *objectFileName)
 {
     unsigned char *nativeStream;
     MTEquation *theEquation;
-    uint32_t equationSize;   
+    uint32_t equationSize;
 
     nativeStream = NULL;
     theEquation = NULL;
-        
+
     /* Decode the OLE and extract the equation stream into buffer nativeStream */
     if (DecodeOLE(objectFileName, "/Equation Native", &nativeStream, &equationSize)) {
         RTFMsg("* error decoding OLE equation object!\n");
         return (false);
-    }    
+    }
 
     theEquation = (MTEquation *) malloc(sizeof(MTEquation));
     if (theEquation == NULL) {
@@ -3710,11 +3046,11 @@ boolean ConvertEquationFile(char *objectFileName)
 
         if (nowBetweenParagraphs) {
             theEquation->m_inline = 0;
-            EndLastParagraph();
-            StartNewParagraph();
+            EndParagraph();
+            NewParagraph();
         } else
             theEquation->m_inline = 1;
-        
+
         if (g_insert_eqn_name) {
             PutLitStr("\\fbox{file://");
             PutLitStr(objectFileName);
@@ -3738,7 +3074,7 @@ boolean ConvertEquationFile(char *objectFileName)
     return true;
 }
 
-/* 
+/*
  * Translate an object containing a MathType equation
  */
 static boolean ReadEquation(int *groupCount)
@@ -3772,16 +3108,16 @@ static boolean ReadEquation(int *groupCount)
     (*groupCount)--;
 
     result = ConvertEquationFile(objectFileName);
-    
+
     if (g_delete_eqn_file)
         remove(objectFileName);
-        
+
     return result;
 }
 
 
-/* 
- * Read and process \object token 
+/*
+ * Read and process \object token
  */
 static void ReadObject(void)
 {
@@ -3967,26 +3303,12 @@ static void ReadWord97Object(void)
         ReadWord97Result();
         break;
     case word97ObjText:
-        if (!table.inside) {
-            SetBraceLevels(SAVE_LEVELS);
-            for (i = 0; i < charAttrCount; i++)
-                PutLitStr("}");
-            charAttrCount = 0;
-            if (blankLineCount < MAX_BLANK_LINES) {
-                InsertNewLine();
-                InsertNewLine();
-                blankLineCount++;
-            }
+        if (!insideTable) {
+            StopTextStyle();
             word97ObjTextGL = braceLevel;
             while (braceLevel && braceLevel >= word97ObjTextGL) {
                 RTFGetToken();
                 RTFRouteToken();
-            }
-            SetBraceLevels(RESTORE_LEVELS);
-            if (blankLineCount < MAX_BLANK_LINES) {
-                InsertNewLine();
-                InsertNewLine();
-                blankLineCount++;
             }
         }
         break;
@@ -4008,7 +3330,7 @@ static void ReadWord97Object(void)
 
 
 /* the following streams should just emit ... HToc268803753
- *    PAGEREF _Toc268803753 \\h 
+ *    PAGEREF _Toc268803753 \\h
  *    HYPERLINK \\l "_Toc268803753"
  *     _Toc268803753
  */
@@ -4088,9 +3410,9 @@ static void ReadUnicode(void)
         return;
     }
 
-    if (rtfParam<0) 
+    if (rtfParam<0)
         rtfParam += 65536;
-        
+
     /* directly translate greek */
     if (913 <= rtfParam && rtfParam <= 969) {
         PutMathLitStr(UnicodeGreekToLatex[rtfParam-913]);
@@ -4098,7 +3420,7 @@ static void ReadUnicode(void)
         return;
     }
 
-    /* and also a bunch of wierd codepoints from the Symbol font 
+    /* and also a bunch of wierd codepoints from the Symbol font
        that end up in a private code area of Unicode */
     if (61472 <= rtfParam && rtfParam <= 61632) {
         PutMathLitStr(UnicodeSymbolFontToLatex[rtfParam-61472]);
@@ -4132,7 +3454,7 @@ static void ReadHyperlink(void)
                 && !RTFCheckMM(rtfSpecialChar, rtfLDblQuote)
                 && !RTFCheckMM(rtfSpecialChar, rtfRDblQuote))
                     RTFRouteToken();
-         } else 
+         } else
              RTFRouteToken();
     }
 
@@ -4151,7 +3473,6 @@ static void ReadHyperlink(void)
         RTFGetToken();
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfOptDest))
             RTFSkipGroup();
-        textStyle.newStyle = false;
         /*if (rtfClass == rtfText)*/
             RTFRouteToken();
     }
@@ -4300,7 +3621,7 @@ static void ReadBookmarkStart(void)
 
 
 /*
- * Prepares output TeX file for each input RTF file. 
+ * Prepares output TeX file for each input RTF file.
  * Sets globals and installs callbacks.
  */
 int BeginLaTeXFile(void)
@@ -4310,7 +3631,6 @@ int BeginLaTeXFile(void)
     RTFSetDefaultFont(-1);
     codePage = 0;
     charAttrCount = 0;
-    textStyle.newStyle = 0;
     nowBetweenParagraphs = true;
     seenLeftDoubleQuotes = false;
     wroteBeginDocument = false;
@@ -4320,6 +3640,7 @@ int BeginLaTeXFile(void)
     continueTextStyle = false;
     insideFootnote = false;
     insideHyperlink = false;
+    insideTable = false;
     paragraph.alignment = left;
     paragraph.lineSpacing = -99;
     paragraph.newStyle = false;
@@ -4340,6 +3661,7 @@ int BeginLaTeXFile(void)
     requireAmsSymbPackage = false;
     requireMultiColPackage = false;
     requireUlemPackage = false;
+    requireFixLtx2ePackage = false;
     requireHyperrefPackage = false;
     requireMultirowPackage = false;
     requireAmsMathPackage = false;
@@ -4352,13 +3674,13 @@ int BeginLaTeXFile(void)
     oleEquation.count = 0;
     object.class = unknownObjClass;
     object.word97 = 0;
-    table.inside = false;
     table.cellCount = 0;
     table.cellInfo = (cell *) NULL;
     table.cellMergePar = none;
     table.multiCol = false;
     table.multiRow = false;
-    InitializeTextStyle();
+    InitTextStyle();
+    textStyleWritten = textStyle;
 
     /* install class callbacks */
     RTFSetClassCallback(rtfText, TextClass);
@@ -4458,7 +3780,7 @@ char * WritePictAsPDF(char *pict)
     OSStatus        err;
     char *          pdf;
     int             n;
-    
+
     if (pict == NULL) return NULL;
     n=strlen(pict);
     pdf=malloc(n+1);
@@ -4474,27 +3796,27 @@ char * WritePictAsPDF(char *pict)
     if (pict_ref == NULL) return NULL;
 
     pict_rect = QDPictGetBounds(pict_ref);
-    
+
     pdf_name  = CFStringCreateWithCString(NULL, pdf, kCFStringEncodingMacRoman);
     pdf_url   = CFURLCreateWithFileSystemPath(NULL, pdf_name,  kCFURLPOSIXPathStyle, FALSE);
     pdf_ctx   = CGPDFContextCreateWithURL(pdf_url, &pict_rect, NULL);
 
     pict_rect = QDPictGetBounds(pict_ref);
     CGContextBeginPage(pdf_ctx, &pict_rect);
-    err = QDPictDrawToCGContext(pdf_ctx, pict_rect, pict_ref);    
+    err = QDPictDrawToCGContext(pdf_ctx, pict_rect, pict_ref);
     CGContextEndPage(pdf_ctx);
     CGContextFlush(pdf_ctx);
-    
+
     CFRelease(pdf_ctx);
     CFRelease(pdf_name);
-    CFRelease(pdf_url); 
+    CFRelease(pdf_url);
     return pdf;
 }
 
 #endif
 
 
-/* characters from the Symbol font get written to private areas of unicode that are 
+/* characters from the Symbol font get written to private areas of unicode that are
    not well supported by latex.  This is simple translation tabl.] */
 char *UnicodeSymbolFontToLatex[] = {
     " ",  /* 61472 or U+F020 */
@@ -4626,8 +3948,8 @@ char *UnicodeSymbolFontToLatex[] = {
     "\\Aleph",
     0
 };
-    
-/* greek characters translated directly to avoid the textgreek.sty package 
+
+/* greek characters translated directly to avoid the textgreek.sty package
    positions 913-969  (0x0391-0x03C9)*/
 char *UnicodeGreekToLatex[] = {
     "A",

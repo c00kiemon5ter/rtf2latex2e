@@ -102,7 +102,6 @@ static void ReadCharSetMaps(void);
 void DebugMessage(void);
 
 static void RTFSwitchCharSet(uint32_t enc);
-void CheckForCharAttr(void);
 
 /*
  * Public variables (listed in rtf.h)
@@ -609,7 +608,6 @@ static void _RTFGetToken(void)
             RTFPushStack();
             break;
         case rtfEndGroup:
-            CheckForCharAttr();
             RTFPopStack();
             break;
         }
