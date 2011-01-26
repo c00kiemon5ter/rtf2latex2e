@@ -100,18 +100,14 @@ typedef struct
     int subScript;
     int superScript;
     int fontSize;
-    long foreColor;
-    long backColor;
+    int foreColor;
+    int backColor;
 } textStyleStruct;
 
 typedef struct
 {
-    int newStyle;
     int alignment;
-    int wroteAlignment;
-    int oldSpacing;
     int lineSpacing;
-    int wroteSpacing;
     int firstIndent;
     int leftIndent;
     int rightIndent;

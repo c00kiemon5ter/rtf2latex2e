@@ -89,7 +89,6 @@ static void _RTFGetToken(void);
 static void _RTFGetToken2(void);
 static short GetChar(void);
 static void ReadFontTbl(void);
-/* static void  ReadColorTbl (void); *//* made public by Ujwal Sathyam and taken to rtf.h */
 static void ReadStyleSheet(void);
 static void ReadInfoGroup(void);
 static void ReadPictGroup(void);
@@ -1327,9 +1326,6 @@ static void ReadFontTbl(void)
  * There will be a problem if a partial entry (1 or 2 but
  * not 3 color values) is given.  The possibility is ignored
  * here. 
-   
-   Made public by Ujwal Sathyam.
-
  */
 
 void ReadColorTbl(void)

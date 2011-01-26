@@ -556,9 +556,9 @@ static void InsertNewLine(void)
 
 /*
  * This function reads colors from the color table and defines them in
- * LaTeX format to be included in the
- * LaTeX preamble. This is done after the color table has been read (see above).
-*/
+ * LaTeX format to be included in the preamble.
+ * This is done after the color table has been read (see above).
+ */
 static void DefineColors(void)
 {
     RTFColor *rtfColorPtr;
@@ -571,13 +571,30 @@ static void DefineColors(void)
         textGreen = (float) ((rtfColorPtr->rtfCGreen) / 255.0);
         textBlue = (float) ((rtfColorPtr->rtfCBlue) / 255.0);
 
-        snprintf(buf, rtfBufSiz, "\\definecolor{color%d}{rgb}{%1.3f,%1.3f,%1.3f}\n",
+        snprintf(buf, rtfBufSiz, "\\definecolor{color%02d}{rgb}{%1.3f,%1.3f,%1.3f}\n",
                 i, textRed, textGreen, textBlue);
         PutLitStr(buf);
 
         i++;
     }
 }
+
+static void WriteColors(void)
+{
+    ReadColorTbl();
+    if (1 || requireColorPackage)
+        DefineColors();
+}
+
+
+static void WriteColor (void)
+{
+    char buf[50];
+    if (!requireColorPackage) return;
+    snprintf(buf, 50, "{\\color{color%02d} ", textStyle.foreColor);
+    PutLitStr(buf);
+}
+
 
 /*
  * a useful diagnostic function to examine the token just read.
@@ -700,19 +717,6 @@ int stdCode;
     PutLitStr(oStr);
 }
 
-/* unused */
-/*
-static void WriteColor (void)
-{
-char buf[rtfBufSiz];
-
-
-        snprintf(buf, rtfBufSiz, "{\\color{color%ld} ", (int)rtfParam);
-        PutLitStr (buf);
-
-}
-*/
-
 /*
  * make sure we write this all important stuff. This routine is called
  * whenever something is written to the output file.
@@ -754,13 +758,36 @@ static void InitTextStyle(void)
     textStyle.superScript = 0;
 
     textStyle.allCaps = 0;
-    textStyle.foreColor = -1;
+    textStyle.foreColor = 0;
     textStyle.backColor = -1;
 
     paragraph.firstIndent = 0;
     paragraph.leftIndent = 0;
     paragraph.rightIndent = 0;
     paragraph.headingString = NULL;
+}
+
+static int SameTextStyle(void)
+{
+    if (textStyleWritten.fontSize != textStyle.fontSize) return false;
+
+    if (textStyleWritten.italic != textStyle.italic) return false;
+    
+    if (textStyleWritten.bold != textStyle.bold)  return false;
+
+    if (textStyleWritten.underlined != textStyle.underlined) return false;
+
+    if (textStyleWritten.smallCaps != textStyle.smallCaps) return false;
+
+    if (textStyleWritten.dbUnderlined != textStyle.dbUnderlined) return false;
+
+    if (textStyleWritten.superScript != textStyle.superScript) return false;
+
+    if (textStyleWritten.subScript != textStyle.subScript) return false;
+
+    if (requireColorPackage && textStyleWritten.foreColor != textStyle.foreColor) return false;
+    
+    return true;
 }
 
 /*
@@ -807,6 +834,11 @@ static void StopTextStyle(void)
         PutLitStr("}");
         textStyleWritten.superScript=false;
     }
+
+    if (textStyleWritten.foreColor) {
+        PutLitStr("}");
+        textStyleWritten.foreColor=0;
+    }
 }
 
 /*
@@ -817,9 +849,11 @@ static void WriteTextStyle(void)
 {
     char buf[100];
 
+	if (SameTextStyle()) return;
+	
+	StopTextStyle();
+	
     if (textStyleWritten.fontSize != textStyle.fontSize) {
-        if (textStyleWritten.fontSize != normalSize)
-            PutLitStr("}");
         if (textStyle.fontSize != normalSize) {
             snprintf(buf, 100, "{%s ", fontSizeList[textStyle.fontSize]);
             PutLitStr(buf);
@@ -830,26 +864,18 @@ static void WriteTextStyle(void)
     if (textStyleWritten.italic != textStyle.italic) {
         if (textStyle.italic)
             PutLitStr("\\textit{");
-        else
-            PutLitStr("}");
         textStyleWritten.italic=textStyle.italic;
     }
 
     if (textStyleWritten.bold != textStyle.bold) {
         if (textStyle.bold)
             PutLitStr("\\textbf{");
-        else {
-            PutLitStr("}");
-        }
         textStyleWritten.bold=textStyle.bold;
     }
 
     if (textStyleWritten.underlined != textStyle.underlined) {
         if (textStyle.underlined)
             PutLitStr("\\emph{");
-        else {
-            PutLitStr("}");
-        }
         requireUlemPackage = true;
         textStyleWritten.underlined=textStyle.underlined;
     }
@@ -857,18 +883,12 @@ static void WriteTextStyle(void)
     if (textStyleWritten.smallCaps != textStyle.smallCaps) {
         if (textStyle.smallCaps)
             PutLitStr("\\textsc{");
-        else {
-            PutLitStr("}");
-        }
         textStyleWritten.smallCaps=textStyle.smallCaps;
     }
 
     if (textStyleWritten.dbUnderlined != textStyle.dbUnderlined) {
         if (textStyle.dbUnderlined)
             PutLitStr("\\uuline{");
-        else {
-            PutLitStr("}");
-        }
         requireUlemPackage = true;
         textStyleWritten.dbUnderlined=textStyle.dbUnderlined;
     }
@@ -876,20 +896,22 @@ static void WriteTextStyle(void)
     if (textStyleWritten.superScript != textStyle.superScript) {
         if (textStyle.superScript)
             PutLitStr("\\textsuperscript{");
-        else {
-            PutLitStr("}");
-        }
         textStyleWritten.superScript=textStyle.superScript;
     }
 
     if (textStyleWritten.subScript != textStyle.subScript) {
         if (textStyle.subScript)
             PutLitStr("\\textsubscript{");
-        else {
-            PutLitStr("}");
-        }
         textStyleWritten.subScript=textStyle.subScript;
         requireFixLtx2ePackage = true;
+    }
+
+    if (requireColorPackage && textStyleWritten.foreColor != textStyle.foreColor) {
+        if (textStyle.foreColor) {
+    		snprintf(buf, 100, "{\\color{color%02d} ", textStyle.foreColor);
+    		PutLitStr(buf);
+        }
+        textStyleWritten.foreColor=textStyle.foreColor;
     }
 }
 
@@ -1162,13 +1184,6 @@ static void WriteLaTeXHeader(void)
     }
 
     PutLitStr("\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
-}
-
-static void WriteColors(void)
-{
-    ReadColorTbl();
-    if (requireColorPackage)
-        DefineColors();
 }
 
 static void DoSectionCleanUp(void)
@@ -2113,7 +2128,6 @@ static void ParAttr(void)
 
         switch (rtfMinor) {
         case rtfSpaceBetween:
-            paragraph.oldSpacing = paragraph.lineSpacing;
             paragraph.lineSpacing = rtfParam;
             break;
         case rtfQuadCenter:
@@ -3553,10 +3567,7 @@ int BeginLaTeXFile(void)
     insideTable = false;
     paragraph.alignment = left;
     paragraph.lineSpacing = -99;
-    paragraph.newStyle = false;
     paragraph.parbox = false;
-    paragraph.wroteAlignment = false;
-    paragraph.wroteSpacing = false;
     section.newStyle = false;
     section.cols = 1;
 
@@ -3564,6 +3575,8 @@ int BeginLaTeXFile(void)
         requireColorPackage = false;
     else
         requireColorPackage = true;
+        
+    requireColorPackage = true;
     requireSetspacePackage = false;
     requireTablePackage = false;
     requireGraphicxPackage = false;
