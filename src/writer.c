@@ -145,7 +145,6 @@ float preferenceValue[NumberOfPreferences];
  * Flags global to LaTeX2e-writer.c
  */
 static int wrapCount = 0;
-static int charAttrCount = 0;
 static int mathMode = 0;
 static int word97ObjectType;
 static boolean nowBetweenParagraphs = true;
@@ -984,7 +983,7 @@ static void WriteTextStyle(void)
 }
 
 /*
- * This function stores the text style.  Should be merged into CharAttr()
+ * This function stores the text style.
  */
 static void SetTextStyle(void)
 {
@@ -1020,14 +1019,9 @@ static void SetTextStyle(void)
     case rtfSubScript:
         textStyle.subScript = (rtfParam) ? true : false;
         break;
+    case rtfSuperScrShrink:
     case rtfSuperScript:
         textStyle.superScript = (rtfParam) ? true : false;
-        break;
-    case rtfSuperScrShrink:
-        RTFGetToken();
-        if (strcmp(rtfTextBuf, "\\chftn") && !RTFCheckCM(rtfGroup, rtfEndGroup))
-            textStyle.superScript = (rtfParam) ? true : false;
-        RTFUngetToken();
         break;
     case rtfFontSize:
         textStyle.fontSize = normalSize;
@@ -1049,6 +1043,9 @@ static void SetTextStyle(void)
             textStyle.fontSize = giganticSize;
         else if (rtfParam <= 72)
             textStyle.fontSize = GiganticSize;
+        break;
+    case rtfDeleted:
+        RTFSkipGroup();
         break;
     }
 }
@@ -1414,40 +1411,6 @@ static void SpecialChar(void)
     }
 }
 
-
-/* This function looks at a few character attributes that are relevant to LaTeX */
-static void CharAttr(void)
-{
-    switch (rtfMinor) {
-
-    case rtfPlain:
-    case rtfItalic:
-    case rtfBold:
-    case rtfUnderline:
-    case rtfFontSize:
-    case rtfSmallCaps:
-    case rtfAllCaps:
-    case rtfDbUnderline:
-        if (!(int) preferenceValue[GetPreferenceNum("ignoreTextStyle")])
-            SetTextStyle();
-        break;
-    case rtfSubScript:
-    case rtfSubScrShrink:
-    case rtfSuperScript:
-    case rtfSuperScrShrink:
-        SetTextStyle();
-        break;
-    case rtfForeColor:
-        if (requireColorPackage)
-            SetTextStyle();
-        break;
-    case rtfDeleted:
-        RTFSkipGroup();
-        break;
-    }
-
-
-}
 
 /*
  * This routine sets attributes for the detected cell and
@@ -2292,7 +2255,7 @@ static void ControlClass(void)
         SpecialChar();
         break;
     case rtfCharAttr:
-        CharAttr();
+        SetTextStyle();
         break;
     case rtfListAttr:
         RTFSkipGroup();
@@ -3630,7 +3593,6 @@ int BeginLaTeXFile(void)
 
     RTFSetDefaultFont(-1);
     codePage = 0;
-    charAttrCount = 0;
     nowBetweenParagraphs = true;
     seenLeftDoubleQuotes = false;
     wroteBeginDocument = false;
