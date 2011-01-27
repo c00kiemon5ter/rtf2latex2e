@@ -3389,7 +3389,7 @@ static void HandleOptionalTokens(void)
 		if (rtfClass != rtfGroup) { SkipGroup(); break;}
 		
 		RTFGetToken();    /* should be nonshppict */
-		SkipGroup();
+		SkipGroup();      /* because we don't want two pictures in latex file */
 		break;
 		
     default:

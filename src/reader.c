@@ -665,8 +665,33 @@ static void _RTFGetToken2(void)
         }
         return;
     }
+    
+    /* get the character following the backslash */
+	c = GetChar();
+	
+	/* \<newline>text         ---> \par text */
+	/* \<newline><spaces>text ---> \text */
+	if (c == '\n' || c == '\r') {
+		while (c == '\n' || c == '\r')  
+			c = GetChar();
+	
+		if (c != ' ') {
+			pushedChar = c;
+			strcpy(rtfTextBuf,"\\par");
+        	Lookup("\\par"); 
+			return;
+		}
+		
+		while (c == ' ') 
+			c = GetChar();
 
-    if ((c = GetChar()) == EOF) {
+		rtfTextBuf[1] = c;
+		rtfTextBuf[2] = '\0';
+		rtfTextLen = 2;
+	}
+	
+
+    if (c == EOF) {
         /* early eof, whoops (class is rtfUnknown) */
         return;
     }
@@ -717,6 +742,8 @@ static void _RTFGetToken2(void)
      * in the buffer, though, so fix up before and restore after
      * looking up.
      */
+
+		fprintf(stderr,"slash --> 0x%2x ... '%s'\n", c, rtfTextBuf);
 
     if (c != EOF)
         rtfTextBuf[rtfTextLen - 1] = '\0';
