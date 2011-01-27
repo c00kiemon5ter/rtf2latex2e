@@ -3172,9 +3172,9 @@ static void ReadHyperlink(void)
 
     while (braceLevel && braceLevel >= localGL) {
         RTFGetToken();
-        if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfOptDest))
+        /*if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfOptDest))
             RTFSkipGroup();
-        /*if (rtfClass == rtfText)*/
+        if (rtfClass == rtfText)*/
             RTFRouteToken();
     }
 
@@ -3373,8 +3373,27 @@ static void HandleOptionalTokens(void)
     	ReadUnicode();
     	break;
 
+	case rtfWord97Picture:
+		/* expecting {\*\shppict{\pict{...}}{\nonshppict{\pict{...}} */
+		
+		RTFGetToken();
+		if (rtfClass != rtfGroup) { SkipGroup(); break;}
+		
+		RTFGetToken();    /* should be pict */
+		if (rtfMinor != rtfPict){ SkipGroup(); break;}
+		
+		RTFRouteToken();  /* handle pict */
+		RTFGetToken();    /* should be } */
+		RTFRouteToken();  /* handle last brace from shppict */
+		RTFGetToken();	  /* should be { */
+		if (rtfClass != rtfGroup) { SkipGroup(); break;}
+		
+		RTFGetToken();    /* should be nonshppict */
+		SkipGroup();
+		break;
+		
     default:
-//		ExamineToken();
+	//	ExamineToken(); 
         RTFSkipGroup();
         break;
 	}
@@ -3387,17 +3406,6 @@ static void HandleOptionalTokens(void)
  */
 static void SpecialChar(void)
 {
-    if (nowBetweenParagraphs) {
-        if (rtfMinor == rtfTab) {
-            paragraph.extraIndent += 360;
-            return;
-        }
-        if (rtfMinor == rtfNoBrkSpace) {
-            paragraph.extraIndent += 72;
-            return;
-        }
-    }
-
     switch (rtfMinor) {
     case rtfSect:
     case rtfLine:
@@ -3407,10 +3415,16 @@ static void SpecialChar(void)
         nowBetweenParagraphs = true;
         break;
     case rtfNoBrkSpace:
-        PutStdChar(rtfSC_nobrkspace);
+    	if (nowBetweenParagraphs)
+            paragraph.extraIndent += 72;
+    	else
+        	PutStdChar(rtfSC_nobrkspace);
         break;
     case rtfTab:
-        PutLitStr("\\tab ");
+    	if (nowBetweenParagraphs)
+            paragraph.extraIndent += 360;
+    	else
+        	PutLitStr("\\tab ");
         break;
     case rtfNoBrkHyphen:
         PutStdChar(rtfSC_nobrkhyphen);
@@ -3443,7 +3457,12 @@ static void SpecialChar(void)
     case rtfOptDest:
     	HandleOptionalTokens();
     	break;
-
+    case rtfCurHeadPage:
+    	break;
+    case rtfCurFNote:
+    	break;
+	default:
+		ExamineToken();  /* comment out before release */
     }
 }
 
