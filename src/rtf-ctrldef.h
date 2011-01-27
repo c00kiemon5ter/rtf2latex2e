@@ -1028,7 +1028,7 @@
 # define		rtfList	697
 # define		rtfListTable	698
 # define		rtfListOverrideTable	699
- 
+
  /*
   * Word 97 Object Attributes
   */
@@ -1071,3 +1071,13 @@
 # define		rtfHighChar	715
 # define		rtfDblByteChar	716
 
+# define	rtfGoober	31
+
+# define		rtfxmlTbl	717
+# define		rtfxmlNs	718
+# define		rtfxmlOpen	719
+# define		rtfxmlAttr	720
+# define		rtfxmlAttrNs	721
+# define		rtfxmlAttrName	722
+# define		rtfxmlAttrValue	723
+# define		rtfListLevel	724

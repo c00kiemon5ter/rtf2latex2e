@@ -110,7 +110,7 @@ short rtfClass;
 short rtfMajor;
 short rtfMinor;
 int32_t rtfParam;
-char *rtfTextBuf = (char *) NULL;
+char *rtfTextBuf = NULL;
 short rtfTextLen;
 
 int32_t rtfLineNum;
@@ -128,21 +128,21 @@ static short pushedClass;       /* pushed token info for RTFUngetToken() */
 static short pushedMajor;
 static short pushedMinor;
 static int32_t pushedParam;
-static char *pushedTextBuf = (char *) NULL;
+static char *pushedTextBuf = NULL;
 
 static short prevChar;
 static short bumpLine;
 
 
-static RTFFont *fontList = (RTFFont *) NULL;    /* these lists MUST be */
-static RTFColor *colorList = (RTFColor *) NULL; /* initialized to NULL */
-static RTFStyle *styleList = (RTFStyle *) NULL;
+static RTFFont *fontList = NULL;    /* these lists MUST be */
+static RTFColor *colorList = NULL; /* initialized to NULL */
+static RTFStyle *styleList = NULL;
 
 
 static FILE *rtffp;
 
-static char *inputName = (char *) NULL;
-static char *outputName = (char *) NULL;
+static char *inputName = NULL;
+static char *outputName = NULL;
 
 
 /*
@@ -153,7 +153,7 @@ static char *outputName = (char *) NULL;
 
 static char *stdCharName[] = {
 # include       "stdcharnames.h"
-    (char *) NULL
+    NULL
 };
 
 
@@ -163,10 +163,10 @@ static char *stdCharName[] = {
  * used as indices into the arrays to produce standard character codes.
  */
 
-static char *genCharSetFile = (char *) NULL;
+static char *genCharSetFile = NULL;
 static short haveGenCharSet = 0;
 
-static char *symCharSetFile = (char *) NULL;
+static char *symCharSetFile = NULL;
 static short symCharCode[charSetSize];  /* symbol */
 static short haveSymCharSet = 0;
 
@@ -192,7 +192,7 @@ static short *curCharCode = cp1252CharCode;
 /*
  * By default, the reader is configured to handle charset mapping invisibly,
  * including reading the charset files and switching charset maps as necessary
- * for Symbol font.  Now supports automatic switching character set 
+ * for Symbol font.  Now supports automatic switching character set
  * maps for other encodings such latin1, latin2, etc...
  */
 
@@ -234,15 +234,15 @@ void RTFInit(void)
 
     RTFFree(inputName);
     RTFFree(outputName);
-    inputName = outputName = (char *) NULL;
+    inputName = outputName = NULL;
 
     /* initialize control symbol lookup table */
     LookupInit();
 
     for (i = 0; i < rtfMaxClass; i++)
-        RTFSetClassCallback(i, (RTFFuncPtr) NULL);
+        RTFSetClassCallback(i, NULL);
     for (i = rtfMinDestination; i <= rtfMaxDestination; i++)
-        RTFSetDestinationCallback(i, (RTFFuncPtr) NULL);
+        RTFSetDestinationCallback(i, NULL);
 
     /* install built-in destination readers */
     RTFSetDestinationCallback(rtfFontTbl, ReadFontTbl);
@@ -252,26 +252,25 @@ void RTFInit(void)
     RTFSetDestinationCallback(rtfPict, ReadPictGroup);
     RTFSetDestinationCallback(rtfObject, ReadObjGroup);
 
-
-    RTFSetReadHook((RTFFuncPtr) NULL);
+    RTFSetReadHook(NULL);
 
     /* dump old lists if necessary */
 
-    while (fontList != (RTFFont *) NULL) {
+    while (fontList != NULL) {
         fp = fontList->rtfNextFont;
         RTFFree(fontList->rtfFName);
         RTFFree((char *) fontList);
         fontList = fp;
     }
-    while (colorList != (RTFColor *) NULL) {
+    while (colorList != NULL) {
         cp = colorList->rtfNextColor;
         RTFFree((char *) colorList);
         colorList = cp;
     }
-    while (styleList != (RTFStyle *) NULL) {
+    while (styleList != NULL) {
         sp = styleList->rtfNextStyle;
         eltList = styleList->rtfSSEList;
-        while (eltList != (RTFStyleElt *) NULL) {
+        while (eltList != NULL) {
             ep = eltList->rtfNextSE;
             RTFFree(eltList->rtfSEText);
             RTFFree((char *) eltList);
@@ -303,7 +302,7 @@ void RTFSetStream(FILE *stream)
  */
 void RTFSetInputName(char *name)
 {
-    if ((inputName = RTFStrSave(name)) == (char *) NULL)
+    if ((inputName = RTFStrSave(name)) == NULL)
         RTFPanic("RTFSetInputName: out of memory");
 }
 
@@ -316,7 +315,7 @@ char *RTFGetInputName(void)
 
 void RTFSetOutputName(char *name)
 {
-    if ((outputName = RTFStrSave(name)) == (char *) NULL)
+    if ((outputName = RTFStrSave(name)) == NULL)
         RTFPanic("RTFSetOutputName: out of memory");
 }
 
@@ -328,7 +327,7 @@ char *RTFGetOutputName(void)
 
 
 
-/* ---------------------------------------------------------------------- 
+/* ----------------------------------------------------------------------
  * Callback table manipulation routines
  *
  * Install or return a writer callback for a token class
@@ -349,7 +348,7 @@ RTFFuncPtr RTFGetClassCallback(short class)
 {
     if (class >= 0 && class < rtfMaxClass)
         return (ccb[class]);
-    return ((RTFFuncPtr) NULL);
+    return (NULL);
 }
 
 
@@ -371,7 +370,7 @@ RTFFuncPtr RTFGetDestinationCallback(short dest)
 {
     if (dest >= rtfMinDestination && dest <= rtfMaxDestination)
         return (dcb[dest - rtfMinDestination]);
-    return ((RTFFuncPtr) NULL);
+    return (NULL);
 }
 
 
@@ -410,14 +409,15 @@ void RTFRouteToken(void)
     }
     if (RTFCheckCM(rtfControl, rtfDestination)) {
         /* invoke destination-specific callback if there is one */
+
         if ((p = RTFGetDestinationCallback(rtfMinor))
-            != (RTFFuncPtr) NULL) {
+            != NULL) {
             (*p) ();
             return;
         }
     }
     /* invoke class callback if there is one */
-    if ((p = RTFGetClassCallback(rtfClass)) != (RTFFuncPtr) NULL)
+    if ((p = RTFGetClassCallback(rtfClass)) != NULL)
         (*p) ();
 }
 
@@ -459,7 +459,7 @@ short RTFGetToken(void)
     for (;;) {
         _RTFGetToken();
         DebugMessage();
-        if ((p = RTFGetReadHook()) != (RTFFuncPtr) NULL)
+        if ((p = RTFGetReadHook()) != NULL)
             (*p) ();            /* give read hook a look at token */
 
         /* Silently discard newlines, carriage returns, nulls.  */
@@ -581,21 +581,19 @@ static void _RTFGetToken(void)
 
     } else if ((autoCharSetFlags & rtfSwitchCharSet)
                && RTFCheckCMM(rtfControl, rtfCharAttr, rtfFontNum)) {
-        if ((fp = RTFGetFont((short) rtfParam)) != (RTFFont *) NULL) {
+        if ((fp = RTFGetFont((short) rtfParam)) != NULL) {
             if (strncmp(fp->rtfFName, "Symbol", 6) == 0)
                 curCharSet = rtfCSSymbol;
             else
                 curCharSet = rtfCSGeneral;
             RTFSetCharSet(curCharSet);
-            /* next piece of code added by Ujwal Sathyam;
-               checks if there is an encoding change other than Symbol */
+            /* checks if there is an encoding change other than Symbol */
             if (fp->rtfFCharSet > -1)
                 RTFSwitchCharSet(fp->rtfFCharSet);
             /* end addition */
         }
     }
-    /* the following check added by Ujwal Sathyam to detect character set
-       switches using the \cchs command */
+    /* detect character set switches using the \cchs command */
     else if ((autoCharSetFlags & rtfSwitchCharSet)
              && RTFCheckCMM(rtfControl, rtfCharAttr, rtfCharCharSet)) {
         RTFSwitchCharSet(rtfParam);
@@ -644,13 +642,13 @@ static void _RTFGetToken2(void)
         rtfMajor = rtfBeginGroup;
         return;
     }
-    
+
     if (c == '}') {
         rtfClass = rtfGroup;
         rtfMajor = rtfEndGroup;
         return;
     }
-    
+
     if (c != '\\') {
         /*
          * Two possibilities here:
@@ -667,12 +665,12 @@ static void _RTFGetToken2(void)
         }
         return;
     }
-    
+
     if ((c = GetChar()) == EOF) {
         /* early eof, whoops (class is rtfUnknown) */
         return;
     }
-    
+
     if (!isalpha(c)) {
         /*
          * Three possibilities here:
@@ -694,7 +692,7 @@ static void _RTFGetToken2(void)
         }
 
         /* escaped char */
-        /*if (index (":{}\\", c) != (char *) NULL)  */
+        /*if (index (":{}\\", c) != NULL)  */
         if (c == ':' || c == '{' || c == '}' || c == '\\') {
             rtfClass = rtfText;
             rtfMajor = c;
@@ -705,7 +703,7 @@ static void _RTFGetToken2(void)
         Lookup(rtfTextBuf);     /* sets class, major, minor */
         return;
     }
-    
+
     /* control word */
     while (isalpha(c)) {
         if ((c = GetChar()) == EOF)
@@ -737,7 +735,7 @@ static void _RTFGetToken2(void)
         sign = -1;
         c = GetChar();
     }
-    
+
     if (c != EOF && isdigit(c)) {
         rtfParam = 0;
         while (isdigit(c)) {    /* gobble parameter */
@@ -843,7 +841,7 @@ void RTFSetToken(short class, short major, short minor, int32_t param, char *tex
 
 /*
  * Initialize charset stuff.
- * Keep two charsets active, one to translate the symbol font and 
+ * Keep two charsets active, one to translate the symbol font and
  * another for everything else
  */
 
@@ -853,10 +851,10 @@ static void CharSetInit(void)
 /*  commented out by Ujwal Sathyam after enabling autoswitching of character sets.
         RTFFree (genCharSetFile);
 */
-    genCharSetFile = (char *) NULL;
+    genCharSetFile = NULL;
     haveGenCharSet = 0;
     RTFFree(symCharSetFile);
-    symCharSetFile = (char *) NULL;
+    symCharSetFile = NULL;
     haveSymCharSet = 0;
     curCharSet = rtfCSGeneral;
     curCharCode = genCharCode;
@@ -872,7 +870,7 @@ static void CharSetInit(void)
  */
 void RTFSetCharSetMap(char *name, short csId)
 {
-    if ((name = RTFStrSave(name)) == (char *) NULL)     /* make copy */
+    if ((name = RTFStrSave(name)) == NULL)     /* make copy */
         RTFPanic("RTFSetCharSetMap: out of memory");
     switch (csId) {
     case rtfCSGeneral:
@@ -916,9 +914,9 @@ static void ReadCharSetMaps(void)
 
     if (symCharSetFile)
         (void) strcpy(buf, symCharSetFile);
-    else 
+    else
         (void) strcpy(buf, "rtf-encoding.symbolfont");
-        
+
     if (RTFReadCharSetMap(buf, rtfCSSymbol) == 0)
         RTFPanic("ReadCharSetMaps: Cannot read charset map %s", buf);
 }
@@ -982,7 +980,7 @@ short RTFReadCharSetMap(char *file, short csId)
         break;
     }
 
-    if ((f = RTFOpenLibFile(file, "r")) == (FILE *) NULL)
+    if ((f = RTFOpenLibFile(file, "r")) == NULL)
         return (0);
 
     /* clobber current mapping */
@@ -1002,17 +1000,17 @@ short RTFReadCharSetMap(char *file, short csId)
 
     /* read file */
 
-    while (fgets(buf, (int) sizeof(buf), f) != (char *) NULL) {
+    while (fgets(buf, (int) sizeof(buf), f) != NULL) {
         if (buf[0] == '#')      /* skip comment lines */
             continue;
         TSScanInit(buf);
-        if ((name = TSScan()) == (char *) NULL)
+        if ((name = TSScan()) == NULL)
             continue;           /* skip blank lines */
         if ((stdCode = RTFStdCharCode(name)) < 0) {
             RTFPanic("%s: unknown character name: %s", fn, name);
             continue;
         }
-        if ((p = TSScan()) == (char *) NULL) {
+        if ((p = TSScan()) == NULL) {
             RTFPanic("%s: malformed charset map line for character %s",
                      fn, name);
             continue;
@@ -1078,7 +1076,7 @@ short RTFStdCharCode(char *name)
 char *RTFStdCharName(short code)
 {
     if (code < 0 || code >= rtfSC_MaxChar)
-        return ((char *) NULL);
+        return (NULL);
     return (stdCharName[code]);
 }
 
@@ -1214,7 +1212,7 @@ static void ReadFontTbl(void)
                 RTFPanic("%s: missing \"{\"", fn);
             (void) RTFGetToken();       /* yes, skip to next token */
         }
-        
+
         fp = New(RTFFont);
         if (!fp) {
             RTFPanic("%s: cannot allocate font entry", fn);
@@ -1224,8 +1222,8 @@ static void ReadFontTbl(void)
         fp->rtfNextFont = fontList;
         fontList = fp;
 
-        fp->rtfFName = (char *) NULL;
-        fp->rtfFAltName = (char *) NULL;
+        fp->rtfFName = NULL;
+        fp->rtfFAltName = NULL;
         fp->rtfFNum = -1;
         fp->rtfFFamily = 0;
         fp->rtfFCharSet = -1;   /* changed by Ujwal Sathyam from 0 to -1 */
@@ -1234,11 +1232,12 @@ static void ReadFontTbl(void)
         fp->rtfFCodePage = 0;
 
         while (rtfClass != rtfEOF && !RTFCheckCM(rtfText, ';')) {
+
             if (rtfClass == rtfControl) {
                 switch (rtfMajor) {
                 default:
                     /* ignore token but announce it */
-                    /* RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf); */
+                    RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf);
                 case rtfFontFamily:
                     fp->rtfFFamily = rtfMinor;
                     break;
@@ -1281,15 +1280,15 @@ static void ReadFontTbl(void)
                 }
                 *bp = '\0';
                 fp->rtfFName = RTFStrSave(buf);
-                if (fp->rtfFName == (char *) NULL)
+                if (fp->rtfFName == NULL)
                     RTFPanic("%s: cannot allocate font name", fn);
                 /* already have next token; don't read one */
                 /* at bottom of loop */
                 continue;
             } else {
-                /* ignore token but and don't announce it 
+                /* ignore token but and don't announce it */
                 RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf);
-                */
+
             }
             (void) RTFGetToken();
         }
@@ -1310,7 +1309,7 @@ static void ReadFontTbl(void)
     {
         RTFFont *fp1;
         if (defaultFontNumber > -1) {
-            if ((fp1 = RTFGetFont(defaultFontNumber)) != (RTFFont *) NULL
+            if ((fp1 = RTFGetFont(defaultFontNumber)) != NULL
                 && fp1->rtfFCharSet > -1)
                 RTFSwitchCharSet(fp1->rtfFCharSet);
         }
@@ -1325,7 +1324,7 @@ static void ReadFontTbl(void)
  * a semi-colon is given in the definition, no color values).
  * There will be a problem if a partial entry (1 or 2 but
  * not 3 color values) is given.  The possibility is ignored
- * here. 
+ * here.
  */
 
 void ReadColorTbl(void)
@@ -1338,13 +1337,13 @@ void ReadColorTbl(void)
         (void) RTFGetToken();
         if (RTFCheckCM(rtfGroup, rtfEndGroup))
             break;
-        
+
         cp = New(RTFColor);
         if (!cp) {
             RTFPanic("%s: cannot allocate color entry", fn);
             exit(1);
         }
-            
+
         cp->rtfCNum = cnum++;
         cp->rtfCRed = cp->rtfCGreen = cp->rtfCBlue = -1;
         cp->rtfNextColor = colorList;
@@ -1392,23 +1391,23 @@ static void ReadStyleSheet(void)
 
     for (;;) {
         (void) RTFGetToken();
-        
+
         if (RTFCheckCM(rtfGroup, rtfEndGroup))
             break;
-        
+
         sp = New(RTFStyle);
         if (!sp) {
             RTFPanic("%s: cannot allocate stylesheet entry", fn);
             exit(1);
         }
-        
-        sp->rtfSName = (char *) NULL;
+
+        sp->rtfSName = NULL;
         sp->rtfSNum = -1;
         sp->rtfSType = rtfParStyle;
         sp->rtfSAdditive = 0;
         sp->rtfSBasedOn = rtfNoStyleNum;
         sp->rtfSNextPar = -1;
-        sp->rtfSSEList = sepLast = (RTFStyleElt *) NULL;
+        sp->rtfSSEList = sepLast = NULL;
         sp->rtfNextStyle = styleList;
         sp->rtfExpanding = 0;
         styleList = sp;
@@ -1418,6 +1417,7 @@ static void ReadStyleSheet(void)
             (void) RTFGetToken();
             if (rtfClass == rtfEOF || RTFCheckCM(rtfText, ';'))
                 break;
+
             if (rtfClass == rtfControl) {
                 if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
                     continue;   /* ignore "\*" */
@@ -1453,25 +1453,25 @@ static void ReadStyleSheet(void)
                     sp->rtfSType = rtfTableStyle;
                     continue;
                 }
-                
+
                 sep = New(RTFStyleElt);
                 if (!sep) {
                     RTFPanic("%s: cannot allocate style element", fn);
                     exit(1);
                 }
-                
+
                 sep->rtfSEClass = rtfClass;
                 sep->rtfSEMajor = rtfMajor;
                 sep->rtfSEMinor = rtfMinor;
                 sep->rtfSEParam = rtfParam;
                 if ((sep->rtfSEText = RTFStrSave(rtfTextBuf))
-                    == (char *) NULL)
+                    == NULL)
                     RTFPanic("%s: cannot allocate style element text", fn);
-                if (sepLast == (RTFStyleElt *) NULL)
+                if (sepLast == NULL)
                     sp->rtfSSEList = sep;       /* first element */
                 else            /* add to end */
                     sepLast->rtfNextSE = sep;
-                sep->rtfNextSE = (RTFStyleElt *) NULL;
+                sep->rtfNextSE = NULL;
                 sepLast = sep;
             } else if (RTFCheckCM(rtfGroup, rtfBeginGroup)) {
                 /*
@@ -1492,7 +1492,7 @@ static void ReadStyleSheet(void)
                     (void) RTFGetToken();
                 }
                 *bp = '\0';
-                if ((sp->rtfSName = RTFStrSave(buf)) == (char *) NULL)
+                if ((sp->rtfSName = RTFStrSave(buf)) == NULL)
                     RTFPanic("%s: cannot allocate style name", fn);
             } else {            /* unrecognized */
 
@@ -1526,7 +1526,7 @@ static void ReadStyleSheet(void)
          *
          * Some German RTF writers use "Standard" instead of "Normal".
          */
-        if (sp->rtfSName == (char *) NULL)
+        if (sp->rtfSName == NULL)
             RTFPanic("%s: missing style name", fn);
         if (sp->rtfSNum < 0) {
             if (strncmp(buf, "Normal", 6) != 0 && strncmp(buf, "Standard", 8) != 0) {
@@ -1577,7 +1577,7 @@ RTFStyle *RTFGetStyle(short num)
 
     if (num == -1)
         return (styleList);
-    for (s = styleList; s != (RTFStyle *) NULL; s = s->rtfNextStyle) {
+    for (s = styleList; s != NULL; s = s->rtfNextStyle) {
         if (s->rtfSNum == num)
             break;
     }
@@ -1591,7 +1591,7 @@ RTFFont *RTFGetFont(short num)
 
     if (num == -1)
         return (fontList);
-    for (f = fontList; f != (RTFFont *) NULL; f = f->rtfNextFont) {
+    for (f = fontList; f != NULL; f = f->rtfNextFont) {
         if (f->rtfFNum == num) {
             /* check for NULL font name contributed by Keith Refson */
             if (f->rtfFName == NULL)
@@ -1609,7 +1609,7 @@ RTFColor *RTFGetColor(short num)
 
     if (num == -1)
         return (colorList);
-    for (c = colorList; c != (RTFColor *) NULL; c = c->rtfNextColor) {
+    for (c = colorList; c != NULL; c = c->rtfNextColor) {
         if (c->rtfCNum == num)
             break;
     }
@@ -1629,7 +1629,7 @@ void RTFExpandStyle(short n)
     RTFStyle *s;
     RTFStyleElt *se;
 
-    if (n == -1 || (s = RTFGetStyle(n)) == (RTFStyle *) NULL) {
+    if (n == -1 || (s = RTFGetStyle(n)) == NULL) {
         RTFMsg("¥ n is %d, returning without expanding style\n", n);
         return;
     }
@@ -1654,7 +1654,7 @@ void RTFExpandStyle(short n)
      * isn't used because it would add the param value to the end
      * of the token text, which already has it in.
      */
-    for (se = s->rtfSSEList; se != (RTFStyleElt *) NULL;
+    for (se = s->rtfSSEList; se != NULL;
          se = se->rtfNextSE) {
         rtfClass = se->rtfSEClass;
         rtfMajor = se->rtfSEMajor;
@@ -1685,7 +1685,7 @@ struct RTFCtrl {
 };
 
 
-static RTFCtrl **rtfCtrl = (RTFCtrl **) NULL;
+static RTFCtrl **rtfCtrl = NULL;
 static short nCtrls;
 
 
@@ -1708,10 +1708,10 @@ static void LookupInit(void)
     char *scanEscape;
     char *fn = "LookupInit";
 
-    if (rtfCtrl != (RTFCtrl **) NULL)   /* already initialized */
+    if (rtfCtrl != NULL)   /* already initialized */
         return;
 
-    if ((f = RTFOpenLibFile(ctrlFileName, "r")) == (FILE *) NULL)
+    if ((f = RTFOpenLibFile(ctrlFileName, "r")) == NULL)
         RTFPanic("%s: cannot open %s file.", fn, ctrlFileName);
 
     /*
@@ -1737,7 +1737,7 @@ static void LookupInit(void)
          * control word tokens.
          */
         if (line == 1) {
-            if (p2 == (char *) NULL)    /* malformed */
+            if (p2 == NULL)    /* malformed */
                 break;
             nCtrls = atoi(p1);
             tokBytes = atoi(p2);
@@ -1746,7 +1746,7 @@ static void LookupInit(void)
                 RTFPanic("%s: out of memory.", fn);
                 exit(1);
             }
-            
+
             for (i = 0; i < nCtrls; i++) {
                 rp = (RTFCtrl *) RTFAlloc(sizeof(RTFCtrl));
                 if (!rp) {
@@ -1755,7 +1755,7 @@ static void LookupInit(void)
                 }
                 rtfCtrl[i] = rp;
             }
-            
+
             /*
              * Allocate a buffer into which to copy all the tokens
              */
@@ -1766,7 +1766,7 @@ static void LookupInit(void)
             }
             tokBufEnd = tokBuf;
         } else {
-            if (p3 == (char *) NULL)    /* malformed */
+            if (p3 == NULL)    /* malformed */
                 break;
             if (line - 1 > nCtrls)      /* malformed */
                 break;
@@ -1775,7 +1775,7 @@ static void LookupInit(void)
             rp->minor = atoi(p2);
             rp->str = tokBufEnd;
             rp->index = line - 2;
-            
+
             /* process string to remove embedded escapes */
             p1 = p3;
             while ((c = *p1++) != '\0') {
@@ -1798,7 +1798,7 @@ static void LookupInit(void)
     TSSetScanner(&scanner);
     (void) fclose(f);
 
-    if (rtfCtrl == (RTFCtrl **) NULL || line - 1 != nCtrls)
+    if (rtfCtrl == NULL || line - 1 != nCtrls)
         RTFPanic("%s: %s file contents malformed.", fn, ctrlFileName);
 }
 
@@ -1853,7 +1853,7 @@ static void Lookup(char *s)
     rtfClass = rtfUnknown;
 }
 
-void DebugMessage(void) 
+void DebugMessage(void)
 {
     if (0 && g_debug_level > 0)
         if (strcmp(rtfCtrl[rtfTokenIndex]->str,"objdata"))
@@ -1891,15 +1891,15 @@ char *RTFStrSave(char *s)
 {
     char *p;
 
-    if ((p = RTFAlloc(strlen(s) + 1)) == (char *) NULL)
-        return ((char *) NULL);
+    if ((p = RTFAlloc(strlen(s) + 1)) == NULL)
+        return (NULL);
     return (strcpy(p, s));
 }
 
 
 void RTFFree(char *p)
 {
-    if (p != (char *) NULL)
+    if (p != NULL)
         free(p);
 }
 
@@ -1953,11 +1953,11 @@ short RTFHexToChar(short i)
 int RTFHexStrToInt(char * s)
 {
     int i,x;
-    if (!s) 
+    if (!s)
         return 0;
-    if (strlen(s)<3) 
+    if (strlen(s)<3)
         return 0;
-    if (s[0] != '0' || (s[1] != 'x' && s[1] != 'X')) 
+    if (s[0] != '0' || (s[1] != 'x' && s[1] != 'X'))
         return 0;
     i=2;
     x=0;
@@ -2012,11 +2012,11 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
     if (reinit) {
         for (i = 0; i < rtfSC_MaxChar; i++) {
             RTFFree(outMap[i]);
-            outMap[i] = (char *) NULL;
+            outMap[i] = NULL;
         }
     }
 
-    if ((f = RTFOpenLibFile(file, "r")) == (FILE *) NULL)
+    if ((f = RTFOpenLibFile(file, "r")) == NULL)
         return (0);
 
     /*
@@ -2030,7 +2030,7 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
 
     /* read file */
 
-    while (fgets(buf, (int) sizeof(buf), f) != (char *) NULL) {
+    while (fgets(buf, (int) sizeof(buf), f) != NULL) {
         if (buf[0] == '#')      /* skip comment lines */
             continue;
         TSScanInit(buf);
@@ -2042,18 +2042,18 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
             strcat(texMapQualifier, "\n");
             continue;
         }
-        if ((name = TSScan()) == (char *) NULL)
+        if ((name = TSScan()) == NULL)
             continue;           /* skip blank lines */
         if ((stdCode = RTFStdCharCode(name)) < 0) {
             RTFMsg("%s: unknown character name: %s\n", fn, name);
             continue;
         }
-        if ((seq = TSScan()) == (char *) NULL) {
+        if ((seq = TSScan()) == NULL) {
             RTFMsg("%s: malformed output sequence line for character %s\n",
                    fn, name);
             continue;
         }
-        if ((seq = RTFStrSave(seq)) == (char *) NULL)
+        if ((seq = RTFStrSave(seq)) == NULL)
             RTFPanic("%s: out of memory", fn);
         outMap[stdCode] = seq;
     }
@@ -2082,7 +2082,7 @@ void RTFSetOpenLibFileProc(FILE * (*proc) (char *file, char *mode))
 FILE *RTFOpenLibFile(char *file, char *mode)
 {
     if (libFileOpen == NULL)
-        return ((FILE *) NULL);
+        return (NULL);
     return ((*libFileOpen) (file, mode));
 }
 
@@ -2161,7 +2161,7 @@ void RTFPanic(char *fmt, ...)
     vsnprintf(buf, rtfBufSiz, fmt, args);
     va_end(args);
     (void) strcat(buf, "\n");
-    if (prevChar != EOF && rtfTextBuf != (char *) NULL) {
+    if (prevChar != EOF && rtfTextBuf != NULL) {
         snprintf(buf + strlen(buf), rtfBufSiz-strlen(buf),
                 "Last token read was \"%s\" near line %d, position %hd.\n",
                 rtfTextBuf, (int)rtfLineNum, (int)rtfLinePos);
@@ -2257,7 +2257,7 @@ void RTFInitStack(void)
     paragraphWritten.leftIndent       = UNINITIALIZED;
     paragraphWritten.lineSpacing      = UNINITIALIZED;
     paragraphWritten.alignment        = UNINITIALIZED;
-    
+
     paragraph.firstIndent      = 720;
     paragraph.leftIndent       = 0;
     paragraph.lineSpacing      = 240;
@@ -2274,7 +2274,7 @@ void RTFPushStack(void)
     csStack[braceLevel] = curCharSet;
     parStack[braceLevel] = paragraph;
     textStyleStack[braceLevel] = textStyle;
-    
+
 //    fprintf(stderr, "push [%d] alignment now written=%d, set=%d\n",braceLevel, paragraphWritten.alignment, paragraph.alignment);
     braceLevel++;
     if (braceLevel >= MAX_STACK) {
@@ -2288,14 +2288,14 @@ void RTFPopStack(void)
     int i;
     braceLevel--;
     i=braceLevel;
-    
+
     if (i < 0) {
         RTFMsg("Too many '}'.  Stack Underflow\n");
         i = 0;
     }
     curCharSet = csStack[i];
     RTFSetCharSet(curCharSet);
-    
+
     paragraph = parStack[i];
     textStyle = textStyleStack[i];
 }

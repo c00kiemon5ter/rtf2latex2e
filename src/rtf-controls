@@ -1031,8 +1031,8 @@ major rtfListAttr
  
 minor	rtfList		list
 minor	rtfListTable	listtable
-minor	rtfListOverrideTable	listoverridetable	
- 
+minor	rtfListOverrideTable	listoverridetable
+
  /*
   * Word 97 Object Attributes
   */
@@ -1077,3 +1077,13 @@ minor	rtfLowChar	loch
 minor	rtfHighChar	hich
 minor	rtfDblByteChar	dbch
 
+major	rtfGoober
+
+minor	rtfxmlTbl	xmlnstbl 
+minor	rtfxmlNs	xmlns
+minor	rtfxmlOpen	xmlopen
+minor	rtfxmlAttr	xmlattr
+minor	rtfxmlAttrNs	xmlattrns
+minor	rtfxmlAttrName	xmlattrname
+minor	rtfxmlAttrValue	xmlattrvalue
+minor	rtfListLevel	listlevel

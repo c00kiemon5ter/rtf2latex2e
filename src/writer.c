@@ -596,7 +596,6 @@ void ExamineToken(void)
             case rtfIndexAttr: printf(" (rtfIndexAttr)\n"); break;
             case rtfTOCAttr: printf(" (rtfTOCAttr)\n"); break;
             case rtfNeXTGrAttr: printf(" (rtfNeXTGrAttr)\n"); break;
-            case rtfListAttr: printf(" (rtfListAttr)\n"); break;
             case rtfWord97ObjAttr: printf(" (rtfWord97ObjAttr)\n"); break;
             case rtfAnsiCharAttr: printf(" (rtfAnsiCharAttr)\n"); break;
             default: printf(" (unknown)\n"); break;
@@ -2218,6 +2217,12 @@ static void ControlClass(void)
             SkipGroup();
         break;
     }
+
+	/* handles {\*\keyword ...} */
+//	if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
+//		RTFSkipGroup();
+
+
 }
 
 /* called when we are done reading the RTF file. */
@@ -3536,6 +3541,7 @@ int BeginLaTeXFile(void)
     RTFSetDestinationCallback(rtfPict, ReadPicture);
     RTFSetDestinationCallback(rtfFootnote, ReadFootnote);
     RTFSetDestinationCallback(rtfBookmarkStart, ReadBookmarkStart);
+    /*
     RTFSetDestinationCallback(rtfBookmarkEnd, SkipGroup);
     RTFSetDestinationCallback(rtfDataField, SkipGroup);
     RTFSetDestinationCallback(rtfTemplate, SkipGroup);
@@ -3543,7 +3549,15 @@ int BeginLaTeXFile(void)
     RTFSetDestinationCallback(rtfFchars, SkipGroup);
     RTFSetDestinationCallback(rtfLchars, SkipGroup);
     RTFSetDestinationCallback(rtfPgdsctbl, SkipGroup);
-
+    RTFSetDestinationCallback(rtfxmlNs, SkipGroup);
+    RTFSetDestinationCallback(rtfxmlAttr, SkipGroup);
+    RTFSetDestinationCallback(rtfxmlOpen, SkipGroup);
+    RTFSetDestinationCallback(rtfxmlTbl, SkipGroup);
+    RTFSetDestinationCallback(rtfxmlAttrNs, SkipGroup);
+    RTFSetDestinationCallback(rtfxmlAttrName, SkipGroup);
+    RTFSetDestinationCallback(rtfxmlAttrValue, SkipGroup);
+    RTFSetDestinationCallback(rtfListTable, SkipGroup);
+    */
 
     /* use r2l-map if present */
     /* defaults */

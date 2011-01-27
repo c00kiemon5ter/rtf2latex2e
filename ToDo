@@ -1,15 +1,14 @@
-Security
-   Incorporate all the SafeBuf stuff
+Before 2.0 Release
+   add CLI options for the new preferences
+   document all CLI options
+   revise README
 
-Improvements
-   clean up table formatting
-   handle latin1 characters between 0xA0 and 0xBF directly
-
-Other
-   document CLI options
-   
-Packaging
-   Revise README
-   explain how to use -E to provide bug reports for equations
-   bump version to 2.0
-   
+Later Improvements
+   rewrite file to eliminate preamble kludge
+   translate page header
+   translate word fields
+   incorporate line numbers in equations
+   improve up table formatting
+   support for font changing
+   incorporate SafeBuf stuff?
+   fix-up enc-utf8x.rtf translation

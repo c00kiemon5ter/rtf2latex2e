@@ -1,5 +1,5 @@
 # number of control words and bytes of token space
-723 5453
+731 5529
 # control word table
 18 516 "\n"
 18 516 "\r"
@@ -392,6 +392,7 @@
 21 576 "linkself"
 11 184 "linkstyles"
 28 697 "list"
+31 724 "listlevel"
 28 699 "listoverridetable"
 28 698 "listtable"
 12 239 "lndscpsxn"
@@ -719,6 +720,13 @@
 11 186 "wraptrsp"
 3 78 "xe"
 25 684 "xef"
+31 720 "xmlattr"
+31 722 "xmlattrname"
+31 721 "xmlattrns"
+31 723 "xmlattrvalue"
+31 718 "xmlns"
+31 717 "xmlnstbl"
+31 719 "xmlopen"
 18 494 "yr"
 18 542 "zwj"
 18 543 "zwnj"
