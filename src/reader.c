@@ -743,7 +743,7 @@ static void _RTFGetToken2(void)
      * looking up.
      */
 
-		fprintf(stderr,"slash --> 0x%2x ... '%s'\n", c, rtfTextBuf);
+/*  fprintf(stderr,"command '%s'\n", rtfTextBuf); */
 
     if (c != EOF)
         rtfTextBuf[rtfTextLen - 1] = '\0';

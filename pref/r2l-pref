@@ -43,16 +43,16 @@ convertParagraphStyle	true
 convertParagraphIndent	true
 
 # convert space between paragraphs using \vspace{} 
-convertInterParagraphSpace	false
+convertInterParagraphSpace	true
 
 # convert line spacing using \baselineskip ... eventually will use \setspace{}
-convertLineSpacing	false
+convertLineSpacing	true
 
 # convert changes in the font size.  This is not unreasonable because
 # LaTeX often makes reasonable assumptions about the font size.
 # and it is a nuisance if every paragraph is bracketed with {\Large ... }
 # because the RTF document was written in 14 point font.
-convertTextSize	false
+convertTextSize	true
 
 #convert text styles.  includes bold, italics, smallcaps, underline, doubleunderline
 convertTextStyle	true

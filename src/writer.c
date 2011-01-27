@@ -52,42 +52,42 @@ extern FILE *ifp, *ofp;
 
 /* These should match prefList below */
 enum prefName {
-    pOutputMapFile,
+    pOutputMapFile,               /* 0  */
     pPageWidth,
     pPageLeft,
     pPageRight,
     pConvertColor,
-    pConvertPageSize,
+    pConvertPageSize,             /* 5  */
     pConvertTextSize,
     pConvertTextStyle,
     pConvertParagraphStyle,
     pConvertParagraphIndent,
-    pConvertInterParagraphSpace,
+    pConvertInterParagraphSpace,  /* 10 */
     pConvertLineSpacing,
     pConvertHypertext,
     pConvertPict,
     pConvertEquation,
-    pConvertAsDirectory,
+    pConvertAsDirectory,          /* 15 */
     pLast
 };
 
 const char *prefString[] = {
-    "outputMapFile",
+    "outputMapFile",              /* 0  */
     "pageWidth",
     "pageLeft",
     "pageRight",
     "convertColor",
-    "convertPageSize",
+    "convertPageSize",            /* 5  */
     "convertTextSize",
     "convertTextStyle",
     "convertParagraphStyle",
     "convertParagraphIndent",
-    "convertInterParagraphSpace",
+    "convertInterParagraphSpace", /* 10 */
     "convertLineSpacing",
     "convertHypertext",
     "convertPict",
     "convertEquation",
-    "convertAsDirectory",
+    "convertAsDirectory",         /* 15 */
 };
 
 const char *objectClassList[] = {
@@ -147,7 +147,7 @@ static struct {
  */
 static int wrapCount = 0;
 static int word97ObjectType;
-static boolean nowBetweenParagraphs = true;
+static boolean nowBetweenParagraphs;
 static boolean suppressLineBreak;
 static boolean requireSetspacePackage;
 static boolean requireTablePackage;
@@ -183,6 +183,7 @@ char *tableString = "longtable";
 FILE *ostream;
 parStyleStruct paragraph, paragraphWritten;
 textStyleStruct textStyle, textStyleWritten;
+int current_vspace;
 pictureStruct picture;
 equationStruct oleEquation;
 tableStruct table;
@@ -404,8 +405,7 @@ short ReadPrefFile(char *file)
     
     scanner.scanEscape = scanEscape;
     TSSetScanner(&scanner);
-    if (fclose(f) != 0)
-        printf("¥ error closing pref file %s\n", file);
+    fclose(f);
 
     return 1;
 }
@@ -709,11 +709,19 @@ static void InitTextStyle(void)
 
     textStyle.allCaps = 0;
     textStyle.foreColor = 0;
-    textStyle.backColor = -1;
+    textStyle.backColor = 0;
+}
 
+/*
+ * This function initializes the paragraph style.
+ */
+static void InitPargraphStyle(void)
+{
     paragraph.firstIndent = 0;
     paragraph.leftIndent = 0;
     paragraph.rightIndent = 0;
+    paragraph.spaceBefore = 0;
+    paragraph.extraIndent = 0;
     paragraph.headingString = NULL;
 }
 
@@ -967,10 +975,10 @@ static void NewParagraph(void)
 
     if (insideFootnote || insideTable) return;
 
-    if (prefs[pConvertInterParagraphSpace] && paragraph.spaceBefore) {
-        snprintf(buff,100,"\\vspace{%dpt}\n", paragraph.spaceBefore/20);
+    if (prefs[pConvertInterParagraphSpace] && (current_vspace || paragraph.spaceBefore)) {
+        snprintf(buff,100,"\\vspace{%dpt}\n", (current_vspace+paragraph.spaceBefore)/20);
         PutLitStr(buff);
-        paragraph.spaceBefore = 0;
+        current_vspace = 0;
     }
 
     if (prefs[pConvertParagraphStyle]) {
@@ -992,6 +1000,8 @@ static void NewParagraph(void)
 
         paragraphWritten.alignment = paragraph.alignment;
     }
+
+    setLineSpacing();
 
     if (paragraphWritten.leftIndent != paragraph.leftIndent) {
         snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
@@ -1053,8 +1063,6 @@ static void EndParagraph(void)
         InsertNewLine();
         return;
     }
-
-    setLineSpacing();
 
     if (paragraphWritten.alignment != paragraph.alignment) {
 
@@ -2013,76 +2021,77 @@ static void ParAttr(void)
     if (insideFootnote || insideHyperlink)
         return;
 
-    if (!insideTable) {
+    if (insideTable) {
+        switch (rtfMinor) {
+        case rtfQuadCenter:
+            paragraph.alignment = center;
+            break;
+        case rtfQuadRight:
+            paragraph.alignment = right;
+            break;
+        }
+        return;
+    }
 
-        switch (rtfMinor) {
-        case rtfSpaceBetween:
-            paragraph.lineSpacing = rtfParam;
+    switch (rtfMinor) {
+    case rtfSpaceBetween:
+        paragraph.lineSpacing = rtfParam;
+        break;
+    case rtfQuadCenter:
+        paragraph.alignment = center;
+        break;
+    case rtfQuadJust:
+    case rtfQuadLeft:
+        paragraph.alignment = left;
+        break;
+    case rtfQuadRight:
+        paragraph.alignment = right;
+        break;
+    case rtfParDef:
+        paragraph.firstIndent = 0;
+        paragraph.leftIndent = 0;
+        paragraph.extraIndent = 0;
+        paragraph.alignment = left;
+        paragraph.headingString = NULL;
+        break;
+    case rtfStyleNum:
+    	stylePtr = RTFGetStyle(rtfParam);
+        if (!stylePtr)
             break;
-        case rtfQuadCenter:
-            paragraph.alignment = center;
-            break;
-        case rtfQuadJust:
-        case rtfQuadLeft:
-            paragraph.alignment = left;
-            break;
-        case rtfQuadRight:
-            paragraph.alignment = right;
-            break;
-        case rtfParDef:
-            paragraph.firstIndent = 0;
-            paragraph.leftIndent = 0;
-            paragraph.extraIndent = 0;
-            paragraph.alignment = left;
-            paragraph.headingString = NULL;
-            break;
-        case rtfStyleNum:
-            if ((stylePtr = RTFGetStyle(rtfParam)) == NULL)
-                break;
-            if (prefs[pConvertParagraphIndent]) {
-                if (strcmp(stylePtr->rtfSName, "heading 1") == 0) {
-                    if (paragraphWritten.headingString) EndParagraph();
-                    paragraph.headingString=heading1String;
-                    nowBetweenParagraphs = true;
-                    DoSectionCleanUp();
-                } else if (strcmp(stylePtr->rtfSName, "heading 2") == 0) {
-                    if (paragraphWritten.headingString) EndParagraph();
-                    paragraph.headingString=heading2String;
-                    nowBetweenParagraphs = true;
-                    DoSectionCleanUp();
-                } else if (strcmp(stylePtr->rtfSName, "heading 3") == 0) {
-                    if (paragraphWritten.headingString) EndParagraph();
-                    paragraph.headingString=heading3String;
-                    nowBetweenParagraphs = true;
-                    DoSectionCleanUp();
-                }
+        if (prefs[pConvertParagraphIndent]) {
+            if (strcmp(stylePtr->rtfSName, "heading 1") == 0) {
+                if (paragraphWritten.headingString) EndParagraph();
+                paragraph.headingString=heading1String;
+                nowBetweenParagraphs = true;
+                DoSectionCleanUp();
+            } else if (strcmp(stylePtr->rtfSName, "heading 2") == 0) {
+                if (paragraphWritten.headingString) EndParagraph();
+                paragraph.headingString=heading2String;
+                nowBetweenParagraphs = true;
+                DoSectionCleanUp();
+            } else if (strcmp(stylePtr->rtfSName, "heading 3") == 0) {
+                if (paragraphWritten.headingString) EndParagraph();
+                paragraph.headingString=heading3String;
+                nowBetweenParagraphs = true;
+                DoSectionCleanUp();
             }
-            break;
-        case rtfFirstIndent:
-            paragraph.firstIndent = rtfParam;
-            break;
-        case rtfLeftIndent:
-            paragraph.leftIndent = rtfParam;
-            break;
-        case rtfRightIndent:
-            paragraph.rightIndent = rtfParam;
-            break;
-        case rtfSpaceBefore:
-            paragraph.spaceBefore = rtfParam;
-            break;
-        case rtfSpaceAfter:
-            paragraph.spaceAfter = rtfParam;
-            break;
         }
-    } else {
-        switch (rtfMinor) {
-        case rtfQuadCenter:
-            paragraph.alignment = center;
-            break;
-        case rtfQuadRight:
-            paragraph.alignment = right;
-            break;
-        }
+        break;
+    case rtfFirstIndent:
+        paragraph.firstIndent = rtfParam;
+        break;
+    case rtfLeftIndent:
+        paragraph.leftIndent = rtfParam;
+        break;
+    case rtfRightIndent:
+        paragraph.rightIndent = rtfParam;
+        break;
+    case rtfSpaceBefore:
+        paragraph.spaceBefore = rtfParam;
+        break;
+    case rtfSpaceAfter:
+        paragraph.spaceAfter = rtfParam;
+        break;
     }
 
 }
@@ -3411,12 +3420,12 @@ static void SpecialChar(void)
     case rtfLine:
     case rtfPar:
         if (nowBetweenParagraphs)
-            paragraph.spaceBefore += abs(paragraph.lineSpacing);
+            current_vspace += abs(paragraph.lineSpacing);
         nowBetweenParagraphs = true;
         break;
     case rtfNoBrkSpace:
     	if (nowBetweenParagraphs)
-            paragraph.extraIndent += 72;
+            paragraph.extraIndent += 0;
     	else
         	PutStdChar(rtfSC_nobrkspace);
         break;
@@ -3563,6 +3572,7 @@ int BeginLaTeXFile(void)
     table.multiCol = false;
     table.multiRow = false;
     InitTextStyle();
+    InitPargraphStyle();
     textStyleWritten = textStyle;
 
     /* install class callbacks */
