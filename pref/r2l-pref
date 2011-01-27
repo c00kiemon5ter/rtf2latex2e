@@ -27,12 +27,12 @@ pageLeft	1.0
 pageRight	1.0
 
 # use above sizes to set the extent of the LaTeX page
-convertPageSize	false
+convertPageSize	true
 
 # translate color text formatting.  This is annoying because the entire RTF color table
 # always gets written to the LaTeX file and therefore inserts a bunch of noise at
 # in the preamble
-convertColor	false
+convertColor	true
 
 # convert RTF heading 1, 2, & 3. For example, 'heading 2' --> \subsection{...}
 convertParagraphStyle	true

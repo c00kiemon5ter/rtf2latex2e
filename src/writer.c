@@ -542,8 +542,8 @@ static void DefineColors(void)
 
 static void WriteColors(void)
 {
-    if (!prefs[pConvertColor]) return;
     ReadColorTbl();
+    if (!prefs[pConvertColor]) return;
     DefineColors();
 }
 
@@ -1299,70 +1299,6 @@ static void ReadFootnote(void)
     PutLitStr("}");
     insideFootnote = false;
 }
-
-/*
- * The reason these use the rtfSC_xxx thingies instead of just writing
- * out ' ', '-', '"', etc., is so that the mapping for these characters
- * can be controlled by the latex-encoding file.
- */
-static void SpecialChar(void)
-{
-    if (nowBetweenParagraphs) {
-        if (rtfMinor == rtfTab) {
-            paragraph.extraIndent += 360;
-            return;
-        }
-        if (rtfMinor == rtfNoBrkSpace) {
-            paragraph.extraIndent += 72;
-            return;
-        }
-    }
-
-    switch (rtfMinor) {
-    case rtfSect:
-    case rtfLine:
-    case rtfPar:
-        if (nowBetweenParagraphs)
-            paragraph.spaceBefore += abs(paragraph.lineSpacing);
-        nowBetweenParagraphs = true;
-        break;
-    case rtfNoBrkSpace:
-        PutStdChar(rtfSC_nobrkspace);
-        break;
-    case rtfTab:
-        PutLitStr("\\tab ");
-        break;
-    case rtfNoBrkHyphen:
-        PutStdChar(rtfSC_nobrkhyphen);
-        break;
-    case rtfBullet:
-        PutStdChar(rtfSC_bullet);
-        break;
-    case rtfEmDash:
-        PutLitStr("---");
-        break;
-    case rtfEnDash:
-        PutLitStr("-");
-        break;
-    case rtfLQuote:
-        PutLitStr("`");
-        break;
-    case rtfRQuote:
-        PutLitStr("'");
-        break;
-    case rtfLDblQuote:
-        PutLitStr("``");
-        break;
-    case rtfRDblQuote:
-        PutLitStr("''");
-        break;
-    case rtfPage:
-        if (!insideTable)
-            PutLitStr("\\pagebreak{}");
-        break;
-    }
-}
-
 
 /*
  * This routine sets attributes for the detected cell and
@@ -2151,8 +2087,6 @@ static void ParAttr(void)
 
 }
 
-
-
 static void SectAttr(void)
 {
     switch (rtfMinor) {
@@ -2166,62 +2100,6 @@ static void SectAttr(void)
 /*                       section.newStyle = true; */
         break;
     }
-
-}
-
-
-/* decides what to do when a control word is encountered */
-static void ControlClass(void)
-{
-
-    switch (rtfMajor) {
-    case rtfDefFont:
-        RTFSetDefaultFont(rtfParam);
-    case rtfFontAttr:
-        switch (rtfMinor) {
-        case rtfAnsiCodePage:
-        case rtfFontCodePage:
-            /* codePage = rtfParam;*/
-            break;
-        }
-        break;
-    case rtfDestination:
-        Destination();
-        break;
-    case rtfSpecialChar:
-        SpecialChar();
-        break;
-    case rtfCharAttr:
-        SetTextStyle();
-        break;
-    case rtfListAttr:
-        RTFSkipGroup();
-        RTFRouteToken();
-        break;
-    case rtfTblAttr:            /* trigger for reading table */
-        if (rtfMinor == rtfRowDef && !(insideTable)) {
-            RTFUngetToken();
-            DoTable();          /* if we are not already inside a table, get into it */
-        } else
-            DoTableAttr();      /* if we are already inside
-                                 * a table, set table attributes */
-        break;
-    case rtfParAttr:
-        ParAttr();
-        break;
-    case rtfSectAttr:
-        SectAttr();
-        break;
-    case rtfWord97ObjAttr:
-        if (rtfMinor == rtfShapeName || rtfMinor == rtfShapeValue)
-            SkipGroup();
-        break;
-    }
-
-	/* handles {\*\keyword ...} */
-//	if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
-//		RTFSkipGroup();
-
 
 }
 
@@ -3008,6 +2886,7 @@ static void ReadObject(void)
 
         /* if unsuccessful, include the equation as a picture */
         if (!res || g_include_both) {
+        	fprintf(stderr, "failed to convert equation\n");
             temp = groupCounter;
 
             while (!RTFCheckMM(rtfDestination, rtfPict)) {
@@ -3189,43 +3068,6 @@ static void ReadWord97Object(void)
     RTFRouteToken();
 }
 
-
-/* the following streams should just emit ... HToc268803753
- *    PAGEREF _Toc268803753 \\h
- *    HYPERLINK \\l "_Toc268803753"
- *     _Toc268803753
- */
-static void emitBookmark(void)
-{
-    int started = 0;
-
-    RTFGetToken();
-    while (rtfClass == rtfText) {
-        switch (rtfTextBuf[0]) {
-        case ' ':
-            if (started) {     /* assume that bookmarks optionally start and end with spaces */
-                RTFSkipGroup();
-                return;
-            }
-            break;
-        case '"':
-            break;
-        case '\\':
-            RTFGetToken(); /* drop backslash and the next letter */
-            break;
-        case '_':
-            started = 1;
-            PutLitStr("H");
-            break;
-        default:
-            started = 1;
-            PutLitStr(rtfTextBuf);
-            break;
-        }
-        RTFGetToken();
-    }
-}
-
 static void ReadUnicode(void)
 {
     if (rtfParam == 8212) {
@@ -3386,6 +3228,42 @@ static void ReadSymbolField(void)
     RTFRouteToken();
 }
 
+/* the following streams should just emit ... HToc268803753
+ *    PAGEREF _Toc268803753 \\h
+ *    HYPERLINK \\l "_Toc268803753"
+ *     _Toc268803753
+ */
+static void emitBookmark(void)
+{
+    int started = 0;
+
+    RTFGetToken();
+    while (rtfClass == rtfText) {
+        switch (rtfTextBuf[0]) {
+        case ' ':
+            if (started) {     /* assume that bookmarks optionally start and end with spaces */
+                RTFSkipGroup();
+                return;
+            }
+            break;
+        case '"':
+            break;
+        case '\\':
+            RTFGetToken(); /* drop backslash and the next letter */
+            break;
+        case '_':
+            started = 1;
+            PutLitStr("H");
+            break;
+        default:
+            started = 1;
+            PutLitStr(rtfTextBuf);
+            break;
+        }
+        RTFGetToken();
+    }
+}
+
 /*
  *  Just emit \pageref{HToc268612944} for {\*\fldinst {...  PAGEREF _Toc268612944 \\h } ..}
 */
@@ -3478,6 +3356,151 @@ static void ReadBookmarkStart(void)
     RTFRouteToken();
 }
 
+static void HandleOptionalTokens(void)
+{
+	RTFGetToken();
+	
+    switch (rtfMinor) {
+    case rtfBookmarkStart:
+    	ReadBookmarkStart();
+    	break;
+    	
+    case rtfFieldInst:
+    	ReadFieldInst();
+    	break;
+    	
+    case rtfUnicode:
+    	ReadUnicode();
+    	break;
+
+    default:
+//		ExamineToken();
+        RTFSkipGroup();
+        break;
+	}
+}
+
+/*
+ * The reason these use the rtfSC_xxx thingies instead of just writing
+ * out ' ', '-', '"', etc., is so that the mapping for these characters
+ * can be controlled by the latex-encoding file.
+ */
+static void SpecialChar(void)
+{
+    if (nowBetweenParagraphs) {
+        if (rtfMinor == rtfTab) {
+            paragraph.extraIndent += 360;
+            return;
+        }
+        if (rtfMinor == rtfNoBrkSpace) {
+            paragraph.extraIndent += 72;
+            return;
+        }
+    }
+
+    switch (rtfMinor) {
+    case rtfSect:
+    case rtfLine:
+    case rtfPar:
+        if (nowBetweenParagraphs)
+            paragraph.spaceBefore += abs(paragraph.lineSpacing);
+        nowBetweenParagraphs = true;
+        break;
+    case rtfNoBrkSpace:
+        PutStdChar(rtfSC_nobrkspace);
+        break;
+    case rtfTab:
+        PutLitStr("\\tab ");
+        break;
+    case rtfNoBrkHyphen:
+        PutStdChar(rtfSC_nobrkhyphen);
+        break;
+    case rtfBullet:
+        PutStdChar(rtfSC_bullet);
+        break;
+    case rtfEmDash:
+        PutLitStr("---");
+        break;
+    case rtfEnDash:
+        PutLitStr("-");
+        break;
+    case rtfLQuote:
+        PutLitStr("`");
+        break;
+    case rtfRQuote:
+        PutLitStr("'");
+        break;
+    case rtfLDblQuote:
+        PutLitStr("``");
+        break;
+    case rtfRDblQuote:
+        PutLitStr("''");
+        break;
+    case rtfPage:
+        if (!insideTable)
+            PutLitStr("\\pagebreak{}");
+        break;
+    case rtfOptDest:
+    	HandleOptionalTokens();
+    	break;
+
+    }
+}
+
+/* decides what to do when a control word is encountered */
+static void ControlClass(void)
+{
+
+    switch (rtfMajor) {
+    case rtfDefFont:
+        RTFSetDefaultFont(rtfParam);
+    case rtfFontAttr:
+        switch (rtfMinor) {
+        case rtfAnsiCodePage:
+        case rtfFontCodePage:
+            /* codePage = rtfParam;*/
+            break;
+        }
+        break;
+    case rtfDestination:
+        Destination();
+        break;
+    case rtfSpecialChar:
+        SpecialChar();
+        break;
+    case rtfCharAttr:
+        SetTextStyle();
+        break;
+    case rtfListAttr:
+        RTFSkipGroup();
+//        RTFRouteToken();
+        break;
+    case rtfTblAttr:            /* trigger for reading table */
+        if (rtfMinor == rtfRowDef && !(insideTable)) {
+            RTFUngetToken();
+            DoTable();          /* if we are not already inside a table, get into it */
+        } else
+            DoTableAttr();      /* if we are already inside
+                                 * a table, set table attributes */
+        break;
+    case rtfParAttr:
+        ParAttr();
+        break;
+    case rtfSectAttr:
+        SectAttr();
+        break;
+    case rtfWord97ObjAttr:
+        if (rtfMinor == rtfShapeName || rtfMinor == rtfShapeValue)
+            SkipGroup();
+        break;
+    }
+
+	/* handles {\*\keyword ...} */
+//	if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
+//		RTFSkipGroup();
+
+
+}
 
 /*
  * Prepares output TeX file for each input RTF file.
@@ -3528,39 +3551,12 @@ int BeginLaTeXFile(void)
     RTFSetClassCallback(rtfControl, ControlClass);
 
     /* install destination callbacks */
-    RTFSetDestinationCallback(rtfUnicode, ReadUnicode);
     RTFSetDestinationCallback(rtfObjWid, ReadObjWidth);
     RTFSetDestinationCallback(rtfColorTbl, WriteColors);
-    RTFSetDestinationCallback(rtfParNumTextAfter, SkipGroup);
-    RTFSetDestinationCallback(rtfParNumTextBefore, SkipGroup);
-    RTFSetDestinationCallback(rtfFieldInst, ReadFieldInst);
     RTFSetDestinationCallback(rtfObject, ReadObject);
     RTFSetDestinationCallback(rtfWord97Object, ReadWord97Object);
-    RTFSetDestinationCallback(rtfWord97NoPicture, SkipGroup);
-    RTFSetDestinationCallback(rtfRevisionTbl, SkipGroup);
     RTFSetDestinationCallback(rtfPict, ReadPicture);
     RTFSetDestinationCallback(rtfFootnote, ReadFootnote);
-    RTFSetDestinationCallback(rtfBookmarkStart, ReadBookmarkStart);
-    /*
-    RTFSetDestinationCallback(rtfBookmarkEnd, SkipGroup);
-    RTFSetDestinationCallback(rtfDataField, SkipGroup);
-    RTFSetDestinationCallback(rtfTemplate, SkipGroup);
-    RTFSetDestinationCallback(rtfDocvar, SkipGroup);
-    RTFSetDestinationCallback(rtfFchars, SkipGroup);
-    RTFSetDestinationCallback(rtfLchars, SkipGroup);
-    RTFSetDestinationCallback(rtfPgdsctbl, SkipGroup);
-    RTFSetDestinationCallback(rtfxmlNs, SkipGroup);
-    RTFSetDestinationCallback(rtfxmlAttr, SkipGroup);
-    RTFSetDestinationCallback(rtfxmlOpen, SkipGroup);
-    RTFSetDestinationCallback(rtfxmlTbl, SkipGroup);
-    RTFSetDestinationCallback(rtfxmlAttrNs, SkipGroup);
-    RTFSetDestinationCallback(rtfxmlAttrName, SkipGroup);
-    RTFSetDestinationCallback(rtfxmlAttrValue, SkipGroup);
-    RTFSetDestinationCallback(rtfListTable, SkipGroup);
-    */
-
-    /* use r2l-map if present */
-    /* defaults */
 
     if (r2lMapPresent) {
         int itemNumber;

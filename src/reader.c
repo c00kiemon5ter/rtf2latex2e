@@ -2258,13 +2258,13 @@ void RTFInitStack(void)
     paragraphWritten.lineSpacing      = UNINITIALIZED;
     paragraphWritten.alignment        = UNINITIALIZED;
 
-    paragraph.firstIndent      = 720;
-    paragraph.leftIndent       = 0;
-    paragraph.lineSpacing      = 240;
-    paragraph.alignment        = 0;
-    textStyle.foreColor = -1;
-    textStyle.backColor = -1;
-    textStyle.fontSize = normalSize;
+    paragraph.firstIndent = 720;
+    paragraph.leftIndent  = 0;
+    paragraph.lineSpacing = 240;
+    paragraph.alignment   = 0;
+    textStyle.foreColor   = 0;
+    textStyle.backColor   = 0;
+    textStyle.fontSize    = normalSize;
 
     RTFPushStack();
 }
