@@ -101,6 +101,7 @@ static void ReadCharSetMaps(void);
 void DebugMessage(void);
 
 static void RTFSwitchCharSet(uint32_t enc);
+void ExamineToken(void);
 
 /*
  * Public variables (listed in rtf.h)
@@ -1224,8 +1225,13 @@ static void ReadFontTbl(void)
 
     for (;;) {
         (void) RTFGetToken();
+
         if (RTFCheckCM(rtfGroup, rtfEndGroup))
             break;
+            
+        if (rtfClass==rtfText && rtfMinor == rtfSC_space)
+            continue;
+
         if (old < 0) {          /* first entry - determine tbl type */
             if (RTFCheckCMM(rtfControl, rtfCharAttr, rtfFontNum))
                 old = 1;        /* no brace */
@@ -1234,9 +1240,10 @@ static void ReadFontTbl(void)
             else                /* can't tell! */
                 RTFPanic("%s: Cannot determine format", fn);
         }
+        
         if (old == 0) {         /* need to find "{" here */
             if (!RTFCheckCM(rtfGroup, rtfBeginGroup))
-                RTFPanic("%s: missing \"{\"", fn);
+                RTFPanic("%s: xmissing \"{\"", fn);
             (void) RTFGetToken();       /* yes, skip to next token */
         }
 
@@ -1319,6 +1326,7 @@ static void ReadFontTbl(void)
             }
             (void) RTFGetToken();
         }
+
         if (old == 0) {         /* need to see "}" here */
             (void) RTFGetToken();
             if (!RTFCheckCM(rtfGroup, rtfEndGroup))

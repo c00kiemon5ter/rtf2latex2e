@@ -774,6 +774,9 @@ minor	rtfPMMetafile		pmmetafile
 minor	rtfWinMetafile		wmetafile
 minor	rtfDevIndBitmap		dibitmap
 minor	rtfWinBitmap		wbitmap
+minor	rtfPng				pngblip
+minor	rtfJpeg				jpegblip
+minor	rtfEmf				emfblip
 minor	rtfPixelBits		wbmbitspixel
 minor	rtfBitmapPlanes		wbmplanes
 minor	rtfBitmapWid		wbmwidthbytes
@@ -1058,15 +1061,6 @@ minor	rtfVertLeftAlign	cltxlrtb
 minor	rtfVertRightAlign	cltxtbrl
 minor	rtfVertMergeRngFirst	clvmgf
 minor	rtfVertMergeRngPrevious	clvmrg
-
- /*
-  * More picture attributes
-  */
-
-major rtfPictAttr
-
-minor	rtfPng		pngblip
-minor	rtfJpeg		jpegblip
 
 
 /* some special ANSI encoding commands */

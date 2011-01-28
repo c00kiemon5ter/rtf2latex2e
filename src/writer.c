@@ -572,6 +572,8 @@ void ExamineToken(void)
     printf("* Major is %3d", rtfMajor);
     if (rtfClass == rtfText) {
         printf(" raw='%c' \n", rtfMajor);
+    } else if (rtfClass == rtfGroup) {
+        printf(" (%s)\n", rtfMajor? "rtfEndGroup" : "rtfBeginGroup");
     } else {
         switch (rtfMajor) {
             case rtfVersion: printf(" (rtfVersion)\n"); break;
@@ -976,6 +978,8 @@ static void setLineSpacing(void)
 static void NewParagraph(void)
 {
     char buff[100];
+
+    CheckForBeginDocument();
 
     nowBetweenParagraphs = false;
 
@@ -2175,6 +2179,9 @@ static int HexData(void)
         case rtfWinMetafile:
             picture.type = wmf;
             break;
+        case rtfEmf:
+            picture.type = emf;
+            break;
         case rtfPng:
             picture.type = png;
             break;
@@ -2251,6 +2258,8 @@ static void WritePictureHeader(FILE * pictureFile)
         break;
     case wmf:
         fwrite(wmfhead, 22, 1, pictureFile);
+        break;
+    case emf:
         break;
     case png:
         break;
@@ -2441,6 +2450,11 @@ static void ReadPicture(void)
 /*         RTFMsg("* Warning: WMF format image encountered.\n"); */
         ConvertHexPicture("wmf");
         IncludeGraphics("wmf");
+        break;
+    case emf:
+/*         RTFMsg("* Warning: EMF format image encountered.\n"); */
+        ConvertHexPicture("emf");
+        IncludeGraphics("emf");
         break;
     case png:
 /*         RTFMsg("* Warning: PNG format image encountered.\n"); */

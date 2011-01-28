@@ -166,10 +166,11 @@ parser: checkfiles clean
 	rm -f src/rtf-ctrldef.h  src/rtf-namedef.h  src/stdcharnames.h src/rtf-ctrl
 	make src/rtfprep	
 	cd src && ./rtfprep
+	cp src/rtf-ctrl pref/rtf-ctrl
 
 appleclean:
-	sudo xattr -r -d com.apple.FinderInfo ../trunk
-	sudo xattr -r -d com.apple.TextEncoding ../trunk
+	sudo xattr -r -d com.apple.FinderInfo ./
+	sudo xattr -r -d com.apple.TextEncoding ./
 	
 splint: 
 	splint -weak $(SRCS) $(HDRS)
