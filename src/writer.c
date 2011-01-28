@@ -914,6 +914,9 @@ static void SetTextStyle(void)
     case rtfUnderline:
         textStyle.underlined = (rtfParam) ? true : false;
         break;
+    case rtfNoUnderline:
+        textStyle.underlined = false;
+        break;    
     case rtfDbUnderline:
         textStyle.dbUnderlined = (rtfParam) ? true : false;
         break;
