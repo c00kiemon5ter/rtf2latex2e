@@ -514,48 +514,51 @@
 # define		rtfBgPatLineColor	367
 # define		rtfBgPatColor	368
 
+# define		rtfWidowCtlPar	369
+# define		rtfOutLineLevel	370
+
 /*
  * Positioning attributes
  */
 
 # define	rtfPosAttr	14
 
-# define		rtfAbsWid	369
-# define		rtfAbsHt	370
+# define		rtfAbsWid	371
+# define		rtfAbsHt	372
 
-# define		rtfRPosMargH	371
-# define		rtfRPosPageH	372
-# define		rtfRPosColH	373
-# define		rtfPosX	374
-# define		rtfPosNegX	375
-# define		rtfPosXCenter	376
-# define		rtfPosXInside	377
-# define		rtfPosXOutSide	378
-# define		rtfPosXRight	379
-# define		rtfPosXLeft	380
+# define		rtfRPosMargH	373
+# define		rtfRPosPageH	374
+# define		rtfRPosColH	375
+# define		rtfPosX	376
+# define		rtfPosNegX	377
+# define		rtfPosXCenter	378
+# define		rtfPosXInside	379
+# define		rtfPosXOutSide	380
+# define		rtfPosXRight	381
+# define		rtfPosXLeft	382
 
-# define		rtfRPosMargV	381
-# define		rtfRPosPageV	382
-# define		rtfRPosParaV	383
-# define		rtfPosY	384
-# define		rtfPosNegY	385
-# define		rtfPosYInline	386
-# define		rtfPosYTop	387
-# define		rtfPosYCenter	388
-# define		rtfPosYBottom	389
+# define		rtfRPosMargV	383
+# define		rtfRPosPageV	384
+# define		rtfRPosParaV	385
+# define		rtfPosY	386
+# define		rtfPosNegY	387
+# define		rtfPosYInline	388
+# define		rtfPosYTop	389
+# define		rtfPosYCenter	390
+# define		rtfPosYBottom	391
 
-# define		rtfNoWrap	390
-# define		rtfDistFromTextAll	391
-# define		rtfDistFromTextX	392
-# define		rtfDistFromTextY	393
+# define		rtfNoWrap	392
+# define		rtfDistFromTextAll	393
+# define		rtfDistFromTextX	394
+# define		rtfDistFromTextY	395
 /*
  * \dyfrtext no longer exists as of spec 1.2, apparently
  * having been replaced by \dfrmtextx and \dfrmtexty.
  */
-# define		rtfTextDistY	394
+# define		rtfTextDistY	396
 
-# define		rtfDropCapLines	395
-# define		rtfDropCapType	396
+# define		rtfDropCapLines	397
+# define		rtfDropCapType	398
 
 /*
  * Table attributes
@@ -563,55 +566,55 @@
 
 # define	rtfTblAttr	15
 
-# define		rtfRowDef	397
-# define		rtfRowGapH	398
-# define		rtfCellPos	399
-# define		rtfMergeRngFirst	400
-# define		rtfMergePrevious	401
+# define		rtfRowDef	399
+# define		rtfRowGapH	400
+# define		rtfCellPos	401
+# define		rtfMergeRngFirst	402
+# define		rtfMergePrevious	403
 
-# define		rtfRowLeft	402
-# define		rtfRowRight	403
-# define		rtfRowCenter	404
-# define		rtfRowLeftEdge	405
-# define		rtfRowHt	406
-# define		rtfRowHeader	407
-# define		rtfRowKeep	408
+# define		rtfRowLeft	404
+# define		rtfRowRight	405
+# define		rtfRowCenter	406
+# define		rtfRowLeftEdge	407
+# define		rtfRowHt	408
+# define		rtfRowHeader	409
+# define		rtfRowKeep	410
 
-# define		rtfRTLRow	409
-# define		rtfLTRRow	410
+# define		rtfRTLRow	411
+# define		rtfLTRRow	412
 
-# define		rtfRowBordTop	411
-# define		rtfRowBordLeft	412
-# define		rtfRowBordBottom	413
-# define		rtfRowBordRight	414
-# define		rtfRowBordHoriz	415
-# define		rtfRowBordVert	416
+# define		rtfRowBordTop	413
+# define		rtfRowBordLeft	414
+# define		rtfRowBordBottom	415
+# define		rtfRowBordRight	416
+# define		rtfRowBordHoriz	417
+# define		rtfRowBordVert	418
 
-# define		rtfCellBordBottom	417
-# define		rtfCellBordTop	418
-# define		rtfCellBordLeft	419
-# define		rtfCellBordRight	420
+# define		rtfCellBordBottom	419
+# define		rtfCellBordTop	420
+# define		rtfCellBordLeft	421
+# define		rtfCellBordRight	422
 
-# define		rtfCellShading	421
-# define		rtfCellBgPatH	422
-# define		rtfCellBgPatV	423
-# define		rtfCellFwdDiagBgPat	424
-# define		rtfCellBwdDiagBgPat	425
-# define		rtfCellHatchBgPat	426
-# define		rtfCellDiagHatchBgPat	427
+# define		rtfCellShading	423
+# define		rtfCellBgPatH	424
+# define		rtfCellBgPatV	425
+# define		rtfCellFwdDiagBgPat	426
+# define		rtfCellBwdDiagBgPat	427
+# define		rtfCellHatchBgPat	428
+# define		rtfCellDiagHatchBgPat	429
 /*
  * The spec lists \clbgdkhor, but the corresponding non-cell
  * control is \bgdkhoriz.  At any rate, Macintosh Word seems
  * to accept both \clbgdkhor and \clbgdkhoriz.
  */
-# define		rtfCellDarkBgPatH	428
-# define		rtfCellDarkBgPatV	429
-# define		rtfCellFwdDarkBgPat	430
-# define		rtfCellBwdDarkBgPat	431
-# define		rtfCellDarkHatchBgPat	432
-# define		rtfCellDarkDiagHatchBgPat	433
-# define		rtfCellBgPatLineColor	434
-# define		rtfCellBgPatColor	435
+# define		rtfCellDarkBgPatH	430
+# define		rtfCellDarkBgPatV	431
+# define		rtfCellFwdDarkBgPat	432
+# define		rtfCellBwdDarkBgPat	433
+# define		rtfCellDarkHatchBgPat	434
+# define		rtfCellDarkDiagHatchBgPat	435
+# define		rtfCellBgPatLineColor	436
+# define		rtfCellBgPatColor	437
 
 /*
  * Character formatting attributes
@@ -619,43 +622,43 @@
 
 # define	rtfCharAttr	16
 
-# define		rtfPlain	436
-# define		rtfBold	437
-# define		rtfAllCaps	438
-# define		rtfDeleted	439
-# define		rtfSubScript	440
-# define		rtfSubScrShrink	441
-# define		rtfNoSuperSub	442
-# define		rtfExpand	443
-# define		rtfExpandTwips	444
-# define		rtfKerning	445
-# define		rtfFontNum	446
-# define		rtfFontSize	447
-# define		rtfItalic	448
-# define		rtfOutline	449
-# define		rtfRevised	450
-# define		rtfRevAuthor	451
-# define		rtfRevDTTM	452
-# define		rtfSmallCaps	453
-# define		rtfShadow	454
-# define		rtfStrikeThru	455
-# define		rtfUnderline	456
-# define		rtfDotUnderline	457
-# define		rtfDbUnderline	458
-# define		rtfNoUnderline	459
-# define		rtfWordUnderline	460
-# define		rtfSuperScript	461
-# define		rtfSuperScrShrink	462
-# define		rtfInvisible	463
-# define		rtfForeColor	464
-# define		rtfBackColor	465
-# define		rtfRTLChar	466
-# define		rtfLTRChar	467
-# define		rtfCharStyleNum	468
-# define		rtfCharCharSet	469
-# define		rtfLanguage	470
+# define		rtfPlain	438
+# define		rtfBold	439
+# define		rtfAllCaps	440
+# define		rtfDeleted	441
+# define		rtfSubScript	442
+# define		rtfSubScrShrink	443
+# define		rtfNoSuperSub	444
+# define		rtfExpand	445
+# define		rtfExpandTwips	446
+# define		rtfKerning	447
+# define		rtfFontNum	448
+# define		rtfFontSize	449
+# define		rtfItalic	450
+# define		rtfOutline	451
+# define		rtfRevised	452
+# define		rtfRevAuthor	453
+# define		rtfRevDTTM	454
+# define		rtfSmallCaps	455
+# define		rtfShadow	456
+# define		rtfStrikeThru	457
+# define		rtfUnderline	458
+# define		rtfDotUnderline	459
+# define		rtfDbUnderline	460
+# define		rtfNoUnderline	461
+# define		rtfWordUnderline	462
+# define		rtfSuperScript	463
+# define		rtfSuperScrShrink	464
+# define		rtfInvisible	465
+# define		rtfForeColor	466
+# define		rtfBackColor	467
+# define		rtfRTLChar	468
+# define		rtfLTRChar	469
+# define		rtfCharStyleNum	470
+# define		rtfCharCharSet	471
+# define		rtfLanguage	472
 /* this has disappeared from the spec as of 1.2 */
-# define		rtfGray	471
+# define		rtfGray	473
 
 /*
  * Associated character formatting attributes
@@ -663,25 +666,25 @@
 
 # define	rtfACharAttr	17
 
-# define		rtfACBold	472
-# define		rtfACAllCaps	473
-# define		rtfACForeColor	474
-# define		rtfACSubScript	475
-# define		rtfACExpand	476
-# define		rtfACFontNum	477
-# define		rtfACFontSize	478
-# define		rtfACItalic	479
-# define		rtfACLanguage	480
-# define		rtfACOutline	481
-# define		rtfACSmallCaps	482
-# define		rtfACShadow	483
-# define		rtfACStrikeThru	484
-# define		rtfACUnderline	485
-# define		rtfACDotUnderline	486
-# define		rtfACDbUnderline	487
-# define		rtfACNoUnderline	488
-# define		rtfACWordUnderline	489
-# define		rtfACSuperScript	490
+# define		rtfACBold	474
+# define		rtfACAllCaps	475
+# define		rtfACForeColor	476
+# define		rtfACSubScript	477
+# define		rtfACExpand	478
+# define		rtfACFontNum	479
+# define		rtfACFontSize	480
+# define		rtfACItalic	481
+# define		rtfACLanguage	482
+# define		rtfACOutline	483
+# define		rtfACSmallCaps	484
+# define		rtfACShadow	485
+# define		rtfACStrikeThru	486
+# define		rtfACUnderline	487
+# define		rtfACDotUnderline	488
+# define		rtfACDbUnderline	489
+# define		rtfACNoUnderline	490
+# define		rtfACWordUnderline	491
+# define		rtfACSuperScript	492
 
 /*
  * Special characters
@@ -691,68 +694,68 @@
 
 /* special characters seen in \info destination */
 
-# define		rtfIIntVersion	491
-# define		rtfIVersion	492
-# define		rtfIEditTime	493
-# define		rtfIYear	494
-# define		rtfIMonth	495
-# define		rtfIDay	496
-# define		rtfIHour	497
-# define		rtfIMinute	498
-# define		rtfISecond	499
-# define		rtfINPages	500
-# define		rtfINWords	501
-# define		rtfINChars	502
-# define		rtfIIntID	503
+# define		rtfIIntVersion	493
+# define		rtfIVersion	494
+# define		rtfIEditTime	495
+# define		rtfIYear	496
+# define		rtfIMonth	497
+# define		rtfIDay	498
+# define		rtfIHour	499
+# define		rtfIMinute	500
+# define		rtfISecond	501
+# define		rtfINPages	502
+# define		rtfINWords	503
+# define		rtfINChars	504
+# define		rtfIIntID	505
 
 /* other special characters */
 
-# define		rtfCurHeadDate	504
-# define		rtfCurHeadDateLong	505
-# define		rtfCurHeadDateAbbrev	506
-# define		rtfCurHeadTime	507
-# define		rtfCurHeadPage	508
-# define		rtfSectNum	509
-# define		rtfCurFNote	510
-# define		rtfCurAnnotRef	511
-# define		rtfFNoteSep	512
-# define		rtfFNoteCont	513
-# define		rtfCell	514
-# define		rtfRow	515
+# define		rtfCurHeadDate	506
+# define		rtfCurHeadDateLong	507
+# define		rtfCurHeadDateAbbrev	508
+# define		rtfCurHeadTime	509
+# define		rtfCurHeadPage	510
+# define		rtfSectNum	511
+# define		rtfCurFNote	512
+# define		rtfCurAnnotRef	513
+# define		rtfFNoteSep	514
+# define		rtfFNoteCont	515
+# define		rtfCell	516
+# define		rtfRow	517
 /*
  * newline and carriage return are synonyms for
  * \par when they are preceded by a \ character
  */
-# define		rtfPar	516
-# define		rtfSect	517
-# define		rtfPage	518
-# define		rtfColumn	519
-# define		rtfLine	520
-# define		rtfSoftPage	521
-# define		rtfSoftColumn	522
-# define		rtfSoftLine	523
-# define		rtfSoftLineHt	524
-# define		rtfTab	525
-# define		rtfEmDash	526
-# define		rtfEnDash	527
-# define		rtfEmSpace	528
-# define		rtfEnSpace	529
-# define		rtfBullet	530
-# define		rtfLQuote	531
-# define		rtfRQuote	532
-# define		rtfLDblQuote	533
-# define		rtfRDblQuote	534
-# define		rtfFormula	535
-# define		rtfNoBrkSpace	536
-# define		rtfNoReqHyphen	537
-# define		rtfNoBrkHyphen	538
-# define		rtfOptDest	539
-# define		rtfLTRMark	540
-# define		rtfRTLMark	541
-# define		rtfNoWidthJoiner	542
-# define		rtfNoWidthNonJoiner	543
+# define		rtfPar	518
+# define		rtfSect	519
+# define		rtfPage	520
+# define		rtfColumn	521
+# define		rtfLine	522
+# define		rtfSoftPage	523
+# define		rtfSoftColumn	524
+# define		rtfSoftLine	525
+# define		rtfSoftLineHt	526
+# define		rtfTab	527
+# define		rtfEmDash	528
+# define		rtfEnDash	529
+# define		rtfEmSpace	530
+# define		rtfEnSpace	531
+# define		rtfBullet	532
+# define		rtfLQuote	533
+# define		rtfRQuote	534
+# define		rtfLDblQuote	535
+# define		rtfRDblQuote	536
+# define		rtfFormula	537
+# define		rtfNoBrkSpace	538
+# define		rtfNoReqHyphen	539
+# define		rtfNoBrkHyphen	540
+# define		rtfOptDest	541
+# define		rtfLTRMark	542
+# define		rtfRTLMark	543
+# define		rtfNoWidthJoiner	544
+# define		rtfNoWidthNonJoiner	545
 /* is this a valid token? */
-# define		rtfCurHeadPict	544
+# define		rtfCurHeadPict	546
 
 /*
  * Bookmark attributes
@@ -760,8 +763,8 @@
 
 # define	rtfBookmarkAttr	19
 
-# define		rtfBookmarkFirstCol	545
-# define		rtfBookmarkLastCol	546
+# define		rtfBookmarkFirstCol	547
+# define		rtfBookmarkLastCol	548
 
 /*
  * Picture attributes
@@ -769,39 +772,39 @@
 
 # define	rtfPictAttr	20
 
-# define		rtfMacQD	547
-# define		rtfPMMetafile	548
-# define		rtfWinMetafile	549
-# define		rtfDevIndBitmap	550
-# define		rtfWinBitmap	551
-# define		rtfPng	552
-# define		rtfJpeg	553
-# define		rtfEmf	554
-# define		rtfPixelBits	555
-# define		rtfBitmapPlanes	556
-# define		rtfBitmapWid	557
+# define		rtfMacQD	549
+# define		rtfPMMetafile	550
+# define		rtfWinMetafile	551
+# define		rtfDevIndBitmap	552
+# define		rtfWinBitmap	553
+# define		rtfPng	554
+# define		rtfJpeg	555
+# define		rtfEmf	556
+# define		rtfPixelBits	557
+# define		rtfBitmapPlanes	558
+# define		rtfBitmapWid	559
 
-# define		rtfPicWid	558
-# define		rtfPicHt	559
+# define		rtfPicWid	560
+# define		rtfPicHt	561
 /*
  * \picwGoal and \pichGoal aren't in the spec,
  * but some writers emit them, so we recognize them.
  */
-# define		rtfPicGoalWid	560
-# define		rtfPicGoalHt	561
-# define		rtfPicScaleX	562
-# define		rtfPicScaleY	563
-# define		rtfPicScaled	564
-# define		rtfPicCropTop	565
-# define		rtfPicCropBottom	566
-# define		rtfPicCropLeft	567
-# define		rtfPicCropRight	568
+# define		rtfPicGoalWid	562
+# define		rtfPicGoalHt	563
+# define		rtfPicScaleX	564
+# define		rtfPicScaleY	565
+# define		rtfPicScaled	566
+# define		rtfPicCropTop	567
+# define		rtfPicCropBottom	568
+# define		rtfPicCropLeft	569
+# define		rtfPicCropRight	570
 
-# define		rtfPicMFHasBitmap	569
-# define		rtfPicMFBitsPerPixel	570
+# define		rtfPicMFHasBitmap	571
+# define		rtfPicMFBitsPerPixel	572
 
-# define		rtfPicBinary	571
-# define		rtfPicProp	572
+# define		rtfPicBinary	573
+# define		rtfPicProp	574
 
 /*
  * Object controls
@@ -809,37 +812,37 @@
 
 # define	rtfObjAttr	21
 
-# define		rtfObjEmb	573
-# define		rtfObjLink	574
-# define		rtfObjAutoLink	575
-# define		rtfObjSubscriber	576
-# define		rtfObjPublisher	577
-# define		rtfObjICEmb	578
+# define		rtfObjEmb	575
+# define		rtfObjLink	576
+# define		rtfObjAutoLink	577
+# define		rtfObjSubscriber	578
+# define		rtfObjPublisher	579
+# define		rtfObjICEmb	580
 
-# define		rtfObjLinkSelf	579
-# define		rtfObjLock	580
-# define		rtfObjUpdate	581
+# define		rtfObjLinkSelf	581
+# define		rtfObjLock	582
+# define		rtfObjUpdate	583
 
-# define		rtfObjHt	582
-# define		rtfObjWid	583
-# define		rtfObjSetSize	584
-# define		rtfObjAlign	585
-# define		rtfObjTransposeY	586
-# define		rtfObjCropTop	587
-# define		rtfObjCropBottom	588
-# define		rtfObjCropLeft	589
-# define		rtfObjCropRight	590
-# define		rtfObjScaleX	591
-# define		rtfObjScaleY	592
+# define		rtfObjHt	584
+# define		rtfObjWid	585
+# define		rtfObjSetSize	586
+# define		rtfObjAlign	587
+# define		rtfObjTransposeY	588
+# define		rtfObjCropTop	589
+# define		rtfObjCropBottom	590
+# define		rtfObjCropLeft	591
+# define		rtfObjCropRight	592
+# define		rtfObjScaleX	593
+# define		rtfObjScaleY	594
 
-# define		rtfObjResRTF	593
-# define		rtfObjResPict	594
-# define		rtfObjResBitmap	595
-# define		rtfObjResText	596
-# define		rtfObjResMerge	597
+# define		rtfObjResRTF	595
+# define		rtfObjResPict	596
+# define		rtfObjResBitmap	597
+# define		rtfObjResText	598
+# define		rtfObjResMerge	599
 
-# define		rtfObjBookmarkPubObj	598
-# define		rtfObjPubAutoUpdate	599
+# define		rtfObjBookmarkPubObj	600
+# define		rtfObjPubAutoUpdate	601
 
 /*
  * Drawing object attributes
@@ -847,97 +850,97 @@
 
 # define	rtfDrawAttr	22
 
-# define		rtfDrawLock	600
-# define		rtfDrawPageRelX	601
-# define		rtfDrawColumnRelX	602
-# define		rtfDrawMarginRelX	603
-# define		rtfDrawPageRelY	604
-# define		rtfDrawParaRelY	605
-# define		rtfDrawMarginRelY	606
-# define		rtfDrawHeight	607
+# define		rtfDrawLock	602
+# define		rtfDrawPageRelX	603
+# define		rtfDrawColumnRelX	604
+# define		rtfDrawMarginRelX	605
+# define		rtfDrawPageRelY	606
+# define		rtfDrawParaRelY	607
+# define		rtfDrawMarginRelY	608
+# define		rtfDrawHeight	609
 
-# define		rtfDrawBeginGroup	608
-# define		rtfDrawGroupCount	609
-# define		rtfDrawEndGroup	610
-# define		rtfDrawArc	611
-# define		rtfDrawCallout	612
-# define		rtfDrawEllipse	613
-# define		rtfDrawLine	614
-# define		rtfDrawPolygon	615
-# define		rtfDrawPolyLine	616
-# define		rtfDrawRect	617
-# define		rtfDrawTextBox	618
+# define		rtfDrawBeginGroup	610
+# define		rtfDrawGroupCount	611
+# define		rtfDrawEndGroup	612
+# define		rtfDrawArc	613
+# define		rtfDrawCallout	614
+# define		rtfDrawEllipse	615
+# define		rtfDrawLine	616
+# define		rtfDrawPolygon	617
+# define		rtfDrawPolyLine	618
+# define		rtfDrawRect	619
+# define		rtfDrawTextBox	620
 
-# define		rtfDrawOffsetX	619
-# define		rtfDrawSizeX	620
-# define		rtfDrawOffsetY	621
-# define		rtfDrawSizeY	622
+# define		rtfDrawOffsetX	621
+# define		rtfDrawSizeX	622
+# define		rtfDrawOffsetY	623
+# define		rtfDrawSizeY	624
 
-# define		rtfCOAngle	623
-# define		rtfCOAccentBar	624
-# define		rtfCOBestFit	625
-# define		rtfCOBorder	626
-# define		rtfCOAttachAbsDist	627
-# define		rtfCOAttachBottom	628
-# define		rtfCOAttachCenter	629
-# define		rtfCOAttachTop	630
-# define		rtfCOLength	631
-# define		rtfCONegXQuadrant	632
-# define		rtfCONegYQuadrant	633
-# define		rtfCOOffset	634
-# define		rtfCOAttachSmart	635
-# define		rtfCODoubleLine	636
-# define		rtfCORightAngle	637
-# define		rtfCOSingleLine	638
-# define		rtfCOTripleLine	639
+# define		rtfCOAngle	625
+# define		rtfCOAccentBar	626
+# define		rtfCOBestFit	627
+# define		rtfCOBorder	628
+# define		rtfCOAttachAbsDist	629
+# define		rtfCOAttachBottom	630
+# define		rtfCOAttachCenter	631
+# define		rtfCOAttachTop	632
+# define		rtfCOLength	633
+# define		rtfCONegXQuadrant	634
+# define		rtfCONegYQuadrant	635
+# define		rtfCOOffset	636
+# define		rtfCOAttachSmart	637
+# define		rtfCODoubleLine	638
+# define		rtfCORightAngle	639
+# define		rtfCOSingleLine	640
+# define		rtfCOTripleLine	641
 
-# define		rtfDrawTextBoxMargin	640
-# define		rtfDrawRoundRect	641
+# define		rtfDrawTextBoxMargin	642
+# define		rtfDrawRoundRect	643
 
-# define		rtfDrawPointX	642
-# define		rtfDrawPointY	643
-# define		rtfDrawPolyCount	644
+# define		rtfDrawPointX	644
+# define		rtfDrawPointY	645
+# define		rtfDrawPolyCount	646
 
-# define		rtfDrawArcFlipX	645
-# define		rtfDrawArcFlipY	646
+# define		rtfDrawArcFlipX	647
+# define		rtfDrawArcFlipY	648
 
-# define		rtfDrawLineBlue	647
-# define		rtfDrawLineGreen	648
-# define		rtfDrawLineRed	649
-# define		rtfDrawLinePalette	650
-# define		rtfDrawLineDashDot	651
-# define		rtfDrawLineDashDotDot	652
-# define		rtfDrawLineDash	653
-# define		rtfDrawLineDot	654
-# define		rtfDrawLineGray	655
-# define		rtfDrawLineHollow	656
-# define		rtfDrawLineSolid	657
-# define		rtfDrawLineWidth	658
+# define		rtfDrawLineBlue	649
+# define		rtfDrawLineGreen	650
+# define		rtfDrawLineRed	651
+# define		rtfDrawLinePalette	652
+# define		rtfDrawLineDashDot	653
+# define		rtfDrawLineDashDotDot	654
+# define		rtfDrawLineDash	655
+# define		rtfDrawLineDot	656
+# define		rtfDrawLineGray	657
+# define		rtfDrawLineHollow	658
+# define		rtfDrawLineSolid	659
+# define		rtfDrawLineWidth	660
 
-# define		rtfDrawHollowEndArrow	659
-# define		rtfDrawEndArrowLength	660
-# define		rtfDrawSolidEndArrow	661
-# define		rtfDrawEndArrowWidth	662
-# define		rtfDrawHollowStartArrow	663
-# define		rtfDrawStartArrowLength	664
-# define		rtfDrawSolidStartArrow	665
-# define		rtfDrawStartArrowWidth	666
+# define		rtfDrawHollowEndArrow	661
+# define		rtfDrawEndArrowLength	662
+# define		rtfDrawSolidEndArrow	663
+# define		rtfDrawEndArrowWidth	664
+# define		rtfDrawHollowStartArrow	665
+# define		rtfDrawStartArrowLength	666
+# define		rtfDrawSolidStartArrow	667
+# define		rtfDrawStartArrowWidth	668
 
-# define		rtfDrawBgFillBlue	667
-# define		rtfDrawBgFillGreen	668
-# define		rtfDrawBgFillRed	669
-# define		rtfDrawBgFillPalette	670
-# define		rtfDrawBgFillGray	671
-# define		rtfDrawFgFillBlue	672
-# define		rtfDrawFgFillGreen	673
-# define		rtfDrawFgFillRed	674
-# define		rtfDrawFgFillPalette	675
-# define		rtfDrawFgFillGray	676
-# define		rtfDrawFillPatIndex	677
+# define		rtfDrawBgFillBlue	669
+# define		rtfDrawBgFillGreen	670
+# define		rtfDrawBgFillRed	671
+# define		rtfDrawBgFillPalette	672
+# define		rtfDrawBgFillGray	673
+# define		rtfDrawFgFillBlue	674
+# define		rtfDrawFgFillGreen	675
+# define		rtfDrawFgFillRed	676
+# define		rtfDrawFgFillPalette	677
+# define		rtfDrawFgFillGray	678
+# define		rtfDrawFillPatIndex	679
 
-# define		rtfDrawShadow	678
-# define		rtfDrawShadowXOffset	679
-# define		rtfDrawShadowYOffset	680
+# define		rtfDrawShadow	680
+# define		rtfDrawShadowXOffset	681
+# define		rtfDrawShadowYOffset	682
 
 /*
  * Footnote attributes
@@ -945,7 +948,7 @@
 
 # define	rtfFNoteAttr	23
 
-# define		rtfFNAlt	681
+# define		rtfFNAlt	683
 
 /*
  * Field attributes
@@ -953,11 +956,11 @@
 
 # define	rtfFieldAttr	24
 
-# define		rtfFieldDirty	682
-# define		rtfFieldEdited	683
-# define		rtfFieldLocked	684
-# define		rtfFieldPrivate	685
-# define		rtfFieldAlt	686
+# define		rtfFieldDirty	684
+# define		rtfFieldEdited	685
+# define		rtfFieldLocked	686
+# define		rtfFieldPrivate	687
+# define		rtfFieldAlt	688
 
 /*
  * Index entry attributes
@@ -965,9 +968,9 @@
 
 # define	rtfIndexAttr	25
 
-# define		rtfIndexNumber	687
-# define		rtfIndexBold	688
-# define		rtfIndexItalic	689
+# define		rtfIndexNumber	689
+# define		rtfIndexBold	690
+# define		rtfIndexItalic	691
 
 /*
  * Table of contents attributes
@@ -975,8 +978,8 @@
 
 # define	rtfTOCAttr	26
 
-# define		rtfTOCType	690
-# define		rtfTOCLevel	691
+# define		rtfTOCType	692
+# define		rtfTOCLevel	693
 
 /*
  * NeXT graphic attributes -- non-standard
@@ -984,43 +987,29 @@
 
 # define	rtfNeXTGrAttr	27
 
-# define		rtfNeXTGWidth	692
-# define		rtfNeXTGHeight	693
+# define		rtfNeXTGWidth	694
+# define		rtfNeXTGHeight	695
+# define		rtfNoOrient	696
 
-/*
- * Stuff added by Ujwal Sathyam for rtf2LaTeX2e
- * New paragraph attributes found in MS Word for Mac.
- * For some unknown reason, I couldn't add it to the list of the other
- * paragraph attributes. I have modified rtfprep.c to ignore multiply
- * defined majors. New destinations have to be added to the destination
- * list above.
- */
-
-/*
- * More paragraph attributes
- */
-
-# define		rtfWidowCtlPar	694
-# define		rtfOutLineLevel	695
 
 /*
  * More character attributes
  */
 
-# define		rtfCGrid	696
+# define		rtfCGrid	697
 
 /*
  * More section attributes
  */
 
-# define		rtfAdjustRight	697
+# define		rtfAdjustRight	698
 
 /*
  * More style attributes
  */
 
-# define		rtfStyleAutoUpdate	698
-# define		rtfTableStyleNum	699
+# define		rtfStyleAutoUpdate	699
+# define		rtfTableStyleNum	700
 
 /*
  * List attributes. List should actually be defined as a destination.
@@ -1028,9 +1017,9 @@
  
 # define	rtfListAttr	28
  
-# define		rtfList	700
-# define		rtfListTable	701
-# define		rtfListOverrideTable	702
+# define		rtfList	701
+# define		rtfListTable	702
+# define		rtfListOverrideTable	703
 
  /*
   * Word 97 Object Attributes
@@ -1038,41 +1027,41 @@
 
 # define	rtfWord97ObjAttr	29
 
-# define		rtfWord97ObjResult	703
-# define		rtfWord97ObjInst	704
-# define		rtfWord97ObjText	705
-# define		rtfShapeName	706
-# define		rtfShapeValue	707
+# define		rtfWord97ObjResult	704
+# define		rtfWord97ObjInst	705
+# define		rtfWord97ObjText	706
+# define		rtfShapeName	707
+# define		rtfShapeValue	708
 
  /*
   * More table attributes
   */
 
 
-# define		rtfVertTopAlign	708
-# define		rtfVertCenterAlign	709
-# define		rtfVertBottomAlign	710
-# define		rtfVertLeftAlign	711
-# define		rtfVertRightAlign	712
-# define		rtfVertMergeRngFirst	713
-# define		rtfVertMergeRngPrevious	714
+# define		rtfVertTopAlign	709
+# define		rtfVertCenterAlign	710
+# define		rtfVertBottomAlign	711
+# define		rtfVertLeftAlign	712
+# define		rtfVertRightAlign	713
+# define		rtfVertMergeRngFirst	714
+# define		rtfVertMergeRngPrevious	715
 
 
 /* some special ANSI encoding commands */
 
 # define	rtfAnsiCharAttr	30
 
-# define		rtfLowChar	715
-# define		rtfHighChar	716
-# define		rtfDblByteChar	717
+# define		rtfLowChar	716
+# define		rtfHighChar	717
+# define		rtfDblByteChar	718
 
 # define	rtfGoober	31
 
-# define		rtfxmlTbl	718
-# define		rtfxmlNs	719
-# define		rtfxmlOpen	720
-# define		rtfxmlAttr	721
-# define		rtfxmlAttrNs	722
-# define		rtfxmlAttrName	723
-# define		rtfxmlAttrValue	724
-# define		rtfListLevel	725
+# define		rtfxmlTbl	719
+# define		rtfxmlNs	720
+# define		rtfxmlOpen	721
+# define		rtfxmlAttr	722
+# define		rtfxmlAttrNs	723
+# define		rtfxmlAttrName	724
+# define		rtfxmlAttrValue	725
+# define		rtfListLevel	726

@@ -514,6 +514,9 @@ minor	rtfDarkDiagHatchBgPat	bgdkdcross
 minor	rtfBgPatLineColor	cfpat
 minor	rtfBgPatColor		cbpat
 
+minor	rtfWidowCtlPar	widctlpar
+minor	rtfOutLineLevel	outlinelevel
+
 /*
  * Positioning attributes
  */
@@ -986,23 +989,8 @@ major	rtfNeXTGrAttr
 
 minor	rtfNeXTGWidth		width
 minor	rtfNeXTGHeight		height
+minor	rtfNoOrient			noorient
 
-/*
- * Stuff added by Ujwal Sathyam for rtf2LaTeX2e
- * New paragraph attributes found in MS Word for Mac.
- * For some unknown reason, I couldn't add it to the list of the other
- * paragraph attributes. I have modified rtfprep.c to ignore multiply
- * defined majors. New destinations have to be added to the destination
- * list above.
- */
-
-/*
- * More paragraph attributes
- */
-major	rtfParAttr
-
-minor	rtfWidowCtlPar	widctlpar
-minor	rtfOutLineLevel	outlinelevel
 
 /*
  * More character attributes

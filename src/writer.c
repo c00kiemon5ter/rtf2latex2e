@@ -1272,34 +1272,6 @@ static void TextClass(void)
     WrapText();
 }
 
-/*
- * This function notices destinations that should be ignored
- * and skips to their ends.  This keeps, for instance, picture
- * data from being considered as plain text.
- */
-
-static void Destination(void)
-{
-    switch (rtfMinor) {
-    case rtfFNContSep:
-    case rtfFNContNotice:
-    case rtfInfo:
-    case rtfIndexRange:
-    case rtfITitle:
-    case rtfISubject:
-    case rtfIAuthor:
-    case rtfIOperator:
-    case rtfIKeywords:
-    case rtfIComment:
-    case rtfIVersion:
-    case rtfIDoccomm:
-    case rtfUserPropsGroup:
-    case rtfWGRFmtFilter:
-        RTFSkipGroup();
-        break;
-    }
-}
-
 /* reads footnote. Just puts a footnote wrapper around whatever is
  * inside the footnote. Table footnotes are skipped for now
  * until I figure out a way that TeX likes.
@@ -2344,8 +2316,9 @@ static void ConvertHexPicture(char *pictureType)
 }
 
 
-/* This function writes the appropriate LaTeX2e commands to include the picture
-   into the LaTeX file */
+/* 
+ * Write appropriate commands to include the picture
+ */
 static void IncludeGraphics(char *pictureType)
 {
     char *figPtr, *suffix;
@@ -2417,7 +2390,6 @@ static void IncludeGraphics(char *pictureType)
             PutLitStr("\n\\end{figure}");
             
         nowBetweenParagraphs = true;
-
     }
 }
 
@@ -2488,6 +2460,69 @@ static void ReadPicture(void)
     picture.scaleX = 100;
     picture.scaleY = 100;
     strcpy(picture.name, "");
+}
+
+/* 
+ * This function reads in a picture 
+ * 
+ * {{\NeXTGraphic build.tiff \width740 \height740 \noorient}¬}
+ *
+ */
+static void ReadNextGraphic(void)
+{
+	char filename[100], buff[100];
+	int i=0;
+	int width=0;
+	int height=0;
+
+    requireGraphicxPackage = true;
+
+	/* skip to first letter of file name */
+	RTFGetToken();
+	while (rtfClass == rtfText && rtfMajor == ' ')
+		RTFGetToken();	
+
+	/* read the file name */
+	i=0;
+	while (rtfClass == rtfText && rtfMajor != ' ' && i < 100) {
+		filename[i++] = rtfMajor;
+		RTFGetToken();	
+	}
+	filename[i] = '\0';
+
+	while (!RTFCheckCM(rtfGroup, rtfEndGroup)) {
+		switch (rtfMinor) {
+		case rtfNeXTGHeight:
+			height = rtfParam/20;
+			break;
+		case rtfNeXTGWidth:
+			width = rtfParam/20;
+			break;
+		default:
+			break;
+		}
+		RTFGetToken();
+	}
+	
+	/* skip everything until outer brace */
+	SkipGroup();
+
+    PutLitStr("\\includegraphics");
+    if (width || height) {
+    	PutLitStr("[");
+    	if (width) {
+    		snprintf(buff, 100, "width=%dpt, ", width);
+    		PutLitStr(buff);
+    	}
+    	if (height) {
+    		snprintf(buff, 100, "height=%dpt", height);
+    		PutLitStr(buff);
+    	}
+    	PutLitStr("]");
+    }
+    PutLitStr("{");
+    PutLitStr(filename);
+    PutLitStr("}\n");
 }
 
 /*
@@ -3503,10 +3538,40 @@ static void SpecialChar(void)
     }
 }
 
+/*
+ * This function notices destinations that should be ignored
+ * and skips to their ends.  This keeps, for instance, picture
+ * data from being considered as plain text.
+ */
+
+static void Destination(void)
+{
+    switch (rtfMinor) {
+    case rtfFNContSep:
+    case rtfFNContNotice:
+    case rtfInfo:
+    case rtfIndexRange:
+    case rtfITitle:
+    case rtfISubject:
+    case rtfIAuthor:
+    case rtfIOperator:
+    case rtfIKeywords:
+    case rtfIComment:
+    case rtfIVersion:
+    case rtfIDoccomm:
+    case rtfUserPropsGroup:
+    case rtfWGRFmtFilter:
+        RTFSkipGroup();
+        break;
+    case rtfNeXTGraphic:
+        ReadNextGraphic();
+        break;
+    }
+}
+
 /* decides what to do when a control word is encountered */
 static void ControlClass(void)
 {
-
     switch (rtfMajor) {
     case rtfDefFont:
         RTFSetDefaultFont(rtfParam);
