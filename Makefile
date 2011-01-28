@@ -46,7 +46,7 @@ HDRS         = src/cole.h                 src/cole_support.h         src/eqn.h  
 
 RTFPREP_SRCS = src/rtf-controls           src/rtfprep.c              src/standard-names      \
                src/tokenscan.c            src/tokenscan.h            src/rtf-ctrldef.h       \
-               src/rtf-namedef.h          src/stdcharnames.h         src/rtf-ctrl
+               src/rtf-namedef.h          src/stdcharnames.h
 
 RTFPREP_OBJS = src/rtfprep.o              src/tokenscan.o
 
@@ -166,7 +166,7 @@ parser: checkfiles clean
 	rm -f src/rtf-ctrldef.h  src/rtf-namedef.h  src/stdcharnames.h src/rtf-ctrl
 	make src/rtfprep	
 	cd src && ./rtfprep
-	cp src/rtf-ctrl pref/rtf-ctrl
+	mv src/rtf-ctrl pref/rtf-ctrl
 
 appleclean:
 	sudo xattr -r -d com.apple.FinderInfo ./
