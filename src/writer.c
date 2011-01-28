@@ -104,6 +104,12 @@ const char *justificationList[] = {
     "\\raggedleft"
 };
 
+const char *multiJustList[] = {
+    "l",
+    "c",
+    "r"
+};
+
 const char *environmentList[] = {
     "flushleft",
     "center",
@@ -1791,18 +1797,20 @@ static void WriteCellHeader(int cellNum)
             PutLitChar('|');
 
         if (cellPtr->mergePar == first) {
-            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}\n{", cellPtr->width);
+            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}", cellPtr->width, cellPtr->width);
             PutLitStr(buf);
         } else {
-            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}\n{%s", cellPtr->width, justificationList[paragraph.alignment]);
+            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}%s", cellPtr->width,cellPtr->width, justificationList[paragraph.alignment]);
             PutLitStr(buf);
             InsertNewLine();
         }
+        
     } else if (cellPtr->mergePar != first) {
-        snprintf(buf,rtfBufSiz, "{%s ", justificationList[paragraph.alignment]);
+        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s ", cellPtr->width, justificationList[paragraph.alignment]);
         PutLitStr(buf);
     } else {
-        PutLitStr("{");
+        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin} ", cellPtr->width);
+        PutLitStr(buf);
     }
 
     if (cellPtr->mergePar == first)
@@ -1849,9 +1857,12 @@ static void ProcessTableRow(int rowNum)
             } 
             
             StopTextStyle();
-            PutLitStr("}");
-                
             if (cellPtr->mergePar == first)
+                PutLitChar('}');
+
+            PutLitStr("\\end{minipage}");
+                
+            if (table.multiCol)
                 PutLitChar('}');
 
             cellIsEmpty = true;
