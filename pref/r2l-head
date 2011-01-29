@@ -11,5 +11,4 @@
 
 # \usepackage[italian]{babel} (loading italian package)
 # \usepackage{fullpage} (some people like to make full use of the page)
-# \usepackage{times}
-# \usepackage[T1]{fontenc}
+\usepackage{times}

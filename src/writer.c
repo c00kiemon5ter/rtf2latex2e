@@ -1140,14 +1140,8 @@ static void WriteLaTeXHeader(void)
 {
     FILE *f;
     char buf[rtfBufSiz];
-    char *item;
-    TSScanner scanner;
-    char *scanEscape;
     int i, j;
-    boolean preambleFilePresent = true;
-
-    if ((f = RTFOpenLibFile("r2l-head", "r")) == NULL)
-        preambleFilePresent = false;
+    size_t size;
 
     PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
     InsertNewLine();
@@ -1156,33 +1150,27 @@ static void WriteLaTeXHeader(void)
     PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
     InsertNewLine();
 
-    if (preambleFilePresent) {
-        /*
-         * Turn off scanner's backslash escape mechanism while reading
-         * file.  Restore it later.
-         */
-        TSGetScanner(&scanner);
-        scanEscape = scanner.scanEscape;
-        scanner.scanEscape = "";
-        TSSetScanner(&scanner);
+    f = RTFOpenLibFile("r2l-head", "r");
+    if (f) {
 
-        while (fgets(buf, (int) sizeof(buf), f) != NULL) {
-            if (buf[0] == '#')  /* skip comment lines */
-                continue;
-            TSScanInit(buf);
-            if ((item = TSScan()) == NULL)
-                continue;       /* skip blank lines */
-
-            PutLitStr(item);
-            PutLitChar('\n');
-        }
-
-        scanner.scanEscape = scanEscape;
-        TSSetScanner(&scanner);
-
-        if (fclose(f) != 0)
-            printf("¥ error closing preamble file\n");
+    	/* (over) allocate and read user-defined preamble text */
+		fseek(f, 0, SEEK_END);
+		size = ftell(f); 
+		fseek(f, 0, SEEK_SET);
+		preambleUserText = malloc(size);
+		preambleUserText[0] = '\0';
+	
+		while (fgets(buf, (int) sizeof(buf), f) != NULL) {
+			if (buf[0] == '#') continue;  /* skip comment lines */
+			if (buf[0] == '\0') continue; /* skip blank lines */
+			strcat(preambleUserText,buf);
+			strcat(preambleUserText,"\n");
+		}
+		fclose(f);
     }
+
+    /* insert latex-encoding qualifier */
+    PutLitStr(preambleUserText);
 
     /* insert latex-encoding qualifier */
     PutLitStr(preambleEncoding);
