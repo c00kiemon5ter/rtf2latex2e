@@ -157,4 +157,11 @@ short ReadPrefFile (char *file);
 extern parStyleStruct paragraph, paragraphWritten;
 extern textStyleStruct textStyle, textStyleWritten;
 
-
+extern char *preambleFirstText;
+extern char *preambleSecondText;
+extern char *preambleDocClass;
+extern char *preambleUserText;
+extern char *preambleEncoding;
+extern char *preamblePackages;
+extern char *preambleColorTable;
+extern char *preambleOurDefs;

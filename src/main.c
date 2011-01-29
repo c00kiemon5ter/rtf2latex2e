@@ -33,7 +33,7 @@
 int mkdir (const char *filename, mode_t mode);
 void PrefsInit(void);
 
-extern char  outputMapFile[];
+extern char  *outputMapFileName;
 FILE         *OpenLibFile(char *name, char *mode);
 
 FILE         *ifp, *ofp;
@@ -462,7 +462,7 @@ main(int argc, char **argv)
 
 	PrefsInit();   /* first so that command line can override file prefs */
 	
-    while ((c = my_getopt(argc, argv, "bhDeEvVt:P:")) != EOF) {
+    while ((c = my_getopt(argc, argv, "bhDeEvVP:")) != EOF) {
         switch (c) {
 
         case 'b':
@@ -487,12 +487,7 @@ main(int argc, char **argv)
             print_version();
             return (0);
 
-        case 't':
-            strcpy(outputMapFile, optarg);
-            break;
-
-        case 'P':   /* -P path/to/cfg:path/to/script or -P
-                 * path/to/cfg or -P :path/to/script */
+        case 'P':   /* -P path/to/pref */
             g_library_path = strdup(optarg);
             break;
 
@@ -509,7 +504,6 @@ main(int argc, char **argv)
     /* Initialize stuff */
     if (argc > 0) {
         SetEndianness();                    /* needed for cole routines */
-        strcpy(outputMapFile, "");          /* assume special TeX-Map is not used */
         RTFSetOpenLibFileProc(OpenLibFile); /* install routine for opening library files */
         WriterInit();                       /* one time writer initialization */
     } else {

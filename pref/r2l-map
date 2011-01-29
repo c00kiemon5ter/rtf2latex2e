@@ -18,7 +18,6 @@
 
 # Parameter		Value					Default
 
-documentclass	{article}				# {article}
 heading1		\section*{				# \section*{
 heading2		\subsection*{			# \subsection*{
 heading3		\subsubsection*{		# \subsubsection*{

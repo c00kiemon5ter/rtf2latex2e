@@ -23,6 +23,7 @@
 # include <string.h>
 # include <stdlib.h>
 # include <ctype.h>
+# include <unistd.h>
 
 # include "rtf.h"
 # include "tokenscan.h"
@@ -31,7 +32,6 @@
 # include "eqn.h"
 void __cole_dump(void *_m, void *_start, uint32_t length, char *msg);
 
-char outputMapFile[255];
 # define  prefFileName    "r2l-pref"
 # define  MAX_BLANK_LINES       2
 # define  MATH_NONE_MODE        0
@@ -39,7 +39,6 @@ char outputMapFile[255];
 # define  MATH_DISPLAY_MODE     2
 
 # define  PREVIOUS_COLUMN_VALUE -10000
-char texMapQualifier[rtfBufSiz];
 
 void RTFSetOutputStream(FILE * stream);
 static void ReadObject(void);
@@ -50,9 +49,9 @@ extern FILE *ifp, *ofp;
 # define EQUATION_OFFSET 35
 # define MTEF_HEADER_SIZE 28
 
-/* These should match prefList below */
+/* These should exactly match prefString[] below */
 enum prefName {
-    pOutputMapFile,               /* 0  */
+    pOutputMapFileName,           /* 0  */
     pPageWidth,
     pPageLeft,
     pPageRight,
@@ -68,11 +67,14 @@ enum prefName {
     pConvertPict,
     pConvertEquation,
     pConvertAsDirectory,          /* 15 */
+    pPreambleFirstText,
+    pPreambleSecondText,
+    pPreambleDocClass,
     pLast
 };
 
 const char *prefString[] = {
-    "outputMapFile",              /* 0  */
+    "outputMapFileName",          /* 0  */
     "pageWidth",
     "pageLeft",
     "pageRight",
@@ -88,6 +90,9 @@ const char *prefString[] = {
     "convertPict",
     "convertEquation",
     "convertAsDirectory",         /* 15 */
+    "preambleFirstText",
+    "preambleSecondText",
+    "preambleDocClass"
 };
 
 const char *objectClassList[] = {
@@ -170,6 +175,16 @@ static boolean insideTable;
 static boolean insideFootnote;
 static boolean insideHyperlink;
 
+char *preambleFirstText = NULL;
+char *preambleSecondText = NULL;
+char *preambleDocClass = NULL;
+char *preambleUserText = NULL;
+char *preambleEncoding = NULL;
+char *preamblePackages = NULL;
+char *preambleColorTable = NULL;
+char *preambleOurDefs = NULL;
+char *outputMapFileName = NULL;
+
 #ifdef PICT2PDF
 char * WritePictAsPDF(char *pict);
 #endif
@@ -180,7 +195,6 @@ static char *outMap[rtfSC_MaxChar];
 static char *r2lMap[NumberOfR2LMappings];
 static boolean r2lMapPresent = true;
 
-char *documentclassString = "{article}";
 char *heading1String = "\\section*{";
 char *heading2String = "\\subsection*{";
 char *heading3String = "\\subsubsection*{";
@@ -308,15 +322,12 @@ void WriterInit(void)
     if (ReadPrefFile(prefFileName) == 0)
         RTFPanic("Cannot read preferences file %s", prefFileName);
 
-    /* read output map file latex-encoding */
-    strcpy(texMapQualifier, "");
+    /* if a latex-encoding file was not specified in the preference, set it to the default */
+    if (!outputMapFileName)
+        outputMapFileName = strdup("latex-encoding");
 
-    /* if a latex-encoding file was not specified, set it to the default */
-    if (strcmp(outputMapFile, "") == 0)
-        strcpy(outputMapFile, "latex-encoding");
-
-    if (RTFReadOutputMap(outputMapFile, outMap, 1) == 0)
-        RTFPanic("Cannot read output map %s", outputMapFile);
+    if (RTFReadOutputMap(outputMapFileName, outMap, 1) == 0)
+        RTFPanic("Cannot read output map %s", outputMapFileName);
 
     /* read r2l mapping file if present */
     r2lMapPresent = ReadR2LMap();
@@ -336,7 +347,7 @@ static int GetPreferenceNum(const char *name)
 
 void PrefsInit(void)
 {
-    prefs[pOutputMapFile]=0;
+    prefs[pOutputMapFileName] = 0;
     prefs[pPageWidth] = 8.5 * 20 * 72;  /*twips*/
     prefs[pPageLeft] = 1.0 * 20 * 72;
     prefs[pPageRight] = 1.0 * 20 * 72;
@@ -352,6 +363,9 @@ void PrefsInit(void)
     prefs[pConvertPict] = true;
     prefs[pConvertEquation] = true;
     prefs[pConvertAsDirectory] = true;
+    prefs[pPreambleFirstText] = 0;
+    prefs[pPreambleSecondText] = 0;
+    prefs[pPreambleDocClass] = 0;
 }
 
 static void setPref(const char *name, const char *value)
@@ -360,8 +374,27 @@ static void setPref(const char *name, const char *value)
 
     if (n == -1) return;
     
-    if (n == pOutputMapFile) {
-        strcpy(outputMapFile, value);
+    if (n == pOutputMapFileName) {
+    	if (outputMapFileName) free(outputMapFileName);
+        outputMapFileName = strdup(value);
+        return;
+    }
+
+    if (n == pPreambleFirstText) {
+    	if (preambleFirstText) free(preambleFirstText);
+        preambleFirstText = strdup(value);
+        return;
+    }
+
+    if (n == pPreambleSecondText) {
+    	if (preambleSecondText) free(preambleSecondText);
+        preambleSecondText = strdup(value);
+        return;
+    }
+
+    if (n == pPreambleDocClass) {
+    	if (preambleDocClass) free(preambleDocClass);
+        preambleDocClass = strdup(value);
         return;
     }
 
@@ -1116,10 +1149,11 @@ static void WriteLaTeXHeader(void)
     if ((f = RTFOpenLibFile("r2l-head", "r")) == NULL)
         preambleFilePresent = false;
 
-    PutLitStr("%&LaTeX\n");
-    PutLitStr("% !TEX encoding = UTF-8 Unicode\n");
-    PutLitStr("\\documentclass");
-    PutLitStr(documentclassString);
+    PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
+    InsertNewLine();
+    PutLitStr(preambleSecondText); /* from pref/r2l-pref     */
+    InsertNewLine();
+    PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
     InsertNewLine();
 
     if (preambleFilePresent) {
@@ -1151,8 +1185,7 @@ static void WriteLaTeXHeader(void)
     }
 
     /* insert latex-encoding qualifier */
-    if (strcmp(texMapQualifier, "") != 0)
-        PutLitStr(texMapQualifier);
+    PutLitStr(preambleEncoding);
 
     /* to come back and write necessary \usepackage{...}
      * commands if necessary */
@@ -1167,6 +1200,41 @@ static void WriteLaTeXHeader(void)
     PutLitStr("\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
 }
 
+/*
+ * This function rewrites the LaTeX file with simpler header
+ */
+static void RewriteLatexFile(void)
+{
+    FILE *new_ofp;
+    char c;
+
+//	fopen(new_ofp,newfilename);
+
+    PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
+    InsertNewLine();
+    PutLitStr(preambleSecondText); /* from pref/r2l-pref     */
+    InsertNewLine();
+    PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
+    InsertNewLine();
+	PutLitStr(preambleUserText);   /* from pref/r2l-head      */
+	PutLitStr(preambleEncoding);   /* from pref/latex-encoding */
+	PutLitStr(preamblePackages);   /* as needed */
+	PutLitStr(preambleColorTable); /* as needed */
+	PutLitStr(preambleOurDefs);    /* e.g., \tab */
+	
+//	fseek(ofp,beginDocMark);
+
+	while (!feof(ofp)) {
+		c = fgetc(ofp);
+		fputc(c, new_ofp);
+	}
+	
+	fclose(ofp);
+	fclose(new_ofp);
+//	unlink(oldfilename);
+//	rename(oldfilename, newfilename);
+}
+
 static void DoSectionCleanUp(void)
 {
     if (section.cols > 1) {
@@ -1178,6 +1246,37 @@ static void DoSectionCleanUp(void)
     }
 }
 
+static void setPreamblePackages(void)
+{
+	if (!preamblePackages) 
+		preamblePackages = malloc(1024);
+	
+	preamblePackages[0] = '\0';
+    if (requireSetspacePackage)
+        strcat(preamblePackages,"\\usepackage{setspace}\n");
+    if (prefs[pConvertColor])
+        strcat(preamblePackages,"\\usepackage{color}\n");
+    if (requireGraphicxPackage)
+        strcat(preamblePackages,"\\usepackage{graphicx}\n");
+    if (requireTablePackage)
+        strcat(preamblePackages,"\\usepackage{longtable}\n");
+    if (requireMultirowPackage)
+        strcat(preamblePackages,"\\usepackage{multirow}\n");
+    if (requireAmsSymbPackage)
+        strcat(preamblePackages,"\\usepackage{amssymb}\n");
+    if (requireMultiColPackage)
+        strcat(preamblePackages,"\\usepackage{multicol}\n");
+    if (requireUlemPackage)
+        strcat(preamblePackages,"\\usepackage{ulem}\n");
+    if (requireFixLtx2ePackage)
+        strcat(preamblePackages,"\\usepackage{fixltx2e}\n");
+    if (requireAmsMathPackage)
+        strcat(preamblePackages,"\\usepackage{amsmath}\n");
+    if (requireHyperrefPackage) {
+        strcat(preamblePackages,"\\usepackage{hyperref}\n");
+    }
+}
+
 static void WriteLaTeXFooter(void)
 {
     EndParagraph();
@@ -1186,30 +1285,10 @@ static void WriteLaTeXFooter(void)
     PutLitStr("\n\n\\end{document}\n");
     fseek(ofp, packagePos, 0);
 
+	setPreamblePackages();
+	PutLitStr(preamblePackages);
+
     /* load required packages */
-    if (requireSetspacePackage)
-        PutLitStr("\\usepackage{setspace}\n");
-    if (prefs[pConvertColor])
-        PutLitStr("\\usepackage{color}\n");
-    if (requireGraphicxPackage)
-        PutLitStr("\\usepackage{graphicx}\n");
-    if (requireTablePackage)
-        PutLitStr("\\usepackage{longtable}\n");
-    if (requireMultirowPackage)
-        PutLitStr("\\usepackage{multirow}\n");
-    if (requireAmsSymbPackage)
-        PutLitStr("\\usepackage{amssymb}\n");
-    if (requireMultiColPackage)
-        PutLitStr("\\usepackage{multicol}\n");
-    if (requireUlemPackage)
-        PutLitStr("\\usepackage{ulem}\n");
-    if (requireFixLtx2ePackage)
-        PutLitStr("\\usepackage{fixltx2e}\n");
-    if (requireAmsMathPackage)
-        PutLitStr("\\usepackage{amsmath}\n");
-    if (requireHyperrefPackage) {
-        PutLitStr("\\usepackage{hyperref}\n");
-    }
     fseek(ofp, 0L, 2);          /* go back to end of stream */
 }
 
@@ -3682,9 +3761,6 @@ int BeginLaTeXFile(void)
 
     if (r2lMapPresent) {
         int itemNumber;
-        itemNumber = R2LItem("documentclass");
-        if (r2lMap[itemNumber] != NULL)
-            documentclassString = r2lMap[itemNumber];
         itemNumber = R2LItem("heading1");
         if (r2lMap[itemNumber] != NULL)
             heading1String = r2lMap[itemNumber];

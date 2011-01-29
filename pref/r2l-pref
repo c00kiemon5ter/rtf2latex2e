@@ -7,6 +7,17 @@
 # any order. 'true' and 'false' values are allowed for appropriate
 # preferences.
 
+# Line that is inserted before \documentclass{}
+# Typically starts with % 
+preambleFirstText        %&LaTeX
+
+# Another line, just like the one above
+# Use quotes because value contains spaces
+preambleSecondText       '% !TEX encoding = UTF-8 Unicode'
+
+# This is your chance to customize the type of latex document created
+preambleDocClass         \documentclass{article}
+
 # specify the output map file to map between RTF and LaTeX characters.
 # This is the character set used for the characters in the emitted latex.
 # Examples are 
@@ -14,7 +25,7 @@
 #      latex-encoding.applemac (uses applemac input encoding), 
 #      latex-encoding.cp1252   (uses cp1252 input encoding)
 
-outputMapFile	latex-encoding
+outputMapFileName	latex-encoding
 
 # Default page width in inches.  US Letter is 8.5, A4 paper is 8.3 
 # ignored if convertPageSize is false

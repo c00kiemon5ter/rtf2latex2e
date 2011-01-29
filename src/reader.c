@@ -2003,13 +2003,6 @@ int RTFHexStrToInt(char * s)
     return x;
 }
 
-/* ---------------------------------------------------------------------- */
-
-/*
- * RTFReadOutputMap(void) -- Read output translation map
- */
-
-
 /*
  * Read in a file describing the relation between the standard character set
  * and an RTF translator's corresponding output sequences.  Each line consists
@@ -2038,6 +2031,7 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
     char *name, *seq;
     short stdCode;
     short i;
+    size_t size;
     TSScanner scanner;
     char *scanEscape;
     char *fn = "RTFReadOutputMap";
@@ -2063,31 +2057,41 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
     scanner.scanEscape = "";
     TSSetScanner(&scanner);
 
-    /* read file */
+    /* (over) allocate space for preambleEncoding */
+	fseek(f, 0, SEEK_END);
+	size = ftell(f); 
+	fseek(f, 0, SEEK_SET);
+	preambleEncoding = malloc(size);
 
+    /* read file */
     while (fgets(buf, (int) sizeof(buf), f) != NULL) {
         if (buf[0] == '#')      /* skip comment lines */
             continue;
         TSScanInit(buf);
+        
         /* check for any special requirements */
         if (buf[0] == '%') {
             if (strcmp((name = TSScan()), "%") == 0)
                 continue;       /* skip blank lines */
-            strcat(texMapQualifier, ++name);
-            strcat(texMapQualifier, "\n");
+            strcat(preambleEncoding, ++name);
+            strcat(preambleEncoding, "\n");
             continue;
         }
+        
         if ((name = TSScan()) == NULL)
             continue;           /* skip blank lines */
+            
         if ((stdCode = RTFStdCharCode(name)) < 0) {
             RTFMsg("%s: unknown character name: %s\n", fn, name);
             continue;
         }
+        
         if ((seq = TSScan()) == NULL) {
             RTFMsg("%s: malformed output sequence line for character %s\n",
                    fn, name);
             continue;
         }
+        
         if ((seq = RTFStrSave(seq)) == NULL)
             RTFPanic("%s: out of memory", fn);
         outMap[stdCode] = seq;
