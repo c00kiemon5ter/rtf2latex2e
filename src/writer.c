@@ -100,9 +100,6 @@ static struct {
     int word97;
 } object;
 
-/*
- * Flags global to LaTeX2e-writer.c
- */
 static int wrapCount = 0;
 static int word97ObjectType;
 static boolean nowBetweenParagraphs;
@@ -118,6 +115,7 @@ static boolean requireFixLtx2ePackage;
 static boolean requireHyperrefPackage;
 static boolean requireAmsMathPackage;
 static size_t packagePos;
+static size_t beginDocumentPos;
 static boolean insideTable;
 static boolean insideFootnote;
 static boolean insideHyperlink;
@@ -397,16 +395,24 @@ static void CheckForBeginDocument(void)
     static int wroteBeginDocument = false;
     
     if (!wroteBeginDocument) {
+
+		if (preambleOurDefs) free(preambleOurDefs);
+		preambleOurDefs = malloc(1000);
+		preambleOurDefs[0] = '\0';
+		
         if (prefs[pConvertPageSize]) {
             snprintf(buf, 100, "\\setlength{\\oddsidemargin}{%dpt}\n", 72 - prefs[pPageLeft]/20);
-            PutLitStr(buf);
+            strcat(preambleOurDefs,buf);
             snprintf(buf, 100, "\\setlength{\\evensidemargin}{%dpt}\n", 72 - prefs[pPageRight]/20);
-            PutLitStr(buf);
-            snprintf(buf, 100, "\\setlength{\\textwidth}{%dpt}\n", 
-                      (prefs[pPageWidth] - prefs[pPageLeft] - prefs[pPageRight])/20);
-            PutLitStr(buf);
+            strcat(preambleOurDefs,buf);
+            snprintf(buf, 100, "\\setlength{\\textwidth}{%dpt}\n", (prefs[pPageWidth] - prefs[pPageLeft] - prefs[pPageRight])/20);
+            strcat(preambleOurDefs,buf);
+    		strcat(preambleOurDefs,"\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
+            PutLitStr(preambleOurDefs);
         }
+    	strcat(preambleOurDefs,"\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
 
+    	beginDocumentPos = ftell(ofp);
         PutLitStr("\\begin{document}\n\n");
         wroteBeginDocument = true;
     }
@@ -864,44 +870,6 @@ static void WriteLaTeXHeader(void)
             PutLitChar(' ');
         PutLitChar('\n');
     }
-
-    PutLitStr("\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
-}
-
-/*
- * This function rewrites the LaTeX file with simpler header
- */
-static void RewriteLatexFile(void)
-{
-    FILE *new_ofp=NULL;
-    int c;
-
-//	fopen(new_ofp,newfilename);
-	if (!new_ofp) return;
-	
-    PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
-    InsertNewLine();
-    PutLitStr(preambleSecondText); /* from pref/r2l-pref     */
-    InsertNewLine();
-    PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
-    InsertNewLine();
-	PutLitStr(preambleUserText);   /* from pref/r2l-head      */
-	PutLitStr(preambleEncoding);   /* from pref/latex-encoding */
-	PutLitStr(preamblePackages);   /* as needed */
-	PutLitStr(preambleColorTable); /* as needed */
-	PutLitStr(preambleOurDefs);    /* e.g., \tab */
-	
-//	fseek(ofp,beginDocMark);
-
-	while (!feof(ofp)) {
-		c = fgetc(ofp);
-		fputc(c, new_ofp);
-	}
-	
-	fclose(ofp);
-	fclose(new_ofp);
-//	unlink(oldfilename);
-//	rename(oldfilename, newfilename);
 }
 
 static void DoSectionCleanUp(void)
@@ -913,21 +881,6 @@ static void DoSectionCleanUp(void)
         InsertNewLine();
         section.cols = 1;
     }
-}
-
-static void WriteLaTeXFooter(void)
-{
-    EndParagraph();
-    DoSectionCleanUp();
-
-    PutLitStr("\n\n\\end{document}\n");
-    fseek(ofp, packagePos, 0);
-
-	setPreamblePackages();
-	PutLitStr(preamblePackages);
-
-    /* load required packages */
-    fseek(ofp, 0L, 2);          /* go back to end of stream */
 }
 
 /* This function causes the present group to be skipped.  */
@@ -1825,10 +1778,57 @@ static void SectAttr(void)
 
 }
 
+/*
+ * This function rewrites the LaTeX file with simpler header
+ */
+static void RewriteLatexFile(void)
+{
+    FILE *new_ofp=NULL;
+    int c;
+
+//	fopen(new_ofp,newfilename);
+	if (!new_ofp) return;
+	
+    PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
+    InsertNewLine();
+    PutLitStr(preambleSecondText); /* from pref/r2l-pref     */
+    InsertNewLine();
+    PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
+    InsertNewLine();
+	PutLitStr(preambleUserText);   /* from pref/r2l-head      */
+	PutLitStr(preambleEncoding);   /* from pref/latex-encoding */
+	PutLitStr(preamblePackages);   /* as needed */
+	PutLitStr(preambleColorTable); /* as needed */
+	PutLitStr(preambleOurDefs);    /* e.g., \tab */
+	
+//	fseek(ofp,beginDocMark);
+
+	while (!feof(ofp)) {
+		c = fgetc(ofp);
+		fputc(c, new_ofp);
+	}
+	
+	fclose(ofp);
+	fclose(new_ofp);
+//	unlink(oldfilename);
+//	rename(oldfilename, newfilename);
+}
+
+
 /* called when we are done reading the RTF file. */
 void EndLaTeXFile(void)
 {
-    WriteLaTeXFooter();
+    EndParagraph();
+    DoSectionCleanUp();
+
+    PutLitStr("\n\n\\end{document}\n");
+    fseek(ofp, packagePos, 0);
+
+	setPreamblePackages();
+	PutLitStr(preamblePackages);
+
+    /* load required packages */
+    fseek(ofp, 0L, 2);          /* go back to end of stream */
 }
 
 /* sets the output stream */

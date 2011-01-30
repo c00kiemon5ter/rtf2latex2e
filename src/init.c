@@ -35,6 +35,7 @@
 # define  PREF_FILE_NAME    "r2l-pref"
 # define  STYLE_FILE_NAME   "r2l-map"
 # define  CTRL_FILE_NAME    "rtf-ctrl"
+# define  HEAD_FILE_NAME    "r2l-head"
 
 
 int prefs[pLast];
@@ -498,7 +499,7 @@ static void InitUserText(void)
     char buf[rtfBufSiz];
     size_t size;
 
-    f = RTFOpenLibFile("r2l-head", "r");
+    f = RTFOpenLibFile(HEAD_FILE_NAME, "r");
     if (f) {
 
     	/* (over) allocate and read user-defined preamble text */
