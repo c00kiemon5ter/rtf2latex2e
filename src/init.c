@@ -137,7 +137,7 @@ static short InitStyleTranslationMap(void)
         if (!closeString) continue;             /* skip incomplete definition */
         
         Style2LatexOpen[i] = strdup(openString);
-        Style2LatexClose[i] = strdup(openString);
+        Style2LatexClose[i] = strdup(closeString);
         Style2LatexStyle[i] = strdup(styleString);
         i++;
 

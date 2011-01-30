@@ -50,6 +50,7 @@ extern FILE *ifp, *ofp;
 # define EQUATION_OFFSET 35
 # define MTEF_HEADER_SIZE 28
 
+int UsedColor[256];
 const char *objectClassList[] = {
     "Unknown",
     "Equation",
@@ -62,12 +63,6 @@ const char *justificationList[] = {
     "\\raggedright",
     "\\centering",
     "\\raggedleft"
-};
-
-const char *multiJustList[] = {
-    "l",
-    "c",
-    "r"
 };
 
 const char *environmentList[] = {
@@ -253,7 +248,7 @@ static void InsertNewLine(void)
  * LaTeX format to be included in the preamble.
  * This is done after the color table has been read (see above).
  */
-static void DefineColors(void)
+static void DefineColors(int ignoreUsedColors)
 {
     RTFColor *rtfColorPtr;
     int i = 1;
@@ -264,10 +259,13 @@ static void DefineColors(void)
         Red = rtfColorPtr->rtfCRed / 255.0;
         Green = rtfColorPtr->rtfCGreen / 255.0;
         Blue = rtfColorPtr->rtfCBlue / 255.0;
-
-        snprintf(buf, rtfBufSiz, "\\definecolor{color%02d}{rgb}{%1.3f,%1.3f,%1.3f}\n",
-                i, Red, Green, Blue);
-        PutLitStr(buf);
+        
+        if (ignoreUsedColors || (!ignoreUsedColors && UsedColor[i])) {
+        	snprintf(buf, rtfBufSiz, "\\definecolor{color%02d}{rgb}",i);
+        	PutLitStr(buf);
+        	snprintf(buf, rtfBufSiz, "{%1.2f,%1.2f,%1.2f}\n", Red, Green, Blue);
+        	PutLitStr(buf);
+        }
 
         i++;
     }
@@ -277,7 +275,7 @@ static void WriteColors(void)
 {
     ReadColorTbl();
     if (!prefs[pConvertColor]) return;
-    DefineColors();
+    DefineColors(true);
 }
 
 /*
@@ -389,7 +387,7 @@ int stdCode;
  * make sure we write this all important stuff. This routine is called
  * whenever something is written to the output file.
  */
-static void CheckForBeginDocument(void)
+static int CheckForBeginDocument(void)
 {
     char buf[100];
     static int wroteBeginDocument = false;
@@ -413,9 +411,11 @@ static void CheckForBeginDocument(void)
     	strcat(preambleOurDefs,"\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
 
     	beginDocumentPos = ftell(ofp);
-        PutLitStr("\\begin{document}\n\n");
+        PutLitStr("\\begin{document}\n");
         wroteBeginDocument = true;
+        return 1;
     }
+    return 0;
 }
 
 /*
@@ -566,6 +566,7 @@ static void WriteTextStyle(void)
         if (textStyle.foreColor) {
             snprintf(buf, 100, "{\\color{color%02d} ", textStyle.foreColor);
             PutLitStr(buf);
+            UsedColor[textStyle.foreColor] = 1;
         }
         textStyleWritten.foreColor=textStyle.foreColor;
     }
@@ -700,7 +701,7 @@ static void NewParagraph(void)
 {
     char buff[100];
 
-    CheckForBeginDocument();
+    (void) CheckForBeginDocument();
 
     nowBetweenParagraphs = false;
 
@@ -767,7 +768,7 @@ static void EndParagraph(void)
 {
     char buf[rtfBufSiz];
 
-    CheckForBeginDocument();
+    if (CheckForBeginDocument()) return;
 
     StopTextStyle();
 
@@ -782,7 +783,7 @@ static void EndParagraph(void)
         return;
     }
 
-    if (prefs[pConvertParagraphStyle] && paragraphWritten.styleIndex != -1) {
+    if (prefs[pConvertParagraphStyle] && (paragraphWritten.styleIndex != -1)) {
         PutLitStr(Style2LatexClose[paragraphWritten.styleIndex]);
         suppressLineBreak = false;
         paragraphWritten.styleIndex=-1;
@@ -810,7 +811,7 @@ static void EndParagraph(void)
 }
 
 
-static void setPreamblePackages(void)
+static void setPreamblePackages(int ignoreUsedColor)
 {
 	if (!preamblePackages) 
 		preamblePackages = malloc(1024);
@@ -818,8 +819,6 @@ static void setPreamblePackages(void)
 	preamblePackages[0] = '\0';
     if (requireSetspacePackage)
         strcat(preamblePackages,"\\usepackage{setspace}\n");
-    if (prefs[pConvertColor])
-        strcat(preamblePackages,"\\usepackage{color}\n");
     if (requireGraphicxPackage)
         strcat(preamblePackages,"\\usepackage{graphicx}\n");
     if (requireTablePackage)
@@ -838,6 +837,17 @@ static void setPreamblePackages(void)
         strcat(preamblePackages,"\\usepackage{amsmath}\n");
     if (requireHyperrefPackage) {
         strcat(preamblePackages,"\\usepackage{hyperref}\n");
+    }
+
+    if (prefs[pConvertColor]) {
+    	int i=0;
+    	int needPackage=false;
+    	
+    	for (i=0; i<256; i++) 
+    		if (UsedColor[i]) needPackage = true;
+    	
+        if (ignoreUsedColor || (!ignoreUsedColor && needPackage))
+        	strcat(preamblePackages,"\\usepackage{color}\n");
     }
 }
 
@@ -1783,11 +1793,17 @@ static void SectAttr(void)
  */
 static void RewriteLatexFile(void)
 {
-    FILE *new_ofp=NULL;
-    int c;
-
-//	fopen(new_ofp,newfilename);
-	if (!new_ofp) return;
+    FILE *nfp=NULL;
+    char* newname;
+    char* oldname;
+    
+    oldname = RTFGetOutputName();
+    newname = strdup_together(oldname,"x");
+	nfp = fopen(newname, "wb");
+	if (!nfp) return;
+	
+    RTFSetOutputStream(nfp);
+    RTFSetOutputName(newname);
 	
     PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
     InsertNewLine();
@@ -1797,21 +1813,25 @@ static void RewriteLatexFile(void)
     InsertNewLine();
 	PutLitStr(preambleUserText);   /* from pref/r2l-head      */
 	PutLitStr(preambleEncoding);   /* from pref/latex-encoding */
+
+	setPreamblePackages(false);
 	PutLitStr(preamblePackages);   /* as needed */
-	PutLitStr(preambleColorTable); /* as needed */
+
+	DefineColors(false);
+
 	PutLitStr(preambleOurDefs);    /* e.g., \tab */
 	
-//	fseek(ofp,beginDocMark);
+    fseek(ofp, beginDocumentPos, 0);
 
 	while (!feof(ofp)) {
-		c = fgetc(ofp);
-		fputc(c, new_ofp);
+		int c = fgetc(ofp);
+		fputc(c, nfp);
 	}
 	
 	fclose(ofp);
-	fclose(new_ofp);
-//	unlink(oldfilename);
-//	rename(oldfilename, newfilename);
+	fclose(nfp);
+	unlink(oldname);
+	rename(oldname, newname);
 }
 
 
@@ -1824,7 +1844,7 @@ void EndLaTeXFile(void)
     PutLitStr("\n\n\\end{document}\n");
     fseek(ofp, packagePos, 0);
 
-	setPreamblePackages();
+	setPreamblePackages(true);
 	PutLitStr(preamblePackages);
 
     /* load required packages */
@@ -3306,7 +3326,9 @@ static void Destination(void)
  */
 static void RTFSetGenCharSet(void)
 {
-    if (strcmp(&rtfTextBuf[1], "ansi") == 0)
+	int i;
+	
+	if (strcmp(&rtfTextBuf[1], "ansi") == 0)
         genCharCode = cp1252CharCode;
     else if (strcmp(&rtfTextBuf[1], "mac") == 0)
         genCharCode = cpMacCharCode;
@@ -3337,6 +3359,9 @@ static void RTFSetGenCharSet(void)
 		}
 	}
 	
+	for (i=0; i<256; i++)
+		UsedColor[i] = 0;
+		
 	curCharCode = genCharCode;
 } 
 
@@ -3439,7 +3464,8 @@ int BeginLaTeXFile(void)
     table.multiRow = false;
     InitTextStyle();
     InitParagraphStyle();
-    textStyleWritten = textStyle;
+    paragraphWritten = paragraph;
+	textStyleWritten = textStyle;
 
     /* install class callbacks */
     RTFSetClassCallback(rtfText, TextClass);
