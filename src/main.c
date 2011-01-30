@@ -249,7 +249,6 @@ main(int argc, char **argv)
     extern int      optind;
 
     SetEndianness();
-    InitConverter();
 	
     while ((c = my_getopt(argc, argv, "bhDeEvVP:")) != EOF) {
         switch (c) {
@@ -293,7 +292,8 @@ main(int argc, char **argv)
     /* Initialize stuff */
     if (!argc) 
         print_usage();
-    
+
+    InitConverter();
 
     for (fileCounter = 0; fileCounter < argc; fileCounter++) {
 

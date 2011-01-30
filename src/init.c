@@ -831,6 +831,7 @@ OpenLibFile(char *name, char *mode)
         fprintf(stderr, "   (1) define the environment variable RTFPATH, *or*\n");
         fprintf(stderr, "   (2) use command line path option \"-P /path/to/cfg/file\", *or*\n");
         fprintf(stderr, "   (3) recompile rtf2latex with LIBDIR defined properly\n");
+        fprintf(stderr, "Path specified on command line: %s \n", (g_library_path) ? g_library_path : "not defined\n");
         s = getenv("RTFPATH");
         fprintf(stderr, "Current RTFPATH: %s", (s) ? s : "not defined\n");
         s = LIBDIR;
