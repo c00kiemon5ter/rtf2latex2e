@@ -644,10 +644,12 @@ static void SetTextStyle(void)
     case rtfSubScrShrink:
     case rtfSubScript:
         textStyle.subScript = (rtfParam) ? true : false;
+        textStyle.superScript = false;
         break;
     case rtfSuperScrShrink:
     case rtfSuperScript:
         textStyle.superScript = (rtfParam) ? true : false;
+        textStyle.subScript = false;
         break;
     case rtfFontSize:
         textStyle.fontSize = normalSize;
@@ -2024,7 +2026,7 @@ static void ConvertHexPicture(char *pictureType)
 
     strcpy(picture.name, RTFGetOutputName());
     picture.name[strlen(picture.name)-4] = '\0';
-    snprintf(dummyBuf, rtfBufSiz, "Fig%03d.%s", picture.count, pictureType);
+    snprintf(dummyBuf, rtfBufSiz, "-fig%03d.%s", picture.count, pictureType);
     strcat(picture.name, dummyBuf);
 
     /* open picture file */
@@ -2083,7 +2085,7 @@ static void IncludeGraphics(char *pictureType)
     char *figPtr, *suffix;
     char dummyBuf[rtfBufSiz];
     double scaleX, scaleY;
-    double width, height;
+    int width, height;
 
 
     suffix = strrchr(picture.name, '.');
@@ -2111,11 +2113,11 @@ static void IncludeGraphics(char *pictureType)
         scaleY = picture.scaleY / 100.0;
 
     if (picture.goalHeight == 0) {
-        width = picture.width * scaleX;
-        height = picture.height * scaleY;
+        width = (int) picture.width * scaleX;
+        height = (int) picture.height * scaleY;
     } else {
-        width = picture.goalWidth * scaleX / 20.0;
-        height = picture.goalHeight * scaleY / 20.0;
+        width = (int) picture.goalWidth * scaleX / 20.0;
+        height = (int) picture.goalHeight * scaleY / 20.0;
     }
 
     figPtr = strrchr(picture.name, PATH_SEP);
@@ -2134,12 +2136,21 @@ static void IncludeGraphics(char *pictureType)
         if (height > 20)
             PutLitStr("\n\\begin{center}");
         
-        snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%2.3fin, height=%2.3fin]{%s}", width / 72, height / 72, figPtr);
+        snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%dpt, height=%dpt]{%s}", width, height, figPtr);
         PutLitStr(dummyBuf);
         
         if (height > 50) {
-            snprintf(dummyBuf, rtfBufSiz, "\n\\caption{This should be the caption for \\texttt{%s}.}", figPtr);
-            PutLitStr(dummyBuf);
+        	int i=0;
+            PutLitStr("\n\\caption{This should be the caption for \\texttt{");
+            while (figPtr[i]) {
+            	if (figPtr[0] == '_')
+            		PutLitStr("\\_");
+            	else
+            		PutLitChar(figPtr[i]);
+            	i++;
+            }
+            	
+            PutLitStr("}.}");
         }
         
         if (height > 20)
