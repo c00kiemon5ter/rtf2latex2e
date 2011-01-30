@@ -107,7 +107,7 @@ static short InitStyleTranslationMap(void)
         Style2LatexMapIndex[i] = -1;
     }
 
-    f = RTFOpenLibFile(STYLE_FILE_NAME, "r");
+    f = RTFOpenLibFile(STYLE_FILE_NAME, "rb");
     if (!f) return 0;
 
     /*
@@ -218,7 +218,7 @@ short ReadPrefFile(char *file)
     TSScanner scanner;
     char *scanEscape;
 
-    f = RTFOpenLibFile(file, "r");
+    f = RTFOpenLibFile(file, "rb");
     if (!f) 
         return 0;
 
@@ -293,7 +293,7 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
         }
     }
 
-    if ((f = RTFOpenLibFile(file, "r")) == NULL)
+    if ((f = RTFOpenLibFile(file, "rb")) == NULL)
         return (0);
 
     /*
@@ -403,7 +403,7 @@ static short RTFReadCharSetMap(char *file, short *stdCodeArray)
     char *scanEscape;
     char *fn = "RTFReadCharSetMap";
 
-    if ((f = RTFOpenLibFile(file, "r")) == NULL)
+    if ((f = RTFOpenLibFile(file, "rb")) == NULL)
         return (0);
 
     /* clobber current mapping */
@@ -499,7 +499,7 @@ static void InitUserText(void)
     char buf[rtfBufSiz];
     size_t size;
 
-    f = RTFOpenLibFile(HEAD_FILE_NAME, "r");
+    f = RTFOpenLibFile(HEAD_FILE_NAME, "rb");
     if (f) {
 
     	/* (over) allocate and read user-defined preamble text */
@@ -535,7 +535,7 @@ static void InitControlWordLookupTable(void)
     char *scanEscape;
     char *fn = "LookupInit";
 
-    if ((f = RTFOpenLibFile(CTRL_FILE_NAME, "r")) == NULL)
+    if ((f = RTFOpenLibFile(CTRL_FILE_NAME, "rb")) == NULL)
         RTFPanic("%s: cannot open %s file.", fn, CTRL_FILE_NAME);
 
     /*

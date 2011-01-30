@@ -139,7 +139,7 @@ static char * establish_filename(char * name)
     len = strlen(name) - 5;
     if (len > 0 && strcasecmp(name + len,".rtfd") == 0) {
         s = append_file_to_path(name, "TXT.rtf");
-        fp = fopen(name, "r");
+        fp = fopen(name, "rb");
         if (fp) {
             fclose(fp);
             g_input_file_type = TYPE_RTFD;
@@ -150,7 +150,7 @@ static char * establish_filename(char * name)
         return NULL;
     }
     
-    fp = fopen(name, "r");
+    fp = fopen(name, "rb");
     if (fp) {
         fclose(fp);
         g_input_file_type = identify_filename(name);
@@ -158,7 +158,7 @@ static char * establish_filename(char * name)
     }
     
     s = strdup_together(name, ".rtf");
-    fp = fopen(s, "r");
+    fp = fopen(s, "rb");
     if (fp) {
         fclose(fp);
         g_input_file_type = TYPE_RTF;
@@ -167,12 +167,12 @@ static char * establish_filename(char * name)
 
     free(s);
     s = strdup_together(name, ".rtfd");
-    fp = fopen(s, "r");
+    fp = fopen(s, "rb");
     if (fp) {
         fclose(fp);
         free(s);
         s = strdup_together(name, ".rtfd/TXT.rtf");
-        fp = fopen(s, "r");
+        fp = fopen(s, "rb");
         if (fp) {
             fclose(fp);
             g_input_file_type = TYPE_RTFD;
@@ -186,7 +186,7 @@ static char * establish_filename(char * name)
 
     free(s);
     s = strdup_together(name, ".eqn");
-    fp = fopen(s, "r");
+    fp = fopen(s, "rb");
     if (fp) {
         fclose(fp);
         g_input_file_type = TYPE_EQN;

@@ -114,14 +114,14 @@ TSScanner	scanner;
 char		*scanEscape;
 
 	fprintf (stderr, "Reading %s...\n", ctrlInputFile);
-	if ((f = fopen (ctrlInputFile, "r")) == (FILE *) NULL)
+	if ((f = fopen (ctrlInputFile, "rb")) == (FILE *) NULL)
 	{
 		fprintf (stderr, "Cannot open input file %s\n", ctrlInputFile);
 		exit (1);
 	}
 
 	fprintf (stderr, "Writing %s...\n", rtfCtrlDef);
-	if (freopen (rtfCtrlDef, "w", stdout) == (FILE *) NULL)
+	if (freopen (rtfCtrlDef, "wb", stdout) == (FILE *) NULL)
 	{
 		fprintf (stderr, "Cannot open output file %s\n", rtfCtrlDef);
 		exit (1);
@@ -241,7 +241,7 @@ char		*scanEscape;
 	}
 
 	fprintf (stderr, "Writing %s...\n", rtfCtrlTab);
-	if (freopen (rtfCtrlTab, "w", stdout) == (FILE *) NULL)
+	if (freopen (rtfCtrlTab, "wb", stdout) == (FILE *) NULL)
 	{
 		fprintf (stderr, "Cannot open output file %s\n", rtfCtrlTab);
 		exit (1);
@@ -281,20 +281,20 @@ char		*scanEscape;
 	}
 
 	fprintf (stderr, "Reading %s...\n", nameInputFile);
-	if ((f = fopen (nameInputFile, "r")) == (FILE *) NULL)
+	if ((f = fopen (nameInputFile, "rb")) == (FILE *) NULL)
 	{
 		fprintf (stderr, "Cannot open input file %s\n", nameInputFile);
 		exit (1);
 	}
 
 	fprintf (stderr, "Writing %s...\n", rtfNameDef);
-	if ((of1 = fopen (rtfNameDef, "w")) == (FILE *) NULL)
+	if ((of1 = fopen (rtfNameDef, "wb")) == (FILE *) NULL)
 	{
 		fprintf (stderr, "Cannot open output file %s\n", rtfNameDef);
 		exit (1);
 	}
 	fprintf (stderr, "Writing %s...\n", rtfNameTab);
-	if ((of2 = fopen (rtfNameTab, "w")) == (FILE *) NULL)
+	if ((of2 = fopen (rtfNameTab, "wb")) == (FILE *) NULL)
 	{
 		fprintf (stderr, "Cannot open output file %s\n", rtfNameTab);
 		exit (1);
