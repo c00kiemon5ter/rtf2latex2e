@@ -1,9 +1,6 @@
 Before 2.0 Release
-   add CLI options for the new preferences
-   document all CLI options
    revise README
    determine which rtf test files to ship
-   fix underscore problem in filenames
    standardize insertion of table/equation/image to account for paragraph state
    answer all outstanding issues on sf 
    make changelog

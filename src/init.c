@@ -85,8 +85,8 @@ int Style2LatexMapIndex[MAX_STYLE_MAPPINGS];
 
 short symCharCode[CHAR_SET_SIZE];          /* Adobe Symbol Font */
 short cp1250CharCode[CHAR_SET_SIZE];       /* code page 1250 */
+short cp1251CharCode[CHAR_SET_SIZE];       /* code page 1251 */
 short cp1252CharCode[CHAR_SET_SIZE];       /* code page 1252 */
-short cp1253CharCode[CHAR_SET_SIZE];       /* code page 1253 */
 short cp1254CharCode[CHAR_SET_SIZE];       /* code page 1254 */
 short cp437CharCode[CHAR_SET_SIZE];        /* code page 437 */
 short cp850CharCode[CHAR_SET_SIZE];        /* code page 850 */
@@ -473,6 +473,9 @@ void InitCharSets(void)
 {
     if (!RTFReadCharSetMap("rtf-encoding.cp1250", cp1250CharCode))
         RTFPanic("Cannot read character mapping for code page 1250!\n");
+
+    if (!RTFReadCharSetMap("rtf-encoding.cp1251", cp1251CharCode))
+        RTFPanic("Cannot read character mapping for code page 1252!\n");
 
     if (!RTFReadCharSetMap("rtf-encoding.cp1252", cp1252CharCode))
         RTFPanic("Cannot read character mapping for code page 1252!\n");

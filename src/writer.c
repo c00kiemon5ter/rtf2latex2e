@@ -3374,6 +3374,9 @@ static void RTFSetGenCharSet(void)
 			case 1250:
 				genCharCode=cp1250CharCode;
 				break;
+			case 1251:
+				genCharCode=cp1251CharCode;
+				break;
 			case 1252:
 				genCharCode=cp1252CharCode;
 				break;

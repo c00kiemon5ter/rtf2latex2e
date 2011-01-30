@@ -70,6 +70,7 @@ extern int Style2LatexMapIndex[MAX_STYLE_MAPPINGS];
 # define        CHAR_SET_SIZE             256
 extern short symCharCode[CHAR_SET_SIZE];          /* Adobe Symbol Font */
 extern short cp1250CharCode[CHAR_SET_SIZE];       /* code page 1250 */
+extern short cp1251CharCode[CHAR_SET_SIZE];       /* code page 1252 */
 extern short cp1252CharCode[CHAR_SET_SIZE];       /* code page 1252 */
 extern short cp1254CharCode[CHAR_SET_SIZE];       /* code page 1254 */
 extern short cp437CharCode[CHAR_SET_SIZE];        /* code page 437 */
