@@ -2979,6 +2979,16 @@ static void ReadUnicode(void)
     RTFGetToken();
 }
 
+static void SkipFieldResult(void)
+{
+    /* skip over to the result group */
+    while (!RTFCheckCMM(rtfControl, rtfDestination, rtfFieldResult))
+        RTFGetToken();
+
+    RTFSkipGroup();
+    RTFRouteToken();
+}
+
 static void ReadHyperlink(void)
 {
     int localGL;
@@ -3010,7 +3020,6 @@ static void ReadHyperlink(void)
     /* switch off hyperlink flag */
     insideHyperlink = false;
 
-
     while (braceLevel && braceLevel >= localGL) {
         RTFGetToken();
         RTFRouteToken();
@@ -3026,21 +3035,17 @@ static void ReadSymbolField(void)
     short major, minor;
     short *currentCharCode = curCharCode;
 
-	curCharCode = symCharCode;
-
     /* go to the start of the symbol representation */
-    strcpy(buf, "");
     if (RTFGetToken() != rtfText) {
         if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0)
             RTFSkipGroup();
         RTFSkipGroup();
         RTFRouteToken();
-    	curCharCode = currentCharCode;
         return;
     }
 
     /* read in the symbol token */
-    strcat(buf, rtfTextBuf);
+    strcpy(buf, rtfTextBuf);
     while (strcmp(rtfTextBuf, " ") != 0) {
         RTFGetToken();
         if (strcmp(rtfTextBuf, " ") != 0)
@@ -3049,8 +3054,11 @@ static void ReadSymbolField(void)
 
     /* convert the text symbol token to an int */
     major = atoi(buf);
+    
     /* do the mapping */
+	curCharCode = symCharCode;
     minor = RTFMapChar(major);
+    curCharCode = currentCharCode;
 
     /* set the rtf token to the new value */
     RTFSetToken(rtfText, major, minor, rtfNoParam, buf);
@@ -3061,8 +3069,6 @@ static void ReadSymbolField(void)
     /* call the handler for text */
     TextClass();
 
-    /* reset our character set */
-    curCharCode = currentCharCode;
     RTFSkipGroup();
     RTFRouteToken();
 }
@@ -3108,21 +3114,14 @@ static void emitBookmark(void)
 */
 static void ReadPageRefField(void)
 {
-/*    char *fn = "ReadPageRefField";
-    RTFMsg("%s: starting ...\n",fn); */
-
     PutLitStr("\\pageref{");
     emitBookmark();
     PutLitStr("}");
     RTFRouteToken();
-
-    /* skip over to the result group */
-    while (!RTFCheckCMM(rtfControl, rtfDestination, rtfFieldResult))
-        RTFGetToken();
-
-    RTFSkipGroup();
-    RTFRouteToken();
+    
+    SkipFieldResult();
 }
+
 
 /*
  *  Three possible types of fields
@@ -3135,10 +3134,6 @@ static void ReadFieldInst(void)
     char buf[100];
     int i;
     int groupCount = 1;
-/*    char *fn = "ReadFieldInst";
-    RTFMsg("%s: starting ... \n",fn);*/
-
-    strcpy(buf, "");
 
     /* skip to text identifying the type of FIELD  */
     while (rtfClass != rtfText || rtfMinor == rtfSC_space) {
@@ -3154,7 +3149,7 @@ static void ReadFieldInst(void)
     }
 
     /* extract text identifying the FIELD into buf */
-    strcat(buf, rtfTextBuf);
+    strcpy(buf, rtfTextBuf);
     while (strcmp(rtfTextBuf, " ") != 0 && rtfClass != rtfGroup) {
         RTFGetToken();
         if (strcmp(rtfTextBuf, " ") != 0 && rtfClass != rtfGroup)
@@ -3162,11 +3157,10 @@ static void ReadFieldInst(void)
     }
 /*    RTFMsg("%s: FIELD type is %s\n",fn,buf);*/
 
-    if (0 && strcmp(buf, "HYPERLINK") == 0 )
-        if (prefs[pConvertHypertext]) {
-            ReadHyperlink();
-            return;
-        }
+    if (prefs[pConvertHypertext] && strcmp(buf, "HYPERLINK") == 0 ) {
+		ReadHyperlink();
+		return;
+	}
 
     if (strcmp(buf, "SYMBOL") == 0) {
         ReadSymbolField();
@@ -3175,6 +3169,12 @@ static void ReadFieldInst(void)
 
     if (strcmp(buf, "PAGEREF") == 0) {
         ReadPageRefField();
+        return;
+    }
+
+    if (strcmp(buf, "PAGE") == 0) {
+        /* skip ... otherwise a number gets inserted */
+    	SkipFieldResult();
         return;
     }
 
