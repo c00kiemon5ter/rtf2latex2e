@@ -404,11 +404,10 @@ static int CheckForBeginDocument(void)
             snprintf(buf, 100, "\\setlength{\\evensidemargin}{%dpt}\n", 72 - prefs[pPageRight]/20);
             strcat(preambleOurDefs,buf);
             snprintf(buf, 100, "\\setlength{\\textwidth}{%dpt}\n", (prefs[pPageWidth] - prefs[pPageLeft] - prefs[pPageRight])/20);
-            strcat(preambleOurDefs,buf);
-    		strcat(preambleOurDefs,"\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
-            PutLitStr(preambleOurDefs);
         }
+        
     	strcat(preambleOurDefs,"\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
+        PutLitStr(preambleOurDefs);
 
     	beginDocumentPos = ftell(ofp);
         PutLitStr("\\begin{document}\n");
@@ -1791,52 +1790,69 @@ static void SectAttr(void)
 /*
  * This function rewrites the LaTeX file with simpler header
  */
-static void RewriteLatexFile(void)
+void EndLaTeXFile(void)
 {
     FILE *nfp=NULL;
+	int numr;
     char* newname;
     char* oldname;
+    char buffer[512];
     
+    /* last few bits */
+    EndParagraph();
+    DoSectionCleanUp();
+    PutLitStr("\n\n\\end{document}\n");
+
+	/* open new file */
     oldname = RTFGetOutputName();
     newname = strdup_together(oldname,"x");
 	nfp = fopen(newname, "wb");
 	if (!nfp) return;
 	
+	/* prepare */
     RTFSetOutputStream(nfp);
     RTFSetOutputName(newname);
 	
+	/* write improved header */
+    suppressLineBreak = false;
     PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
     InsertNewLine();
     PutLitStr(preambleSecondText); /* from pref/r2l-pref     */
     InsertNewLine();
     PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
     InsertNewLine();
-	PutLitStr(preambleUserText);   /* from pref/r2l-head      */
 	PutLitStr(preambleEncoding);   /* from pref/latex-encoding */
-
+    InsertNewLine();
+    InsertNewLine();
 	setPreamblePackages(false);
 	PutLitStr(preamblePackages);   /* as needed */
 
+	PutLitStr(preambleUserText);   /* from pref/r2l-head      */
+    InsertNewLine();
 	DefineColors(false);
-
+    InsertNewLine();
 	PutLitStr(preambleOurDefs);    /* e.g., \tab */
-	
+    InsertNewLine();
+    
+    /* now copy the body of the document */
     fseek(ofp, beginDocumentPos, 0);
 
-	while (!feof(ofp)) {
-		int c = fgetc(ofp);
-		fputc(c, nfp);
+	while(!feof(ofp)){	
+		numr = fread(buffer,1,512,ofp);
+		fwrite(buffer,1,numr,nfp);
 	}
 	
+	/* close files and rename */
+    free(newname);
 	fclose(ofp);
 	fclose(nfp);
 	unlink(oldname);
-	rename(oldname, newname);
+	rename(newname, oldname);
 }
 
 
 /* called when we are done reading the RTF file. */
-void EndLaTeXFile(void)
+void xEndLaTeXFile(void)
 {
     EndParagraph();
     DoSectionCleanUp();

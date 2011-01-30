@@ -356,7 +356,7 @@ main(int argc, char **argv)
         }
         
         fclose(ifp);
-        fclose(ofp);
+       // fclose(ofp);
         free(input_filename);
         free(output_filename);
     }

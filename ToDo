@@ -5,7 +5,6 @@ Before 2.0 Release
    determine which rtf test files to ship
    fix underscore problem in filenames
    standardize insertion of table/equation/image to account for paragraph state
-   rewrite file to eliminate preamble kludge
    answer all outstanding issues on sf 
    make changelog
 
