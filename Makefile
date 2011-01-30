@@ -98,7 +98,7 @@ src/init.o: src/init.c
 	$(CC) $(CFLAGS) -DLIBDIR=\"$(SUPPORT_INSTALL)\" -c src/init.c -o src/init.o
 
 src/main.o: src/main.c
-	$(CC) $(CFLAGS) -DLIBDIR=\"$(SUPPORT_INSTALL)\" -c src/main.c -o src/main.o
+	$(CC) $(CFLAGS) -DLIBDIR=\"$(SUPPORT_INSTALL)\" -DVERSION=\"$(VERSION)\" -c src/main.c -o src/main.o
 
 doc : doc/rtf2latexSWP.tex doc/rtfReader.tex doc/rtf2latexDoc.tex
 	cd doc && $(MAKE)

@@ -17,17 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-
-# define    rtf2latex2e_version "2.0"
-
-# define    WRAP_LIMIT  80
-# define    PACKAGES    9
-
+# define    WRAP_LIMIT     80
+# define    PACKAGES        9
 # define    UNINITIALIZED -99
 
 #ifndef boolean
 typedef unsigned char boolean;
 #endif
+
 # define    New(t)  ((t *) RTFAlloc (sizeof (t)))
 # define    Swap(a, b) {int tmp;\
                         tmp = a;\
