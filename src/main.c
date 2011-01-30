@@ -1,6 +1,7 @@
 /*
  * RTF-to-LaTeX2e translation driver code.
  * (c) 1999 Ujwal S. Sathyam
+ * (c) 2011 Scott Prahl
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,14 +44,15 @@ extern char  fileCreator[];
 #include <Windows.h>
 #endif
 
-char         *g_library_path   = NULL;
-int          g_little_endian   = 0;
-int          g_debug_level     = 0;
-int          g_include_both    = 0;
-int          g_delete_eqn_file = 1;
-int          g_insert_eqn_name = 0;
-int          g_object_width    = 0;
-int          g_create_new_directory = 0;
+char  *g_library_path        = NULL;
+int   g_little_endian        = 0;
+int   g_debug_level          = 0;
+int   g_object_width         = 0;
+int   g_create_new_directory = 0;
+
+int	  g_eqn_insert_image     = 0;
+int   g_eqn_keep_file        = 0;
+int	  g_eqn_insert_name      = 0;
 
 enum INPUT_FILE_TYPE g_input_file_type;
 
@@ -77,31 +79,45 @@ print_version(void)
 static void 
 print_usage(void)
 {
-    char           *s;
-
-    fprintf(stdout, "`rtf2latex' converts text files in RTF format to the LaTeX text format.\n\n");
-    fprintf(stdout, "Usage:  rtf2latex [-t <TeX-map>] <rtf file>\n\n");
+    fprintf(stdout, "rtf2latex %s - convert RTF to LaTeX.\n", rtf2latex2e_version);
     fprintf(stdout, "Options:\n");
     fprintf(stdout, "  -h               display help\n");
-    fprintf(stdout, "  -b               include latex & picts for equations\n");
+    fprintf(stdout, "  -b               best attempt at matching RTF formatting\n");
     fprintf(stdout, "  -D               make a new directory for latex and extracted images\n");
-    fprintf(stdout, "  -E               save intermediate .eqn files\n");
-    fprintf(stdout, "  -P path          paths to *.cfg & latex2png\n");
-    fprintf(stdout, "  -t /path/to/tmp  temporary directory\n");
+    fprintf(stdout, "  -e #             equation conversion options\n");
+    fprintf(stdout, "      -e1              convert to latex\n");
+    fprintf(stdout, "      -e2              insert image\n");
+    fprintf(stdout, "      -e4              keep intermediate eqn file\n");
+    fprintf(stdout, "      -e8              insert eqn file name in latex document\n");
+    fprintf(stdout, "  -n               natural latex formatting ... easiest to edit\n");
+    fprintf(stdout, "  -p #             paragraph conversion options\n");
+    fprintf(stdout, "      -p1              'heading 1' style -> '\\section{}'\n");
+    fprintf(stdout, "      -p2              indenting\n");
+    fprintf(stdout, "      -p4              space between paragraphs\n");
+    fprintf(stdout, "      -p8              line spacing\n");
+    fprintf(stdout, "      -p16             margins\n");
+    fprintf(stdout, "      -p32             alignment\n");
+    fprintf(stdout, "  -P path          path to preferred preference directory\n");
+    fprintf(stdout, "  -t #             text conversion options\n");
+    fprintf(stdout, "      -t1              font size\n");
+    fprintf(stdout, "      -t2              font color\n");
+    fprintf(stdout, "      -t4              font formatting\n");
+    fprintf(stdout, "      -t8              replace tabs with spaces\n");
     fprintf(stdout, "  -v               version information\n");
-    fprintf(stdout, "  -V               version information\n");
+    fprintf(stdout, "\n");
     fprintf(stdout, "Examples:\n");
-    fprintf(stdout, "  rtf2latex foo                     convert foo.rtf to foo.tex\n");
-    fprintf(stdout, "  rtf2latex <foo >foo.TEX             convert foo to foo.TEX\n");
-    fprintf(stdout, "  rtf2latex -P ./cfg/:./scripts/ foo  look for library files in ./cfg\n\n");
-    fprintf(stdout, "Report bugs to <rtf2latex2e-developers@lists.sourceforge.net>\n\n");
-    fprintf(stdout, "$RTFPATH designates the directory for the library files \n");
-    s = getenv("RTFPATH");
-    fprintf(stdout, "$RTFPATH = '%s'\n\n", (s) ? s : "not defined");
-    s = LIBDIR;
-    fprintf(stdout, "LIBDIR compiled-in directory for configuration files (*.cfg)\n");
-    fprintf(stdout, "LIBDIR  = '%s'\n\n", (s) ? s : "not defined");
-    fprintf(stdout, "rtf2latex %s\n", rtf2latex2e_version);
+    fprintf(stdout, "  rtf2latex foo              convert foo.rtf to foo.tex\n");
+    fprintf(stdout, "  rtf2latex -p 33 -t 4 foo   'natural' latex translation\n");
+    fprintf(stdout, "  rtf2latex -e 15 foo        help identify failed equation conversion\n");
+    fprintf(stdout, "  rtf2latex foo-eqn003.eqn   debug third equation (after above command)\n");
+    fprintf(stdout, "  rtf2latex -D foo           put foo.tex and images in foo-latex dir\n");
+    fprintf(stdout, "  rtf2latex foo.rtfd         convert to foo.rtfd/TXT.tex\n");
+    fprintf(stdout, "\n");
+    fprintf(stdout, "Preference Directory:\n");
+    fprintf(stdout, "  Default  = '%s'\n", (LIBDIR) ? LIBDIR : "not defined");
+    fprintf(stdout, "  $RTFPATH = '%s'\n", (getenv("RTFPATH")) ? getenv("RTFPATH") : "not defined");
+    fprintf(stdout, "\n");
+    fprintf(stdout, "Report bugs at http://sourceforge.net/projects/rtf2latex2e/\n\n");
     exit(1);
 }
 
@@ -243,18 +259,21 @@ int
 main(int argc, char **argv)
 {
     char            c, *input_filename, *output_filename;
-    int             fileCounter;
+    int             fileCounter, cli_paragraph, cli_text, cli_equation;
     long            cursorPos;
     extern char    *optarg;
     extern int      optind;
 
     SetEndianness();
-	
-    while ((c = my_getopt(argc, argv, "bhDeEvVP:")) != EOF) {
+	cli_paragraph = -1;
+	cli_text = -1;
+    while ((c = my_getopt(argc, argv, "bDe:hnp:P:t:v")) != EOF) {
         switch (c) {
 
         case 'b':
-            g_include_both = 1;
+            cli_paragraph = 63;
+            cli_text = 7;
+            cli_equation = 1;
             break;
 
         case 'D':
@@ -262,22 +281,31 @@ main(int argc, char **argv)
             break;
 
         case 'e':
-            g_delete_eqn_file = 0;
+            sscanf(optarg, "%d", &cli_equation);
             break;
 
-        case 'E':
-            g_insert_eqn_name = 1;
-            g_delete_eqn_file = 0;
+        case 'n':
+            cli_paragraph = 33;
+            cli_text = 20;
+            cli_equation = 1;
             break;
+
+		case 'p':
+            sscanf(optarg, "%d", &cli_paragraph);
+			break;
+
+        case 'P':   /* -P path/to/pref */
+            g_library_path = strdup(optarg);
+            break;
+
+		case 't':
+            sscanf(optarg, "%d", &cli_text);
+			break;
 
         case 'v':
         case 'V':
             print_version();
             return (0);
-
-        case 'P':   /* -P path/to/pref */
-            g_library_path = strdup(optarg);
-            break;
 
         case 'h':
         case '?':
@@ -289,9 +317,31 @@ main(int argc, char **argv)
     argc -= optind;
     argv += optind;
 
-    /* Initialize stuff */
-    if (!argc) 
-        print_usage();
+    if (!argc) print_usage();
+	InitConverter();
+
+	if (cli_paragraph >= 0) {
+		prefs[pConvertParagraphStyle]      = cli_paragraph & 1;
+		prefs[pConvertParagraphIndent]     = cli_paragraph & 2;
+		prefs[pConvertInterParagraphSpace] = cli_paragraph & 4;
+		prefs[pConvertLineSpacing]         = cli_paragraph & 8;
+		prefs[pConvertParagraphMargin]     = cli_paragraph & 16;
+		prefs[pConvertParagraphAlignment]  = cli_paragraph & 32;
+	}
+
+	if (cli_text >= 0) {
+		prefs[pConvertTextSize]  = cli_text & 1;
+		prefs[pConvertTextColor] = cli_text & 2;
+		prefs[pConvertTextForm]  = cli_text & 4;
+		prefs[pConvertTextNoTab] = cli_text & 16;
+	}
+
+	if (cli_equation >= 0) {
+		prefs[pConvertEquation] = cli_equation & 1;
+		g_eqn_insert_image      = cli_equation & 2;
+		g_eqn_keep_file         = cli_equation & 4;
+		g_eqn_insert_name       = cli_equation & 8;
+	}
 
     InitConverter();
 

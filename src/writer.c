@@ -243,6 +243,28 @@ static void InsertNewLine(void)
     PutLitChar('\n');
 }
 
+/* useful for just printing filenames in latex doc */
+static void PutEscapedLitStr(char *s)
+{
+	int i=0;
+	while (s[i]) {
+		switch (s[i]) {
+		case '_':
+			PutLitStr("\\_");
+			break;
+		case '%':
+			PutLitStr("\\%");
+			break;
+		case '\\':
+			PutLitStr("\\textbackslash{}");
+			break;
+		default:
+			PutLitChar(s[i]);
+		}
+		i++;
+	}
+}
+
 /*
  * This function reads colors from the color table and defines them in
  * LaTeX format to be included in the preamble.
@@ -274,7 +296,7 @@ static void DefineColors(int ignoreUsedColors)
 static void WriteColors(void)
 {
     ReadColorTbl();
-    if (!prefs[pConvertColor]) return;
+    if (!prefs[pConvertTextColor]) return;
     DefineColors(true);
 }
 
@@ -406,7 +428,8 @@ static int CheckForBeginDocument(void)
             snprintf(buf, 100, "\\setlength{\\textwidth}{%dpt}\n", (prefs[pPageWidth] - prefs[pPageLeft] - prefs[pPageRight])/20);
         }
         
-    	strcat(preambleOurDefs,"\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
+    	if (!prefs[pConvertTextNoTab])
+    		strcat(preambleOurDefs,"\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
         PutLitStr(preambleOurDefs);
 
     	beginDocumentPos = ftell(ofp);
@@ -454,13 +477,13 @@ static int SameTextStyle(void)
 {
     if (prefs[pConvertTextSize] && textStyleWritten.fontSize != textStyle.fontSize) return false;
 
-    if (prefs[pConvertColor] && textStyleWritten.foreColor != textStyle.foreColor) return false;
+    if (prefs[pConvertTextColor] && textStyleWritten.foreColor != textStyle.foreColor) return false;
 
     if (textStyleWritten.superScript != textStyle.superScript) return false;
 
     if (textStyleWritten.subScript != textStyle.subScript) return false;
 
-    if (!prefs[pConvertTextStyle]) return true;
+    if (!prefs[pConvertTextForm]) return true;
     
     if (textStyleWritten.italic != textStyle.italic) return false;
     
@@ -485,7 +508,7 @@ static void StopTextStyle(void)
         textStyleWritten.fontSize=normalSize;
     }
 
-    if (prefs[pConvertColor] && textStyleWritten.foreColor) {
+    if (prefs[pConvertTextColor] && textStyleWritten.foreColor) {
         PutLitStr("}");
         textStyleWritten.foreColor=0;
     }
@@ -500,7 +523,7 @@ static void StopTextStyle(void)
         textStyleWritten.superScript=false;
     }
 
-    if (!prefs[pConvertTextStyle]) return;
+    if (!prefs[pConvertTextForm]) return;
 
     if (textStyleWritten.italic) {
         PutLitStr("}");
@@ -561,7 +584,7 @@ static void WriteTextStyle(void)
         requireFixLtx2ePackage = true;
     }
 
-    if (prefs[pConvertColor] && textStyleWritten.foreColor != textStyle.foreColor) {
+    if (prefs[pConvertTextColor] && textStyleWritten.foreColor != textStyle.foreColor) {
         if (textStyle.foreColor) {
             snprintf(buf, 100, "{\\color{color%02d} ", textStyle.foreColor);
             PutLitStr(buf);
@@ -570,7 +593,7 @@ static void WriteTextStyle(void)
         textStyleWritten.foreColor=textStyle.foreColor;
     }
 
-    if (!prefs[pConvertTextStyle]) return;
+    if (!prefs[pConvertTextForm]) return;
 
     if (textStyleWritten.italic != textStyle.italic) {
         if (textStyle.italic)
@@ -721,25 +744,30 @@ static void NewParagraph(void)
 		return;
     }
 
-    if (paragraphWritten.alignment != paragraph.alignment) {
 
-        if (paragraph.alignment == right)
-            PutLitStr("\\begin{flushright}\n");
-
-        if (paragraph.alignment == center)
-            PutLitStr("\\begin{center}\n");
-
-        paragraphWritten.alignment = paragraph.alignment;
+    if (prefs[pConvertParagraphAlignment]) {
+		if (paragraphWritten.alignment != paragraph.alignment) {
+	
+			if (paragraph.alignment == right)
+				PutLitStr("\\begin{flushright}\n");
+	
+			if (paragraph.alignment == center)
+				PutLitStr("\\begin{center}\n");
+	
+			paragraphWritten.alignment = paragraph.alignment;
+		}
     }
 
     setLineSpacing();
 
-    if (paragraphWritten.leftIndent != paragraph.leftIndent) {
-        snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
-        if (paragraph.alignment != right && paragraph.alignment != center) {
-            PutLitStr(buff);
-            paragraphWritten.leftIndent = paragraph.leftIndent;
-        }
+    if (prefs[pConvertParagraphMargin]) {
+		if (paragraphWritten.leftIndent != paragraph.leftIndent) {
+			snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
+			if (paragraph.alignment != right && paragraph.alignment != center) {
+				PutLitStr(buff);
+				paragraphWritten.leftIndent = paragraph.leftIndent;
+			}
+		}
     }
 
     if (prefs[pConvertParagraphIndent]) {
@@ -840,7 +868,7 @@ static void setPreamblePackages(int ignoreUsedColor)
         strcat(preamblePackages,"\\usepackage{hyperref}\n");
     }
 
-    if (prefs[pConvertColor]) {
+    if (prefs[pConvertTextColor]) {
     	int i=0;
     	int needPackage=false;
     	
@@ -1716,6 +1744,7 @@ static void ParAttr(void)
     case rtfQuadRight:
         paragraph.alignment = right;
         break;
+        
     case rtfParDef:
         paragraph.firstIndent = 0;
         paragraph.leftIndent = 0;
@@ -1725,35 +1754,12 @@ static void ParAttr(void)
         break;
         
     case rtfStyleNum:
-    
         if (prefs[pConvertParagraphStyle] && rtfParam < MAX_STYLE_MAPPINGS) 
         	paragraph.styleIndex = Style2LatexMapIndex[rtfParam];
         else
     		paragraph.styleIndex = -1;
-        	
- /*  	
-    	stylePtr = RTFGetStyle(rtfParam);
-        if (!stylePtr)
-            break;
-            if (strcmp(stylePtr->rtfSName, "heading 1") == 0) {
-                if (paragraphWritten.headingString) EndParagraph();
-                paragraph.headingString=heading1String;
-                nowBetweenParagraphs = true;
-                DoSectionCleanUp();
-            } else if (strcmp(stylePtr->rtfSName, "heading 2") == 0) {
-                if (paragraphWritten.headingString) EndParagraph();
-                paragraph.headingString=heading2String;
-                nowBetweenParagraphs = true;
-                DoSectionCleanUp();
-            } else if (strcmp(stylePtr->rtfSName, "heading 3") == 0) {
-                if (paragraphWritten.headingString) EndParagraph();
-                paragraph.headingString=heading3String;
-                nowBetweenParagraphs = true;
-                DoSectionCleanUp();
-            }
-        }
-        */
         break;
+        
     case rtfFirstIndent:
         paragraph.firstIndent = rtfParam;
         break;
@@ -2140,16 +2146,8 @@ static void IncludeGraphics(char *pictureType)
         PutLitStr(dummyBuf);
         
         if (height > 50) {
-        	int i=0;
             PutLitStr("\n\\caption{This should be the caption for \\texttt{");
-            while (figPtr[i]) {
-            	if (figPtr[0] == '_')
-            		PutLitStr("\\_");
-            	else
-            		PutLitChar(figPtr[i]);
-            	i++;
-            }
-            	
+            PutEscapedLitStr(figPtr);
             PutLitStr("}.}");
         }
         
@@ -2503,7 +2501,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 
     if (type == EquationClass) {
         (oleEquation.count)++;
-        snprintf(dummyBuf, 20, "Eq%03d.eqn", oleEquation.count);
+        snprintf(dummyBuf, 20, "-eqn%03d.eqn", oleEquation.count);
     } else
         snprintf(dummyBuf, 20, ".obj");
 
@@ -2632,9 +2630,9 @@ boolean ConvertEquationFile(char *objectFileName)
         } else
             theEquation->m_inline = 1;
 
-        if (g_insert_eqn_name) {
+        if (g_eqn_insert_name) {
             PutLitStr("\\fbox{file://");
-            PutLitStr(objectFileName);
+            PutEscapedLitStr(objectFileName);
             PutLitStr("}");
             requireHyperrefPackage = true;
         }
@@ -2690,7 +2688,7 @@ static boolean ReadEquation(int *groupCount)
 
     result = ConvertEquationFile(objectFileName);
 
-    if (g_delete_eqn_file)
+    if (!g_eqn_keep_file)
         remove(objectFileName);
 
     return result;
@@ -2721,14 +2719,15 @@ static void ReadObject(void)
     case EquationClass:
         /* RTFMsg("%s: * equation object '%s', processing...\n", fn, object.className); */
 
-        if (prefs[pConvertEquation])
+        if (prefs[pConvertEquation]) {
             res = ReadEquation(&groupCounter);
-        else
+        	if (!res) fprintf(stderr, "failed to convert equation\n");
+        } else
             res = false;
 
+
         /* if unsuccessful, include the equation as a picture */
-        if (!res || g_include_both) {
-        	fprintf(stderr, "failed to convert equation\n");
+        if (!res || g_eqn_insert_image) {
             temp = groupCounter;
 
             while (!RTFCheckMM(rtfDestination, rtfPict)) {
@@ -3014,10 +3013,7 @@ static void ReadHyperlink(void)
 
     while (braceLevel && braceLevel >= localGL) {
         RTFGetToken();
-        /*if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfOptDest))
-            RTFSkipGroup();
-        if (rtfClass == rtfText)*/
-            RTFRouteToken();
+        RTFRouteToken();
     }
 
     PutLitStr("}");
@@ -3262,6 +3258,8 @@ static void SpecialChar(void)
     case rtfTab:
     	if (nowBetweenParagraphs)
             paragraph.extraIndent += 360;
+    	else if (prefs[pConvertTextNoTab])
+    		PutLitChar(' ');
     	else
         	PutLitStr("\\tab ");
         break;

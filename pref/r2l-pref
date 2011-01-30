@@ -40,11 +40,6 @@ pageRight	1.0
 # use above sizes to set the extent of the LaTeX page
 convertPageSize	true
 
-# translate color text formatting.  This is annoying because the entire RTF color table
-# always gets written to the LaTeX file and therefore inserts a bunch of noise at
-# in the preamble
-convertColor	true
-
 # convert RTF heading 1, 2, & 3. For example, 'heading 2' --> \subsection{...}
 convertParagraphStyle	true
 
@@ -56,6 +51,12 @@ convertParagraphIndent	true
 # convert space between paragraphs using \vspace{} 
 convertInterParagraphSpace	true
 
+# adjust latex margins according to those for each paragraph
+convertParagraphMargin	true
+
+# allow paragraphs to be centered or flush right
+convertParagraphAlignment	true
+
 # convert line spacing using \baselineskip ... eventually will use \setspace{}
 convertLineSpacing	true
 
@@ -66,7 +67,15 @@ convertLineSpacing	true
 convertTextSize	true
 
 #convert text styles.  includes bold, italics, smallcaps, underline, doubleunderline
-convertTextStyle	true
+convertTextForm	true
+
+#if true then replace tabs with spaces, otherwise replace with \tab 
+convertTextNoTab	true
+
+# translate color text formatting.  This is annoying because the entire RTF color table
+# always gets written to the LaTeX file and therefore inserts a bunch of noise at
+# in the preamble
+convertTextColor	true
 
 #convert hypertext links using url package
 convertHypertext	false

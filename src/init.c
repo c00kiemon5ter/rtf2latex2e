@@ -48,10 +48,10 @@ const char *prefString[] = {
     "pageWidth",
     "pageLeft",
     "pageRight",
-    "convertColor",
+    "convertTextColor",
     "convertPageSize",            /* 5  */
     "convertTextSize",
-    "convertTextStyle",
+    "convertTextForm",
     "convertParagraphStyle",
     "convertParagraphIndent",
     "convertInterParagraphSpace", /* 10 */
@@ -63,7 +63,10 @@ const char *prefString[] = {
     "preambleFirstText",
     "preambleSecondText",
     "preambleDocClass",
-    "convertTableName"
+    "convertTableName",
+    "convertParagraphMargin",     /* 20 */
+    "convertParagraphAlignment",
+    "convertTextNoTab"
 };
 
 char *preambleFirstText = NULL;
@@ -358,9 +361,9 @@ void InitUserPrefs(void)
     prefs[pPageWidth] = 8.5 * 20 * 72;  /*twips*/
     prefs[pPageLeft] = 1.0 * 20 * 72;
     prefs[pPageRight] = 1.0 * 20 * 72;
-    prefs[pConvertColor] = true;
+    prefs[pConvertTextColor] = true;
     prefs[pConvertPageSize] = false;
-    prefs[pConvertTextStyle] = true;
+    prefs[pConvertTextForm] = true;
     prefs[pConvertTextSize] = false;
     prefs[pConvertParagraphStyle] = true;
     prefs[pConvertParagraphIndent] = true;

@@ -386,12 +386,11 @@ enum INPUT_FILE_TYPE {
 extern enum INPUT_FILE_TYPE g_input_file_type;
 
 extern int g_debug_level;
-extern int g_include_both;
-extern int g_delete_eqn_file;
-extern int g_insert_eqn_name;
 extern int g_object_width;
 
-extern int groupLevel;
+extern int g_eqn_insert_image;
+extern int g_eqn_keep_file;
+extern int g_eqn_insert_name;
 
 void RTFInitStack(void);
 void RTFPushStack(void);

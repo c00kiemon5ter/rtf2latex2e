@@ -8,10 +8,10 @@ enum prefName {
     pPageWidth,
     pPageLeft,
     pPageRight,
-    pConvertColor,
+    pConvertTextColor,
     pConvertPageSize,             /* 5  */
     pConvertTextSize,
-    pConvertTextStyle,
+    pConvertTextForm,
     pConvertParagraphStyle,
     pConvertParagraphIndent,
     pConvertInterParagraphSpace,  /* 10 */
@@ -24,6 +24,9 @@ enum prefName {
     pPreambleSecondText,
     pPreambleDocClass,
     pConvertTableName,
+    pConvertParagraphMargin,     /* 20 */
+    pConvertParagraphAlignment,
+    pConvertTextNoTab,
     pLast
 };
 
