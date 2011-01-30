@@ -70,6 +70,7 @@
 # undef         rtfInternal
 
 # include       "rtf2latex2e.h"
+# include       "init.h"
 extern char     texMapQualifier[];
 
 /*
@@ -79,12 +80,6 @@ extern char     texMapQualifier[];
 
 # define        New(t)  ((t *) RTFAlloc (sizeof (t)))
 
-
-/* maximum number of character values representable in a byte */
-
-# define        charSetSize             256
-
-
 static void _RTFGetToken(void);
 static void _RTFGetToken2(void);
 static short GetChar(void);
@@ -93,14 +88,10 @@ static void ReadStyleSheet(void);
 static void ReadInfoGroup(void);
 static void ReadPictGroup(void);
 static void ReadObjGroup(void);
-static void LookupInit(void);
 static void Lookup(char *s);
 
-static void CharSetInit(void);
-static void ReadCharSetMaps(void);
 void DebugMessage(void);
 
-static void RTFSwitchCharSet(uint32_t enc);
 void ExamineToken(void);
 
 /*
@@ -164,47 +155,17 @@ static char *stdCharName[] = {
  * used as indices into the arrays to produce standard character codes.
  */
 
-static char *genCharSetFile = NULL;
-static short haveGenCharSet = 0;
 
-static char *symCharSetFile = NULL;
-static short symCharCode[charSetSize];  /* symbol */
-static short haveSymCharSet = 0;
+short *genCharCode = NULL;
+short *curCharCode = NULL;
 
-static short cp1250CharCode[charSetSize];       /* code page 1250 */
-static short cp1252CharCode[charSetSize];       /* code page 1252 */
-static short cp1253CharCode[charSetSize];       /* code page 1253 */
-static short cp1254CharCode[charSetSize];       /* code page 1254 */
-static short cp437CharCode[charSetSize];        /* code page 437 */
-static short cp850CharCode[charSetSize];        /* code page 850 */
-static short cpMacCharCode[charSetSize];        /* mac character set */
-static short cpNextCharCode[charSetSize];       /* NeXt character set */
-
-static short *genCharCode = cp1252CharCode;
-
-static int globalCharSet;
-static int defaultFontNumber;
-
-static short curCharSet = rtfCSGeneral;
-static short *curCharCode = cp1252CharCode;
-
-
-
-/*
- * By default, the reader is configured to handle charset mapping invisibly,
- * including reading the charset files and switching charset maps as necessary
- * for Symbol font.  Now supports automatic switching character set
- * maps for other encodings such latin1, latin2, etc...
- */
-
-static short autoCharSetFlags;
+int defaultFontNumber;
 
 /*
  * Initialize the reader.  This may be called multiple times,
  * to read multiple files.  The only thing not reset is the input
  * stream; that must be done with RTFSetStream().
  */
-
 void RTFInit(void)
 {
     short i;
@@ -236,9 +197,6 @@ void RTFInit(void)
     RTFFree(inputName);
     RTFFree(outputName);
     inputName = outputName = NULL;
-
-    /* initialize control symbol lookup table */
-    LookupInit();
 
     for (i = 0; i < rtfMaxClass; i++)
         RTFSetClassCallback(i, NULL);
@@ -282,7 +240,8 @@ void RTFInit(void)
         styleList = sp;
     }
 
-    CharSetInit();
+	genCharCode = cp1252CharCode;
+	curCharCode = cp1252CharCode;
     RTFInitStack();
 }
 
@@ -325,7 +284,6 @@ char *RTFGetOutputName(void)
 {
     return (outputName);
 }
-
 
 
 /* ----------------------------------------------------------------------
@@ -374,6 +332,19 @@ RTFFuncPtr RTFGetDestinationCallback(short dest)
     return (NULL);
 }
 
+/* ---------------------------------------------------------------------- */
+
+/*
+ * Routines to handle mapping of RTF character sets
+ * onto standard characters.
+ *
+ * RTFStdCharCode(name) given char name, produce numeric code
+ * RTFStdCharName(code) given char code, return name
+ * RTFMapChar(c)        map input (RTF) char code to std code
+ *
+ */
+
+
 
 /* ---------------------------------------------------------------------- */
 
@@ -389,17 +360,17 @@ RTFFuncPtr RTFGetDestinationCallback(short dest)
 
 void RTFRead(void)
 {
-    while (RTFGetToken() != rtfEOF)
+    while (RTFGetToken() != rtfEOF) {
+/*    	ExamineToken(); */
         RTFRouteToken();
+    }
 }
-
 
 /*
  * Route a token.  If it's a destination for which a reader is
  * installed, process the destination internally, otherwise
  * pass the token to the writer's class callback.
  */
-
 void RTFRouteToken(void)
 {
     RTFFuncPtr p;
@@ -514,8 +485,6 @@ short RTFPeekToken(void)
 
 static void _RTFGetToken(void)
 {
-    RTFFont *fp;
-
     /* first check for pushed token from RTFUngetToken() */
 
     if (pushedClass >= 0) {
@@ -534,73 +503,43 @@ static void _RTFGetToken(void)
      * important, e.g., for making sure no "}" pops the font stack twice.
      */
 
-    _RTFGetToken2();
+	_RTFGetToken2();
     if (rtfClass == rtfText)    /* map RTF char to standard code */
         rtfMinor = RTFMapChar(rtfMajor);
 
-    /*
-     * If auto-charset stuff is activated, see if anything needs doing,
-     * like reading the charset maps or switching between them.
-     */
-
-    if (autoCharSetFlags == 0)
+    if (RTFCheckCMM(rtfControl, rtfCharAttr, rtfFontNum)) {
+		RTFFont *fp = RTFGetFont(rtfFontNum);
+		if (fp) curCharCode = fp->rtfFCharCode;
         return;
-
-    if ((autoCharSetFlags & rtfReadCharSet)
-        && RTFCheckCM(rtfControl, rtfCharSet)) {
-
-        if (strcmp(&rtfTextBuf[1], "mac") == 0)
-            globalCharSet = macCharSet;
-        else if (strcmp(&rtfTextBuf[1], "ansi") == 0)
-            globalCharSet = ansiCharSet;
-        else if (strcmp(&rtfTextBuf[1], "pc") == 0)
-            globalCharSet = pcCharSet;
-        else if (strcmp(&rtfTextBuf[1], "pca") == 0)
-            globalCharSet = pcaCharSet;
-
-        if (g_input_file_type == TYPE_RTFD)
-            globalCharSet = nextCharSet;
-
-        ReadCharSetMaps();
-
-        /* check for the \ansicpg control word */
-        RTFPeekToken();
-        if (RTFCheckCMM(rtfControl, rtfFontAttr, rtfAnsiCodePage)) {
-            switch (rtfParam) {
-            case 1250:
-                RTFSwitchCharSet(cp1250Enc);
-                break;
-            case 1252:
-                RTFSwitchCharSet(cp1252Enc);
-                break;
-            case 1254:
-                RTFSwitchCharSet(cp1254Enc);
-                break;
-            }
-        }
-
-
-    } else if ((autoCharSetFlags & rtfSwitchCharSet)
-               && RTFCheckCMM(rtfControl, rtfCharAttr, rtfFontNum)) {
-        if ((fp = RTFGetFont((short) rtfParam)) != NULL) {
-            if (strncmp(fp->rtfFName, "Symbol", 6) == 0)
-                curCharSet = rtfCSSymbol;
-            else
-                curCharSet = rtfCSGeneral;
-            RTFSetCharSet(curCharSet);
-            /* checks if there is an encoding change other than Symbol */
-            if (fp->rtfFCharSet > -1)
-                RTFSwitchCharSet(fp->rtfFCharSet);
-            /* end addition */
-        }
     }
-    /* detect character set switches using the \cchs command */
-    else if ((autoCharSetFlags & rtfSwitchCharSet)
-             && RTFCheckCMM(rtfControl, rtfCharAttr, rtfCharCharSet)) {
-        RTFSwitchCharSet(rtfParam);
+    
+    /* \cchs indicates any characters not belonging to the default document character
+     * set and tells which character set they do belong to. Macintosh character sets 
+     * are represented by values greater than 255. The values for N correspond to the 
+     * values for the \ fcharset control word.
+     */
+    if (RTFCheckCMM(rtfControl, rtfCharAttr, rtfCharCharSet)) {
+    
+    	if (rtfParam>255) {
+    		curCharCode = cp1252CharCode;
+			return;
+		}
+    	
+        switch (rtfParam) {
+        case 1:
+        	curCharCode = genCharCode;
+        	break;
+        case 2:
+        	curCharCode = symCharCode;
+        	break;
+        default:
+        	curCharCode = cp1252CharCode;
+        	break;
+        }
+        return;
     }
 
-    else if (rtfClass == rtfGroup) {
+    if (rtfClass == rtfGroup) {
         switch (rtfMajor) {
         case rtfBeginGroup:
             RTFPushStack();
@@ -609,6 +548,7 @@ static void _RTFGetToken(void)
             RTFPopStack();
             break;
         }
+        return;
     }
 }
 
@@ -851,234 +791,6 @@ void RTFSetToken(short class, short major, short minor, int32_t param, char *tex
 }
 
 
-/* ---------------------------------------------------------------------- */
-
-/*
- * Routines to handle mapping of RTF character sets
- * onto standard characters.
- *
- * RTFStdCharCode(name) given char name, produce numeric code
- * RTFStdCharName(code) given char code, return name
- * RTFMapChar(c)        map input (RTF) char code to std code
- * RTFSetCharSet(id)    select given charset map
- * RTFGetCharSet()      get current charset map
- *
- * See ../h/README for more information about charset names and codes.
- */
-
-
-/*
- * Initialize charset stuff.
- * Keep two charsets active, one to translate the symbol font and
- * another for everything else
- */
-
-static void CharSetInit(void)
-{
-    autoCharSetFlags = (rtfReadCharSet | rtfSwitchCharSet);
-/*  commented out by Ujwal Sathyam after enabling autoswitching of character sets.
-        RTFFree (genCharSetFile);
-*/
-    genCharSetFile = NULL;
-    haveGenCharSet = 0;
-    RTFFree(symCharSetFile);
-    symCharSetFile = NULL;
-    haveSymCharSet = 0;
-    curCharSet = rtfCSGeneral;
-    curCharCode = genCharCode;
-}
-
-
-/*
- * Specify the name of a file to be read when auto-charset-file reading is done
- *
- * The idea is that each font has a pre-defined character set.  Currently
- * only two character sets are defined ... the default one (ansi/mac/pc/pca)
- * and that for interpreting characters from the symbol font
- */
-void RTFSetCharSetMap(char *name, short csId)
-{
-    if ((name = RTFStrSave(name)) == NULL)     /* make copy */
-        RTFPanic("RTFSetCharSetMap: out of memory");
-    switch (csId) {
-    case rtfCSGeneral:
-        RTFFree(genCharSetFile);        /* free any previous value */
-        genCharSetFile = name;
-        break;
-    case rtfCSSymbol:
-        RTFFree(symCharSetFile);        /* free any previous value */
-        symCharSetFile = name;
-        break;
-    }
-}
-
-
-/*
- * Do auto-charset-file reading.
- */
-
-static void ReadCharSetMaps(void)
-{
-    char buf[rtfBufSiz];
-    buf[0]='\0';
-
-    if (strcmp(&rtfTextBuf[1], "ansi") == 0)
-        genCharCode = cp1252CharCode;
-    else if (strcmp(&rtfTextBuf[1], "mac") == 0)
-        genCharCode = cpMacCharCode;
-    else if (strcmp(&rtfTextBuf[1], "pc") == 0)
-        genCharCode = cp437CharCode;
-    else if (strcmp(&rtfTextBuf[1], "pca") == 0)
-        genCharCode = cp850CharCode;
-    else
-        genCharCode = cp1252CharCode;
-
-    /* default to NeXtStep code page until \ansicpg token is encountered */
-    if (g_input_file_type == TYPE_RTFD)
-        genCharCode = cpNextCharCode;
-
-    genCharSetFile = &rtfTextBuf[1];
-    haveGenCharSet = 1;
-
-    if (symCharSetFile)
-        (void) strcpy(buf, symCharSetFile);
-    else
-        (void) strcpy(buf, "rtf-encoding.symbolfont");
-
-    if (RTFReadCharSetMap(buf, rtfCSSymbol) == 0)
-        RTFPanic("ReadCharSetMaps: Cannot read charset map %s", buf);
-}
-
-
-
-/*
- * Read in a file describing an RTF character set map.  Lines consist of pairs
- * associating character names with character values.
- *
- * If the filename is an absolute pathname, look in the specified location
- * only.  Otherwise try to find the file in the current directory or library.
- */
-
-short RTFReadCharSetMap(char *file, short csId)
-{
-    FILE *f;
-    char buf[rtfBufSiz];
-    char *name, *p;
-    short *stdCodeArray;
-    short stdCode;
-    short radix;
-    short value;
-    short i;
-    TSScanner scanner;
-    char *scanEscape;
-    char *fn = "RTFReadCharSetMap";
-
-    switch (csId) {
-    default:
-        return (0);             /* illegal charset id */
-    case rtfCSGeneral:
-        stdCodeArray = genCharCode;
-        break;
-    case rtfCSSymbol:
-        stdCodeArray = symCharCode;
-        break;
-    case rtfCS1250:
-        stdCodeArray = cp1250CharCode;
-        break;
-    case rtfCS1252:
-        stdCodeArray = cp1252CharCode;
-        break;
-    case rtfCS1253:
-        stdCodeArray = cp1253CharCode;
-        break;
-    case rtfCS1254:
-        stdCodeArray = cp1254CharCode;
-        break;
-    case rtfCSMac:
-        stdCodeArray = cpMacCharCode;
-        break;
-    case rtfCS437:
-        stdCodeArray = cp437CharCode;
-        break;
-    case rtfCS850:
-        stdCodeArray = cp850CharCode;
-        break;
-    case rtfCSNext:
-        stdCodeArray = cpNextCharCode;
-        break;
-    }
-
-    if ((f = RTFOpenLibFile(file, "r")) == NULL)
-        return (0);
-
-    /* clobber current mapping */
-
-    for (i = 0; i < charSetSize; i++) {
-        stdCodeArray[i] = rtfSC_nothing;
-    }
-
-    /*
-     * Turn off scanner's backslash escape mechanism while reading
-     * charset file.  Restore it later.
-     */
-    TSGetScanner(&scanner);
-    scanEscape = scanner.scanEscape;
-    scanner.scanEscape = "";
-    TSSetScanner(&scanner);
-
-    /* read file */
-
-    while (fgets(buf, (int) sizeof(buf), f) != NULL) {
-        if (buf[0] == '#')      /* skip comment lines */
-            continue;
-        TSScanInit(buf);
-        if ((name = TSScan()) == NULL)
-            continue;           /* skip blank lines */
-        if ((stdCode = RTFStdCharCode(name)) < 0) {
-            RTFPanic("%s: unknown character name: %s", fn, name);
-            continue;
-        }
-        if ((p = TSScan()) == NULL) {
-            RTFPanic("%s: malformed charset map line for character %s",
-                     fn, name);
-            continue;
-        }
-        if (p[1] == '\0')       /* single char - use ascii value */
-            value = p[0];
-        else {
-            radix = 10;
-            if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
-                radix = 16;
-                p += 2;
-            }
-            value = 0;
-            while (*p != '\0')
-                value = value * radix + RTFCharToHex(*p++);
-        }
-        if (value >= charSetSize) {
-            RTFMsg("%s: character value %d for %s too high\n",
-                   fn, value, name);
-            RTFPanic("maximum value is %d", charSetSize - 1);
-        }
-        stdCodeArray[value] = stdCode;
-    }
-    scanner.scanEscape = scanEscape;
-    TSSetScanner(&scanner);
-    fclose(f);
-
-    switch (csId) {
-    case rtfCSGeneral:
-        haveGenCharSet = 1;
-        break;
-    case rtfCSSymbol:
-        haveSymCharSet = 1;
-        break;
-    }
-
-    return (1);
-}
-
-
 /*
  * Given a standard character name (a string), find its code (a number).
  * Return -1 if name is unknown.
@@ -1120,71 +832,9 @@ char *RTFStdCharName(short code)
 
 short RTFMapChar(short c)
 {
-    switch (curCharSet) {
-    case rtfCSGeneral:
-        if (!haveGenCharSet) {
-            if (RTFReadCharSetMap("rtf-encoding.cp1252", rtfCSGeneral) == 0)
-                    RTFPanic("RTFMapChar: cannot read cp1252.map");
-        }
-        break;
-    case rtfCSSymbol:
-        if (!haveSymCharSet) {
-            if (RTFReadCharSetMap("ansi-sym", rtfCSSymbol) == 0)
-                RTFPanic("RTFMapChar: cannot read ansi-sym");
-        }
-        break;
-    }
-    if (c < 0 || c >= charSetSize)
+    if (c < 0 || c >= CHAR_SET_SIZE)
         return (rtfSC_nothing);
     return (curCharCode[c]);
-}
-
-
-/*
- * Set the current character set.  If csId is illegal, uses general charset.
- */
-
-void RTFSetCharSet(short csId)
-{
-
-
-    switch (csId) {
-    default:                    /* use general if csId unknown */
-    case rtfCSGeneral:
-        curCharCode = genCharCode;
-        curCharSet = csId;
-        break;
-    case rtfCSSymbol:
-        curCharCode = symCharCode;
-        curCharSet = csId;
-        break;
-    case rtfCS1250:
-        curCharCode = cp1250CharCode;
-        curCharSet = csId;
-        break;
-    case rtfCS1252:
-        curCharCode = cp1252CharCode;
-        curCharSet = csId;
-        break;
-    case rtfCS1254:
-        curCharCode = cp1254CharCode;
-        curCharSet = csId;
-        break;
-    case rtfCSMac:
-        curCharCode = cpMacCharCode;
-        curCharSet = csId;
-        break;
-    case rtfCSNext:
-        curCharCode = cpNextCharCode;
-        curCharSet = csId;
-        break;
-    }
-}
-
-
-short RTFGetCharSet(void)
-{
-    return (curCharSet);
 }
 
 
@@ -1260,21 +910,25 @@ static void ReadFontTbl(void)
         fp->rtfFAltName = NULL;
         fp->rtfFNum = -1;
         fp->rtfFFamily = 0;
-        fp->rtfFCharSet = -1;   /* changed by Ujwal Sathyam from 0 to -1 */
+        fp->rtfFCharSet = -1;
         fp->rtfFPitch = 0;
         fp->rtfFType = 0;
+        fp->rtfFCharCode = genCharCode;
         fp->rtfFCodePage = 0;
 
         while (rtfClass != rtfEOF && !RTFCheckCM(rtfText, ';')) {
 
             if (rtfClass == rtfControl) {
+            
                 switch (rtfMajor) {
                 default:
                     /* ignore token but announce it */
                     RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf);
+                    
                 case rtfFontFamily:
                     fp->rtfFFamily = rtfMinor;
                     break;
+                    
                 case rtfCharAttr:
                     switch (rtfMinor) {
                     default:
@@ -1284,6 +938,7 @@ static void ReadFontTbl(void)
                         break;
                     }
                     break;
+                    
                 case rtfFontAttr:
                     switch (rtfMinor) {
                     default:
@@ -1304,8 +959,10 @@ static void ReadFontTbl(void)
                     }
                     break;
                 }
+                
             } else if (RTFCheckCM(rtfGroup, rtfBeginGroup)) {   /* dest */
                 RTFSkipGroup(); /* ignore for now */
+                
             } else if (rtfClass == rtfText) {   /* font name */
                 bp = buf;
                 while (rtfClass != rtfEOF && !RTFCheckCM(rtfText, ';')) {
@@ -1316,14 +973,18 @@ static void ReadFontTbl(void)
                 fp->rtfFName = RTFStrSave(buf);
                 if (fp->rtfFName == NULL)
                     RTFPanic("%s: cannot allocate font name", fn);
-                /* already have next token; don't read one */
-                /* at bottom of loop */
+                    
+                if (strcasecmp(fp->rtfFName,"Symbol")==0)
+                	fp->rtfFCharCode = symCharCode;
+                	
+                /* already have next token; don't read another at bottom of loop */
                 continue;
             } else {
                 /* ignore token but and don't announce it */
                 RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf);
 
             }
+
             (void) RTFGetToken();
         }
 
@@ -1340,18 +1001,12 @@ static void ReadFontTbl(void)
  */
     RTFRouteToken();            /* feed "}" back to router */
 
-/* added by Ujwal Sathyam for rtf2latex2e */
-    {
-        RTFFont *fp1;
-        if (defaultFontNumber > -1) {
-            if ((fp1 = RTFGetFont(defaultFontNumber)) != NULL
-                && fp1->rtfFCharSet > -1)
-                RTFSwitchCharSet(fp1->rtfFCharSet);
-        }
-    }
-/* end additions */
+	if (defaultFontNumber > -1) {
+		RTFFont *fp1 = RTFGetFont(defaultFontNumber);
+		if (fp1) curCharCode = fp1->rtfFCharCode;
+	}
+	
 }
-
 
 /*
  * The color table entries have color values of -1 if
@@ -1412,6 +1067,21 @@ void ReadColorTbl(void)
 }
 
 
+/* correlates the user defined conversion with a styles "name" */
+static short Style2LatexItem(char *name)
+{
+    int i;
+
+    for (i = 0; i < MAX_STYLE_MAPPINGS; i++) {
+    	if (!Style2LatexStyle[i]) return -1; 
+    	
+        if (strcasecmp(name, Style2LatexStyle[i]) == 0)
+            return i;
+    }
+    return (-1);
+}
+
+
 /*
  * The "Normal" style definition doesn't contain any style number,
  * all others do.  Normal style is given style rtfNormalStyleNum.
@@ -1456,6 +1126,7 @@ static void ReadStyleSheet(void)
             if (rtfClass == rtfControl) {
                 if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
                     continue;   /* ignore "\*" */
+                    
                 if (RTFCheckMM(rtfParAttr, rtfStyleNum)) {
                     sp->rtfSNum = rtfParam;
                     sp->rtfSType = rtfParStyle;
@@ -1499,9 +1170,10 @@ static void ReadStyleSheet(void)
                 sep->rtfSEMajor = rtfMajor;
                 sep->rtfSEMinor = rtfMinor;
                 sep->rtfSEParam = rtfParam;
-                if ((sep->rtfSEText = RTFStrSave(rtfTextBuf))
-                    == NULL)
+                sep->rtfSEText = RTFStrSave(rtfTextBuf);
+                if (! sep->rtfSEText)
                     RTFPanic("%s: cannot allocate style element text", fn);
+                    
                 if (sepLast == NULL)
                     sp->rtfSSEList = sep;       /* first element */
                 else            /* add to end */
@@ -1538,11 +1210,7 @@ static void ReadStyleSheet(void)
             }
         }
         (void) RTFGetToken();
-/*              if (!RTFCheckCM (rtfGroup, rtfEndGroup))
-                        RTFPanic ("%s: missing \"}\"", fn);
-*/
-/* if loop changed to while loop by Ujwal Sathyam; I came across an rtf file that
-   had a wrong stylesheet */
+   
         while (!RTFCheckCM(rtfGroup, rtfEndGroup)) {
             RTFGetToken();
             if (rtfClass == rtfEOF) {
@@ -1563,6 +1231,7 @@ static void ReadStyleSheet(void)
          */
         if (sp->rtfSName == NULL)
             RTFPanic("%s: missing style name", fn);
+            
         if (sp->rtfSNum < 0) {
             if (strncmp(buf, "Normal", 6) != 0 && strncmp(buf, "Standard", 8) != 0) {
                 RTFMsg("%s: style is '%s'\n",fn, buf);
@@ -1571,6 +1240,13 @@ static void ReadStyleSheet(void)
             }
             sp->rtfSNum = rtfNormalStyleNum;
         }
+        
+        /* this provides direct access to the right style mapping without
+           needing to compare all the style names every time we want to know
+           If there is no mapping, then the index is just set to -1 */
+        if (sp->rtfSNum < MAX_STYLE_MAPPINGS)
+        	Style2LatexMapIndex[sp->rtfSNum] = Style2LatexItem(sp->rtfSName);
+        
         if (sp->rtfSNextPar == -1)      /* if \snext not given, */
             sp->rtfSNextPar = sp->rtfSNum;      /* next is itself */
     }
@@ -1710,132 +1386,9 @@ void RTFExpandStyle(short n)
  */
 
 
-typedef struct RTFCtrl RTFCtrl;
+RTFCtrl **rtfCtrl = NULL;
+short nCtrls;
 
-struct RTFCtrl {
-    short major;                /* major number */
-    short minor;                /* minor number */
-    short index;                /* index of token */
-    char *str;                  /* symbol name */
-};
-
-
-static RTFCtrl **rtfCtrl = NULL;
-static short nCtrls;
-
-
-/*
- * Read in control word lookup table.  Only need to do this once.
- */
-
-# define        ctrlFileName    "rtf-ctrl"
-
-static void LookupInit(void)
-{
-    FILE *f;
-    RTFCtrl *rp;
-    char buf[rtfBufSiz];
-    char *tokBuf, *tokBufEnd;
-    short tokBytes;
-    short line = 0, i;
-    char *p1, *p2, *p3, c;
-    TSScanner scanner;
-    char *scanEscape;
-    char *fn = "LookupInit";
-
-    if (rtfCtrl != NULL)   /* already initialized */
-        return;
-
-    if ((f = RTFOpenLibFile(ctrlFileName, "r")) == NULL)
-        RTFPanic("%s: cannot open %s file.", fn, ctrlFileName);
-
-    /*
-     * Turn off scanner's backslash escape mechanism while reading
-     * file.  Restore it later.
-     */
-    TSGetScanner(&scanner);
-    scanEscape = scanner.scanEscape;
-    scanner.scanEscape = "";
-    TSSetScanner(&scanner);
-
-    while (fgets(buf, (int) sizeof(buf), f) ) {
-        if (buf[0] == '#')      /* skip comments */
-            continue;
-        ++line;
-        TSScanInit(buf);
-        p1 = TSScan();
-        p2 = TSScan();
-        p3 = TSScan();
-        /*
-         * First non-comment line contains number of control words and
-         * number of bytes (including terminating nulls) needed to store
-         * control word tokens.
-         */
-        if (line == 1) {
-            if (p2 == NULL)    /* malformed */
-                break;
-            nCtrls = atoi(p1);
-            tokBytes = atoi(p2);
-            rtfCtrl = (RTFCtrl **) RTFAlloc(nCtrls * sizeof(RTFCtrl *));
-            if (!rtfCtrl) {
-                RTFPanic("%s: out of memory.", fn);
-                exit(1);
-            }
-
-            for (i = 0; i < nCtrls; i++) {
-                rp = (RTFCtrl *) RTFAlloc(sizeof(RTFCtrl));
-                if (!rp) {
-                    RTFPanic("%s: out of memory.", fn);
-                    exit(1);
-                }
-                rtfCtrl[i] = rp;
-            }
-
-            /*
-             * Allocate a buffer into which to copy all the tokens
-             */
-            tokBuf = RTFAlloc(tokBytes);
-            if (!tokBuf) {
-                RTFPanic("%s: out of memory.", fn);
-                exit(1);
-            }
-            tokBufEnd = tokBuf;
-        } else {
-            if (p3 == NULL)    /* malformed */
-                break;
-            if (line - 1 > nCtrls)      /* malformed */
-                break;
-            rp = rtfCtrl[line - 2];
-            rp->major = atoi(p1);
-            rp->minor = atoi(p2);
-            rp->str = tokBufEnd;
-            rp->index = line - 2;
-
-            /* process string to remove embedded escapes */
-            p1 = p3;
-            while ((c = *p1++) != '\0') {
-                /*
-                 * Escaped character.  Default is to use next
-                 * character unmodified, but \n and \r are
-                 * turned into linefeed and carriage return.
-                 */
-                if (c == '\\') {
-                    c = *p1++;
-                    if (c == 'n') c = '\n';
-                    if (c == 'r') c = '\r';
-                }
-                *tokBufEnd++ = c;
-            }
-            *tokBufEnd++ = '\0';
-        }
-    }
-    scanner.scanEscape = scanEscape;
-    TSSetScanner(&scanner);
-    (void) fclose(f);
-
-    if (rtfCtrl == NULL || line - 1 != nCtrls)
-        RTFPanic("%s: %s file contents malformed.", fn, ctrlFileName);
-}
 
 
 /*
@@ -2003,104 +1556,6 @@ int RTFHexStrToInt(char * s)
     return x;
 }
 
-/*
- * Read in a file describing the relation between the standard character set
- * and an RTF translator's corresponding output sequences.  Each line consists
- * of a standard character name and the output sequence for that character.
- *
- * outMap is an array of strings into which the sequences should be placed.
- * It should be declared like this in the calling program:
- *
- *      char *outMap[rtfSC_MaxChar];
- *
- * reinit should be non-zero if outMap should be initialized before reading the
- * file, zero otherwise.  (This allows the map to be constructed by reading
- * several files.)  It's assumed that any existing strings in the map were
- * allocated by RTFStrSave().  The map is initialized BEFORE any attempt is
- * made to read the file.
- *
- * If the filename is an absolute pathname, look in the specified location
- * only.  Otherwise try to find the file in the current directory or the
- * library directory.
- */
-
-short RTFReadOutputMap(char *file, char *outMap[], short reinit)
-{
-    FILE *f;
-    char buf[rtfBufSiz];
-    char *name, *seq;
-    short stdCode;
-    short i;
-    size_t size;
-    TSScanner scanner;
-    char *scanEscape;
-    char *fn = "RTFReadOutputMap";
-
-    /* clobber current mapping */
-
-    if (reinit) {
-        for (i = 0; i < rtfSC_MaxChar; i++) {
-            RTFFree(outMap[i]);
-            outMap[i] = NULL;
-        }
-    }
-
-    if ((f = RTFOpenLibFile(file, "r")) == NULL)
-        return (0);
-
-    /*
-     * Turn off scanner's backslash escape mechanism while reading
-     * file.  Restore it later.
-     */
-    TSGetScanner(&scanner);
-    scanEscape = scanner.scanEscape;
-    scanner.scanEscape = "";
-    TSSetScanner(&scanner);
-
-    /* (over) allocate space for preambleEncoding */
-	fseek(f, 0, SEEK_END);
-	size = ftell(f); 
-	fseek(f, 0, SEEK_SET);
-	preambleEncoding = malloc(size);
-
-    /* read file */
-    while (fgets(buf, (int) sizeof(buf), f) != NULL) {
-        if (buf[0] == '#')      /* skip comment lines */
-            continue;
-        TSScanInit(buf);
-        
-        /* check for any special requirements */
-        if (buf[0] == '%') {
-            if (strcmp((name = TSScan()), "%") == 0)
-                continue;       /* skip blank lines */
-            strcat(preambleEncoding, ++name);
-            strcat(preambleEncoding, "\n");
-            continue;
-        }
-        
-        if ((name = TSScan()) == NULL)
-            continue;           /* skip blank lines */
-            
-        if ((stdCode = RTFStdCharCode(name)) < 0) {
-            RTFMsg("%s: unknown character name: %s\n", fn, name);
-            continue;
-        }
-        
-        if ((seq = TSScan()) == NULL) {
-            RTFMsg("%s: malformed output sequence line for character %s\n",
-                   fn, name);
-            continue;
-        }
-        
-        if ((seq = RTFStrSave(seq)) == NULL)
-            RTFPanic("%s: out of memory", fn);
-        outMap[stdCode] = seq;
-    }
-    scanner.scanEscape = scanEscape;
-    TSSetScanner(&scanner);
-    fclose(f);
-    return (1);
-}
 
 
 /* ---------------------------------------------------------------------- */
@@ -2239,36 +1694,6 @@ void RTFSetPushedChar(short lastChar)
     pushedChar = lastChar;
 }
 
-static void RTFSwitchCharSet(uint32_t enc)
-{
-
-
-    if (enc > 255 && globalCharSet != macCharSet)
-        RTFSetCharSet(rtfCSMac);
-
-    else if (enc != globalCharSet) {
-        switch (enc) {
-        case cp1250Enc:
-            RTFSetCharSet(rtfCS1250);
-            break;
-        case cp1252Enc:
-            RTFSetCharSet(rtfCS1252);
-            break;
-        case cp1254Enc:
-            RTFSetCharSet(rtfCS1254);
-            break;
-/*                      case macEnc:
-                                RTFSetCharSet (rtfCSMac);
-                                break;
-*/
-        case symbolEnc:
-            RTFSetCharSet(rtfCSSymbol);
-            break;
-        }
-    }
-
-}
-
 void RTFSetDefaultFont(int fontNumber)
 {
     defaultFontNumber = fontNumber;
@@ -2282,9 +1707,10 @@ void RTFSetDefaultFont(int fontNumber)
 
 # define        MAX_STACK             100
 
-short csStack[MAX_STACK], savedCSStack[MAX_STACK];
-parStyleStruct parStack[MAX_STACK], parWrittenStack[MAX_STACK], parSavedStack[MAX_STACK];
-textStyleStruct textStyleStack[MAX_STACK], textStyleWrittenStack[MAX_STACK];
+short *csStack[MAX_STACK];
+short *savedCSStack[MAX_STACK];
+parStyleStruct  parStack[MAX_STACK];
+textStyleStruct textStyleStack[MAX_STACK];
 
 int braceLevel;
 int savedbraceLevel;
@@ -2310,7 +1736,7 @@ void RTFInitStack(void)
 
 void RTFPushStack(void)
 {
-    csStack[braceLevel] = curCharSet;
+    csStack[braceLevel] = curCharCode;
     parStack[braceLevel] = paragraph;
     textStyleStack[braceLevel] = textStyle;
 
@@ -2332,8 +1758,7 @@ void RTFPopStack(void)
         RTFMsg("Too many '}'.  Stack Underflow\n");
         i = 0;
     }
-    curCharSet = csStack[i];
-    RTFSetCharSet(curCharSet);
+    curCharCode = csStack[i];
 
     paragraph = parStack[i];
     textStyle = textStyleStack[i];
@@ -2349,6 +1774,5 @@ void RTFRestoreStack(void)
 {
     memcpy(csStack, savedCSStack, MAX_STACK * sizeof(short));
     braceLevel = savedbraceLevel;
-    curCharSet = csStack[braceLevel];
-    RTFSetCharSet(curCharSet);
+    curCharCode = csStack[braceLevel];
 }

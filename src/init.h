@@ -1,0 +1,84 @@
+#ifndef _RTF_INIT
+
+#define _RTF_INIT
+
+/* These should exactly match order in prefString[] in init.c */
+enum prefName {
+    pOutputMapFileName,           /* 0  */
+    pPageWidth,
+    pPageLeft,
+    pPageRight,
+    pConvertColor,
+    pConvertPageSize,             /* 5  */
+    pConvertTextSize,
+    pConvertTextStyle,
+    pConvertParagraphStyle,
+    pConvertParagraphIndent,
+    pConvertInterParagraphSpace,  /* 10 */
+    pConvertLineSpacing,
+    pConvertHypertext,
+    pConvertPict,
+    pConvertEquation,
+    pConvertAsDirectory,          /* 15 */
+    pPreambleFirstText,
+    pPreambleSecondText,
+    pPreambleDocClass,
+    pConvertTableName,
+    pLast
+};
+
+typedef struct RTFCtrl RTFCtrl;
+
+struct RTFCtrl {
+    short major;                /* major number */
+    short minor;                /* minor number */
+    short index;                /* index of token */
+    char *str;                  /* symbol name */
+};
+
+
+extern RTFCtrl **rtfCtrl;
+extern short nCtrls;
+
+extern const char *prefString[];
+extern int prefs[pLast];
+extern char *convertTableName;
+
+extern char *preambleFirstText;
+extern char *preambleSecondText;
+extern char *preambleDocClass;
+extern char *preambleUserText;
+extern char *preambleEncoding;
+extern char *preamblePackages;
+extern char *preambleColorTable;
+extern char *preambleOurDefs;
+
+FILE *OpenLibFile(char *name, char *mode);
+char *strdup_together(const char *s, const char *t);
+char *append_file_to_path(char *path, char *file);
+void InitConverter(void);
+
+# define MAX_STYLE_MAPPINGS     255
+extern char *Style2LatexOpen[MAX_STYLE_MAPPINGS];
+extern char *Style2LatexClose[MAX_STYLE_MAPPINGS];
+extern char *Style2LatexStyle[MAX_STYLE_MAPPINGS];
+extern int Style2LatexMapIndex[MAX_STYLE_MAPPINGS];
+
+# define        CHAR_SET_SIZE             256
+extern short symCharCode[CHAR_SET_SIZE];          /* Adobe Symbol Font */
+extern short cp1250CharCode[CHAR_SET_SIZE];       /* code page 1250 */
+extern short cp1252CharCode[CHAR_SET_SIZE];       /* code page 1252 */
+extern short cp1254CharCode[CHAR_SET_SIZE];       /* code page 1254 */
+extern short cp437CharCode[CHAR_SET_SIZE];        /* code page 437 */
+extern short cp850CharCode[CHAR_SET_SIZE];        /* code page 850 */
+extern short cpMacCharCode[CHAR_SET_SIZE];        /* mac character set */
+extern short cpNextCharCode[CHAR_SET_SIZE];       /* NeXt character set */
+
+extern short *genCharCode;
+extern short *curCharCode;
+
+extern char *outMap[rtfSC_MaxChar];
+
+extern char *g_library_path;
+
+#endif

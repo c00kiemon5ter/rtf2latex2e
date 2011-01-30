@@ -82,6 +82,9 @@ convertEquation	true
 # latex file are placed inside
 convertAsDirectory false
 
+# Name of environment for tables.  The default is "tabular"
+convertTableName	longtable
+
 # Macintosh only
 # Convert embedded macintosh PICT files to PDF files
 convertPict	true

@@ -206,7 +206,6 @@ extern short	rtfLinePos;		/* input line position */
 
 # define	rtfCSGeneral	0	/* general (default) charset */
 # define	rtfCSSymbol	1	/* symbol charset */
-/* The following CharSet indices added by Ujwal Sathyam for rtf2latex2e */
 # define	rtfCS1250	2	/* code page 1250 (Eastern European) */
 # define	rtfCS1252	3	/* code page 1252 (ANSI) */
 # define	rtfCS1253	4	/* code page 1253 (Greek) */
@@ -216,15 +215,16 @@ extern short	rtfLinePos;		/* input line position */
 # define	rtfCS850	8	/* code page 850 */
 # define    rtfCSNext   9   /* NextStep code page, used for .rtfd files */
 
-# define	macCharSet	256
 # define	ansiCharSet	0
+# define	macCharSet	256
 # define	pcCharSet	437
 # define	pcaCharSet	850
 # define    nextCharSet 10646
 
+/* these are not really used */
 # define	cp1252Enc	0
 # define	symbolEnc	2
-/* # define	macEnc		77    wrong?? */
+# define	macEnc		77
 # define	cp1253Enc	161
 # define	cp1254Enc	162
 # define	cp1258Enc	163
@@ -234,15 +234,6 @@ extern short	rtfLinePos;		/* input line position */
 # define	cp1251Enc	204
 # define	cp874Enc	222
 # define	cp1250Enc	238
-
-/* end additions by Ujwal Sathyam */
-
-/*
- * Flags for auto-charset-processing.  Both are on by default.
- */
-
-# define	rtfReadCharSet		0x01	/* auto-read charset files */
-# define	rtfSwitchCharSet	0x02	/* auto-switch charset maps */
 
 /*
  * Style types
@@ -267,14 +258,15 @@ typedef struct RTFStyleElt	RTFStyleElt;
 struct RTFFont
 {
 	char	*rtfFName;		/* font name */
-	char	*rtfFAltName;		/* font alternate name */
+	char	*rtfFAltName;	/* font alternate name */
+	short	*rtfFCharCode;	/* array to convert characters */
 	short	rtfFNum;		/* font number */
 	short	rtfFFamily;		/* font family */
-	short	rtfFCharSet;		/* font charset */
+	short	rtfFCharSet;	/* font charset */
 	short	rtfFPitch;		/* font pitch */
 	short	rtfFType;		/* font type */
-	short	rtfFCodePage;		/* font code page */
-	RTFFont	*rtfNextFont;		/* next font in list */
+	short   rtfFCodePage;   /* font code page */
+	RTFFont	*rtfNextFont;	/* next font in list */
 };
 
 
@@ -368,7 +360,6 @@ void		ReadColorTbl (void); /* made public and brought over from reader.c by Ujwa
 void		RTFMsg (char *fmt, ...);
 void		RTFPanic (char *fmt, ...);
 
-short 	RTFReadCharSetMap(char *file, short csId);
 void 		RTFSetCharSetMap(char *name, short csId);
 short 	RTFStdCharCode(char *name);
 char		*RTFStdCharName (short code);

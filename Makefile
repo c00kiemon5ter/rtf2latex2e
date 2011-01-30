@@ -38,11 +38,11 @@ CFLAGS:=$(CFLAGS) $(PLATFORM)
 
 SRCS         = src/cole.c                 src/cole_decode.c          src/cole_support.c      \
                src/eqn.c                  src/main.c                 src/mygetopt.c          \
-               src/reader.c               src/writer.c               
+               src/reader.c               src/writer.c               src/init.c
                
 HDRS         = src/cole.h                 src/cole_support.h         src/eqn.h               \
                src/eqn_support.h          src/mygetopt.h             src/rtf2latex2e.h       \
-               src/rtf.h
+               src/rtf.h                  src/init.h
 
 RTFPREP_SRCS = src/rtf-controls           src/rtfprep.c              src/standard-names      \
                src/tokenscan.c            src/tokenscan.h            src/rtf-ctrldef.h       \
@@ -82,7 +82,8 @@ EQNS         = test/testeqn01.eqn         test/testeqn02.eqn         test/testeq
                
 OBJS         = src/cole.o                 src/cole_decode.o          src/cole_support.o      \
                src/eqn.o                  src/main.o                 src/mygetopt.o          \
-               src/reader.o               src/tokenscan.o            src/writer.o
+               src/reader.o               src/tokenscan.o            src/writer.o            \
+               src/init.o
 
 all : checkfiles rtf2latex2e
 
@@ -93,7 +94,10 @@ rtf2latex2e: $(OBJS) $(HDRS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $(BINARY_NAME)
 	cp $(BINARY_NAME) rtf2latex
 
-src/main.o: Makefile src/main.c
+src/init.o: src/init.c
+	$(CC) $(CFLAGS) -DLIBDIR=\"$(SUPPORT_INSTALL)\" -c src/init.c -o src/init.o
+
+src/main.o: src/main.c
 	$(CC) $(CFLAGS) -DLIBDIR=\"$(SUPPORT_INSTALL)\" -c src/main.c -o src/main.o
 
 doc : doc/rtf2latexSWP.tex doc/rtfReader.tex doc/rtf2latexDoc.tex

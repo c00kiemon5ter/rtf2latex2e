@@ -29,9 +29,9 @@
 #include     "mygetopt.h"
 #include     "rtf2latex2e.h"
 #include     "eqn.h"
+#include     "init.h"
 
 int mkdir (const char *filename, mode_t mode);
-void PrefsInit(void);
 
 extern char  *outputMapFileName;
 FILE         *OpenLibFile(char *name, char *mode);
@@ -64,220 +64,6 @@ SetEndianness(void)
         g_little_endian = 1;
 }
 
-
-/*
- * Copy src to string dst of size siz.  At most siz-1 characters
- * will be copied.  Always NUL terminates (unless siz == 0).
- * Returns strlen(src); if retval >= siz, truncation occurred.
- */
-size_t
-my_strlcpy(char *dst, const char *src, size_t siz)
-{
-        char *d = dst;
-        const char *s = src;
-        size_t n = siz;
-
-        /* Copy as many bytes as will fit */
-        if (n != 0) {
-                while (--n != 0) {
-                        if ((*d++ = *s++) == '\0')
-                                break;
-                }
-        }
-
-        /* Not enough room in dst, add NUL and traverse rest of src */
-        if (n == 0) {
-                if (siz != 0)
-                        *d = '\0';                /* NUL-terminate dst */
-                while (*s++)
-                        ;
-        }
-
-        return(s - src - 1);        /* count does not include NUL */
-}
-
-/*
- * Appends src to string dst of size siz (unlike strncat, siz is the
- * full size of dst, not space left).  At most siz-1 characters
- * will be copied.  Always NUL terminates (unless siz <= strlen(dst)).
- * Returns strlen(src) + MIN(siz, strlen(initial dst)).
- * If retval >= siz, truncation occurred.
- */
-size_t
-my_strlcat(char *dst, const char *src, size_t siz)
-{
-        char *d = dst;
-        const char *s = src;
-        size_t n = siz;
-        size_t dlen;
-
-        /* Find the end of dst and adjust bytes left but don't go past end */
-        while (n-- != 0 && *d != '\0')
-                d++;
-        dlen = d - dst;
-        n = siz - dlen;
-
-        if (n == 0)
-                return(dlen + strlen(s));
-        while (*s != '\0') {
-                if (n != 1) {
-                        *d++ = *s;
-                        n--;
-                }
-                s++;
-        }
-        *d = '\0';
-
-        return(dlen + (s - src));        /* count does not include NUL */
-}
-
-/******************************************************************************
- purpose:  returns a new string consisting of s+t
-******************************************************************************/
-char *strdup_together(const char *s, const char *t)
-{
-    char *both;
-    size_t siz;
-    
-    if (s == NULL) {
-        if (t == NULL)
-            return NULL;
-        return strdup(t);
-    }
-    if (t == NULL)
-        return strdup(s);
-
-    if (0) fprintf(stderr, "'%s' + '%s'", s, t);
-    siz = strlen(s) + strlen(t) + 1;
-    both = (char *) malloc(siz);
-
-    if (both == NULL)
-        fprintf(stderr, "Could not allocate memory for both strings.");
-
-    my_strlcpy(both, s, siz);
-    my_strlcat(both, t, siz);
-
-    return both;
-}
-
-static char * append_file_to_path(char *path, char *file)
-{
-    char *s, *t;
-    int len;
-    
-    if (file == NULL) return NULL;
-        
-    if (path == NULL) return strdup(file);
-    
-    len = strlen(path);
-    if (path[len] == PATH_SEP)
-        return strdup_together(path,file);
-    
-    /* need to insert PATH_SEP */
-    s = malloc(len+2);
-    strcpy(s,path);
-    s[len]=PATH_SEP;
-    s[len+1]='\0';
-    t = strdup_together(s,file);
-    free(s);
-    return t;   
-}
-
-
-/****************************************************************************
- * purpose:  append path to .cfg file name and open
-             return NULL upon failure,
-             return filepointer otherwise
- ****************************************************************************/
-static FILE    *
-try_path(char *path, char *file, char *mode)
-{
-    char           *both;
-    FILE           *fp = NULL;
-
-    both = append_file_to_path(path, file);
-    if (0) fprintf(stderr, "trying filename='%s'\n\n", both);
-    fp = fopen(both, mode);
-    free(both);
-    return fp;
-}
-
-/****************************************************************************
-purpose: open library files by trying multiple paths
- ****************************************************************************/
-FILE           *
-OpenLibFile(char *name, char *mode)
-{
-    char           *env_path, *p, *p1;
-    char           *lib_path;
-    FILE           *fp;
-
-    /* try path specified on the line */
-    fp = try_path(g_library_path, name, mode);
-    if (fp)
-        return fp;
-
-    /* try the environment variable RTFPATH */
-    p = getenv("RTFPATH");
-    if (p) {
-        env_path = strdup(p);   /* create a copy to work with */
-        p = env_path;
-        while (p) {
-            p1 = strchr(p, ENV_SEP);
-            if (p1)
-                *p1 = '\0';
-
-            fp = try_path(p, name, mode);
-            if (fp) {
-                free(env_path);
-                return fp;
-            }
-            p = (p1) ? p1 + 1 : NULL;
-        }
-        free(env_path);
-    }
-    /* last resort.  try LIBDIR from compile time */
-    lib_path = strdup(LIBDIR);
-    if (lib_path) {
-        p = lib_path;
-        while (p) {
-            p1 = strchr(p, ENV_SEP);
-            if (p1)
-                *p1 = '\0';
-
-            fp = try_path(p, name, mode);
-            if (fp) {
-                free(lib_path);
-                return fp;
-            }
-            p = (p1) ? p1 + 1 : NULL;
-        }
-        free(lib_path);
-    }
-    /* failed ... give some feedback */
-    {
-        char           *s;
-        fprintf(stderr, "Cannot open the rtf2latex library files\n");
-        fprintf(stderr, "Locate the directory containing the rtf2latex binary, \n");
-        fprintf(stderr, "the character set map files, and the output map TeX-map file\n\n");
-        fprintf(stderr, "Then you can\n");
-        fprintf(stderr, "   (1) define the environment variable RTFPATH, *or*\n");
-        fprintf(stderr, "   (2) use command line path option \"-P /path/to/cfg/file\", *or*\n");
-        fprintf(stderr, "   (3) recompile rtf2latex with LIBDIR defined properly\n");
-        s = getenv("RTFPATH");
-        fprintf(stderr, "Current RTFPATH: %s", (s) ? s : "not defined\n");
-        s = LIBDIR;
-        fprintf(stderr, "Compiled-in support directory: %s", (s) ? s : "not defined\n\n");
-        fprintf(stderr, " Depending on your shell, you can set the environment variable RTFPATH using\n");
-        fprintf(stderr, "     export RTFPATH=directory (bash) or \n");
-        fprintf(stderr, "     setenv RTFPATH directory (csh) or \n");
-        fprintf(stderr, "     SET RTFPATH=directory (DOS) or \n");
-        fprintf(stderr, "You should also add this directory to your search path.\n");
-        fprintf(stderr, "You can set these variables in your .bash_profile, .login, or autoexec.bat file.\n\n");
-        fprintf(stderr, "Giving up.  Please don't hate me.\n");
-    }
-    return NULL;
-}
 
 static void 
 print_version(void)
@@ -451,6 +237,8 @@ static char * make_output_filename(char * name)
     return NULL;
 }
 
+void ExamineToken(void);
+
 int 
 main(int argc, char **argv)
 {
@@ -460,7 +248,8 @@ main(int argc, char **argv)
     extern char    *optarg;
     extern int      optind;
 
-	PrefsInit();   /* first so that command line can override file prefs */
+    SetEndianness();
+    InitConverter();
 	
     while ((c = my_getopt(argc, argv, "bhDeEvVP:")) != EOF) {
         switch (c) {
@@ -502,13 +291,9 @@ main(int argc, char **argv)
     argv += optind;
 
     /* Initialize stuff */
-    if (argc > 0) {
-        SetEndianness();                    /* needed for cole routines */
-        RTFSetOpenLibFileProc(OpenLibFile); /* install routine for opening library files */
-        WriterInit();                       /* one time writer initialization */
-    } else {
+    if (!argc) 
         print_usage();
-    }
+    
 
     for (fileCounter = 0; fileCounter < argc; fileCounter++) {
 
@@ -530,6 +315,7 @@ main(int argc, char **argv)
             RTFPanic("* Cannot open input file %s\n", input_filename);
             exit(1);
         }
+		
         RTFSetInputName(input_filename);
         RTFSetStream(ifp);
 
@@ -537,9 +323,9 @@ main(int argc, char **argv)
         if (g_input_file_type != TYPE_EQN) {
             cursorPos = ftell(ifp);
             RTFGetToken();
-            RTFGetToken();
-            if (rtfMajor != rtfVersion) {
-                RTFMsg("* Yikes! '%s' is not actually a RTF file!  Skipping....\n", input_filename);
+			RTFGetToken();
+			if (!RTFCheckCMM(rtfControl, rtfVersion, rtfVersionNum)) {
+				RTFMsg("* Yikes! '%s' is not actually a RTF file!  Skipping....\n", input_filename);
                 fclose(ifp);
                 free(input_filename);
                 continue;

@@ -113,9 +113,8 @@ typedef struct
     int rightIndent;
     int spaceBefore;
     int spaceAfter;
-    int parbox;
-    char *headingString;
     int extraIndent;
+    int styleIndex;
 } parStyleStruct;
 
 typedef struct cell

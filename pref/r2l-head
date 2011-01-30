@@ -10,5 +10,5 @@
 # Here are some examples (uncomment to use):
 
 # \usepackage[italian]{babel} (loading italian package)
-# \usepackage{fullpage} (some people like to make full use of the page)
+\usepackage{fullpage} (some people like to make full use of the page)
 \usepackage{times}

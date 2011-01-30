@@ -30,9 +30,10 @@
 # include "cole.h"
 # include "rtf2latex2e.h"
 # include "eqn.h"
+# include "init.h"
+
 void __cole_dump(void *_m, void *_start, uint32_t length, char *msg);
 
-# define  prefFileName    "r2l-pref"
 # define  MAX_BLANK_LINES       2
 # define  MATH_NONE_MODE        0
 # define  MATH_INLINE_MODE      1
@@ -48,52 +49,6 @@ extern FILE *ifp, *ofp;
 
 # define EQUATION_OFFSET 35
 # define MTEF_HEADER_SIZE 28
-
-/* These should exactly match prefString[] below */
-enum prefName {
-    pOutputMapFileName,           /* 0  */
-    pPageWidth,
-    pPageLeft,
-    pPageRight,
-    pConvertColor,
-    pConvertPageSize,             /* 5  */
-    pConvertTextSize,
-    pConvertTextStyle,
-    pConvertParagraphStyle,
-    pConvertParagraphIndent,
-    pConvertInterParagraphSpace,  /* 10 */
-    pConvertLineSpacing,
-    pConvertHypertext,
-    pConvertPict,
-    pConvertEquation,
-    pConvertAsDirectory,          /* 15 */
-    pPreambleFirstText,
-    pPreambleSecondText,
-    pPreambleDocClass,
-    pLast
-};
-
-const char *prefString[] = {
-    "outputMapFileName",          /* 0  */
-    "pageWidth",
-    "pageLeft",
-    "pageRight",
-    "convertColor",
-    "convertPageSize",            /* 5  */
-    "convertTextSize",
-    "convertTextStyle",
-    "convertParagraphStyle",
-    "convertParagraphIndent",
-    "convertInterParagraphSpace", /* 10 */
-    "convertLineSpacing",
-    "convertHypertext",
-    "convertPict",
-    "convertEquation",
-    "convertAsDirectory",         /* 15 */
-    "preambleFirstText",
-    "preambleSecondText",
-    "preambleDocClass"
-};
 
 const char *objectClassList[] = {
     "Unknown",
@@ -134,14 +89,6 @@ const char *fontSizeList[] = {
     "\\Huge"
 };
 
-const char *r2lList[] = {
-    "documentclass",
-    "heading1",
-    "heading2",
-    "heading3",
-    "table"
-};
-
 static struct {
     boolean newStyle;
     int cols;
@@ -175,30 +122,11 @@ static boolean insideTable;
 static boolean insideFootnote;
 static boolean insideHyperlink;
 
-char *preambleFirstText = NULL;
-char *preambleSecondText = NULL;
-char *preambleDocClass = NULL;
-char *preambleUserText = NULL;
-char *preambleEncoding = NULL;
-char *preamblePackages = NULL;
-char *preambleColorTable = NULL;
-char *preambleOurDefs = NULL;
-char *outputMapFileName = NULL;
-
 #ifdef PICT2PDF
 char * WritePictAsPDF(char *pict);
 #endif
 
-static char *outMap[rtfSC_MaxChar];
-
-#define NumberOfR2LMappings     5
-static char *r2lMap[NumberOfR2LMappings];
-static boolean r2lMapPresent = true;
-
-char *heading1String = "\\section*{";
-char *heading2String = "\\subsection*{";
-char *heading3String = "\\subsubsection*{";
-char *tableString = "longtable";
+char *outMap[rtfSC_MaxChar];
 
 FILE *ostream;
 parStyleStruct paragraph, paragraphWritten;
@@ -207,7 +135,6 @@ int current_vspace;
 pictureStruct picture;
 equationStruct oleEquation;
 tableStruct table;
-int prefs[pLast];
 
 int g_debug_par_start       = 0;
 int g_debug_table_prescan   = 0;
@@ -217,237 +144,6 @@ int g_debug_char_style      = 0;
 char *UnicodeSymbolFontToLatex[];
 char *UnicodeGreekToLatex[];
 
-static short R2LItem(char *name)
-{
-    short i;
-
-    for (i = 0; i < NumberOfR2LMappings; i++) {
-        if (strcasecmp(name, r2lList[i]) == 0)
-            return (i);
-    }
-    printf("R2LItem: invalid preference %s!\n", name);
-    return (-1);
-}
-
-static short ReadR2LMap(void)
-{
-    FILE *f;
-    char buf[rtfBufSiz];
-    char *name, *seq;
-    short stdCode;
-    short i;
-    TSScanner scanner;
-    char *scanEscape;
-    char *fn = "ReadR2LMap";
-
-    /* clobber current mapping */
-    for (i = 0; i < NumberOfR2LMappings; i++) {
-        RTFFree(r2lMap[i]);
-        r2lMap[i] = NULL;
-    }
-
-    f = RTFOpenLibFile("r2l-map", "r");
-    if (!f) return 0;
-
-    /*
-     * Turn off scanner's backslash escape mechanism while reading
-     * file.  Restore it later.
-     */
-    TSGetScanner(&scanner);
-    scanEscape = scanner.scanEscape;
-    scanner.scanEscape = "";
-    TSSetScanner(&scanner);
-
-    /* read file */
-
-    while (fgets(buf, (int) sizeof(buf), f)) {
-        if (buf[0] == '#') continue;     /* skip comment lines */
-
-        TSScanInit(buf);
-        
-        name = TSScan();
-        if (!name) continue;             /* skip blank lines */
-
-        if ((stdCode = R2LItem(name)) < 0) {
-            RTFMsg("%s: unknown preference: %s\n", fn, name);
-            continue;
-        }
-
-        if ((seq = TSScan()) == NULL) {
-            RTFMsg("%s: malformed output sequence line for preference %s\n", fn, name);
-            continue;
-        }
-
-        if ((seq = RTFStrSave(seq)) == NULL)
-            RTFPanic("%s: out of memory", fn);
-
-        r2lMap[stdCode] = seq;
-    }
-    scanner.scanEscape = scanEscape;
-    TSSetScanner(&scanner);
-    fclose(f);
-
-    return (1);
-}
-
-
-/*
- * Initialize the writer. Basically reads the output map.
- */
-void WriterInit(void)
-{
-    /* read input RTF character map files */
-    if (RTFReadCharSetMap("rtf-encoding.cp1252", rtfCS1252) == 0)
-        RTFPanic("Cannot read character set map file cp1252.map for code page 1252!\n");
-
-    if (RTFReadCharSetMap("rtf-encoding.cp1250", rtfCS1250) == 0)
-        RTFPanic("Cannot read character set map file cp1250.map for code page 1250!\n");
-
-    if (RTFReadCharSetMap("rtf-encoding.cp1254", rtfCS1254) == 0)
-        RTFPanic("Cannot read character set map file cp1254.map for code page 1254!\n");
-
-    if (RTFReadCharSetMap("rtf-encoding.mac", rtfCSMac) == 0)
-        RTFPanic("Cannot read character set map file applemac.map!\n");
-
-    if (RTFReadCharSetMap("rtf-encoding.cp437", rtfCS437) == 0)
-        RTFPanic("Cannot read character set map file cp437.map for code page 437!\n");
-
-    if (RTFReadCharSetMap("rtf-encoding.cp850", rtfCS850) == 0)
-        RTFPanic("Cannot read character set map file cp850.map for code page 850!\n");
-
-    if (RTFReadCharSetMap("rtf-encoding.next", rtfCSNext) == 0)
-        RTFPanic("Cannot read character set map file next.map for code page Next!\n");
-
-    /* read preferences */
-    if (ReadPrefFile(prefFileName) == 0)
-        RTFPanic("Cannot read preferences file %s", prefFileName);
-
-    /* if a latex-encoding file was not specified in the preference, set it to the default */
-    if (!outputMapFileName)
-        outputMapFileName = strdup("latex-encoding");
-
-    if (RTFReadOutputMap(outputMapFileName, outMap, 1) == 0)
-        RTFPanic("Cannot read output map %s", outputMapFileName);
-
-    /* read r2l mapping file if present */
-    r2lMapPresent = ReadR2LMap();
-}
-
-static int GetPreferenceNum(const char *name)
-{
-    short i;
-
-    for (i = 0; i < pLast; i++)
-        if (strcasecmp(name, prefString[i]) == 0) return (i);
-
-    fprintf(stderr,"Could not locate preference '%s'\n", name);
-
-    return (-1);
-}
-
-void PrefsInit(void)
-{
-    prefs[pOutputMapFileName] = 0;
-    prefs[pPageWidth] = 8.5 * 20 * 72;  /*twips*/
-    prefs[pPageLeft] = 1.0 * 20 * 72;
-    prefs[pPageRight] = 1.0 * 20 * 72;
-    prefs[pConvertColor] = true;
-    prefs[pConvertPageSize] = true;
-    prefs[pConvertTextStyle] = true;
-    prefs[pConvertTextSize] = true;
-    prefs[pConvertParagraphStyle] = true;
-    prefs[pConvertParagraphIndent] = true;
-    prefs[pConvertInterParagraphSpace] = true;
-    prefs[pConvertLineSpacing] = true;
-    prefs[pConvertHypertext] = true;
-    prefs[pConvertPict] = true;
-    prefs[pConvertEquation] = true;
-    prefs[pConvertAsDirectory] = true;
-    prefs[pPreambleFirstText] = 0;
-    prefs[pPreambleSecondText] = 0;
-    prefs[pPreambleDocClass] = 0;
-}
-
-static void setPref(const char *name, const char *value)
-{
-    int n = GetPreferenceNum(name);
-
-    if (n == -1) return;
-    
-    if (n == pOutputMapFileName) {
-    	if (outputMapFileName) free(outputMapFileName);
-        outputMapFileName = strdup(value);
-        return;
-    }
-
-    if (n == pPreambleFirstText) {
-    	if (preambleFirstText) free(preambleFirstText);
-        preambleFirstText = strdup(value);
-        return;
-    }
-
-    if (n == pPreambleSecondText) {
-    	if (preambleSecondText) free(preambleSecondText);
-        preambleSecondText = strdup(value);
-        return;
-    }
-
-    if (n == pPreambleDocClass) {
-    	if (preambleDocClass) free(preambleDocClass);
-        preambleDocClass = strdup(value);
-        return;
-    }
-
-    if (n == pPageWidth || n == pPageLeft || n == pPageRight) {
-        prefs[n] = (int) 20.0 * 72.0 * atof(value);
-        return;
-    }
-
-    prefs[n] = strcasecmp(value,"true")==0 ? 1 : 0;
-}
-
-short ReadPrefFile(char *file)
-{
-    FILE *f;
-    char buf[rtfBufSiz];
-    char *name, *seq;
-    TSScanner scanner;
-    char *scanEscape;
-
-    f = RTFOpenLibFile(file, "r");
-    if (!f) {
-        RTFMsg("can't open file preference file %s\n", file);
-        return 0;
-    }
-
-    /*
-     * Turn off scanner's backslash escape mechanism while reading
-     * file.  Restore it later.
-     */
-    TSGetScanner(&scanner);
-    scanEscape = scanner.scanEscape;
-    scanner.scanEscape = "";
-    TSSetScanner(&scanner);
-
-    while (fgets(buf, rtfBufSiz, f)) {
-        if (buf[0] == '#') continue;    /* skip comment lines */
-
-        TSScanInit(buf);
-        name = TSScan();
-        if (!name) continue;           /* skip blank lines */
-
-        seq = TSScan();
-        if (!seq) continue;            /* skip empty settings */
-
-        setPref(name,seq);
-    }
-    
-    scanner.scanEscape = scanEscape;
-    TSSetScanner(&scanner);
-    fclose(f);
-
-    return 1;
-}
 
 static void PutIntAsUtf8(int x)
 {
@@ -652,21 +348,6 @@ void ExamineToken(void)
     printf("* Param is %3d\n\n", (int) rtfParam);
 }
 
-
-static uint32_t CountCharInString(char *theString, char theChar)
-{
-    uint32_t i, count, length;
-
-    count = 0;
-    length = (uint32_t) strlen(theString);
-
-    for (i = 0; i < length; i++)
-        if (theString[i] == theChar)
-            count++;
-
-    return (count);
-}
-
 /*
  * Eventually this should keep track of the destination of the
  * current state and only write text when in the initial state.
@@ -683,9 +364,7 @@ int stdCode;
     char buf[rtfBufSiz];
 
     if (stdCode == rtfSC_nothing) {
-        RTFMsg
-            ("* Warning: I don't know this character %c (0x%x) in character set %d!\n",
-             rtfTextBuf[0], rtfTextBuf[0], RTFGetCharSet());
+        RTFMsg("* Unknown character %c (0x%x)!\n", rtfTextBuf[0], rtfTextBuf[0]);
         ExamineToken();
         PutLitStr("(unknown char)");
         return;
@@ -756,14 +435,14 @@ static void InitTextStyle(void)
 /*
  * This function initializes the paragraph style.
  */
-static void InitPargraphStyle(void)
+static void InitParagraphStyle(void)
 {
     paragraph.firstIndent = 0;
     paragraph.leftIndent = 0;
     paragraph.rightIndent = 0;
     paragraph.spaceBefore = 0;
     paragraph.extraIndent = 0;
-    paragraph.headingString = NULL;
+    paragraph.styleIndex = -1;
 }
 
 static int SameTextStyle(void)
@@ -1027,13 +706,11 @@ static void NewParagraph(void)
         current_vspace = 0;
     }
 
-    if (prefs[pConvertParagraphStyle]) {
-        if (paragraphWritten.headingString != paragraph.headingString) {
-            PutLitStr(paragraph.headingString);
-            paragraphWritten.headingString = paragraph.headingString;
-            suppressLineBreak = true;
-            return;
-        }
+    if (prefs[pConvertParagraphStyle] && paragraph.styleIndex != -1) {
+		PutLitStr(Style2LatexOpen[paragraph.styleIndex]);
+		paragraphWritten.styleIndex = paragraph.styleIndex;
+		suppressLineBreak = true;
+		return;
     }
 
     if (paragraphWritten.alignment != paragraph.alignment) {
@@ -1083,7 +760,6 @@ static void NewParagraph(void)
 static void EndParagraph(void)
 {
     char buf[rtfBufSiz];
-    int i,n;
 
     CheckForBeginDocument();
 
@@ -1100,11 +776,10 @@ static void EndParagraph(void)
         return;
     }
 
-    if (prefs[pConvertParagraphStyle] && paragraphWritten.headingString) {
-        n = CountCharInString(paragraphWritten.headingString, '{');
-        for (i = 0; i < n; i++) PutLitStr("}");
+    if (prefs[pConvertParagraphStyle] && paragraphWritten.styleIndex != -1) {
+        PutLitStr(Style2LatexClose[paragraphWritten.styleIndex]);
         suppressLineBreak = false;
-        paragraphWritten.headingString=NULL;
+        paragraphWritten.styleIndex=-1;
         InsertNewLine();
         InsertNewLine();
         return;
@@ -1124,13 +799,40 @@ static void EndParagraph(void)
             PutLitStr("\n\\end{center}");
     }
 
-    if (paragraph.parbox) {
-        PutLitStr("}");
-        paragraph.parbox = false;
-    }
+    InsertNewLine();
+    InsertNewLine();
+}
 
-    InsertNewLine();
-    InsertNewLine();
+
+static void setPreamblePackages(void)
+{
+	if (!preamblePackages) 
+		preamblePackages = malloc(1024);
+	
+	preamblePackages[0] = '\0';
+    if (requireSetspacePackage)
+        strcat(preamblePackages,"\\usepackage{setspace}\n");
+    if (prefs[pConvertColor])
+        strcat(preamblePackages,"\\usepackage{color}\n");
+    if (requireGraphicxPackage)
+        strcat(preamblePackages,"\\usepackage{graphicx}\n");
+    if (requireTablePackage)
+        strcat(preamblePackages,"\\usepackage{longtable}\n");
+    if (requireMultirowPackage)
+        strcat(preamblePackages,"\\usepackage{multirow}\n");
+    if (requireAmsSymbPackage)
+        strcat(preamblePackages,"\\usepackage{amssymb}\n");
+    if (requireMultiColPackage)
+        strcat(preamblePackages,"\\usepackage{multicol}\n");
+    if (requireUlemPackage)
+        strcat(preamblePackages,"\\usepackage{ulem}\n");
+    if (requireFixLtx2ePackage)
+        strcat(preamblePackages,"\\usepackage{fixltx2e}\n");
+    if (requireAmsMathPackage)
+        strcat(preamblePackages,"\\usepackage{amsmath}\n");
+    if (requireHyperrefPackage) {
+        strcat(preamblePackages,"\\usepackage{hyperref}\n");
+    }
 }
 
 /*
@@ -1138,10 +840,7 @@ static void EndParagraph(void)
  */
 static void WriteLaTeXHeader(void)
 {
-    FILE *f;
-    char buf[rtfBufSiz];
     int i, j;
-    size_t size;
 
     PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
     InsertNewLine();
@@ -1149,25 +848,6 @@ static void WriteLaTeXHeader(void)
     InsertNewLine();
     PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
     InsertNewLine();
-
-    f = RTFOpenLibFile("r2l-head", "r");
-    if (f) {
-
-    	/* (over) allocate and read user-defined preamble text */
-		fseek(f, 0, SEEK_END);
-		size = ftell(f); 
-		fseek(f, 0, SEEK_SET);
-		preambleUserText = malloc(size);
-		preambleUserText[0] = '\0';
-	
-		while (fgets(buf, (int) sizeof(buf), f) != NULL) {
-			if (buf[0] == '#') continue;  /* skip comment lines */
-			if (buf[0] == '\0') continue; /* skip blank lines */
-			strcat(preambleUserText,buf);
-			strcat(preambleUserText,"\n");
-		}
-		fclose(f);
-    }
 
     /* insert latex-encoding qualifier */
     PutLitStr(preambleUserText);
@@ -1193,11 +873,12 @@ static void WriteLaTeXHeader(void)
  */
 static void RewriteLatexFile(void)
 {
-    FILE *new_ofp;
-    char c;
+    FILE *new_ofp=NULL;
+    int c;
 
 //	fopen(new_ofp,newfilename);
-
+	if (!new_ofp) return;
+	
     PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
     InsertNewLine();
     PutLitStr(preambleSecondText); /* from pref/r2l-pref     */
@@ -1231,37 +912,6 @@ static void DoSectionCleanUp(void)
         PutLitStr("\n\\end{multicols}");
         InsertNewLine();
         section.cols = 1;
-    }
-}
-
-static void setPreamblePackages(void)
-{
-	if (!preamblePackages) 
-		preamblePackages = malloc(1024);
-	
-	preamblePackages[0] = '\0';
-    if (requireSetspacePackage)
-        strcat(preamblePackages,"\\usepackage{setspace}\n");
-    if (prefs[pConvertColor])
-        strcat(preamblePackages,"\\usepackage{color}\n");
-    if (requireGraphicxPackage)
-        strcat(preamblePackages,"\\usepackage{graphicx}\n");
-    if (requireTablePackage)
-        strcat(preamblePackages,"\\usepackage{longtable}\n");
-    if (requireMultirowPackage)
-        strcat(preamblePackages,"\\usepackage{multirow}\n");
-    if (requireAmsSymbPackage)
-        strcat(preamblePackages,"\\usepackage{amssymb}\n");
-    if (requireMultiColPackage)
-        strcat(preamblePackages,"\\usepackage{multicol}\n");
-    if (requireUlemPackage)
-        strcat(preamblePackages,"\\usepackage{ulem}\n");
-    if (requireFixLtx2ePackage)
-        strcat(preamblePackages,"\\usepackage{fixltx2e}\n");
-    if (requireAmsMathPackage)
-        strcat(preamblePackages,"\\usepackage{amsmath}\n");
-    if (requireHyperrefPackage) {
-        strcat(preamblePackages,"\\usepackage{hyperref}\n");
     }
 }
 
@@ -2014,7 +1664,7 @@ static void DoTable(void)
     insideTable = true;
 
     PutLitStr("\\begin{");
-    PutLitStr(tableString);
+    PutLitStr(convertTableName);
     PutLitStr("}{");
     if (table.multiCol) {
         for (i = 0; i < table.cols; i++)
@@ -2058,7 +1708,7 @@ static void DoTable(void)
     }
 
     PutLitStr("\\hline\n");
-    snprintf(buf, 100, "\\end{%s}\n", tableString);
+    snprintf(buf, 100, "\\end{%s}\n", convertTableName);
     PutLitStr(buf);
     nowBetweenParagraphs = true;
 
@@ -2073,8 +1723,6 @@ static void DoTable(void)
 /* set paragraph attributes that might be useful */
 static void ParAttr(void)
 {
-    RTFStyle *stylePtr = NULL;
-
     if (insideFootnote || insideHyperlink)
         return;
 
@@ -2109,13 +1757,20 @@ static void ParAttr(void)
         paragraph.leftIndent = 0;
         paragraph.extraIndent = 0;
         paragraph.alignment = left;
-        paragraph.headingString = NULL;
+        paragraph.styleIndex = -1;
         break;
+        
     case rtfStyleNum:
+    
+        if (prefs[pConvertParagraphStyle] && rtfParam < MAX_STYLE_MAPPINGS) 
+        	paragraph.styleIndex = Style2LatexMapIndex[rtfParam];
+        else
+    		paragraph.styleIndex = -1;
+        	
+ /*  	
     	stylePtr = RTFGetStyle(rtfParam);
         if (!stylePtr)
             break;
-        if (prefs[pConvertParagraphIndent]) {
             if (strcmp(stylePtr->rtfSName, "heading 1") == 0) {
                 if (paragraphWritten.headingString) EndParagraph();
                 paragraph.headingString=heading1String;
@@ -2133,6 +1788,7 @@ static void ParAttr(void)
                 DoSectionCleanUp();
             }
         }
+        */
         break;
     case rtfFirstIndent:
         paragraph.firstIndent = rtfParam;
@@ -3325,9 +2981,9 @@ static void ReadSymbolField(void)
 {
     char buf[100];
     short major, minor;
-    short currentCharSet = RTFGetCharSet();
+    short *currentCharCode = curCharCode;
 
-    RTFSetCharSet(rtfCSSymbol);
+	curCharCode = symCharCode;
 
     /* go to the start of the symbol representation */
     strcpy(buf, "");
@@ -3336,6 +2992,7 @@ static void ReadSymbolField(void)
             RTFSkipGroup();
         RTFSkipGroup();
         RTFRouteToken();
+    	curCharCode = currentCharCode;
         return;
     }
 
@@ -3362,7 +3019,7 @@ static void ReadSymbolField(void)
     TextClass();
 
     /* reset our character set */
-    RTFSetCharSet(currentCharSet);
+    curCharCode = currentCharCode;
     RTFSkipGroup();
     RTFRouteToken();
 }
@@ -3636,6 +3293,53 @@ static void Destination(void)
     }
 }
 
+/* 
+ * In RTF, the code page is specified in at least three different places
+ * 
+ * (1) as the third token in the file, e.g., {\rtf1\ansi
+ * (2) in the font table for each font e.g., \fcharset2
+ * (3) by the code page token, e.g., \ansicpg1252
+ *
+ * A pragmatic approach is used here.  The third token is used to
+ * set genCharCode.  If \aniscpg is found, then genCharCode will be
+ * changed to that.  Here we just change if it is the symbol font.
+ */
+static void RTFSetGenCharSet(void)
+{
+    if (strcmp(&rtfTextBuf[1], "ansi") == 0)
+        genCharCode = cp1252CharCode;
+    else if (strcmp(&rtfTextBuf[1], "mac") == 0)
+        genCharCode = cpMacCharCode;
+    else if (strcmp(&rtfTextBuf[1], "pc") == 0)
+        genCharCode = cp437CharCode;
+    else if (strcmp(&rtfTextBuf[1], "pca") == 0)
+        genCharCode = cp850CharCode;
+	
+	/* check for the \ansicpg control word */
+	RTFPeekToken();
+	if (RTFCheckCMM(rtfControl, rtfFontAttr, rtfAnsiCodePage)) {
+		switch (rtfParam) {
+			case 437:
+				genCharCode=cp437CharCode;
+				break;
+			case 850:
+				genCharCode=cp850CharCode;
+				break;
+			case 1250:
+				genCharCode=cp1250CharCode;
+				break;
+			case 1252:
+				genCharCode=cp1252CharCode;
+				break;
+			case 1254:
+				genCharCode=cp1254CharCode;
+				break;
+		}
+	}
+	
+	curCharCode = genCharCode;
+} 
+
 /* decides what to do when a control word is encountered */
 static void ControlClass(void)
 {
@@ -3681,14 +3385,17 @@ static void ControlClass(void)
         if (rtfMinor == rtfShapeName || rtfMinor == rtfShapeValue)
             SkipGroup();
         break;
-    }
+	case rtfCharSet:
+		RTFSetGenCharSet();
+		break;
+	}
 
 	/* handles {\*\keyword ...} */
 //	if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
 //		RTFSkipGroup();
 
-
 }
+
 
 /*
  * Prepares output TeX file for each input RTF file.
@@ -3706,7 +3413,6 @@ int BeginLaTeXFile(void)
     insideTable = false;
     paragraph.alignment = left;
     paragraph.lineSpacing = -99;
-    paragraph.parbox = false;
     section.newStyle = false;
     section.cols = 1;
 
@@ -3732,7 +3438,7 @@ int BeginLaTeXFile(void)
     table.multiCol = false;
     table.multiRow = false;
     InitTextStyle();
-    InitPargraphStyle();
+    InitParagraphStyle();
     textStyleWritten = textStyle;
 
     /* install class callbacks */
@@ -3746,22 +3452,6 @@ int BeginLaTeXFile(void)
     RTFSetDestinationCallback(rtfWord97Object, ReadWord97Object);
     RTFSetDestinationCallback(rtfPict, ReadPicture);
     RTFSetDestinationCallback(rtfFootnote, ReadFootnote);
-
-    if (r2lMapPresent) {
-        int itemNumber;
-        itemNumber = R2LItem("heading1");
-        if (r2lMap[itemNumber] != NULL)
-            heading1String = r2lMap[itemNumber];
-        itemNumber = R2LItem("heading2");
-        if (r2lMap[itemNumber] != NULL)
-            heading2String = r2lMap[itemNumber];
-        itemNumber = R2LItem("heading3");
-        if (r2lMap[itemNumber] != NULL)
-            heading3String = r2lMap[itemNumber];
-        itemNumber = R2LItem("table");
-        if (r2lMap[itemNumber] != NULL)
-            tableString = r2lMap[itemNumber];
-    }
 
     WriteLaTeXHeader();
     return (1);
@@ -3818,8 +3508,9 @@ char * WritePictAsPDF(char *pict)
 #endif
 
 
-/* characters from the Symbol font get written to private areas of unicode that are
-   not well supported by latex.  This is simple translation tabl.] */
+/* characters from the Symbol font get written to private areas 
+   of unicode that are not well supported by latex.  This is 
+   simple translation table. */
 char *UnicodeSymbolFontToLatex[] = {
     " ",  /* 61472 or U+F020 */
     "!",
