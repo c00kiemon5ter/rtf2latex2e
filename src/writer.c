@@ -3201,10 +3201,6 @@ static void HandleOptionalTokens(void)
     	ReadFieldInst();
     	break;
     	
-    case rtfUnicode:
-    	ReadUnicode();
-    	break;
-
 	case rtfWord97Picture:
 		/* expecting {\*\shppict{\pict{...}}{\nonshppict{\pict{...}} */
 		
@@ -3326,6 +3322,9 @@ static void Destination(void)
     case rtfNeXTGraphic:
         ReadNextGraphic();
         break;
+	case rtfUnicode:
+		ReadUnicode();
+		break;
     }
 }
 
