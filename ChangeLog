@@ -1,0 +1,609 @@
+r1 
+moving away from CVS to SVN
+restructure the source to streamline the build
+the code now builds cleanly and works on simple
+files. 
+
+r2 
+run the source code through gnuindent -kr and
+eliminate all tabs.  don't touch eqn.c because
+there may need to be more merging done.
+
+r3 
+add more test files
+add rtfprep and friends
+add more Makefiles 
+
+r4 
+make test works now
+support command line arguments
+
+r5 
+change writer name and add todo list
+
+r6 
+add missing test file
+add parsing for \ts so that stylesheet is read correctly
+modify makefile so that rtf-ctrl gets updated
+
+r7 
+replace use of \quotedbl with \quotedblright
+
+r8 
+remove spurious complier warning about rtfprep.c
+update ToDo list
+
+r9 
+improve HYPERLINK support so that latex output
+does not cause latex errors.  It is still broken
+but ... not as broken as before.
+
+r10 
+start moving from ancient K&R style functions to prototypes
+
+r11 
+eliminate R2Lurl in favor of standard href
+tweak \\ to \\{} to avoid problem when next line starts
+with a right bracket
+add DebugMessage() to help tracking tokens
+process tokens when in doing HYPERLINK
+ignore HYPERLINK commands
+Now translates a 200 page thesis but equations are
+still not working right and images are wrong size.
+
+r12 
+try to streamline handling of rtfField ... 
+
+r13 
+support for \bkmkstart
+
+r14 
+add support for PAGEREF field.  Right now HYPERLINK \L
+competes with PAGEREF.  Pretty screwy.
+
+r15 
+perl script to indent RTF group levels.  The result
+may or may not be a proper RTF file, but it is much
+easier for humans to read
+
+r16 
+only emit \begin{spacing} ... \end{spacing} when something
+has changed.
+
+r17 
+one step forward, two steps back.
+fix OLE decoding so that it works 
+equation parsing does not yet work for newer
+MathType equations so nothing shows.
+
+r18 
+new test file for newer equations
+
+r19 
+MTEF equation parsing in progress
+got tired of two spaces indenting so ran the eqn.c and eqn.h through gnuindent -kr
+
+r20 
+better handling of the options/attributes for each tag
+MTEF version 5 has a separate bye for each option, earlier
+versions just used the upper part of the tag byte
+
+r21 
+restored functionality for MTEF < 5
+
+r22 
+fix xfNULL to be 0x01 and not 0x10
+
+r23 
+At least two MTEF 5 equations translate successfully!
+
+r24 
+add option to include both translated latex equation and
+the corresponding image in the new latex file
+replace .pict suffix on images with .pdf since almost no
+TeX implementations support PICT images anymore.
+
+r25 
+clean up the README
+eliminate the duplicate INSTALL
+go back to rtf2latex2e as a binary name
+fix Makefile to actually install again
+
+r26 
+Clean up building of documentation files
+Clean up creating a zip distribution
+
+r27 
+There is no need to track these pdf files in SVN
+
+r28 
+more Makefile housecleaning.  
+move most of eqn.h to eqn_support.h
+eliminate gratitious LaTeX capitalization
+
+r29 
+trivial whitespace changes
+
+r30 
+still seems like the OLE equation size is off by 4 bytes
+try shifting the entire equation by four bytes and appending
+four NULLs at the end.
+
+r31 
+MTEF 5 changed the meanings of every TMPL.  First attempt
+at adding the new template profile table
+
+r32 
+mend fences
+
+r33 
+restore character translation
+
+r34 
+fix fractions
+
+r35 
+remove tabs ... yet again
+
+r36 
+still fussing with the 02 00 00 00 00 sequence.
+
+r37 
+add moreEqns.rtf as another test file
+
+r38 
+inline and display
+
+r39 
+fixing possible NULL dereferencing as found by static code analyzer
+Remove many declarations of type long to avoid 64-bit problems
+Make casting from 64 bit to 32 bit explicit
+
+r40 
+more removal of longs
+fixes for static code analysis
+removal of unused code in cole_encode.
+
+r41 
+add explicit exit(1) to help static code analyzer,
+remove or comment out unused variables.
+
+r42 
+properly read OLE equation file so that MTEF v5 equations
+get parsed correctly.
+
+r43 
+hacks to work with equations 15.113 and 15.49 which have
+undocumented integral variation codes
+
+r44 
+fix slant fractions again
+hack to make superscripts work ... an empty line enclosing
+another line was hiding the contents.  this probably should
+be revisited.
+
+r45 
+improve inline and display equation modes
+
+r46 
+support for single unicode characters
+
+r47 
+fix crashing bug in embellishments
+add defines to help with debugging
+remove some vestigal code
+add a few special cases to unicode translation
+
+r48 
+fix embell parsing problems
+add textgreek package
+fix use of text in equations
+
+r49 
+WH: fixed typos in Makefile and eqn.c
+
+r50 
+rewrite equation line breaking
+rewrite PILE handling code
+
+r51 
+fix several warnings found by Wilfried when compiling under Windows
+no longer link to figure2eps.o, jpeg2eps.o, or cole_decode.o because 
+these are unused.  This should get us much closer to compiling under
+mingw
+
+r52 
+eliminate c++ style comments in c files
+
+r53 
+add textgreek.sty
+remove vestigal references to cole_encode, fig2eps, jpg2eps
+
+r54 
+correctly parse RULER tag in a LINE tag
+
+r55 
+add MathType equation documentation to the project
+
+r56 
+update ToDo list
+
+r57 
+fix matrices
+always emit definition for \degree 
+remove more vestigal dependence on jpeg2eps and figure2eps
+
+r58 
+add simple implementation of strcasestr for portability
+add more casts to appease msys and djgpp compilers
+
+r59 
+hide unused HasHVLine() function from compilers
+
+r60 
+add newline at end of these source files
+
+r61 
+more consolidation.  eliminate cole_internal.* by inserting in cole_support.*
+add eqn_support.h to list of header files.
+make dist now actually creates an archive that can be compiled afte unzipping
+
+r62 
+remove files that are no longer used from SVN
+
+r63 
+removing more unused files from SVN
+
+r64 
+remove cole_version.c from Makefile
+
+r65 
+add -e and -E flags
+allow processing of a single .eqn file
+consolidate character lookup into one table
+add a dozen or so missing character translations for MT Extra
+
+r66 
+fix variant of superscript and subscript
+eliminate an extra table for charset attributes
+add test files for different equations
+
+r67 
+fix for embellishments
+
+r68 
+improve character embellishment
+dramatically improve auto-recognition of inline vs displayed equations
+
+r69 
+WH: added output of filename and errno to cole_perror
+    changed PLATFORM:=-DMSDOS # Windows/DOS
+         to PLATFORM:=-DRTF2LATEX2E_DOS # Windows/DOS
+    which is checked in main.c
+
+r70 
+bizarre off-by-one byte in test/multiline.rtf conversion,
+fix translation of unknown functions
+add bold to vector typeface
+change from \prime to just '
+fix \therefore typo
+
+r71 
+More robust method for extracting OLE files.  Now just search
+for a byte sequence that each OLE file should begin with.
+Remove lots of cruft from the cole_support and cole_decode files.
+Anyone wanting to hack on these files should get them elsewhere.
+
+r72 
+remove yet another file that should not be in SVN
+
+r73 
+now that all .eqn files start with 0xd0, fix test files
+add .eqn files to distribution
+add missing test files to distribution
+fix Makefiles so that 'make test' works on newly unarchived directory
+
+r74 
+off by one allocation error in cole
+clean up more casts
+rename equation.rtf
+
+r75 
+fix all warnings muttered by splint for the cole files
+including mixed up function point passing.  it is unclear
+how it worked before, but testing seems to suggest that 
+everything still works fine.  The hope is that djgpp or
+mingw compilers will now succeed.
+
+r76 
+improved testing so that pdflatex is used to validate the results
+made all splint suggestions to eqn.c
+
+r77 
+convert all use of sprintf to snprintf
+
+r78 
+trivial changes ... just trying to scope out how hard it will be to 
+improve paragraph translation
+
+r79 
+replace uses of tmpnam() with mkstemp() in an effort to get
+a working binary for windows
+
+r80 
+WH: revert to tmpnam() and add printout of generated tempfile name
+
+r81 
+yet another attempt at getting tmpnam() working on mingw
+
+r82 
+this time the tempnam() code has actually be tested
+
+r83 
+eliminate extra src directory
+add pict -> rtf version under osx
+add tracing of paragraph ending
+
+r84 
+Makefile changes to support new source file structure
+and to support .pict to .pdf conversion
+
+r85 
+insert minor debugging commands, reformat some of the table code
+
+r86 
+remove more cruft
+
+r87 
+WH: cole_support.c, fix for "too many open files"
+
+r88 
+I decided to add the files that are created by rtfprep to SVN
+and to stop producing them every time.  
+Add some error checking to search for OLE header also.
+
+r89 
+add missing prototypes to rtf.h and reader.c
+put rtf-controls under SVN again
+
+
+r90 
+fixes for make install target
+
+r91 
+WH: in main.c, changed fopen() of input file to binary
+
+r92 
+improve unicode character translation ...
+
+r93 
+make latin1 the default output encoding.
+
+r94 
+WH: source code cleanup (removed comments inserted during testing)
+
+r95 
+change default output to cp1252
+add basic support for converting .rtfd files
+add NeXtStep character mapping because it was the default for
+.rtfd files long ago.
+
+r96 
+changing the default output to utf8.  
+
+r97 
+WH: URLs updated in documentation 
+
+r98 
+extent utf8 support to characters up to 0x07FF
+
+
+r99 
+extend utf8 support to 0xFFFF
+add more characters to TeX-map, still a ways to go
+
+r100 
+add more unicode entities to TeX-map
+fix spelling of diaerisis in all files
+
+r101 
+rename TeX-map to latex-encoding
+I figure that if I was confused by the names of these files
+then others would be as well.  
+
+r102 
+more character encoding clean-up
+
+r103 
+remove unused alternate symbolfong encodings
+
+r104 
+update headers for latex-encoding files
+continue to update the default unicode latex-encoding file
+
+r105 
+last set of changes for unicode translation.  Latin 1 and Latin 2
+characters should be pretty much covered now.
+
+r106 
+WH: fixed 2 little typos in documentation
+
+r107 
+add varrho and varepsilon to list of standard character names
+
+r108 
+Start reclaiming the rtf2latex namespace
+
+r109 
+fix a bug in table code
+add a test file for utf8.  It seems to work, but getting
+all the packages correct so that the translated file produces
+a pdf is beyond my skills.
+
+r110 
+WH: changed formatting of tables in test file "enc-utf8x.rtf" from heading2 to body text
+
+r111 
+add -D option to create a new directory for all the files
+created by one .rtf file
+
+r112 
+improved paragraph indentation
+
+r113 
+more work on paragraphs. 
+Add infrastructure to track changes in parser state 
+for paragraphs.
+
+r114 
+step 1 in adding tracking textStyles
+
+r115 
+WH: in main.c, added declaration of mkdir()
+
+r116 
+more paragraph formatting fixes
+
+r117 
+fix regressions with equations and tables
+
+r118 
+remove spurious opening brace
+improve ExamineToken()
+
+r119 
+simplify code for handling headings
+
+r120 
+experimental new implementation of character styles
+only works for italics and bold (and then not together!)
+
+r121 
+implement character formatting.  Much simpler and more robust.
+
+r122 
+eliminate CharAttr()
+
+r123 
+fix paragraph regression with figures
+replace \newpage with \pagebreak (because the latter
+can show up nearly anywhere)
+
+r124 
+remove more unused variables
+enable color support
+fix character formatting bug
+
+r125 
+revamp preferences, add new ones and remove old ones
+fix swapped values for upper and lower case c with cedilla
+continue deleting unused variables
+
+r126 
+trying to fix mishandling of unknown keywords {\*\keword ... }
+lots of thrashing, but no resolution yet --- just trivial cleanup}
+
+r127 
+eliminate spurious ;;;;; in translated latex file
+
+r128 
+explicitly handle {\*\shppict ... }{\nonshppict ...}
+
+r129 
+have parser support \CR or \LF as \par token
+
+r130 
+fixed vertical space between paragraphs
+fixed linespacing within paragraphs
+
+r131 
+changes to tables
+
+r132 
+add a bunch of rtf test files created by Jani Giannoudis
+for the RtfConverter project.  I would add attribution to
+the files, but these are test files and I don't want to change
+them.
+fixed a parsing bug when reading the font table at the start of
+the rtf file.  This is covered by test interpreter test 11.
+
+r133 
+add support for exporting .emf files
+
+r134 
+add support for \ulnone
+
+r135 
+support for NeXtGraphix (commonly used in .rtfd files)
+
+r136 
+only keep one copy of rtf-ctrl around.  Now if you type 'make parser'
+after changing rtf-controls then a new version of rtf-ctrl is produced
+and inserted into the pref/ directory.  If this is followed by just
+a simple 'make install' then you should have a working binary that
+incorporates all the changes in rtf-controls.
+
+r137 
+first batch of changes to rationalize latex preamble info
+move some hard-coded strings out of the c-file and into the r2l-pref
+eliminate output encoding option on the command line because it is 
+probably best if only the utf8x encoding is used.
+
+r138 
+more progress on preamble rationalization
+
+r139 
+split out initialization code and place it in init.c
+simplify charset handling
+change handling of styles to be much more coherent and possibly extensible
+
+r140 
+populate preambleOurDefs
+
+r141 
+last set of changes before shifting over to rewriting entire file
+
+r142 
+new improved preamble
+
+r143 
+bring back unicode support
+
+r144 
+turn off subscript/superscript with \dn0 and \up0
+
+r145 
+change file read and write to "rb" and "wb"
+
+r146 
+WH: InitConverter() must be called after reading command line options
+
+r147 
+revise help command and add many command-line options
+add new preferences
+
+r148 
+suppress spurious numbering when PAGE field is encountered
+
+r149 
+Use just one version number located in the Makefile
+
+r150 
+basic support for cp1251 (russian)
+
+r151 
+command-line options override r2l-pref file
+
+r152 
+test page for showing russian translation.  Support 
+\ansicpg10000, and avoid handling \ansicpg token twice.
+
+r153 
+update README
+fix 'make dist' issues
+rename ourselves to rtf2latex2e
+clean up error messages
+
+r154 
+few more tweaks before release
+
