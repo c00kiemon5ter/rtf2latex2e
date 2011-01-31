@@ -1,7 +1,7 @@
 This is rtf2latex2e version 2.0 that
 
  1. detects text style: bold, italic, color, big, small,...
- 2. reads embedded figures: PICT, WMF, PNG, JPEG, converts to EPS
+ 2. reads embedded figures: PICT, EMF, GIF, TIFF, WMF, PNG, JPEG
  3. reads tables: simple to semi-complex
  4. equations: converts embedded MathType equations
  5. symbols: converts most greek and math symbols
@@ -74,8 +74,7 @@ to get automatic translation of .pict files to .pdf files.
 #CFLAGS  :=$(CFLAGS) -m32 -DPICT2PDF
 #LDFLAGS :=$(LDFLAGS) -m32 -framework ApplicationServices
 
-
-By default th executable is installed as /usr/local/bin/rtf2latex2e.
+By default the executable is installed as /usr/local/bin/rtf2latex2e.
 Support files will installed in /usr/local/share/rtf2latex2e
 
 You can change the directory into which rtf2latex2e is installed by editing the 

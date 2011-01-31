@@ -61,7 +61,7 @@ PREFS        = pref/latex-encoding                pref/latex-encoding.mac       
                pref/r2l-map                       pref/r2l-pref                      \
                pref/rtf-encoding.cp1251
 
-DOCS         = doc/GPL_license            doc/Release-notes.txt      README                  \
+DOCS         = doc/GPL_license            ChangeLog\
                doc/rtf2latexSWP.tex       doc/rtfReader.tex          doc/rtf2latexDoc.tex    \
                doc/Makefile
                
@@ -130,7 +130,6 @@ dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $
 	$(MKDIR)           rtf2latex2e-$(VERSION)/src
 	ln README          rtf2latex2e-$(VERSION)
 	ln Makefile        rtf2latex2e-$(VERSION)
-	ln ChangeLog       rtf2latex2e-$(VERSION)
 	ln $(SRCS)         rtf2latex2e-$(VERSION)/src
 	ln $(HDRS)         rtf2latex2e-$(VERSION)/src
 	ln $(RTFPREP_SRCS) rtf2latex2e-$(VERSION)/src

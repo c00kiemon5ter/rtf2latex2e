@@ -355,7 +355,7 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
 }
 
 /*
- * One time initialization of user preferences from r2l-head
+ * One time initialization of user preferences from r2l-pref
  */
 void InitUserPrefs(void)
 {

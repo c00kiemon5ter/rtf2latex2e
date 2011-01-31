@@ -60,7 +60,7 @@ convertParagraphAlignment	true
 # convert line spacing using \baselineskip ... eventually will use \setspace{}
 convertLineSpacing	true
 
-# convert changes in the font size.  This is not unreasonable because
+# convert changes in the font size.  Disabling this is not unreasonable because
 # LaTeX often makes reasonable assumptions about the font size.
 # and it is a nuisance if every paragraph is bracketed with {\Large ... }
 # because the RTF document was written in 14 point font.
