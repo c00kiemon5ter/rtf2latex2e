@@ -264,6 +264,7 @@ main(int argc, char **argv)
     SetEndianness();
     cli_paragraph = -1;
     cli_text = -1;
+    cli_equation = -1;
     while ((c = my_getopt(argc, argv, "bDe:hnp:P:t:v")) != EOF) {
         switch (c) {
 
@@ -397,11 +398,10 @@ main(int argc, char **argv)
                 (void) ConvertEquationFile(input_filename);
             else
                 RTFRead();
-            EndLaTeXFile();
+            EndLaTeXFile(); /* closes ofp */
         }
         
         fclose(ifp);
-       // fclose(ofp);
         free(input_filename);
         free(output_filename);
     }

@@ -1159,7 +1159,7 @@ static void InheritTableRowDef(void)
 }
 
 /*
- * This function figures out how many columns a cell spans.
+ * This function counts the number of columns a cell spans.
  * This is done by comparing the cell's left and right edges
  * to the sorted column border array. If the left and right
  * edges of the cell are not consecutive entries in the array,
@@ -1192,7 +1192,7 @@ static int GetColumnSpan(cell * cellPtr)
 
  * This is tricky because RTF does not really have a table construct.  Instead, each
  * row is laid out as a series of cells with markup for each.
- * It figures out how many rows there are in the table
+ * It counts how many rows there are in the table
  * and the number of cells in each row. It also calculates the cell widths. Finally, it
  * builds an array of column borders that is useful in figuring out whether a cell spans
  * multiple columns. It has lots of diagnostic printf statements. Shows how much I
@@ -1435,7 +1435,7 @@ static void PrescanTable(void)
 }
 
 /*
- * This routine figures out how many cells are merged vertically and writes the
+ * This routine counts the number of cells to be merged vertically and writes the
  * corresponding \multirow statement.
  */
 static void DoMergedCells(cell * cellPtr)
@@ -2150,8 +2150,10 @@ static void IncludeGraphics(char *pictureType)
         if (height > 50) 
             PutLitStr("\\begin{figure}[htbp]");
         
-        if (height > 20)
+        if (height > 20) {
             PutLitStr("\n\\begin{center}");
+            paragraphWritten.alignment = center;
+        }
         
         snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%dpt, height=%dpt]{%s}", width, height, figPtr);
         PutLitStr(dummyBuf);
@@ -2162,8 +2164,10 @@ static void IncludeGraphics(char *pictureType)
             PutLitStr("}.}");
         }
         
-        if (height > 20)
+        if (height > 20) {
             PutLitStr("\n\\end{center}");
+            paragraphWritten.alignment=paragraph.alignment;
+        }
 
         if (height > 50) 
             PutLitStr("\n\\end{figure}");
