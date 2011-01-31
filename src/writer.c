@@ -426,6 +426,7 @@ static int CheckForBeginDocument(void)
             snprintf(buf, 100, "\\setlength{\\evensidemargin}{%dpt}\n", 72 - prefs[pPageRight]/20);
             strcat(preambleOurDefs,buf);
             snprintf(buf, 100, "\\setlength{\\textwidth}{%dpt}\n", (prefs[pPageWidth] - prefs[pPageLeft] - prefs[pPageRight])/20);
+            strcat(preambleOurDefs,buf);
         }
         
     	if (!prefs[pConvertTextNoTab])
@@ -870,6 +871,12 @@ static void setPreamblePackages(int ignoreUsedColor)
         strcat(preamblePackages,"\\usepackage{hyperref}\n");
     }
 
+	/* almost certainly want these packages for russian */
+	if (genCharCode == cp1251CharCode) {
+        strcat(preamblePackages,"\\usepackage[T2A]{fontenc}\n");
+        strcat(preamblePackages,"\\usepackage[russian]{babel}\n");
+    }
+	
     if (prefs[pConvertTextColor]) {
     	int i=0;
     	int needPackage=false;
@@ -3351,21 +3358,26 @@ static void Destination(void)
  * changed to that.  Here we just change if it is the symbol font.
  */
 static void RTFSetGenCharSet(void)
-{
-	int i;
-	
-	if (strcmp(&rtfTextBuf[1], "ansi") == 0)
+{	
+	switch(rtfMinor) {
+	case rtfAnsiCharSet:
         genCharCode = cp1252CharCode;
-    else if (strcmp(&rtfTextBuf[1], "mac") == 0)
+        break;
+	case rtfMacCharSet:
         genCharCode = cpMacCharCode;
-    else if (strcmp(&rtfTextBuf[1], "pc") == 0)
+        break;
+	case rtfPcCharSet:
         genCharCode = cp437CharCode;
-    else if (strcmp(&rtfTextBuf[1], "pca") == 0)
+        break;
+	case rtfPcaCharSet:
         genCharCode = cp850CharCode;
-	
+        break;
+    }
+        
 	/* check for the \ansicpg control word */
 	RTFPeekToken();
-	if (RTFCheckCMM(rtfControl, rtfFontAttr, rtfAnsiCodePage)) {
+	if (RTFCheckCMM(rtfControl, rtfFontAttr, rtfAnsiCodePage)) {  /* we will handle the token */
+		RTFGetToken(); 
 		switch (rtfParam) {
 			case 437:
 				genCharCode=cp437CharCode;
@@ -3385,12 +3397,12 @@ static void RTFSetGenCharSet(void)
 			case 1254:
 				genCharCode=cp1254CharCode;
 				break;
+			case 10000:
+				genCharCode=cpMacCharCode;
+				break;
 		}
 	}
 	
-	for (i=0; i<256; i++)
-		UsedColor[i] = 0;
-		
 	curCharCode = genCharCode;
 } 
 
@@ -3457,16 +3469,12 @@ static void ControlClass(void)
  */
 int BeginLaTeXFile(void)
 {
-    /* set some globals */
-
+	int i;
+	
     RTFSetDefaultFont(-1);
-    nowBetweenParagraphs = true;
-    suppressLineBreak = false;
     insideFootnote = false;
     insideHyperlink = false;
     insideTable = false;
-    paragraph.alignment = left;
-    paragraph.lineSpacing = -99;
     section.newStyle = false;
     section.cols = 1;
 
@@ -3491,10 +3499,14 @@ int BeginLaTeXFile(void)
     table.cellMergePar = none;
     table.multiCol = false;
     table.multiRow = false;
+    
     InitTextStyle();
+	textStyleWritten = textStyle;
+	
     InitParagraphStyle();
     paragraphWritten = paragraph;
-	textStyleWritten = textStyle;
+    nowBetweenParagraphs = true;
+    suppressLineBreak = false;
 
     /* install class callbacks */
     RTFSetClassCallback(rtfText, TextClass);
@@ -3508,6 +3520,9 @@ int BeginLaTeXFile(void)
     RTFSetDestinationCallback(rtfPict, ReadPicture);
     RTFSetDestinationCallback(rtfFootnote, ReadFootnote);
 
+	for (i=0; i<256; i++)
+		UsedColor[i] = 0;
+		
     WriteLaTeXHeader();
     return (1);
 }
