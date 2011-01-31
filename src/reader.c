@@ -240,8 +240,8 @@ void RTFInit(void)
         styleList = sp;
     }
 
-	genCharCode = cp1252CharCode;
-	curCharCode = cp1252CharCode;
+    genCharCode = cp1252CharCode;
+    curCharCode = cp1252CharCode;
     RTFInitStack();
 }
 
@@ -361,7 +361,7 @@ RTFFuncPtr RTFGetDestinationCallback(short dest)
 void RTFRead(void)
 {
     while (RTFGetToken() != rtfEOF) {
-/*    	ExamineToken(); */
+/*      ExamineToken(); */
         RTFRouteToken();
     }
 }
@@ -503,13 +503,13 @@ static void _RTFGetToken(void)
      * important, e.g., for making sure no "}" pops the font stack twice.
      */
 
-	_RTFGetToken2();
+    _RTFGetToken2();
     if (rtfClass == rtfText)    /* map RTF char to standard code */
         rtfMinor = RTFMapChar(rtfMajor);
 
     if (RTFCheckCMM(rtfControl, rtfCharAttr, rtfFontNum)) {
-		RTFFont *fp = RTFGetFont(rtfFontNum);
-		if (fp) curCharCode = fp->rtfFCharCode;
+        RTFFont *fp = RTFGetFont(rtfFontNum);
+        if (fp) curCharCode = fp->rtfFCharCode;
         return;
     }
     
@@ -520,21 +520,21 @@ static void _RTFGetToken(void)
      */
     if (RTFCheckCMM(rtfControl, rtfCharAttr, rtfCharCharSet)) {
     
-    	if (rtfParam>255) {
-    		curCharCode = cp1252CharCode;
-			return;
-		}
-    	
+        if (rtfParam>255) {
+            curCharCode = cp1252CharCode;
+            return;
+        }
+        
         switch (rtfParam) {
         case 1:
-        	curCharCode = genCharCode;
-        	break;
+            curCharCode = genCharCode;
+            break;
         case 2:
-        	curCharCode = symCharCode;
-        	break;
+            curCharCode = symCharCode;
+            break;
         default:
-        	curCharCode = cp1252CharCode;
-        	break;
+            curCharCode = cp1252CharCode;
+            break;
         }
         return;
     }
@@ -608,29 +608,29 @@ static void _RTFGetToken2(void)
     }
     
     /* get the character following the backslash */
-	c = GetChar();
-	
-	/* \<newline>text         ---> \par text */
-	/* \<newline><spaces>text ---> \text */
-	if (c == '\n' || c == '\r') {
-		while (c == '\n' || c == '\r')  
-			c = GetChar();
-	
-		if (c != ' ') {
-			pushedChar = c;
-			strcpy(rtfTextBuf,"\\par");
-        	Lookup("\\par"); 
-			return;
-		}
-		
-		while (c == ' ') 
-			c = GetChar();
+    c = GetChar();
+    
+    /* \<newline>text         ---> \par text */
+    /* \<newline><spaces>text ---> \text */
+    if (c == '\n' || c == '\r') {
+        while (c == '\n' || c == '\r')  
+            c = GetChar();
+    
+        if (c != ' ') {
+            pushedChar = c;
+            strcpy(rtfTextBuf,"\\par");
+            Lookup("\\par"); 
+            return;
+        }
+        
+        while (c == ' ') 
+            c = GetChar();
 
-		rtfTextBuf[1] = c;
-		rtfTextBuf[2] = '\0';
-		rtfTextLen = 2;
-	}
-	
+        rtfTextBuf[1] = c;
+        rtfTextBuf[2] = '\0';
+        rtfTextLen = 2;
+    }
+    
 
     if (c == EOF) {
         /* early eof, whoops (class is rtfUnknown) */
@@ -975,8 +975,8 @@ static void ReadFontTbl(void)
                     RTFPanic("%s: cannot allocate font name", fn);
                     
                 if (strcasecmp(fp->rtfFName,"Symbol")==0)
-                	fp->rtfFCharCode = symCharCode;
-                	
+                    fp->rtfFCharCode = symCharCode;
+                    
                 /* already have next token; don't read another at bottom of loop */
                 continue;
             } else {
@@ -1001,11 +1001,11 @@ static void ReadFontTbl(void)
  */
     RTFRouteToken();            /* feed "}" back to router */
 
-	if (defaultFontNumber > -1) {
-		RTFFont *fp1 = RTFGetFont(defaultFontNumber);
-		if (fp1) curCharCode = fp1->rtfFCharCode;
-	}
-	
+    if (defaultFontNumber > -1) {
+        RTFFont *fp1 = RTFGetFont(defaultFontNumber);
+        if (fp1) curCharCode = fp1->rtfFCharCode;
+    }
+    
 }
 
 /*
@@ -1073,8 +1073,8 @@ static short Style2LatexItem(char *name)
     int i;
 
     for (i = 0; i < MAX_STYLE_MAPPINGS; i++) {
-    	if (!Style2LatexStyle[i]) return -1; 
-    	
+        if (!Style2LatexStyle[i]) return -1; 
+        
         if (strcasecmp(name, Style2LatexStyle[i]) == 0)
             return i;
     }
@@ -1245,7 +1245,7 @@ static void ReadStyleSheet(void)
            needing to compare all the style names every time we want to know
            If there is no mapping, then the index is just set to -1 */
         if (sp->rtfSNum < MAX_STYLE_MAPPINGS)
-        	Style2LatexMapIndex[sp->rtfSNum] = Style2LatexItem(sp->rtfSName);
+            Style2LatexMapIndex[sp->rtfSNum] = Style2LatexItem(sp->rtfSName);
         
         if (sp->rtfSNextPar == -1)      /* if \snext not given, */
             sp->rtfSNextPar = sp->rtfSNum;      /* next is itself */

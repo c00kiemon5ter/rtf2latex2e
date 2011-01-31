@@ -63,38 +63,38 @@ extern char *Template_EMBELLS[];
 
 char * typeFaceName[NUM_TYPEFACE_SLOTS] =
 {
-	"ZERO",
-	"TEXT",
-	"FUNCTION",
-	"VARIABLE",
-	"LCGREEK",
-	"UCGREEK",
-	"SYMBOL",
-	"VECTOR",
-	"NUMBER",
-	"USER1",
-	"USER2",
-	"MTEXTRA",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN",
-	"TEXT_FE",
-	"EXPAND",
-	"MARKER",
-	"SPACE",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN",
-	"UNKNOWN"
+    "ZERO",
+    "TEXT",
+    "FUNCTION",
+    "VARIABLE",
+    "LCGREEK",
+    "UCGREEK",
+    "SYMBOL",
+    "VECTOR",
+    "NUMBER",
+    "USER1",
+    "USER2",
+    "MTEXTRA",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN",
+    "TEXT_FE",
+    "EXPAND",
+    "MARKER",
+    "SPACE",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN",
+    "UNKNOWN"
 };
 
 static
@@ -861,13 +861,13 @@ MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src, int *src_index)
         new_embell->nudge_y = 0;
 
         *src_index += GetAttribute(eqn, src+*src_index, &attrs);
-		
+        
         if (attrs & xfLMOVE)
             *src_index += GetNudge(src + *src_index, &new_embell->nudge_x, &new_embell->nudge_y);
         
         new_embell->embell = *(src + *src_index);
         if (DEBUG_EMBELLS  || g_input_file_type==TYPE_EQN) 
-        	fprintf(stderr, "[%-3d] EMBELL --- embell=%d\n", *src_index, (int) new_embell->embell);
+            fprintf(stderr, "[%-3d] EMBELL --- embell=%d\n", *src_index, (int) new_embell->embell);
         (*src_index)++;
 
         if (head)
@@ -944,11 +944,11 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     }
 
     if (g_input_file_type==TYPE_EQN || DEBUG_CHAR) {
-    	fprintf(stderr, "          '%c' or 0x%04x,", (int)new_char->character, (unsigned int) new_char->character);
-    	fprintf(stderr, " typeface = %d mtchar=%u, 16bit=%u ", 
-    	          (int) new_char->typeface-128, (unsigned int) new_char->mtchar, (unsigned int) new_char->bits16);
-   		fprintf(stderr, " attr = 0x%02x \n", (unsigned int) new_char->atts);
-   	}
+        fprintf(stderr, "          '%c' or 0x%04x,", (int)new_char->character, (unsigned int) new_char->character);
+        fprintf(stderr, " typeface = %d mtchar=%u, 16bit=%u ", 
+                  (int) new_char->typeface-128, (unsigned int) new_char->mtchar, (unsigned int) new_char->bits16);
+        fprintf(stderr, " attr = 0x%02x \n", (unsigned int) new_char->atts);
+    }
 
     if (eqn->m_mtef_ver == 5) {
         if (new_char->atts & CHAR_EMBELL)
@@ -1054,14 +1054,14 @@ MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
     new_matrix->cols = *(src + *src_index);
     (*src_index)++;
 
-	/* row partition consists of (rows+1) two-bit values */
+    /* row partition consists of (rows+1) two-bit values */
     bytes = (2 * (new_matrix->rows + 1) + 7) / 8;
     for (i=0; i<bytes; i++) {
         new_matrix->row_parts[i] = *(src + *src_index);
         (*src_index)++;
     }
 
-	/* col partition consists of (cols+1) two-bit values */
+    /* col partition consists of (cols+1) two-bit values */
     bytes = (2 * (new_matrix->cols + 1) + 7) / 8;
     for (i=0; i<bytes; i++) {
         new_matrix->col_parts[i] = *(src + *src_index);
@@ -1171,8 +1171,8 @@ static MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *
         new_obj = (void *) NULL;
 
 if (DEBUG_PARSING || g_input_file_type==TYPE_EQN) {
-		print_tag(curr_tag, *src_index);
-		hexdump(src+*src_index, src+*src_index, 16, NULL);
+        print_tag(curr_tag, *src_index);
+        hexdump(src+*src_index, src+*src_index, 16, NULL);
 }
 
         switch (curr_tag) {
@@ -1400,16 +1400,16 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
     }
 
     if (g_input_file_type==TYPE_EQN) {
-    	fprintf(stderr,"* MTEF ver = %d\n", eqn->m_mtef_ver);
-    	fprintf(stderr,"* Platform = %s\n", (eqn->m_platform) ? "Win" : "Mac");
-    	fprintf(stderr,"* Product  = %s\n", (eqn->m_product) ? "MathType" : "EqnEditor");
-    	fprintf(stderr,"* Version  = %d.%d\n", eqn->m_version, eqn->m_version_sub);
-    	fprintf(stderr,"* Type     = %s (ignored because it is unreliable)\n", eqn->m_inline ? "inline" : "display");
+        fprintf(stderr,"* MTEF ver = %d\n", eqn->m_mtef_ver);
+        fprintf(stderr,"* Platform = %s\n", (eqn->m_platform) ? "Win" : "Mac");
+        fprintf(stderr,"* Product  = %s\n", (eqn->m_product) ? "MathType" : "EqnEditor");
+        fprintf(stderr,"* Version  = %d.%d\n", eqn->m_version, eqn->m_version_sub);
+        fprintf(stderr,"* Type     = %s (ignored because it is unreliable)\n", eqn->m_inline ? "inline" : "display");
     }
     
-	eqn->m_atts_table = Profile_MT_CHARSET_ATTS;
-	Eqn_LoadCharSetAtts(eqn, Profile_MT_CHARSET_ATTS);
-	eqn->m_char_table = Profile_CHARTABLE;
+    eqn->m_atts_table = Profile_MT_CHARSET_ATTS;
+    Eqn_LoadCharSetAtts(eqn, Profile_MT_CHARSET_ATTS);
+    eqn->m_char_table = Profile_CHARTABLE;
 
     /*  We expect a SIZE then a LINE or PILE */
     eqn->o_list = Eqn_GetObjectList(eqn, eqn_stream, &src_index, 2);
@@ -1447,7 +1447,7 @@ static
 char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line)
 {
     char buf[128];
-	char *thetex;
+    char *thetex;
     EQ_STRREC strs[3];
 
     int num_strs = 0;
@@ -1479,9 +1479,9 @@ char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line)
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
-	thetex = Eqn_JoinStrings(eqn, strs, num_strs);
+    thetex = Eqn_JoinStrings(eqn, strs, num_strs);
 
-	if (g_input_file_type==TYPE_EQN || DEBUG_LINE) fprintf(stderr,"LINE='%s'\n",thetex);
+    if (g_input_file_type==TYPE_EQN || DEBUG_LINE) fprintf(stderr,"LINE='%s'\n",thetex);
     return thetex;
 }
 
@@ -1558,11 +1558,11 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
     if (!ztex && set_atts.use_codepoint) {
         if (thechar->character >= 32 && thechar->character <= 127) {
             zch = (char) thechar->character;
-			if (thechar->typeface == 135) {
-				snprintf(buff,20,"\\mathbf{%c}", zch);
-				ztex = (char *) malloc(strlen(buff) + 1);
-				strcpy(ztex, buff);
-			}
+            if (thechar->typeface == 135) {
+                snprintf(buff,20,"\\mathbf{%c}", zch);
+                ztex = (char *) malloc(strlen(buff) + 1);
+                strcpy(ztex, buff);
+            }
         }
     }
 
@@ -1588,7 +1588,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
             strcpy(template, Template_EMBELLS[embells->embell]);
         
         if (DEBUG_EMBELLS || g_input_file_type==TYPE_EQN) 
-        	fprintf(stderr,"Yikes --- Template_EMBELLS[%d]='%s'!\n", (int) embells->embell,template);
+            fprintf(stderr,"Yikes --- Template_EMBELLS[%d]='%s'!\n", (int) embells->embell,template);
 
         if (strlen(template)) {     /*  only bother if there is a character */
             char *join, *t_ptr, *j_ptr;
@@ -1596,9 +1596,9 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
             t_ptr = strchr(template, ',');
             
             if (!t_ptr) {
-				RTFPanic("Malformed EMBELL Template!\n");
-				exit(1);
-			}
+                RTFPanic("Malformed EMBELL Template!\n");
+                exit(1);
+            }
             
             /* set string to first or second half of template depending on mode */
             if (eqn->m_mode != EQN_MODE_TEXT) {
@@ -1688,7 +1688,7 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     while (curr_node && curr_node->tag == CHAR) {
         MT_CHAR *charptr = (MT_CHAR *) curr_node->obj_ptr;
         if (!charptr || charptr->typeface != 130 || !isalpha((int) charptr->character)) 
-        	break;
+            break;
         
         nom[*advance] = (char) charptr->character;
         curr_node = (MT_OBJLIST *) curr_node->next;
@@ -1696,13 +1696,13 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     }
     nom[*advance] = '\0';
 
-	if (*advance == 0) return NULL;
-	
-	if (g_input_file_type==TYPE_EQN || DEBUG_FUNCTION) fprintf(stderr,"FUNC : name = '%s'\n", nom);
-	
+    if (*advance == 0) return NULL;
+    
+    if (g_input_file_type==TYPE_EQN || DEBUG_FUNCTION) fprintf(stderr,"FUNC : name = '%s'\n", nom);
+    
     zlen = GetProfileStr(Profile_FUNCTIONS, nom, tex_func, 128);
 
-	/* no function translation found, just emit these characters */
+    /* no function translation found, just emit these characters */
     if (!zlen || !tex_func[0])
         snprintf(tex_func,128,"\\mathrm{%s}", nom);
 
@@ -2380,7 +2380,7 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
         tmpl->variation &= 0x000f;
 
     if (DEBUG_TEMPLATE || g_input_file_type==TYPE_EQN) 
-    	fprintf(stderr,"TMPL : Processing (%d.%d)\n", (int)tmpl->selector, (int)tmpl->variation);
+        fprintf(stderr,"TMPL : Processing (%d.%d)\n", (int)tmpl->selector, (int)tmpl->variation);
 
     num_strs = Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation, strs);
 

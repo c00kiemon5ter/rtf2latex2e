@@ -246,23 +246,23 @@ static void InsertNewLine(void)
 /* useful for just printing filenames in latex doc */
 static void PutEscapedLitStr(char *s)
 {
-	int i=0;
-	while (s[i]) {
-		switch (s[i]) {
-		case '_':
-			PutLitStr("\\_");
-			break;
-		case '%':
-			PutLitStr("\\%");
-			break;
-		case '\\':
-			PutLitStr("\\textbackslash{}");
-			break;
-		default:
-			PutLitChar(s[i]);
-		}
-		i++;
-	}
+    int i=0;
+    while (s[i]) {
+        switch (s[i]) {
+        case '_':
+            PutLitStr("\\_");
+            break;
+        case '%':
+            PutLitStr("\\%");
+            break;
+        case '\\':
+            PutLitStr("\\textbackslash{}");
+            break;
+        default:
+            PutLitChar(s[i]);
+        }
+        i++;
+    }
 }
 
 /*
@@ -283,10 +283,10 @@ static void DefineColors(int ignoreUsedColors)
         Blue = rtfColorPtr->rtfCBlue / 255.0;
         
         if (ignoreUsedColors || (!ignoreUsedColors && UsedColor[i])) {
-        	snprintf(buf, rtfBufSiz, "\\definecolor{color%02d}{rgb}",i);
-        	PutLitStr(buf);
-        	snprintf(buf, rtfBufSiz, "{%1.2f,%1.2f,%1.2f}\n", Red, Green, Blue);
-        	PutLitStr(buf);
+            snprintf(buf, rtfBufSiz, "\\definecolor{color%02d}{rgb}",i);
+            PutLitStr(buf);
+            snprintf(buf, rtfBufSiz, "{%1.2f,%1.2f,%1.2f}\n", Red, Green, Blue);
+            PutLitStr(buf);
         }
 
         i++;
@@ -416,10 +416,10 @@ static int CheckForBeginDocument(void)
     
     if (!wroteBeginDocument) {
 
-		if (preambleOurDefs) free(preambleOurDefs);
-		preambleOurDefs = malloc(1000);
-		preambleOurDefs[0] = '\0';
-		
+        if (preambleOurDefs) free(preambleOurDefs);
+        preambleOurDefs = malloc(1000);
+        preambleOurDefs[0] = '\0';
+        
         if (prefs[pConvertPageSize]) {
             snprintf(buf, 100, "\\setlength{\\oddsidemargin}{%dpt}\n", 72 - prefs[pPageLeft]/20);
             strcat(preambleOurDefs,buf);
@@ -429,11 +429,11 @@ static int CheckForBeginDocument(void)
             strcat(preambleOurDefs,buf);
         }
         
-    	if (!prefs[pConvertTextNoTab])
-    		strcat(preambleOurDefs,"\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
+        if (!prefs[pConvertTextNoTab])
+            strcat(preambleOurDefs,"\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
         PutLitStr(preambleOurDefs);
 
-    	beginDocumentPos = ftell(ofp);
+        beginDocumentPos = ftell(ofp);
         PutLitStr("\\begin{document}\n");
         wroteBeginDocument = true;
         return 1;
@@ -733,44 +733,44 @@ static void NewParagraph(void)
     if (insideFootnote || insideTable) return;
 
     if (prefs[pConvertInterParagraphSpace]) {
-    	if (current_vspace || paragraph.spaceBefore) {
-        	snprintf(buff,100,"\\vspace{%dpt}\n", (current_vspace+paragraph.spaceBefore)/20);
-        	PutLitStr(buff);
-        	current_vspace = 0;
+        if (current_vspace || paragraph.spaceBefore) {
+            snprintf(buff,100,"\\vspace{%dpt}\n", (current_vspace+paragraph.spaceBefore)/20);
+            PutLitStr(buff);
+            current_vspace = 0;
         }
     }
 
     if (prefs[pConvertParagraphStyle] && paragraph.styleIndex != -1) {
-		PutLitStr(Style2LatexOpen[paragraph.styleIndex]);
-		paragraphWritten.styleIndex = paragraph.styleIndex;
-		suppressLineBreak = true;
-		return;
+        PutLitStr(Style2LatexOpen[paragraph.styleIndex]);
+        paragraphWritten.styleIndex = paragraph.styleIndex;
+        suppressLineBreak = true;
+        return;
     }
 
 
     if (prefs[pConvertParagraphAlignment]) {
-		if (paragraphWritten.alignment != paragraph.alignment) {
-	
-			if (paragraph.alignment == right)
-				PutLitStr("\\begin{flushright}\n");
-	
-			if (paragraph.alignment == center)
-				PutLitStr("\\begin{center}\n");
-	
-			paragraphWritten.alignment = paragraph.alignment;
-		}
+        if (paragraphWritten.alignment != paragraph.alignment) {
+    
+            if (paragraph.alignment == right)
+                PutLitStr("\\begin{flushright}\n");
+    
+            if (paragraph.alignment == center)
+                PutLitStr("\\begin{center}\n");
+    
+            paragraphWritten.alignment = paragraph.alignment;
+        }
     }
 
     setLineSpacing();
 
     if (prefs[pConvertParagraphMargin]) {
-		if (paragraphWritten.leftIndent != paragraph.leftIndent) {
-			snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
-			if (paragraph.alignment != right && paragraph.alignment != center) {
-				PutLitStr(buff);
-				paragraphWritten.leftIndent = paragraph.leftIndent;
-			}
-		}
+        if (paragraphWritten.leftIndent != paragraph.leftIndent) {
+            snprintf(buff, 100, "\\leftskip=%dpt\n", paragraph.leftIndent/20);
+            if (paragraph.alignment != right && paragraph.alignment != center) {
+                PutLitStr(buff);
+                paragraphWritten.leftIndent = paragraph.leftIndent;
+            }
+        }
     }
 
     if (prefs[pConvertParagraphIndent]) {
@@ -845,10 +845,10 @@ static void EndParagraph(void)
 
 static void setPreamblePackages(int ignoreUsedColor)
 {
-	if (!preamblePackages) 
-		preamblePackages = malloc(1024);
-	
-	preamblePackages[0] = '\0';
+    if (!preamblePackages) 
+        preamblePackages = malloc(1024);
+    
+    preamblePackages[0] = '\0';
     if (requireSetspacePackage)
         strcat(preamblePackages,"\\usepackage{setspace}\n");
     if (requireGraphicxPackage)
@@ -871,21 +871,21 @@ static void setPreamblePackages(int ignoreUsedColor)
         strcat(preamblePackages,"\\usepackage{hyperref}\n");
     }
 
-	/* almost certainly want these packages for russian */
-	if (genCharCode == cp1251CharCode) {
+    /* almost certainly want these packages for russian */
+    if (genCharCode == cp1251CharCode) {
         strcat(preamblePackages,"\\usepackage[T2A]{fontenc}\n");
         strcat(preamblePackages,"\\usepackage[russian]{babel}\n");
     }
-	
+    
     if (prefs[pConvertTextColor]) {
-    	int i=0;
-    	int needPackage=false;
-    	
-    	for (i=0; i<256; i++) 
-    		if (UsedColor[i]) needPackage = true;
-    	
+        int i=0;
+        int needPackage=false;
+        
+        for (i=0; i<256; i++) 
+            if (UsedColor[i]) needPackage = true;
+        
         if (ignoreUsedColor || (!ignoreUsedColor && needPackage))
-        	strcat(preamblePackages,"\\usepackage{color}\n");
+            strcat(preamblePackages,"\\usepackage{color}\n");
     }
 }
 
@@ -1764,9 +1764,9 @@ static void ParAttr(void)
         
     case rtfStyleNum:
         if (prefs[pConvertParagraphStyle] && rtfParam < MAX_STYLE_MAPPINGS) 
-        	paragraph.styleIndex = Style2LatexMapIndex[rtfParam];
+            paragraph.styleIndex = Style2LatexMapIndex[rtfParam];
         else
-    		paragraph.styleIndex = -1;
+            paragraph.styleIndex = -1;
         break;
         
     case rtfFirstIndent:
@@ -1810,7 +1810,7 @@ static void SectAttr(void)
 void EndLaTeXFile(void)
 {
     FILE *nfp=NULL;
-	int numr;
+    int numr,len;
     char* newname;
     char* oldname;
     char buffer[512];
@@ -1820,17 +1820,20 @@ void EndLaTeXFile(void)
     DoSectionCleanUp();
     PutLitStr("\n\n\\end{document}\n");
 
-	/* open new file */
+    /* open new file, changing name from file.ltx to file.tex*/
     oldname = RTFGetOutputName();
-    newname = strdup_together(oldname,"x");
-	nfp = fopen(newname, "wb");
-	if (!nfp) return;
-	
-	/* prepare */
+    newname = strdup(oldname);
+    len = strlen(newname);
+    newname[len-3]='t';
+    newname[len-2]='e';
+    nfp = fopen(newname, "wb");
+    if (!nfp) return;
+    
+    /* prepare */
     RTFSetOutputStream(nfp);
     RTFSetOutputName(newname);
-	
-	/* write improved header */
+    
+    /* write improved header */
     suppressLineBreak = false;
     PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
     InsertNewLine();
@@ -1838,33 +1841,32 @@ void EndLaTeXFile(void)
     InsertNewLine();
     PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
     InsertNewLine();
-	PutLitStr(preambleEncoding);   /* from pref/latex-encoding */
+    PutLitStr(preambleEncoding);   /* from pref/latex-encoding */
     InsertNewLine();
     InsertNewLine();
-	setPreamblePackages(false);
-	PutLitStr(preamblePackages);   /* as needed */
+    setPreamblePackages(false);
+    PutLitStr(preamblePackages);   /* as needed */
 
-	PutLitStr(preambleUserText);   /* from pref/r2l-head      */
+    PutLitStr(preambleUserText);   /* from pref/r2l-head      */
     InsertNewLine();
-	DefineColors(false);
+    DefineColors(false);
     InsertNewLine();
-	PutLitStr(preambleOurDefs);    /* e.g., \tab */
+    PutLitStr(preambleOurDefs);    /* e.g., \tab */
     InsertNewLine();
     
     /* now copy the body of the document */
     fseek(ofp, beginDocumentPos, 0);
 
-	while(!feof(ofp)){	
-		numr = fread(buffer,1,512,ofp);
-		fwrite(buffer,1,numr,nfp);
-	}
-	
-	/* close files and rename */
+    while(!feof(ofp)){  
+        numr = fread(buffer,1,512,ofp);
+        fwrite(buffer,1,numr,nfp);
+    }
+    
+    /* close files and delete old one */
     free(newname);
-	fclose(ofp);
-	fclose(nfp);
-	unlink(oldname);
-	rename(newname, oldname);
+    fclose(ofp);
+    fclose(nfp);
+    unlink(oldname);
 }
 
 
@@ -1877,8 +1879,8 @@ void xEndLaTeXFile(void)
     PutLitStr("\n\n\\end{document}\n");
     fseek(ofp, packagePos, 0);
 
-	setPreamblePackages(true);
-	PutLitStr(preamblePackages);
+    setPreamblePackages(true);
+    PutLitStr(preamblePackages);
 
     /* load required packages */
     fseek(ofp, 0L, 2);          /* go back to end of stream */
@@ -2247,55 +2249,55 @@ static void ReadPicture(void)
  */
 static void ReadNextGraphic(void)
 {
-	char filename[100], buff[100];
-	int i=0;
-	int width=0;
-	int height=0;
+    char filename[100], buff[100];
+    int i=0;
+    int width=0;
+    int height=0;
 
     requireGraphicxPackage = true;
 
-	/* skip to first letter of file name */
-	RTFGetToken();
-	while (rtfClass == rtfText && rtfMajor == ' ')
-		RTFGetToken();	
+    /* skip to first letter of file name */
+    RTFGetToken();
+    while (rtfClass == rtfText && rtfMajor == ' ')
+        RTFGetToken();  
 
-	/* read the file name */
-	i=0;
-	while (rtfClass == rtfText && rtfMajor != ' ' && i < 100) {
-		filename[i++] = rtfMajor;
-		RTFGetToken();	
-	}
-	filename[i] = '\0';
+    /* read the file name */
+    i=0;
+    while (rtfClass == rtfText && rtfMajor != ' ' && i < 100) {
+        filename[i++] = rtfMajor;
+        RTFGetToken();  
+    }
+    filename[i] = '\0';
 
-	while (!RTFCheckCM(rtfGroup, rtfEndGroup)) {
-		switch (rtfMinor) {
-		case rtfNeXTGHeight:
-			height = rtfParam/20;
-			break;
-		case rtfNeXTGWidth:
-			width = rtfParam/20;
-			break;
-		default:
-			break;
-		}
-		RTFGetToken();
-	}
-	
-	/* skip everything until outer brace */
-	SkipGroup();
+    while (!RTFCheckCM(rtfGroup, rtfEndGroup)) {
+        switch (rtfMinor) {
+        case rtfNeXTGHeight:
+            height = rtfParam/20;
+            break;
+        case rtfNeXTGWidth:
+            width = rtfParam/20;
+            break;
+        default:
+            break;
+        }
+        RTFGetToken();
+    }
+    
+    /* skip everything until outer brace */
+    SkipGroup();
 
     PutLitStr("\\includegraphics");
     if (width || height) {
-    	PutLitStr("[");
-    	if (width) {
-    		snprintf(buff, 100, "width=%dpt, ", width);
-    		PutLitStr(buff);
-    	}
-    	if (height) {
-    		snprintf(buff, 100, "height=%dpt", height);
-    		PutLitStr(buff);
-    	}
-    	PutLitStr("]");
+        PutLitStr("[");
+        if (width) {
+            snprintf(buff, 100, "width=%dpt, ", width);
+            PutLitStr(buff);
+        }
+        if (height) {
+            snprintf(buff, 100, "height=%dpt", height);
+            PutLitStr(buff);
+        }
+        PutLitStr("]");
     }
     PutLitStr("{");
     PutLitStr(filename);
@@ -2730,7 +2732,7 @@ static void ReadObject(void)
 
         if (prefs[pConvertEquation]) {
             res = ReadEquation(&groupCounter);
-        	if (!res) fprintf(stderr, "failed to convert equation\n");
+            if (!res) fprintf(stderr, "failed to convert equation\n");
         } else
             res = false;
 
@@ -3065,7 +3067,7 @@ static void ReadSymbolField(void)
     major = atoi(buf);
     
     /* do the mapping */
-	curCharCode = symCharCode;
+    curCharCode = symCharCode;
     minor = RTFMapChar(major);
     curCharCode = currentCharCode;
 
@@ -3167,9 +3169,9 @@ static void ReadFieldInst(void)
 /*    RTFMsg("%s: FIELD type is %s\n",fn,buf);*/
 
     if (prefs[pConvertHypertext] && strcmp(buf, "HYPERLINK") == 0 ) {
-		ReadHyperlink();
-		return;
-	}
+        ReadHyperlink();
+        return;
+    }
 
     if (strcmp(buf, "SYMBOL") == 0) {
         ReadSymbolField();
@@ -3183,7 +3185,7 @@ static void ReadFieldInst(void)
 
     if (strcmp(buf, "PAGE") == 0) {
         /* skip ... otherwise a number gets inserted */
-    	SkipFieldResult();
+        SkipFieldResult();
         return;
     }
 
@@ -3206,41 +3208,41 @@ static void ReadBookmarkStart(void)
 
 static void HandleOptionalTokens(void)
 {
-	RTFGetToken();
-	
+    RTFGetToken();
+    
     switch (rtfMinor) {
     case rtfBookmarkStart:
-    	ReadBookmarkStart();
-    	break;
-    	
+        ReadBookmarkStart();
+        break;
+        
     case rtfFieldInst:
-    	ReadFieldInst();
-    	break;
-    	
-	case rtfWord97Picture:
-		/* expecting {\*\shppict{\pict{...}}{\nonshppict{\pict{...}} */
-		
-		RTFGetToken();
-		if (rtfClass != rtfGroup) { SkipGroup(); break;}
-		
-		RTFGetToken();    /* should be pict */
-		if (rtfMinor != rtfPict){ SkipGroup(); break;}
-		
-		RTFRouteToken();  /* handle pict */
-		RTFGetToken();    /* should be } */
-		RTFRouteToken();  /* handle last brace from shppict */
-		RTFGetToken();	  /* should be { */
-		if (rtfClass != rtfGroup) { SkipGroup(); break;}
-		
-		RTFGetToken();    /* should be nonshppict */
-		SkipGroup();      /* because we don't want two pictures in latex file */
-		break;
-		
+        ReadFieldInst();
+        break;
+        
+    case rtfWord97Picture:
+        /* expecting {\*\shppict{\pict{...}}{\nonshppict{\pict{...}} */
+        
+        RTFGetToken();
+        if (rtfClass != rtfGroup) { SkipGroup(); break;}
+        
+        RTFGetToken();    /* should be pict */
+        if (rtfMinor != rtfPict){ SkipGroup(); break;}
+        
+        RTFRouteToken();  /* handle pict */
+        RTFGetToken();    /* should be } */
+        RTFRouteToken();  /* handle last brace from shppict */
+        RTFGetToken();    /* should be { */
+        if (rtfClass != rtfGroup) { SkipGroup(); break;}
+        
+        RTFGetToken();    /* should be nonshppict */
+        SkipGroup();      /* because we don't want two pictures in latex file */
+        break;
+        
     default:
-	//	ExamineToken(); 
+    //  ExamineToken(); 
         RTFSkipGroup();
         break;
-	}
+    }
 }
 
 /*
@@ -3259,18 +3261,18 @@ static void SpecialChar(void)
         nowBetweenParagraphs = true;
         break;
     case rtfNoBrkSpace:
-    	if (nowBetweenParagraphs)
+        if (nowBetweenParagraphs)
             paragraph.extraIndent += 0;
-    	else
-        	PutStdChar(rtfSC_nobrkspace);
+        else
+            PutStdChar(rtfSC_nobrkspace);
         break;
     case rtfTab:
-    	if (nowBetweenParagraphs)
+        if (nowBetweenParagraphs)
             paragraph.extraIndent += 360;
-    	else if (prefs[pConvertTextNoTab])
-    		PutLitChar(' ');
-    	else
-        	PutLitStr("\\tab ");
+        else if (prefs[pConvertTextNoTab])
+            PutLitChar(' ');
+        else
+            PutLitStr("\\tab ");
         break;
     case rtfNoBrkHyphen:
         PutStdChar(rtfSC_nobrkhyphen);
@@ -3301,14 +3303,14 @@ static void SpecialChar(void)
             PutLitStr("\\pagebreak{}");
         break;
     case rtfOptDest:
-    	HandleOptionalTokens();
-    	break;
+        HandleOptionalTokens();
+        break;
     case rtfCurHeadPage:
-    	break;
+        break;
     case rtfCurFNote:
-    	break;
-	default:
-		ExamineToken();  /* comment out before release */
+        break;
+    default:
+        ExamineToken();  /* comment out before release */
     }
 }
 
@@ -3340,9 +3342,9 @@ static void Destination(void)
     case rtfNeXTGraphic:
         ReadNextGraphic();
         break;
-	case rtfUnicode:
-		ReadUnicode();
-		break;
+    case rtfUnicode:
+        ReadUnicode();
+        break;
     }
 }
 
@@ -3358,52 +3360,52 @@ static void Destination(void)
  * changed to that.  Here we just change if it is the symbol font.
  */
 static void RTFSetGenCharSet(void)
-{	
-	switch(rtfMinor) {
-	case rtfAnsiCharSet:
+{   
+    switch(rtfMinor) {
+    case rtfAnsiCharSet:
         genCharCode = cp1252CharCode;
         break;
-	case rtfMacCharSet:
+    case rtfMacCharSet:
         genCharCode = cpMacCharCode;
         break;
-	case rtfPcCharSet:
+    case rtfPcCharSet:
         genCharCode = cp437CharCode;
         break;
-	case rtfPcaCharSet:
+    case rtfPcaCharSet:
         genCharCode = cp850CharCode;
         break;
     }
         
-	/* check for the \ansicpg control word */
-	RTFPeekToken();
-	if (RTFCheckCMM(rtfControl, rtfFontAttr, rtfAnsiCodePage)) {  /* we will handle the token */
-		RTFGetToken(); 
-		switch (rtfParam) {
-			case 437:
-				genCharCode=cp437CharCode;
-				break;
-			case 850:
-				genCharCode=cp850CharCode;
-				break;
-			case 1250:
-				genCharCode=cp1250CharCode;
-				break;
-			case 1251:
-				genCharCode=cp1251CharCode;
-				break;
-			case 1252:
-				genCharCode=cp1252CharCode;
-				break;
-			case 1254:
-				genCharCode=cp1254CharCode;
-				break;
-			case 10000:
-				genCharCode=cpMacCharCode;
-				break;
-		}
-	}
-	
-	curCharCode = genCharCode;
+    /* check for the \ansicpg control word */
+    RTFPeekToken();
+    if (RTFCheckCMM(rtfControl, rtfFontAttr, rtfAnsiCodePage)) {  /* we will handle the token */
+        RTFGetToken(); 
+        switch (rtfParam) {
+            case 437:
+                genCharCode=cp437CharCode;
+                break;
+            case 850:
+                genCharCode=cp850CharCode;
+                break;
+            case 1250:
+                genCharCode=cp1250CharCode;
+                break;
+            case 1251:
+                genCharCode=cp1251CharCode;
+                break;
+            case 1252:
+                genCharCode=cp1252CharCode;
+                break;
+            case 1254:
+                genCharCode=cp1254CharCode;
+                break;
+            case 10000:
+                genCharCode=cpMacCharCode;
+                break;
+        }
+    }
+    
+    curCharCode = genCharCode;
 } 
 
 /* decides what to do when a control word is encountered */
@@ -3451,14 +3453,14 @@ static void ControlClass(void)
         if (rtfMinor == rtfShapeName || rtfMinor == rtfShapeValue)
             SkipGroup();
         break;
-	case rtfCharSet:
-		RTFSetGenCharSet();
-		break;
-	}
+    case rtfCharSet:
+        RTFSetGenCharSet();
+        break;
+    }
 
-	/* handles {\*\keyword ...} */
-//	if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
-//		RTFSkipGroup();
+    /* handles {\*\keyword ...} */
+//  if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
+//      RTFSkipGroup();
 
 }
 
@@ -3469,8 +3471,8 @@ static void ControlClass(void)
  */
 int BeginLaTeXFile(void)
 {
-	int i;
-	
+    int i;
+    
     RTFSetDefaultFont(-1);
     insideFootnote = false;
     insideHyperlink = false;
@@ -3501,8 +3503,8 @@ int BeginLaTeXFile(void)
     table.multiRow = false;
     
     InitTextStyle();
-	textStyleWritten = textStyle;
-	
+    textStyleWritten = textStyle;
+    
     InitParagraphStyle();
     paragraphWritten = paragraph;
     nowBetweenParagraphs = true;
@@ -3520,9 +3522,9 @@ int BeginLaTeXFile(void)
     RTFSetDestinationCallback(rtfPict, ReadPicture);
     RTFSetDestinationCallback(rtfFootnote, ReadFootnote);
 
-	for (i=0; i<256; i++)
-		UsedColor[i] = 0;
-		
+    for (i=0; i<256; i++)
+        UsedColor[i] = 0;
+        
     WriteLaTeXHeader();
     return (1);
 }

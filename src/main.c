@@ -34,15 +34,7 @@
 
 int mkdir (const char *filename, mode_t mode);
 
-extern char  *outputMapFileName;
-FILE         *OpenLibFile(char *name, char *mode);
-
 FILE         *ifp, *ofp;
-extern char  fileCreator[];
-
-#if RTF2LATEX2E_DOS
-#include <Windows.h>
-#endif
 
 char  *g_library_path        = NULL;
 int   g_little_endian        = 0;
@@ -50,9 +42,9 @@ int   g_debug_level          = 0;
 int   g_object_width         = 0;
 int   g_create_new_directory = 0;
 
-int	  g_eqn_insert_image     = 0;
+int   g_eqn_insert_image     = 0;
 int   g_eqn_keep_file        = 0;
-int	  g_eqn_insert_name      = 0;
+int   g_eqn_insert_name      = 0;
 
 enum INPUT_FILE_TYPE g_input_file_type;
 
@@ -224,6 +216,11 @@ char * short_name(char *path)
         return strdup(s+1);
 }
 
+/* initial name for translated file will end in .ltx.  Later
+   the file will be rewritten to a name that ends with .tex.
+   the windows rename() function is horrible and so we do this
+   dance instead (see EndLatexFile in writer.c)
+ */
 static char * make_output_filename(char * name)
 {
     char *s, *dir, *file, *out;
@@ -233,13 +230,13 @@ static char * make_output_filename(char * name)
         || g_input_file_type == TYPE_RTFD
         || g_input_file_type == TYPE_EQN) {
         s = strdup(name);
-        strcpy(s+strlen(s)-4, ".tex");
+        strcpy(s+strlen(s)-4, ".ltx");
         return s;
     } 
     
     if (g_input_file_type == TYPE_RTF) {
         file = short_name(name);        
-        strcpy(file+strlen(file)-4, ".tex");
+        strcpy(file+strlen(file)-4, ".ltx");
 
         dir = malloc(strlen(name)+strlen("-latex"));
         strcpy(dir,name);
@@ -265,8 +262,8 @@ main(int argc, char **argv)
     extern int      optind;
 
     SetEndianness();
-	cli_paragraph = -1;
-	cli_text = -1;
+    cli_paragraph = -1;
+    cli_text = -1;
     while ((c = my_getopt(argc, argv, "bDe:hnp:P:t:v")) != EOF) {
         switch (c) {
 
@@ -290,17 +287,17 @@ main(int argc, char **argv)
             cli_equation = 1;
             break;
 
-		case 'p':
+        case 'p':
             sscanf(optarg, "%d", &cli_paragraph);
-			break;
+            break;
 
         case 'P':   /* -P path/to/pref */
             g_library_path = strdup(optarg);
             break;
 
-		case 't':
+        case 't':
             sscanf(optarg, "%d", &cli_text);
-			break;
+            break;
 
         case 'v':
         case 'V':
@@ -318,30 +315,30 @@ main(int argc, char **argv)
     argv += optind;
 
     if (!argc) print_usage();
-	InitConverter();
+    InitConverter();
 
-	if (cli_paragraph >= 0) {
-		prefs[pConvertParagraphStyle]      = cli_paragraph & 1;
-		prefs[pConvertParagraphIndent]     = cli_paragraph & 2;
-		prefs[pConvertInterParagraphSpace] = cli_paragraph & 4;
-		prefs[pConvertLineSpacing]         = cli_paragraph & 8;
-		prefs[pConvertParagraphMargin]     = cli_paragraph & 16;
-		prefs[pConvertParagraphAlignment]  = cli_paragraph & 32;
-	}
+    if (cli_paragraph >= 0) {
+        prefs[pConvertParagraphStyle]      = cli_paragraph & 1;
+        prefs[pConvertParagraphIndent]     = cli_paragraph & 2;
+        prefs[pConvertInterParagraphSpace] = cli_paragraph & 4;
+        prefs[pConvertLineSpacing]         = cli_paragraph & 8;
+        prefs[pConvertParagraphMargin]     = cli_paragraph & 16;
+        prefs[pConvertParagraphAlignment]  = cli_paragraph & 32;
+    }
 
-	if (cli_text >= 0) {
-		prefs[pConvertTextSize]  = cli_text & 1;
-		prefs[pConvertTextColor] = cli_text & 2;
-		prefs[pConvertTextForm]  = cli_text & 4;
-		prefs[pConvertTextNoTab] = cli_text & 16;
-	}
+    if (cli_text >= 0) {
+        prefs[pConvertTextSize]  = cli_text & 1;
+        prefs[pConvertTextColor] = cli_text & 2;
+        prefs[pConvertTextForm]  = cli_text & 4;
+        prefs[pConvertTextNoTab] = cli_text & 16;
+    }
 
-	if (cli_equation >= 0) {
-		prefs[pConvertEquation] = cli_equation & 1;
-		g_eqn_insert_image      = cli_equation & 2;
-		g_eqn_keep_file         = cli_equation & 4;
-		g_eqn_insert_name       = cli_equation & 8;
-	}
+    if (cli_equation >= 0) {
+        prefs[pConvertEquation] = cli_equation & 1;
+        g_eqn_insert_image      = cli_equation & 2;
+        g_eqn_keep_file         = cli_equation & 4;
+        g_eqn_insert_name       = cli_equation & 8;
+    }
 
     for (fileCounter = 0; fileCounter < argc; fileCounter++) {
 
@@ -363,7 +360,7 @@ main(int argc, char **argv)
             RTFPanic("* Cannot open input file %s\n", input_filename);
             exit(1);
         }
-		
+        
         RTFSetInputName(input_filename);
         RTFSetStream(ifp);
 
@@ -371,9 +368,9 @@ main(int argc, char **argv)
         if (g_input_file_type != TYPE_EQN) {
             cursorPos = ftell(ifp);
             RTFGetToken();
-			RTFGetToken();
-			if (!RTFCheckCMM(rtfControl, rtfVersion, rtfVersionNum)) {
-				RTFMsg("* Yikes! '%s' is not actually a RTF file!  Skipping....\n", input_filename);
+            RTFGetToken();
+            if (!RTFCheckCMM(rtfControl, rtfVersion, rtfVersionNum)) {
+                RTFMsg("* Yikes! '%s' is not actually a RTF file!  Skipping....\n", input_filename);
                 fclose(ifp);
                 free(input_filename);
                 continue;
@@ -384,7 +381,7 @@ main(int argc, char **argv)
         
         output_filename = make_output_filename(input_filename);
 
-        ofp = fopen(output_filename, "w+");
+        ofp = fopen(output_filename, "wb+");
         if (!ofp) {
             RTFMsg("Cannot open output file %s\n", output_filename);
             free(input_filename);

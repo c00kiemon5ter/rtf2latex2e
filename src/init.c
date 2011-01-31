@@ -313,9 +313,10 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
 	size = ftell(f); 
 	fseek(f, 0, SEEK_SET);
 	preambleEncoding = malloc(size);
+	preambleEncoding[0] = '\0';
 
     /* read file */
-    while (fgets(buf, (int) sizeof(buf), f) != NULL) {
+    while (fgets(buf, rtfBufSiz, f)) {
         if (buf[0] == '#')      /* skip comment lines */
             continue;
         TSScanInit(buf);
