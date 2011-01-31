@@ -12,7 +12,8 @@ TEX     = 	arch-mac.tex arch.tex equation.tex  mapping.tex \
           	RtfInterpreterTest_0.tex   RtfInterpreterTest_2.tex   RtfInterpreterTest_6.tex\
 			RtfInterpreterTest_1.tex   RtfInterpreterTest_3.tex   RtfInterpreterTest_7.tex\
 			RtfInterpreterTest_10.tex  RtfInterpreterTest_4.tex   RtfInterpreterTest_8.tex\
-			RtfInterpreterTest_11.tex  RtfInterpreterTest_5.tex   RtfInterpreterTest_9.tex
+			RtfInterpreterTest_11.tex  RtfInterpreterTest_5.tex   RtfInterpreterTest_9.tex \
+			russian-short.tex
 
 EQN     = testeqn01.eqn  testeqn02.eqn  testeqn03.eqn  testeqn04.eqn  \
           testeqn05.eqn  testeqn06.eqn  testeqn07.eqn  testeqn08.eqn  \
