@@ -1,11 +1,10 @@
 Before 2.0 Release
    revise README
    determine which rtf test files to ship
-   standardize insertion of table/equation/image to account for paragraph state
-   answer all outstanding issues on sf 
    make changelog
 
 Later Improvements
+   standardize insertion of table/equation/image to account for paragraph state
    translate page header
    translate word fields
    incorporate line numbers in equations

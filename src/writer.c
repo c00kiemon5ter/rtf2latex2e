@@ -731,10 +731,12 @@ static void NewParagraph(void)
 
     if (insideFootnote || insideTable) return;
 
-    if (prefs[pConvertInterParagraphSpace] && (current_vspace || paragraph.spaceBefore)) {
-        snprintf(buff,100,"\\vspace{%dpt}\n", (current_vspace+paragraph.spaceBefore)/20);
-        PutLitStr(buff);
-        current_vspace = 0;
+    if (prefs[pConvertInterParagraphSpace]) {
+    	if (current_vspace || paragraph.spaceBefore) {
+        	snprintf(buff,100,"\\vspace{%dpt}\n", (current_vspace+paragraph.spaceBefore)/20);
+        	PutLitStr(buff);
+        	current_vspace = 0;
+        }
     }
 
     if (prefs[pConvertParagraphStyle] && paragraph.styleIndex != -1) {

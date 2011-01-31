@@ -343,8 +343,6 @@ main(int argc, char **argv)
 		g_eqn_insert_name       = cli_equation & 8;
 	}
 
-    InitConverter();
-
     for (fileCounter = 0; fileCounter < argc; fileCounter++) {
 
         RTFInit();

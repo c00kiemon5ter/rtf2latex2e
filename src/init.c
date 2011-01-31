@@ -373,6 +373,9 @@ void InitUserPrefs(void)
     prefs[pConvertPict] = true;
     prefs[pConvertEquation] = true;
     prefs[pConvertAsDirectory] = false;
+    prefs[pConvertParagraphMargin] = true;
+    prefs[pConvertParagraphAlignment] = true;
+    prefs[pConvertTextNoTab] = false;
 
     outputMapFileName = strdup("latex-encoding");
     convertTableName = strdup("tabular");
