@@ -831,28 +831,21 @@ OpenLibFile(char *name, char *mode)
         free(lib_path);
     }
     /* failed ... give some feedback */
-    {
-        char           *s;
-        fprintf(stderr, "Cannot open the rtf2latex library files\n");
-        fprintf(stderr, "Locate the directory containing the rtf2latex binary, \n");
-        fprintf(stderr, "the character set map files, and the output map TeX-map file\n\n");
-        fprintf(stderr, "Then you can\n");
-        fprintf(stderr, "   (1) define the environment variable RTFPATH, *or*\n");
-        fprintf(stderr, "   (2) use command line path option \"-P /path/to/cfg/file\", *or*\n");
-        fprintf(stderr, "   (3) recompile rtf2latex with LIBDIR defined properly\n");
-        fprintf(stderr, "Path specified on command line: %s \n", (g_library_path) ? g_library_path : "not defined\n");
-        s = getenv("RTFPATH");
-        fprintf(stderr, "Current RTFPATH: %s", (s) ? s : "not defined\n");
-        s = LIBDIR;
-        fprintf(stderr, "Compiled-in support directory: %s", (s) ? s : "not defined\n\n");
-        fprintf(stderr, " Depending on your shell, you can set the environment variable RTFPATH using\n");
-        fprintf(stderr, "     export RTFPATH=directory (bash) or \n");
-        fprintf(stderr, "     setenv RTFPATH directory (csh) or \n");
-        fprintf(stderr, "     SET RTFPATH=directory (DOS) or \n");
-        fprintf(stderr, "You should also add this directory to your search path.\n");
-        fprintf(stderr, "You can set these variables in your .bash_profile, .login, or autoexec.bat file.\n\n");
-        fprintf(stderr, "Giving up.  Please don't hate me.\n");
-    }
+
+	fprintf(stderr, "Cannot find the rtf2latex2e support file '%s'\n", name);
+	fprintf(stderr, "\n");
+	fprintf(stderr, "The default install location for these files is\n");
+	fprintf(stderr, "   /usr/local/share/rtf2latex2e/\n");
+	fprintf(stderr, "When this program was compiled the location was\n");
+	fprintf(stderr, "   %s\n", LIBDIR);
+	fprintf(stderr, "\n");
+	fprintf(stderr, "After locating the proper directory you can \n");
+	fprintf(stderr, "   (1) define the environment variable $RTFPATH, *or*\n");
+	fprintf(stderr, "   (2) use command line path option '-P /path/to/prefs' *or*\n");
+	fprintf(stderr, "   (3) recompile rtf2latex2e with a different LIBDIR defined properly\n");
+	fprintf(stderr, "Giving up.  Please don't hate me.\n");
+	exit(1);
+    
     return NULL;
 }
 

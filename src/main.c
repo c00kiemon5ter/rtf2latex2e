@@ -70,7 +70,7 @@ SetEndianness(void)
 static void 
 print_version(void)
 {
-    fprintf(stdout, "rtf2latex %s\n\n", VERSION);
+    fprintf(stdout, "rtf2latex2e %s\n\n", VERSION);
     fprintf(stdout, "Copyright (C) 2011 Free Software Foundation, Inc.\n");
     fprintf(stdout, "This is free software; see the source for copying conditions.  There is NO\n");
     fprintf(stdout, "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
@@ -79,7 +79,7 @@ print_version(void)
 static void 
 print_usage(void)
 {
-    fprintf(stdout, "rtf2latex %s - convert RTF to LaTeX.\n", VERSION);
+    fprintf(stdout, "rtf2latex2e %s - convert RTF to LaTeX.\n", VERSION);
     fprintf(stdout, "Options:\n");
     fprintf(stdout, "  -h               display help\n");
     fprintf(stdout, "  -b               best attempt at matching RTF formatting\n");
@@ -106,12 +106,12 @@ print_usage(void)
     fprintf(stdout, "  -v               version information\n");
     fprintf(stdout, "\n");
     fprintf(stdout, "Examples:\n");
-    fprintf(stdout, "  rtf2latex foo              convert foo.rtf to foo.tex\n");
-    fprintf(stdout, "  rtf2latex -p 33 -t 4 foo   minimal latex mark-up\n");
-    fprintf(stdout, "  rtf2latex -e 15 foo        help identify failed equation conversion\n");
-    fprintf(stdout, "  rtf2latex foo-eqn003.eqn   debug third equation (after above command)\n");
-    fprintf(stdout, "  rtf2latex -D foo           put foo.tex and images in foo-latex dir\n");
-    fprintf(stdout, "  rtf2latex foo.rtfd         convert to foo.rtfd/TXT.tex\n");
+    fprintf(stdout, "  rtf2latex2e foo              convert foo.rtf to foo.tex\n");
+    fprintf(stdout, "  rtf2latex2e -p 33 -t 4 foo   minimal latex mark-up\n");
+    fprintf(stdout, "  rtf2latex2e -e 15 foo        help identify failed equation conversion\n");
+    fprintf(stdout, "  rtf2latex2e foo-eqn003.eqn   debug third equation (after above command)\n");
+    fprintf(stdout, "  rtf2latex2e -D foo           put foo.tex and images in foo-latex dir\n");
+    fprintf(stdout, "  rtf2latex2e foo.rtfd         convert to foo.rtfd/TXT.tex\n");
     fprintf(stdout, "\n");
     fprintf(stdout, "Preference Directory:\n");
     fprintf(stdout, "  Default  = '%s'\n", (LIBDIR) ? LIBDIR : "not defined");

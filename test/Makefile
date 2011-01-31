@@ -9,14 +9,10 @@ TEX     = 	arch-mac.tex arch.tex equation.tex  mapping.tex \
           	science-latex/science.tex \
           	multiline.tex enc-utf8x.tex \
           	fig-jpeg-latex/fig-jpeg.tex \
-          	Example2.rtfd/TXT.tex \
           	RtfInterpreterTest_0.tex   RtfInterpreterTest_2.tex   RtfInterpreterTest_6.tex\
 			RtfInterpreterTest_1.tex   RtfInterpreterTest_3.tex   RtfInterpreterTest_7.tex\
 			RtfInterpreterTest_10.tex  RtfInterpreterTest_4.tex   RtfInterpreterTest_8.tex\
-			RtfInterpreterTest_11.tex  RtfInterpreterTest_5.tex   RtfInterpreterTest_9.tex\
-			RtfParserTest_0.tex        RtfParserTest_1.tex        RtfParserTest_2.tex\
-			RtfParserTest_3.tex
-
+			RtfInterpreterTest_11.tex  RtfInterpreterTest_5.tex   RtfInterpreterTest_9.tex
 
 EQN     = testeqn01.eqn  testeqn02.eqn  testeqn03.eqn  testeqn04.eqn  \
           testeqn05.eqn  testeqn06.eqn  testeqn07.eqn  testeqn08.eqn  \
@@ -35,7 +31,8 @@ PDF     = arch-mac.pdf arch.pdf equation.pdf mapping.pdf \
           testeqn05.pdf  testeqn06.pdf  testeqn07.pdf  testeqn08.pdf  \
           testeqn09.pdf  testeqn10.pdf
 
-TEX2    = 	RtfParserTest_4.tex\
+TEX2    = 	Example2.rtfd/TXT.tex \
+            RtfParserTest_4.tex\
 			RtfParserTest_5.tex\
 			RtfParserTest_6.tex\
 			RtfParserTest_7.tex\
@@ -50,7 +47,9 @@ TEX2    = 	RtfParserTest_4.tex\
 			RtfInterpreterTest_20.tex\
 			RtfInterpreterTest_21.tex\
 			RtfInterpreterTest_22.tex\
-			RtfInterpreterTest_23.tex
+			RtfInterpreterTest_23.tex\
+			RtfParserTest_0.tex        RtfParserTest_1.tex        RtfParserTest_2.tex\
+			RtfParserTest_3.tex
 
 FAIL     = 	RtfInterpreterTest_fail_0.tex  RtfInterpreterTest_fail_4.tex  RtfParserTest_fail_3.tex \
 			RtfInterpreterTest_fail_1.tex  RtfParserTest_fail_0.tex       RtfParserTest_fail_4.tex \

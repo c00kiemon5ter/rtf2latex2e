@@ -14,7 +14,7 @@ PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
 
 #Base directory - adapt as needed
 # Unix:
-PREFIX?=/opt/local
+PREFIX?=/usr/local
 #Uncomment next lines for DOS/Windows
 #PREFIX_DRIVE=C:
 #PREFIX?=$(PREFIX_DRIVE)/PROGRA~1/rtf2latex
@@ -26,8 +26,8 @@ BIN_INSTALL    =$(PREFIX)/bin
 SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex2e
 
 # MacOS X flags to support PICT -> PDF conversion
-CFLAGS  :=$(CFLAGS) -m32 -DPICT2PDF
-LDFLAGS :=$(LDFLAGS) -m32 -framework ApplicationServices
+#CFLAGS  :=$(CFLAGS) -m32 -DPICT2PDF
+#LDFLAGS :=$(LDFLAGS) -m32 -framework ApplicationServices
 
 # Uncomment to get debugging information about OLE translation
 #CFLAGS:=$(CFLAGS) -DCOLE_VERBOSE
@@ -58,10 +58,12 @@ PREFS        = pref/latex-encoding                pref/latex-encoding.mac       
                pref/rtf-encoding.cp1252           pref/rtf-encoding.cp1254           \
                pref/rtf-encoding.next             pref/rtf-encoding.symbolfont       \
                pref/rtf-ctrl                      pref/r2l-head                      \
-               pref/r2l-map                       pref/r2l-pref                       
+               pref/r2l-map                       pref/r2l-pref                      \
+               pref/rtf-encoding.cp1251
 
 DOCS         = doc/GPL_license            doc/Release-notes.txt      README                  \
-               doc/rtf2latexSWP.tex       doc/rtfReader.tex          doc/rtf2latexDoc.tex
+               doc/rtf2latexSWP.tex       doc/rtfReader.tex          doc/rtf2latexDoc.tex    \
+               doc/Makefile
                
 PDFS         = doc/rtf2latexSWP.pdf       doc/rtfReader.pdf          doc/rtf2latexDoc.pdf  
 
@@ -69,7 +71,13 @@ TEST         = test/Makefile              test/arch.rtf              test/arch-m
                test/equation.rtf          test/fig-jpeg.rtf          test/multiline.rtf      \
                test/mapping.rtf           test/rtf-misc.rtf          test/rtf.rtf            \
                test/table.rtf             test/test.rtf              test/moreEqns.rtf       \
-               test/twoEqn.rtf            \
+               test/twoEqn.rtf            test/science.rtf           test/russian-short.rtf  \
+               test/enc-utf8x.rtf \
+               test/RtfInterpreterTest_0.rtf  test/RtfInterpreterTest_4.rtf  test/RtfInterpreterTest_8.rtf \
+               test/RtfInterpreterTest_1.rtf  test/RtfInterpreterTest_5.rtf  test/RtfInterpreterTest_9.rtf \
+               test/RtfInterpreterTest_2.rtf  test/RtfInterpreterTest_6.rtf  test/RtfInterpreterTest_10.rtf \
+               test/RtfInterpreterTest_3.rtf  test/RtfInterpreterTest_7.rtf  test/RtfInterpreterTest_11.rtf 
+
 
 RTFD         = test/sample.rtfd/TXT.rtf      test/sample.rtfd/amiga.gif \
                test/sample.rtfd/build.tiff   test/sample.rtfd/button_smile.jpeg \
@@ -122,6 +130,7 @@ dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $
 	$(MKDIR)           rtf2latex2e-$(VERSION)/src
 	ln README          rtf2latex2e-$(VERSION)
 	ln Makefile        rtf2latex2e-$(VERSION)
+	ln ChangeLog       rtf2latex2e-$(VERSION)
 	ln $(SRCS)         rtf2latex2e-$(VERSION)/src
 	ln $(HDRS)         rtf2latex2e-$(VERSION)/src
 	ln $(RTFPREP_SRCS) rtf2latex2e-$(VERSION)/src

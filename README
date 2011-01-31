@@ -1,23 +1,26 @@
-This is rtf2latex2e version 1.2 which features
+This is rtf2latex2e version 2.0 that
 
-1. detects text style: bold, italic, color, big, small,...
-2. reads embedded figures: PICT, WMF, PNG, JPEG, converts to EPS
-3. reads tables: simple to semi-complex
-4. equations: converts embedded MathType <= 5.0 equations
-5. symbols: converts most greek and math symbols
-6. reads footnotes (not in tables yet)
-7. support for use of the fontenc package
-8. translates hyperlinks using the hyperref package
-
-REQUIREMENTS:
-=============
-No external dependencies although LaTeX does not support some 
-image types and you'll need to use something like ImageMagick
-or pict2pdf to convert the images to something that can be 
-typeset.
+ 1. detects text style: bold, italic, color, big, small,...
+ 2. reads embedded figures: PICT, WMF, PNG, JPEG, converts to EPS
+ 3. reads tables: simple to semi-complex
+ 4. equations: converts embedded MathType equations
+ 5. symbols: converts most greek and math symbols
+ 6. reads footnotes (not in tables yet)
+ 7. translates hyperlinks using the hyperref package
+ 8. converted latex file uses utf8
+ 9. supports codepages 1250, 1251, 1252, 1254, mac, NeXt
+10. converts RTFD (rtf directories)
+11. extended preferences
+12. internal document page references
+13. save all converted files in a separate directory
 
 WHAT YOU WILL GET:
-==================
+=============
+rtf2latex converts an RTF file to LaTeX and saves any image
+files found inside.  Using pdflatex on the resulting latex
+file will require that these images be converted by you to 
+some image format supported by pdflatex. 
+
 If you expect a WYSIWYG reproduction of your RTF file, you may be 
 disappointed. My main concerns have been translating the essential 
 features of the RTF file such as characters, figures, tables, and 
@@ -28,6 +31,25 @@ touches.  I just want to make that task a little easier.  In my opinion,
 expecting a WYSIWYG reproduction is not practical and misses the point 
 entirely.
 
+The user has some control over how good the visual fidelity is.  For
+example
+
+prompt> rtf2latex -t 0 -p 0 test/test.rtf
+
+will produce a file 'test/test.tex' that has no paragraph formatting
+or text formatting.  Two other useful variants are
+
+prompt> rtf2latex -n test/test.rtf
+
+which makes a file with reasonable latex mark-up.  Fussy details about
+paragraph indenting and spacing are left to latex and some work will be
+needed to identify paragraphs that should not be indented, etc.,  Finally
+
+prompt> rtf2latex -b test/test.rtf
+
+will try all sorts of things to get the formatting correct.  This comes
+at the expense of extensive formatting ``noise.'' 
+
 Typeset the rtf2LaTeX2eDoc.tex for more information, or print out the 
 rtf2LaTeX2eDoc.pdf file. They are in the documentation directory.
 
@@ -35,7 +57,7 @@ The file Release-notes.txt usually has more up-to-date info.
 
 INSTALLATION AND USE:
 =====================
-rtf2latex2e was developed on under Mac OS X but should be compilable
+rtf2latex2e was developed on under Mac OS X but should compile
 under any Unix variant.  Windows users should compile under something
 like MinGW.
 
@@ -43,37 +65,24 @@ To build rtf2latex2e,
 change to the Unix directory directory, type:
 
 make
+make test
 make install (optional, as root)
 
-The default install directory is /usr/local/rtf2latex2e.
+MacOS X users should remove '#' on the Makefile lines before building
+to get automatic translation of .pict files to .pdf files.
 
-A symbolic link /usr/bin/rtf2latex2e pointing to the binary is created.
+#CFLAGS  :=$(CFLAGS) -m32 -DPICT2PDF
+#LDFLAGS :=$(LDFLAGS) -m32 -framework ApplicationServices
+
+
+By default th executable is installed as /usr/local/bin/rtf2latex2e.
+Support files will installed in /usr/local/share/rtf2latex2e
+
 You can change the directory into which rtf2latex2e is installed by editing the 
-variable INSTALL_DIR at the top of the Makefile. You may need to become 
+variable PREFIX in the Makefile. You may need to become 
 super-user to install into that directory. If you do not have super-user 
-privileges, you can change the INSTALL_DIR to somewhere in your home directory, 
+privileges, you can change the PREFIX to somewhere in your home directory, 
 say $(HOME)/rtf2latex2e. 
-
-*****************************************************
-*********************IMPORTANT***********************
-MAKE SURE THE INSTALL_DIR PATH ENDS in rtf2latex2e!!!
-*****************************************************
-
-If you already have an existing rtf2latex2e installation, "make install"
-rename the old rtf2latex2e directory to rtf2latex2e.old.
-
-Finally, you will need to set the environment variable RTF2LATEX2E_DIR 
-from within your shell. The variable has to point to the directory into 
-which rtf2latex2e was installed. You can set the variable using 
-
-export RTF2LATEX2E_DIR=directory (bash) or
-setenv RTF2LATEX2E_DIR directory (csh)
-
-in your .bashrc or .login file, whichever is read by your shell.
-
-To run rtf2latex2e, type:
-
-rtf2latex2e <rtfFileName>
 
 WINDOWS:
 --------
@@ -84,25 +93,23 @@ from the MS-DOS prompt.
 THE r2l-pref PREFERENCE FILE:
 =============================
 rtf2latex2e reads a preference file r2l-pref that allows one to specify 
-
-1. ignoreRulerSettings: default=true; if set, all indenting information is
-   ignored.
-2. ignoreColor: default = true; if set, color information is ignored.
-3. ignoreTextStyle: default = false; if set, text style is ignored.
-4. useFontEncoding: default = T1; a choice of encoding styles such as
-   T1, OT1, LY1, etc.
-   
-There are other options to set paper size and margins. However, they 
-will be ignored if ignoreRulerSettings is set to true.
+many settings.  Read the comments in the preference file for details.
 
 THE r2l-head file:
 ==================
-Here you can specify additional packages to be inserted into the ".tex" file. 
-If this file exists, rtf2latex2e will read it once for every input file.
+Allows you to insert text directly into the preamble of the converted
+doument.  
+
+THE r2l-map file:
+==================
+Allows some direct mapping of paragraph styles to latex commands.  There
+are only three styles defined at the moment.  These convert the style
+'heading 1' to \section
 
 LEGAL STUFF:
 ============
-(c) Ujwal S. Sathyam and Scott A. Prahl, 1999
+(c) Ujwal S. Sathyam and Scott A. Prahl, 1999, 
+(c) Scott A. Prahl, 2011
 
 The author provides this software as is and does not take any responsibility 
 for the consequences of running it (unless it is good, of course...). This is 
