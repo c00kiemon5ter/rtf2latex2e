@@ -25,6 +25,9 @@ BINARY_NAME=rtf2latex2e
 BIN_INSTALL    =$(PREFIX)/bin
 SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex2e
 
+# WMF to EPS conversion
+CFLAGS  :=$(CFLAGS) -DWMF2PDF
+
 # MacOS X flags to support PICT -> PDF conversion
 #CFLAGS  :=$(CFLAGS) -m32 -DPICT2PDF
 #LDFLAGS :=$(LDFLAGS) -m32 -framework ApplicationServices

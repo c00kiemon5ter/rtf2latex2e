@@ -2104,20 +2104,40 @@ static void IncludeGraphics(char *pictureType)
     double scaleX, scaleY;
     int width, height;
 
-
     suffix = strrchr(picture.name, '.');
-    if (suffix != NULL && strcmp(pictureType, "eps") == 0)
+    if (suffix && strcmp(pictureType, "eps") == 0)
         strcpy(suffix, ".eps");
-    else if (strcmp(pictureType, "pict") == 0) {
+
 #ifdef PICT2PDF
+    if (suffix && strcmp(pictureType, "pict") == 0) {
         char *pdfname = WritePictAsPDF(picture.name);
         if (pdfname) {
             strcpy(picture.name,pdfname);
             free(pdfname);
         }
         strcpy(suffix, ".pdf");
-#endif
     }
+#endif
+
+#ifdef UNIX
+    if (suffix && strcmp(pictureType, "wmf") == 0) {
+        if (!system("command -v wmf2eps") && !system("command -v epstopdf")) {
+            int err;
+            char *pdfname = strdup(picture.name);
+            strcpy(pdfname + strlen(pdfname) - 3, "pdf");
+
+            snprintf(dummyBuf, rtfBufSiz, "wmf2eps '%s' | epstopdf --filter > '%s'", picture.name, pdfname);            
+            err = system(dummyBuf);
+
+            if (!err) {
+                unlink(picture.name);
+                strcpy(picture.name,pdfname);
+                strcpy(suffix, ".pdf");
+            }
+            free(pdfname);
+        }
+    }
+#endif
 
     if (picture.scaleX == 0)
         scaleX = 1;
