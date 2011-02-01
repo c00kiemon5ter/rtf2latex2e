@@ -1869,23 +1869,6 @@ void EndLaTeXFile(void)
     unlink(oldname);
 }
 
-
-/* called when we are done reading the RTF file. */
-void xEndLaTeXFile(void)
-{
-    EndParagraph();
-    DoSectionCleanUp();
-
-    PutLitStr("\n\n\\end{document}\n");
-    fseek(ofp, packagePos, 0);
-
-    setPreamblePackages(true);
-    PutLitStr(preamblePackages);
-
-    /* load required packages */
-    fseek(ofp, 0L, 2);          /* go back to end of stream */
-}
-
 /* sets the output stream */
 void RTFSetOutputStream(stream)
 FILE *stream;
@@ -2104,23 +2087,25 @@ static void IncludeGraphics(char *pictureType)
     double scaleX, scaleY;
     int width, height;
 
-    suffix = strrchr(picture.name, '.');
-    if (suffix && strcmp(pictureType, "eps") == 0)
-        strcpy(suffix, ".eps");
+#ifdef UNIX
+    if (strcmp(pictureType, "pict") == 0) {
+        if (!system("command -v pict2pdf") ) {
+            int err;
+            char *pdfname = strdup(picture.name);
+            strcpy(pdfname + strlen(pdfname) - 4, "pdf");
 
-#ifdef PICT2PDF
-    if (suffix && strcmp(pictureType, "pict") == 0) {
-        char *pdfname = WritePictAsPDF(picture.name);
-        if (pdfname) {
-            strcpy(picture.name,pdfname);
+            snprintf(dummyBuf, rtfBufSiz, "pict2pdf '%s' ", picture.name);            
+            err = system(dummyBuf);
+
+            if (!err) {
+                unlink(picture.name);
+                strcpy(picture.name,pdfname);
+            }
             free(pdfname);
         }
-        strcpy(suffix, ".pdf");
     }
-#endif
 
-#ifdef UNIX
-    if (suffix && strcmp(pictureType, "wmf") == 0) {
+    if (strcmp(pictureType, "wmf") == 0) {
         if (!system("command -v wmf2eps") && !system("command -v epstopdf")) {
             int err;
             char *pdfname = strdup(picture.name);
@@ -2132,12 +2117,13 @@ static void IncludeGraphics(char *pictureType)
             if (!err) {
                 unlink(picture.name);
                 strcpy(picture.name,pdfname);
-                strcpy(suffix, ".pdf");
             }
             free(pdfname);
         }
     }
 #endif
+
+    suffix = strrchr(picture.name, '.');
 
     if (picture.scaleX == 0)
         scaleX = 1;
@@ -3490,7 +3476,6 @@ static void ControlClass(void)
 
 }
 
-
 /*
  * Prepares output TeX file for each input RTF file.
  * Sets globals and installs callbacks.
@@ -3554,56 +3539,6 @@ int BeginLaTeXFile(void)
     WriteLaTeXHeader();
     return (1);
 }
-
-#ifdef PICT2PDF
-
-#include <ApplicationServices/ApplicationServices.h>
-
-/* create a PDF file context and draw the picture in that Graphics Context */
-char * WritePictAsPDF(char *pict)
-{
-    CFStringRef     pict_name, pdf_name;
-    CFURLRef        pict_url, pdf_url;
-    QDPictRef       pict_ref;
-    CGRect          pict_rect;
-    CGContextRef    pdf_ctx;
-    OSStatus        err;
-    char *          pdf;
-    int             n;
-
-    if (pict == NULL) return NULL;
-    n=strlen(pict);
-    pdf=malloc(n+1);
-    strcpy(pdf,pict);
-    strcpy(pdf+n-4,"pdf");
-
-    pict_name = CFStringCreateWithCString(NULL, pict, kCFStringEncodingMacRoman);
-    pict_url  = CFURLCreateWithFileSystemPath(NULL, pict_name, kCFURLPOSIXPathStyle, FALSE);
-    pict_ref  = QDPictCreateWithURL(pict_url);
-
-    CFRelease(pict_name);
-    CFRelease(pict_url);
-    if (pict_ref == NULL) return NULL;
-
-    pict_rect = QDPictGetBounds(pict_ref);
-
-    pdf_name  = CFStringCreateWithCString(NULL, pdf, kCFStringEncodingMacRoman);
-    pdf_url   = CFURLCreateWithFileSystemPath(NULL, pdf_name,  kCFURLPOSIXPathStyle, FALSE);
-    pdf_ctx   = CGPDFContextCreateWithURL(pdf_url, &pict_rect, NULL);
-
-    pict_rect = QDPictGetBounds(pict_ref);
-    CGContextBeginPage(pdf_ctx, &pict_rect);
-    err = QDPictDrawToCGContext(pdf_ctx, pict_rect, pict_ref);
-    CGContextEndPage(pdf_ctx);
-    CGContextFlush(pdf_ctx);
-
-    CFRelease(pdf_ctx);
-    CFRelease(pdf_name);
-    CFRelease(pdf_url);
-    return pdf;
-}
-
-#endif
 
 
 /* characters from the Symbol font get written to private areas 
