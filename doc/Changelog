@@ -607,3 +607,26 @@ clean up error messages
 r154 
 few more tweaks before release
 
+r155
+put ChangeLog under svn control
+
+r156
+add missing 1251 encoding to SVN
+rewrite code that rewrites the file.  Windows does not properly
+support the rename() function, so we have to dance around that.
+Also fix a bug caused by not properly initializing a variable
+Remove tabs in c files
+
+r157
+eliminate a few extra files from the distribution
+massive update to the documentation.  It is now mostly relevant.
+
+r158
+fix a problem with moreEqns found by Wilfried.  
+properly initialize command line variable so that
+equations are once again converted.
+
+r159
+better fix for extra double-close of paragraph
+add new target to test/Makefile.  
+now cd test && make pdf should go to completion

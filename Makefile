@@ -61,7 +61,7 @@ PREFS        = pref/latex-encoding                pref/latex-encoding.mac       
                pref/r2l-map                       pref/r2l-pref                      \
                pref/rtf-encoding.cp1251
 
-DOCS         = doc/GPL_license            ChangeLog\
+DOCS         = doc/GPL_license            doc/ChangeLog\
                doc/rtf2latexSWP.tex       doc/rtfReader.tex          doc/rtf2latexDoc.tex    \
                doc/Makefile
                
