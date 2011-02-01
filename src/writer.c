@@ -2144,6 +2144,7 @@ static void IncludeGraphics(char *pictureType)
         figPtr++;
 
     if (!insideTable && !insideFootnote) {
+    	int oldWrittenAlignment = -1;
     
         EndParagraph();
 
@@ -2152,6 +2153,7 @@ static void IncludeGraphics(char *pictureType)
         
         if (height > 20) {
             PutLitStr("\n\\begin{center}");
+            oldWrittenAlignment =  paragraphWritten.alignment;
             paragraphWritten.alignment = center;
         }
         
@@ -2166,7 +2168,7 @@ static void IncludeGraphics(char *pictureType)
         
         if (height > 20) {
             PutLitStr("\n\\end{center}");
-            paragraphWritten.alignment=paragraph.alignment;
+            paragraphWritten.alignment=oldWrittenAlignment;
         }
 
         if (height > 50) 

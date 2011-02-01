@@ -183,7 +183,7 @@ parser: checkfiles clean
 appleclean:
 	sudo xattr -r -d com.apple.FinderInfo ./
 	sudo xattr -r -d com.apple.TextEncoding ./
-	
+	sudo xattr -r -d com.apple.quarantine ./
 splint: 
 	splint -weak $(SRCS) $(HDRS)
 	

@@ -4,16 +4,16 @@ LATEX= pdflatex -interaction=nonstopmode
 LATEX_LOG = > latex.log
 EQN_LOG =  &> eqn.log
 
-TEX     = 	arch-mac.tex arch.tex equation.tex  mapping.tex \
-          	rtf-misc.tex rtf.tex table.tex test.tex moreEqns.tex twoEqn.tex \
-          	science-latex/science.tex \
-          	multiline.tex enc-utf8x.tex \
-          	fig-jpeg-latex/fig-jpeg.tex \
-          	RtfInterpreterTest_0.tex   RtfInterpreterTest_2.tex   RtfInterpreterTest_6.tex\
-			RtfInterpreterTest_1.tex   RtfInterpreterTest_3.tex   RtfInterpreterTest_7.tex\
-			RtfInterpreterTest_10.tex  RtfInterpreterTest_4.tex   RtfInterpreterTest_8.tex\
-			RtfInterpreterTest_11.tex  RtfInterpreterTest_5.tex   RtfInterpreterTest_9.tex \
-			russian-short.tex
+TEX     =   arch-mac.tex arch.tex equation.tex  mapping.tex \
+            rtf-misc.tex rtf.tex table.tex test.tex moreEqns.tex twoEqn.tex \
+            science-latex/science.tex \
+            multiline.tex enc-utf8x.tex \
+            fig-jpeg-latex/fig-jpeg.tex \
+            RtfInterpreterTest_0.tex   RtfInterpreterTest_2.tex   RtfInterpreterTest_6.tex\
+            RtfInterpreterTest_1.tex   RtfInterpreterTest_3.tex   RtfInterpreterTest_7.tex\
+            RtfInterpreterTest_10.tex  RtfInterpreterTest_4.tex   RtfInterpreterTest_8.tex\
+            RtfInterpreterTest_11.tex  RtfInterpreterTest_5.tex   RtfInterpreterTest_9.tex \
+            russian-short.tex
 
 EQN     = testeqn01.eqn  testeqn02.eqn  testeqn03.eqn  testeqn04.eqn  \
           testeqn05.eqn  testeqn06.eqn  testeqn07.eqn  testeqn08.eqn  \
@@ -26,41 +26,42 @@ TEX_EQN = testeqn01.tex  testeqn02.tex  testeqn03.tex  testeqn04.tex  \
 PDF     = arch-mac.pdf arch.pdf equation.pdf mapping.pdf \
           rtf-misc.pdf rtf.pdf moreEqns.pdf twoEqn.pdf  multiline.pdf \
           fig-jpeg-latex/fig-jpeg.pdf \
-          Example2.rtfd/TXT.pdf\
           science-latex/science.pdf \
           testeqn01.pdf  testeqn02.pdf  testeqn03.pdf  testeqn04.pdf  \
           testeqn05.pdf  testeqn06.pdf  testeqn07.pdf  testeqn08.pdf  \
           testeqn09.pdf  testeqn10.pdf
 
-TEX2    = 	Example2.rtfd/TXT.tex \
+TEX2    =   Example2.rtfd/TXT.tex \
             RtfParserTest_4.tex\
-			RtfParserTest_5.tex\
-			RtfParserTest_6.tex\
-			RtfParserTest_7.tex\
-			RtfParserTest_8.tex\
-			RtfInterpreterTest_13.tex\
-			RtfInterpreterTest_14.tex\
-			RtfInterpreterTest_15.tex\
-			RtfInterpreterTest_16.tex\
-			RtfInterpreterTest_17.tex\
-			RtfInterpreterTest_18.tex\
-			RtfInterpreterTest_19.tex\
-			RtfInterpreterTest_20.tex\
-			RtfInterpreterTest_21.tex\
-			RtfInterpreterTest_22.tex\
-			RtfInterpreterTest_23.tex\
-			RtfParserTest_0.tex        RtfParserTest_1.tex        RtfParserTest_2.tex\
-			RtfParserTest_3.tex
+            RtfParserTest_5.tex\
+            RtfParserTest_6.tex\
+            RtfParserTest_7.tex\
+            RtfParserTest_8.tex\
+            RtfInterpreterTest_13.tex\
+            RtfInterpreterTest_14.tex\
+            RtfInterpreterTest_15.tex\
+            RtfInterpreterTest_16.tex\
+            RtfInterpreterTest_17.tex\
+            RtfInterpreterTest_18.tex\
+            RtfInterpreterTest_19.tex\
+            RtfInterpreterTest_20.tex\
+            RtfInterpreterTest_21.tex\
+            RtfInterpreterTest_22.tex\
+            RtfInterpreterTest_23.tex\
+            RtfParserTest_0.tex        RtfParserTest_1.tex        RtfParserTest_2.tex\
+            RtfParserTest_3.tex
 
-FAIL     = 	RtfInterpreterTest_fail_0.tex  RtfInterpreterTest_fail_4.tex  RtfParserTest_fail_3.tex \
-			RtfInterpreterTest_fail_1.tex  RtfParserTest_fail_0.tex       RtfParserTest_fail_4.tex \
-			RtfInterpreterTest_fail_2.tex  RtfParserTest_fail_1.tex       RtfParserTest_fail_5.tex \
-			RtfInterpreterTest_fail_3.tex  RtfParserTest_fail_2.tex       RtfParserTest_fail_6.tex
+FAIL     =  RtfInterpreterTest_fail_0.tex  RtfInterpreterTest_fail_4.tex  RtfParserTest_fail_3.tex \
+            RtfInterpreterTest_fail_1.tex  RtfParserTest_fail_0.tex       RtfParserTest_fail_4.tex \
+            RtfInterpreterTest_fail_2.tex  RtfParserTest_fail_1.tex       RtfParserTest_fail_5.tex \
+            RtfInterpreterTest_fail_3.tex  RtfParserTest_fail_2.tex       RtfParserTest_fail_6.tex
 
 
 all: $(TEX) 
 
 eqn: $(TEX_EQN)
+
+pdf: $(PDF)
 
 Example2.rtfd/TXT.tex : 
 	$(RTF2LATEX) $(OPTIONS) Example2.rtfd
