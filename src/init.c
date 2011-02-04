@@ -473,6 +473,27 @@ static short RTFReadCharSetMap(char *file, short *stdCodeArray)
     return (1);
 }
 
+static int read932CharCodes(void)
+{
+    FILE *f;
+    int a,b;
+    int i;
+
+    if ((f = RTFOpenLibFile("cp932raw.txt", "rb")) == NULL)
+        return (0);
+
+	i=0;
+	while (!feof(f)) {
+		fscanf(f,"%d %d", &a, &b);
+		cp932Index[i]= (short)a;
+		cp932CharCode[i]=(short)b;
+		i++;
+	}
+	cp932IndexSize = i-1;
+	fclose(f);
+	return 1;
+}
+
 /*
  * Initialize all character sets needed to interpret the RTF data
  */
@@ -504,6 +525,8 @@ void InitCharSets(void)
 
     if (!RTFReadCharSetMap("rtf-encoding.symbolfont", symCharCode))
         RTFPanic("Cannot read character mapping for Adobe symbol code page!\n");
+        
+    read932CharCodes();
 }
 
 static void InitUserText(void)
