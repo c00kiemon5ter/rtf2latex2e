@@ -92,6 +92,9 @@ short cp437CharCode[CHAR_SET_SIZE];        /* code page 437 */
 short cp850CharCode[CHAR_SET_SIZE];        /* code page 850 */
 short cpMacCharCode[CHAR_SET_SIZE];        /* mac character set */
 short cpNextCharCode[CHAR_SET_SIZE];       /* NeXt character set */
+short cp932CharCode[8000];       /* cp932 character set */
+short cp932Index[8000];       /* cp932 character set index */
+int cp932IndexSize=0;
 
 static short InitStyleTranslationMap(void)
 {

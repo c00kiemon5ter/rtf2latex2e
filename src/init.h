@@ -78,6 +78,10 @@ extern short cp850CharCode[CHAR_SET_SIZE];        /* code page 850 */
 extern short cpMacCharCode[CHAR_SET_SIZE];        /* mac character set */
 extern short cpNextCharCode[CHAR_SET_SIZE];       /* NeXt character set */
 
+extern short cp932CharCode[8000];       /* cp932 character set */
+extern short cp932Index[8000];       /* cp932 character set index */
+extern int cp932IndexSize;
+
 extern short *genCharCode;
 extern short *curCharCode;
 

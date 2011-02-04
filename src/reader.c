@@ -482,6 +482,53 @@ short RTFPeekToken(void)
     return (rtfClass);
 }
 
+/* compare two short integer entries */
+int shortcmp(const void *v1, const void *v2)
+{
+     return (*(short *)v1 - *(short *)v2);
+}
+
+/* 
+ * binary search cp932Index[] for the entry with a particular value 
+ */
+static int find932Index(int value)
+{
+	short *ptr = (short *)bsearch(&value, cp932Index, cp932IndexSize, sizeof(short), shortcmp);
+    
+    if (ptr) return ptr-cp932Index;
+    	
+    return -1;
+}
+
+static void RTFSet932Token(unsigned char firstByte)
+{	
+	int index;
+	
+	/* ASCII ... leave alone */
+	if (firstByte<0x80) return;
+
+	/* this should not happen */
+	if (firstByte==0x80 || firstByte==0xA0 || firstByte==0xFD || firstByte==0xFE || firstByte==0xFF) {
+		rtfClass = rtfUnknown;
+		rtfParam = rtfNoParam;
+		rtfTextBuf[0] = '\0';
+		return;
+	}
+	
+	/* one byte character */
+	if (0xA0<firstByte && firstByte<0xE0) {
+		index = find932Index(firstByte);
+	} else {
+		RTFGetToken();
+		index = find932Index(firstByte*256+rtfMajor);
+	}
+	
+	rtfClass = rtfControl;
+	rtfMajor = rtfDestination;
+	rtfMinor = rtfUnicode;
+	rtfParam = cp932CharCode[index];
+}
+
 
 static void _RTFGetToken(void)
 {
@@ -504,8 +551,16 @@ static void _RTFGetToken(void)
      */
 
     _RTFGetToken2();
-    if (rtfClass == rtfText)    /* map RTF char to standard code */
-        rtfMinor = RTFMapChar(rtfMajor);
+    
+    if (rtfClass == rtfText) {   /* map RTF char to standard code */
+
+		if (curCharCode != cp932CharCode)
+        	rtfMinor = RTFMapChar(rtfMajor);
+        else
+            RTFSet932Token(rtfMajor);
+            
+        return;
+    }
 
     if (RTFCheckCMM(rtfControl, rtfCharAttr, rtfFontNum)) {
         RTFFont *fp = RTFGetFont(rtfFontNum);
@@ -551,7 +606,6 @@ static void _RTFGetToken(void)
         return;
     }
 }
-
 
 /* this shouldn't be called anywhere but from _RTFGetToken() */
 
@@ -834,6 +888,7 @@ short RTFMapChar(short c)
 {
     if (c < 0 || c >= CHAR_SET_SIZE)
         return (rtfSC_nothing);
+		
     return (curCharCode[c]);
 }
 
