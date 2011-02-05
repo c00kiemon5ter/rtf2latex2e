@@ -489,13 +489,18 @@ int shortcmp(const void *v1, const void *v2)
 }
 
 /* 
- * binary search cp932Index[] for the entry with a particular value 
+ * slow, slow lookup because binary search fails for me
  */
-static int find932Index(int value)
+static int find932Index(short value)
 {
-	short *ptr = (short *)bsearch(&value, cp932Index, cp932IndexSize, sizeof(short), shortcmp);
+	int i;
+	
+	for (i=0; i<cp932IndexSize; i++)
+		if (cp932Index[i] == value) return i;
+		
+	//short *ptr = (short *)bsearch(&value, cp932Index, cp932IndexSize, sizeof(short), shortcmp);
     
-    if (ptr) return ptr-cp932Index;
+   // if (ptr) return ptr-cp932Index;
     	
     return -1;
 }
@@ -503,9 +508,14 @@ static int find932Index(int value)
 static void RTFSet932Token(unsigned char firstByte)
 {	
 	int index;
+	unsigned int value;
+	char *s1, *s2;
 	
 	/* ASCII ... leave alone */
-	if (firstByte<0x80) return;
+	if (firstByte<0x80) {
+//	ExamineToken();
+		return;
+	}
 
 	/* this should not happen */
 	if (firstByte==0x80 || firstByte==0xA0 || firstByte==0xFD || firstByte==0xFE || firstByte==0xFF) {
@@ -517,16 +527,25 @@ static void RTFSet932Token(unsigned char firstByte)
 	
 	/* one byte character */
 	if (0xA0<firstByte && firstByte<0xE0) {
-		index = find932Index(firstByte);
+		value = firstByte;
+		index = find932Index(value);
 	} else {
-		RTFGetToken();
-		index = find932Index(firstByte*256+rtfMajor);
+		s1 = strdup(rtfTextBuf);
+		_RTFGetToken2();
+		s2 = strdup_together(s1,rtfTextBuf);
+		value = firstByte*256+rtfMajor;
+		index = find932Index(value);
+		strcpy(rtfTextBuf,s2);
+		free(s2);
+		free(s1);
 	}
 	
 	rtfClass = rtfControl;
 	rtfMajor = rtfDestination;
-	rtfMinor = rtfUnicode;
+	rtfMinor = rtfUnicodeFake;
 	rtfParam = cp932CharCode[index];
+//	fprintf(stderr,"value is %u, index is %d, index[%d]=%d, charcode[%d]=%d\n", value, index, index, cp932Index[index],index, cp932CharCode[index]);
+//	ExamineToken();
 }
 
 
@@ -1000,6 +1019,8 @@ static void ReadFontTbl(void)
                         break;  /* ignore unknown? */
                     case rtfFontCharSet:
                         fp->rtfFCharSet = rtfParam;
+                        if (rtfParam == 128)
+                        	fp->rtfFCharCode = cp932CharCode;
                         break;
                     case rtfFontPitch:
                         fp->rtfFPitch = rtfParam;
@@ -1049,11 +1070,19 @@ static void ReadFontTbl(void)
                 RTFPanic("%s: missing \"}\"", fn);
         }
     }
+    
     if (fp == NULL || fp->rtfFNum == -1)
-        RTFPanic("%s: missing font number", fn);
+        RTFPanic("File does not contain a valid font table");
+
 /*
  * Could check other pieces of structure here, too, I suppose.
  */
+    for (fp = fontList; fp != NULL; fp = fp->rtfNextFont) {
+		if (fp->rtfFName == NULL)
+			fp->rtfFName = strdup("noName");
+//		fprintf(stderr, "Font %3d, cs=%3d, lookup=%p, name='%s'\n", fp->rtfFNum, fp->rtfFCharSet, fp->rtfFCharCode, fp->rtfFName);
+    }
+
     RTFRouteToken();            /* feed "}" back to router */
 
     if (defaultFontNumber > -1) {
@@ -1785,6 +1814,8 @@ void RTFInitStack(void)
     textStyle.foreColor   = 0;
     textStyle.backColor   = 0;
     textStyle.fontSize    = normalSize;
+    textStyle.charCode    = genCharCode;
+    textStyle.fontNumber  = defaultFontNumber;
 
     RTFPushStack();
 }

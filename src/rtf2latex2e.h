@@ -99,6 +99,8 @@ typedef struct
     int fontSize;
     int foreColor;
     int backColor;
+    int fontNumber;
+    short *charCode;
 } textStyleStruct;
 
 typedef struct

@@ -455,9 +455,11 @@ static void InitTextStyle(void)
     textStyle.smallCaps = 0;
     textStyle.subScript = 0;
     textStyle.superScript = 0;
+    textStyle.foreColor = 0;
+    textStyle.fontNumber = -1;
+    textStyle.charCode = genCharCode;
 
     textStyle.allCaps = 0;
-    textStyle.foreColor = 0;
     textStyle.backColor = 0;
 }
 
@@ -495,6 +497,8 @@ static int SameTextStyle(void)
     if (textStyleWritten.smallCaps != textStyle.smallCaps) return false;
 
     if (textStyleWritten.dbUnderlined != textStyle.dbUnderlined) return false;
+
+    if (textStyleWritten.charCode != textStyle.charCode) return false;
 
     return true;
 }
@@ -627,6 +631,35 @@ static void WriteTextStyle(void)
         requireUlemPackage = true;
         textStyleWritten.dbUnderlined=textStyle.dbUnderlined;
     }
+
+    if (textStyleWritten.charCode != textStyle.charCode) {
+//    	fprintf(stderr,"new charCode=%p\n", textStyle.charCode);
+    	curCharCode = textStyle.charCode;
+        textStyleWritten.charCode=textStyle.charCode;
+    }
+}
+
+/*
+ * This handles font changing
+ * 
+ * When switching fonts like Times -> Helvetica
+ *  
+ *   (1) the style might change from roman to sans serif
+ *   (2) the character code translation may change because
+ *       the font is encoded with a different codepage
+ */
+static void SetFontStyle(void)
+{
+	RTFFont *font;
+
+	textStyle.fontNumber = rtfParam;
+	font = RTFGetFont(rtfParam);
+//	fprintf(stderr, "Font %3d, cs=%3d, lookup=%p, name='%s'\n", font->rtfFNum, font->rtfFCharSet, font->rtfFCharCode, font->rtfFName);
+	textStyle.charCode = font->rtfFCharCode;
+	curCharCode = font->rtfFCharCode;
+
+//	font = RTFGetFont(textStyleWritten.fontNumber);
+//	fprintf(stderr, "Writ %3d, cs=%3d, lookup=%p, name='%s'\n", font->rtfFNum, font->rtfFCharSet, font->rtfFCharCode, font->rtfFName);
 }
 
 /*
@@ -634,7 +667,7 @@ static void WriteTextStyle(void)
  */
 static void SetTextStyle(void)
 {
-    if (insideHyperlink)
+	if (insideHyperlink)
         return;
 
     switch (rtfMinor) {
@@ -696,6 +729,9 @@ static void SetTextStyle(void)
         else if (rtfParam <= 72)
             textStyle.fontSize = GiganticSize;
         break;
+    case rtfFontNum:
+    	SetFontStyle();
+    	break;
     case rtfDeleted:
         RTFSkipGroup();
         break;
@@ -949,15 +985,7 @@ static void WrapText(void)
         PutLitChar('\n');
 }
 
-/*
- * Write out a character.  rtfMajor contains the input character, rtfMinor
- * contains the corresponding standard character code.
- *
- * If the input character isn't in the charset map, try to print some
- * representation of it.
- */
-
-static void TextClass(void)
+static void PrepareForChar(void)
 {
     if (nowBetweenParagraphs) {
 
@@ -986,6 +1014,19 @@ static void TextClass(void)
         requireAmsSymbPackage = true;
 
     WriteTextStyle();
+}
+
+/*
+ * Write out a character.  rtfMajor contains the input character, rtfMinor
+ * contains the corresponding standard character code.
+ *
+ * If the input character isn't in the charset map, try to print some
+ * representation of it.
+ */
+
+static void TextClass(void)
+{
+	PrepareForChar();
     PutStdChar(rtfMinor);
     WrapText();
 }
@@ -2934,72 +2975,73 @@ static void ReadWord97Object(void)
 
 static void ReadUnicode(void)
 {
-    if (rtfParam == 8212) {
+	int thechar;
+	
+	if (rtfParam<0)
+		thechar = rtfParam + 65536;
+	else	
+		thechar = rtfParam;
+	
+	/* \uNNNNY, drop Y is a default unicode char */
+	if (rtfMinor == rtfUnicode)
+		RTFGetToken();
+		
+	PrepareForChar();
+
+//	fprintf(stderr, "Unicode --- %d, 0x%04X\n", thechar, thechar);
+    if (thechar == 8212) {
         PutLitStr("---");
-        RTFGetToken();
         return;
     }
 
-    if (rtfParam == 8216) {
+    if (thechar == 8216) {
         PutLitStr("`");
-        RTFGetToken();
         return;
     }
 
-    if (rtfParam == 8217) {
+    if (thechar == 8217) {
         PutLitStr("'");
-        RTFGetToken();
         return;
     }
 
-    if (rtfParam == 8220) {
+    if (thechar == 8220) {
         PutLitStr("``");
-        RTFGetToken();
         return;
     }
 
-    if (rtfParam == 8221) {
+    if (thechar == 8221) {
         PutLitStr("''");
-        RTFGetToken();
         return;
     }
 
-    if (rtfParam == 8230) {
+    if (thechar == 8230) {
         PutLitStr("...");
-        RTFGetToken();
         return;
     }
 
-    if (0xC0 <= rtfParam && rtfParam <=0xFF) {
-        PutLitChar(rtfParam);
-        RTFGetToken();
+    if (0xC0 <= thechar && thechar <=0xFF) {
+        PutLitChar(thechar);
         return;
     }
-
-    if (rtfParam<0)
-        rtfParam += 65536;
 
     /* directly translate greek */
-    if (913 <= rtfParam && rtfParam <= 969) {
-        PutMathLitStr(UnicodeGreekToLatex[rtfParam-913]);
-        RTFGetToken();
+    if (913 <= thechar && thechar <= 969) {
+        PutMathLitStr(UnicodeGreekToLatex[thechar-913]);
         return;
     }
 
     /* and also a bunch of wierd codepoints from the Symbol font
        that end up in a private code area of Unicode */
-    if (61472 <= rtfParam && rtfParam <= 61632) {
-        PutMathLitStr(UnicodeSymbolFontToLatex[rtfParam-61472]);
-        RTFGetToken();
+    if (61472 <= thechar && thechar <= 61632) {
+        PutMathLitStr(UnicodeSymbolFontToLatex[thechar-61472]);
         return;
     }
 
-    PutIntAsUtf8(rtfParam);
-    /*snprintf(unitext,20,"\\unichar{%d}",(int)rtfParam);
+    PutIntAsUtf8(thechar);
+    /*snprintf(unitext,20,"\\unichar{%d}",(int)thechar);
     if (0) fprintf(stderr,"unicode --- %s!\n",unitext);
     PutLitStr(unitext);
     */
-    RTFGetToken();
 }
 
 static void SkipFieldResult(void)
@@ -3355,6 +3397,7 @@ static void Destination(void)
         ReadNextGraphic();
         break;
     case rtfUnicode:
+    case rtfUnicodeFake:
         ReadUnicode();
         break;
     }
