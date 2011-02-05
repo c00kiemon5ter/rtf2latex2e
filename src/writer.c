@@ -3457,6 +3457,9 @@ static void RTFSetGenCharSet(void)
             case 10000:
                 genCharCode=cpMacCharCode;
                 break;
+            case 10001:
+                genCharCode=cp932CharCode;
+                break;
         }
     }
     

@@ -513,7 +513,7 @@ static void RTFSet932Token(unsigned char firstByte)
 	
 	/* ASCII ... leave alone */
 	if (firstByte<0x80) {
-//	ExamineToken();
+        rtfMinor = cp1252CharCode[firstByte];
 		return;
 	}
 
@@ -544,8 +544,7 @@ static void RTFSet932Token(unsigned char firstByte)
 	rtfMajor = rtfDestination;
 	rtfMinor = rtfUnicodeFake;
 	rtfParam = cp932CharCode[index];
-//	fprintf(stderr,"value is %u, index is %d, index[%d]=%d, charcode[%d]=%d\n", value, index, index, cp932Index[index],index, cp932CharCode[index]);
-//	ExamineToken();
+//	fprintf(stderr,"value is %u, index is %d, index[%d]=%u, charcode[%d]=%u\n", value, index, index, (unsigned short) cp932Index[index],index, (unsigned short) cp932CharCode[index]);
 }
 
 
@@ -577,7 +576,6 @@ static void _RTFGetToken(void)
         	rtfMinor = RTFMapChar(rtfMajor);
         else
             RTFSet932Token(rtfMajor);
-            
         return;
     }
 
@@ -1019,7 +1017,7 @@ static void ReadFontTbl(void)
                         break;  /* ignore unknown? */
                     case rtfFontCharSet:
                         fp->rtfFCharSet = rtfParam;
-                        if (rtfParam == 128)
+                        if (rtfParam == 128 || rtfParam == 78)  /* Japanese */
                         	fp->rtfFCharCode = cp932CharCode;
                         break;
                     case rtfFontPitch:
