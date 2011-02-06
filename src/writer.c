@@ -1927,7 +1927,7 @@ void EndLaTeXFile(void)
 		
 	if (preambleFancyHeaderFirst){
 		PutLitByteStr("\\fancypagestyle{plain}{\n");
-		PutLitByteStr("\\rhead{}\n\\rfoot{}\n\\chead{}\n\\cfoot{}\n");
+		PutLitByteStr("  \\rhead{}\n  \\rfoot{}\n  \\chead{}\n  \\cfoot{}\n");
 		PutLitByteStr(preambleFancyHeaderFirst);
 		PutLitByteStr("}\n");
 		PutLitByteStr("\\thispagestyle{plain}\n");
@@ -3400,6 +3400,7 @@ static void SpecialChar(void)
         HandleOptionalTokens();
         break;
     case rtfCurHeadPage:
+        PutLitStr("\\thepage{}");
         break;
     case rtfCurFNote:
         break;
@@ -3410,7 +3411,7 @@ static void SpecialChar(void)
 
 static void DoHeaderFooter(void)
 {
-	char *buff, *s;
+	char *buff, *s, *option;
 	size_t hfStartPos, hfEndPos, len;
 	int isHeader, isFirst;
 	int level = braceLevel;
@@ -3426,11 +3427,34 @@ static void DoHeaderFooter(void)
 
     hfStartPos = ftell(ofp);
 
-	if (isHeader)
-		PutLitStr("\\lhead{");
-	else
-		PutLitStr("\\lfoot{");
-	
+	switch (rtfMinor) {
+	case rtfHeader:
+		option = "\\lhead{";
+		break;
+	case rtfHeaderRight:
+		option = "\\fancyhead[LO]{";
+		break;
+	case rtfHeaderLeft:
+		option = "\\fancyhead[LE]{";
+		break;
+	case rtfHeaderFirst:
+		option = "  \\lhead{";
+		break;
+	case rtfFooter:
+		option = "\\lfoot{";
+		break;
+	case rtfFooterRight:
+		option = "\\fancyfoot[LO]{";
+		break;
+	case rtfFooterLeft:
+		option = "\\fancyfoot[LE]{";
+		break;
+	case rtfFooterFirst:
+		option = "  \\lfoot{";
+		break;
+	}
+
+	PutLitStr(option);	
     while (braceLevel && braceLevel >= level) {
         RTFGetToken();
     	RTFRouteToken();
@@ -3443,7 +3467,7 @@ static void DoHeaderFooter(void)
     len = hfEndPos - hfStartPos;
     
     /* Don't bother unless the header contains something */
-    if (len>10) {
+    if (len>strlen(option)+2) {
 		requireFancyHdrPackage = true;
 		buff = malloc(len+1);
 		fseek(ofp, hfStartPos, 0);
@@ -3502,8 +3526,6 @@ static void Destination(void)
     case rtfHeaderRight:
     case rtfFooterLeft:
     case rtfFooterRight:
-    	RTFSkipGroup();
-    	break;
     case rtfFooterFirst:
     case rtfHeaderFirst:
     case rtfHeader:

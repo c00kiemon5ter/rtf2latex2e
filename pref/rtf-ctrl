@@ -1,5 +1,5 @@
 # number of control words and bytes of token space
-734 5558
+742 5630
 # control word table
 18 519 "\n"
 18 519 "\r"
@@ -284,10 +284,16 @@
 11 179 "facingp"
 3 7 "falt"
 4 107 "fbidi"
+31 731 "fbimajor"
+31 735 "fbiminor"
 3 94 "fchars"
 5 108 "fcharset"
+31 730 "fdbmajor"
+31 734 "fdbminor"
 4 105 "fdecor"
 11 144 "fet"
+31 729 "fhimajor"
+31 733 "fhiminor"
 13 281 "fi"
 7 117 "fid"
 3 75 "field"
@@ -300,6 +306,8 @@
 24 687 "fldlock"
 24 688 "fldpriv"
 3 77 "fldrslt"
+31 728 "flomajor"
+31 732 "flominor"
 4 103 "fmodern"
 10 131 "fn"
 8 124 "fnetwork"

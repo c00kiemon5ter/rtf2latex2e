@@ -1070,3 +1070,12 @@ minor	rtfxmlAttrNs	xmlattrns
 minor	rtfxmlAttrName	xmlattrname
 minor	rtfxmlAttrValue	xmlattrvalue
 minor	rtfListLevel	listlevel
+
+minor   rtfThemeflomajor	flomajor
+minor   rtfThemefhimajor	fhimajor
+minor   rtfThemefdbmajor	fdbmajor
+minor   rtfThemefbimajor	fbimajor
+minor   rtfThemeflominor	flominor
+minor   rtfThemefhiminor	fhiminor
+minor   rtfThemefdbminor	fdbminor
+minor   rtfThemefbiminor	fbiminor

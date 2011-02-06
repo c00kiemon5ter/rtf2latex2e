@@ -1066,3 +1066,12 @@
 # define		rtfxmlAttrName	725
 # define		rtfxmlAttrValue	726
 # define		rtfListLevel	727
+
+# define		rtfThemeflomajor	728
+# define		rtfThemefhimajor	729
+# define		rtfThemefdbmajor	730
+# define		rtfThemefbimajor	731
+# define		rtfThemeflominor	732
+# define		rtfThemefhiminor	733
+# define		rtfThemefdbminor	734
+# define		rtfThemefbiminor	735
