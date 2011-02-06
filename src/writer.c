@@ -95,25 +95,30 @@ static struct {
     int word97;
 } object;
 
-static int wrapCount = 0;
-static int word97ObjectType;
-static boolean nowBetweenParagraphs;
-static boolean suppressLineBreak;
-static boolean requireSetspacePackage;
-static boolean requireTablePackage;
-static boolean requireMultirowPackage;
-static boolean requireGraphicxPackage;
-static boolean requireAmsSymbPackage;
-static boolean requireMultiColPackage;
-static boolean requireUlemPackage;
-static boolean requireFixLtx2ePackage;
-static boolean requireHyperrefPackage;
-static boolean requireAmsMathPackage;
-static size_t packagePos;
-static size_t beginDocumentPos;
-static boolean insideTable;
-static boolean insideFootnote;
-static boolean insideHyperlink;
+int wrapCount = 0;
+int word97ObjectType;
+boolean nowBetweenParagraphs;
+boolean suppressLineBreak;
+boolean requireSetspacePackage;
+boolean requireTablePackage;
+boolean requireMultirowPackage;
+boolean requireGraphicxPackage;
+boolean requireAmsSymbPackage;
+boolean requireMultiColPackage;
+boolean requireUlemPackage;
+boolean requireFixLtx2ePackage;
+boolean requireHyperrefPackage;
+boolean requireAmsMathPackage;
+boolean requireFancyHdrPackage;
+size_t packagePos;
+size_t beginDocumentPos;
+boolean insideTable;
+boolean insideFootnote;
+boolean insideHyperlink;
+boolean insideHeaderFooter;
+
+char *preambleFancyHeader;
+char *preambleFancyHeaderFirst;
 
 #ifdef PICT2PDF
 char * WritePictAsPDF(char *pict);
@@ -137,6 +142,72 @@ int g_debug_char_style      = 0;
 char *UnicodeSymbolFontToLatex[];
 char *UnicodeGreekToLatex[];
 
+/*
+ * a useful diagnostic function to examine the token just read.
+ */
+void ExamineToken(char * tag)
+{
+    printf("********** %s **********\n", tag);
+    printf("* Token is %s\n", rtfTextBuf);
+    printf("* Class is %3d", rtfClass);
+    switch (rtfClass) {
+    case rtfUnknown: printf(" (rtfUnknown)\n"); break;
+    case rtfGroup: printf(" (rtfGroup)\n"); break;
+    case rtfText: printf(" (rtfText)\n"); break;
+    case rtfControl: printf(" (rtfControl)\n"); break;
+    case rtfEOF: printf(" (rtfEOF)\n"); break;
+    default: printf(" (not one of the basic five)\n"); break;
+    }
+
+    printf("* Major is %3d", rtfMajor);
+    if (rtfClass == rtfText) {
+        printf(" raw='%c' \n", rtfMajor);
+    } else if (rtfClass == rtfGroup) {
+        printf(" (%s)\n", rtfMajor? "rtfEndGroup" : "rtfBeginGroup");
+    } else {
+        switch (rtfMajor) {
+            case rtfVersion: printf(" (rtfVersion)\n"); break;
+            case rtfDefFont: printf(" (rtfDefFont)\n"); break;
+            case rtfCharSet: printf(" (rtfCharSet)\n"); break;
+            case rtfDestination: printf(" (rtfDestination)\n"); break;
+            case rtfFontFamily: printf(" (rtfFontFamily)\n"); break;
+            case rtfFontAttr: printf(" (rtfFontAttr)\n"); break;
+            case rtfColorName: printf(" (rtfColorName)\n"); break;
+            case rtfFileAttr: printf(" (rtfFileAttr)\n"); break;
+            case rtfFileSource: printf(" (rtfFileSource)\n"); break;
+            case rtfStyleAttr: printf(" (rtfStyleAttr)\n"); break;
+            case rtfKeyCodeAttr: printf(" (rtfKeyCodeAttr)\n"); break;
+            case rtfDocAttr: printf(" (rtfDocAttr)\n"); break;
+            case rtfSectAttr: printf(" (rtfSectAttr)\n"); break;
+            case rtfParAttr: printf(" (rtfParAttr)\n"); break;
+            case rtfPosAttr: printf(" (rtfPosAttr)\n"); break;
+            case rtfTblAttr: printf(" (rtfTblAttr)\n"); break;
+            case rtfCharAttr: printf(" (rtfCharAttr)\n"); break;
+            case rtfACharAttr: printf(" (rtfACharAttr)\n"); break;
+            case rtfSpecialChar: printf(" (rtfSpecialChar)\n"); break;
+            case rtfBookmarkAttr: printf(" (rtfBookmarkAttr)\n"); break;
+            case rtfPictAttr: printf(" (rtfPictAttr)\n"); break;
+            case rtfObjAttr: printf(" (rtfObjAttr)\n"); break;
+            case rtfDrawAttr: printf(" (rtfDrawAttr)\n"); break;
+            case rtfFNoteAttr: printf(" (rtfFNoteAttr)\n"); break;
+            case rtfFieldAttr: printf(" (rtfFieldAttr)\n"); break;
+            case rtfIndexAttr: printf(" (rtfIndexAttr)\n"); break;
+            case rtfTOCAttr: printf(" (rtfTOCAttr)\n"); break;
+            case rtfNeXTGrAttr: printf(" (rtfNeXTGrAttr)\n"); break;
+            case rtfWord97ObjAttr: printf(" (rtfWord97ObjAttr)\n"); break;
+            case rtfAnsiCharAttr: printf(" (rtfAnsiCharAttr)\n"); break;
+            default: printf(" (unknown)\n"); break;
+        }
+    }
+
+    printf("* Minor is %3d", rtfMinor);
+    if (rtfClass == rtfText) {
+        printf(" std=0x%2x\n", rtfMinor);
+    } else {
+        printf("\n");
+    }
+    printf("* Param is %3d\n\n", (int) rtfParam);
+}
 
 static void PutIntAsUtf8(int x)
 {
@@ -217,6 +288,17 @@ static void PutLitChar(int c)
     wrapCount = 0;
 
     PutIntAsUtf8(c & 0x00ff);
+}
+
+/* copy a sequence of bytes to the ostream, avoiding all the encoding machinery */
+static void PutLitByteStr(char *s)
+{
+    char *p = s;
+    if (!s) return;
+    while (*p) {
+        fputc(*p, ostream);
+        p++;
+    }
 }
 
 static void PutLitStr(char *s)
@@ -301,72 +383,6 @@ static void WriteColors(void)
 }
 
 /*
- * a useful diagnostic function to examine the token just read.
- */
-void ExamineToken(void)
-{
-    printf("* Token is %s\n", rtfTextBuf);
-    printf("* Class is %3d", rtfClass);
-    switch (rtfClass) {
-    case rtfUnknown: printf(" (rtfUnknown)\n"); break;
-    case rtfGroup: printf(" (rtfGroup)\n"); break;
-    case rtfText: printf(" (rtfText)\n"); break;
-    case rtfControl: printf(" (rtfControl)\n"); break;
-    case rtfEOF: printf(" (rtfEOF)\n"); break;
-    default: printf(" (not one of the basic five)\n"); break;
-    }
-
-    printf("* Major is %3d", rtfMajor);
-    if (rtfClass == rtfText) {
-        printf(" raw='%c' \n", rtfMajor);
-    } else if (rtfClass == rtfGroup) {
-        printf(" (%s)\n", rtfMajor? "rtfEndGroup" : "rtfBeginGroup");
-    } else {
-        switch (rtfMajor) {
-            case rtfVersion: printf(" (rtfVersion)\n"); break;
-            case rtfDefFont: printf(" (rtfDefFont)\n"); break;
-            case rtfCharSet: printf(" (rtfCharSet)\n"); break;
-            case rtfDestination: printf(" (rtfDestination)\n"); break;
-            case rtfFontFamily: printf(" (rtfFontFamily)\n"); break;
-            case rtfFontAttr: printf(" (rtfFontAttr)\n"); break;
-            case rtfColorName: printf(" (rtfColorName)\n"); break;
-            case rtfFileAttr: printf(" (rtfFileAttr)\n"); break;
-            case rtfFileSource: printf(" (rtfFileSource)\n"); break;
-            case rtfStyleAttr: printf(" (rtfStyleAttr)\n"); break;
-            case rtfKeyCodeAttr: printf(" (rtfKeyCodeAttr)\n"); break;
-            case rtfDocAttr: printf(" (rtfDocAttr)\n"); break;
-            case rtfSectAttr: printf(" (rtfSectAttr)\n"); break;
-            case rtfParAttr: printf(" (rtfParAttr)\n"); break;
-            case rtfPosAttr: printf(" (rtfPosAttr)\n"); break;
-            case rtfTblAttr: printf(" (rtfTblAttr)\n"); break;
-            case rtfCharAttr: printf(" (rtfCharAttr)\n"); break;
-            case rtfACharAttr: printf(" (rtfACharAttr)\n"); break;
-            case rtfSpecialChar: printf(" (rtfSpecialChar)\n"); break;
-            case rtfBookmarkAttr: printf(" (rtfBookmarkAttr)\n"); break;
-            case rtfPictAttr: printf(" (rtfPictAttr)\n"); break;
-            case rtfObjAttr: printf(" (rtfObjAttr)\n"); break;
-            case rtfDrawAttr: printf(" (rtfDrawAttr)\n"); break;
-            case rtfFNoteAttr: printf(" (rtfFNoteAttr)\n"); break;
-            case rtfFieldAttr: printf(" (rtfFieldAttr)\n"); break;
-            case rtfIndexAttr: printf(" (rtfIndexAttr)\n"); break;
-            case rtfTOCAttr: printf(" (rtfTOCAttr)\n"); break;
-            case rtfNeXTGrAttr: printf(" (rtfNeXTGrAttr)\n"); break;
-            case rtfWord97ObjAttr: printf(" (rtfWord97ObjAttr)\n"); break;
-            case rtfAnsiCharAttr: printf(" (rtfAnsiCharAttr)\n"); break;
-            default: printf(" (unknown)\n"); break;
-        }
-    }
-
-    printf("* Minor is %3d", rtfMinor);
-    if (rtfClass == rtfText) {
-        printf(" std=0x%2x\n", rtfMinor);
-    } else {
-        printf("\n");
-    }
-    printf("* Param is %3d\n\n", (int) rtfParam);
-}
-
-/*
  * Eventually this should keep track of the destination of the
  * current state and only write text when in the initial state.
  *
@@ -375,15 +391,14 @@ void ExamineToken(void)
  * obvious and provides incentive to fix it. :-)
  */
 
-static void PutStdChar(stdCode)
-int stdCode;
+static void PutStdChar(int stdCode)
 {
     char *oStr = NULL;
     char buf[rtfBufSiz];
 
     if (stdCode == rtfSC_nothing) {
         RTFMsg("* Unknown character %c (0x%x)!\n", rtfTextBuf[0], rtfTextBuf[0]);
-        ExamineToken();
+        ExamineToken("PutStdChar");
         PutLitStr("(unknown char)");
         return;
     }
@@ -409,10 +424,12 @@ int stdCode;
  * make sure we write this all important stuff. This routine is called
  * whenever something is written to the output file.
  */
+static int wroteBeginDocument = false;
 static int CheckForBeginDocument(void)
 {
     char buf[100];
-    static int wroteBeginDocument = false;
+    
+    if (insideHeaderFooter) return 0;
     
     if (!wroteBeginDocument) {
 
@@ -431,7 +448,7 @@ static int CheckForBeginDocument(void)
         
         if (!prefs[pConvertTextNoTab])
             strcat(preambleOurDefs,"\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
-        PutLitStr(preambleOurDefs);
+        PutLitByteStr(preambleOurDefs);
 
         beginDocumentPos = ftell(ofp);
         PutLitStr("\\begin{document}\n");
@@ -566,7 +583,7 @@ static void WriteTextStyle(void)
 
     if (SameTextStyle()) return;
     
-    StopTextStyle();
+    if (wroteBeginDocument || !insideHeaderFooter) StopTextStyle();
     
     if (prefs[pConvertTextSize] && textStyleWritten.fontSize != textStyle.fontSize) {
         if (textStyle.fontSize != normalSize) {
@@ -633,7 +650,6 @@ static void WriteTextStyle(void)
     }
 
     if (textStyleWritten.charCode != textStyle.charCode) {
-//    	fprintf(stderr,"new charCode=%p\n", textStyle.charCode);
     	curCharCode = textStyle.charCode;
         textStyleWritten.charCode=textStyle.charCode;
     }
@@ -657,9 +673,6 @@ static void SetFontStyle(void)
 //	fprintf(stderr, "Font %3d, cs=%3d, lookup=%p, name='%s'\n", font->rtfFNum, font->rtfFCharSet, font->rtfFCharCode, font->rtfFName);
 	textStyle.charCode = font->rtfFCharCode;
 	curCharCode = font->rtfFCharCode;
-
-//	font = RTFGetFont(textStyleWritten.fontNumber);
-//	fprintf(stderr, "Writ %3d, cs=%3d, lookup=%p, name='%s'\n", font->rtfFNum, font->rtfFCharSet, font->rtfFCharCode, font->rtfFName);
 }
 
 /*
@@ -766,7 +779,7 @@ static void NewParagraph(void)
 
     nowBetweenParagraphs = false;
 
-    if (insideFootnote || insideTable) return;
+    if (insideFootnote || insideTable || insideHeaderFooter) return;
 
     if (prefs[pConvertInterParagraphSpace]) {
         if (current_vspace || paragraph.spaceBefore) {
@@ -836,6 +849,8 @@ static void EndParagraph(void)
 {
     char buf[rtfBufSiz];
 
+	if (insideHeaderFooter) return;
+	
     if (CheckForBeginDocument()) return;
 
     StopTextStyle();
@@ -844,7 +859,7 @@ static void EndParagraph(void)
         PutLitStr("\\linebreak\n");
         return;
     }
-
+	
     if (insideFootnote) {
         InsertNewLine();
         InsertNewLine();
@@ -911,6 +926,12 @@ static void setPreamblePackages(int ignoreUsedColor)
     if (genCharCode == cp1251CharCode) {
         strcat(preamblePackages,"\\usepackage[T2A]{fontenc}\n");
         strcat(preamblePackages,"\\usepackage[russian]{babel}\n");
+    }
+    
+    if (requireFancyHdrPackage) {
+        strcat(preamblePackages,"\\usepackage{fancyhdr}\n");
+        strcat(preamblePackages,"\\renewcommand{\\headrulewidth}{0pt}\n");
+        strcat(preamblePackages,"\\renewcommand{\\footrulewidth}{0pt}\n");
     }
     
     if (prefs[pConvertTextColor]) {
@@ -1765,7 +1786,7 @@ static void DoTable(void)
 /* set paragraph attributes that might be useful */
 static void ParAttr(void)
 {
-    if (insideFootnote || insideHyperlink)
+    if (insideFootnote || insideHyperlink || insideHeaderFooter)
         return;
 
     if (insideTable) {
@@ -1831,6 +1852,8 @@ static void ParAttr(void)
 
 static void SectAttr(void)
 {
+	if (insideHeaderFooter) return;
+	
     switch (rtfMinor) {
     case rtfColumns:
         section.cols = rtfParam;
@@ -1892,8 +1915,25 @@ void EndLaTeXFile(void)
     InsertNewLine();
     DefineColors(false);
     InsertNewLine();
-    PutLitStr(preambleOurDefs);    /* e.g., \tab */
+    PutLitByteStr(preambleOurDefs);    /* e.g., \tab */
     InsertNewLine();
+
+	if (preambleFancyHeader){
+		PutLitByteStr("\\pagestyle{fancy}\n");
+		PutLitByteStr("\\rhead{}\n\\rfoot{}\n\\chead{}\n\\cfoot{}\n");
+		PutLitByteStr(preambleFancyHeader);
+    	InsertNewLine();
+	}
+		
+	if (preambleFancyHeaderFirst){
+		PutLitByteStr("\\fancypagestyle{plain}{\n");
+		PutLitByteStr("\\rhead{}\n\\rfoot{}\n\\chead{}\n\\cfoot{}\n");
+		PutLitByteStr(preambleFancyHeaderFirst);
+		PutLitByteStr("}\n");
+		PutLitByteStr("\\thispagestyle{plain}\n");
+    	InsertNewLine();
+	}
+
     
     /* now copy the body of the document */
     fseek(ofp, beginDocumentPos, 0);
@@ -1907,7 +1947,7 @@ void EndLaTeXFile(void)
     free(newname);
     fclose(ofp);
     fclose(nfp);
-    unlink(oldname);
+//    unlink(oldname);
 }
 
 /* sets the output stream */
@@ -3293,7 +3333,7 @@ static void HandleOptionalTokens(void)
         break;
         
     default:
-    //  ExamineToken(); 
+    //  ExamineToken("HandleOptionalTokesn"); 
         RTFSkipGroup();
         break;
     }
@@ -3364,8 +3404,66 @@ static void SpecialChar(void)
     case rtfCurFNote:
         break;
     default:
-        ExamineToken();  /* comment out before release */
+        ExamineToken("SpecialChar");  /* comment out before release */
     }
+}
+
+static void DoHeaderFooter(void)
+{
+	char *buff, *s;
+	size_t hfStartPos, hfEndPos, len;
+	int isHeader, isFirst;
+	int level = braceLevel;
+	
+	if (insideHeaderFooter) return;
+	
+	insideHeaderFooter = true;
+	suppressLineBreak = true;
+	isHeader = (rtfMinor == rtfHeader) || (rtfMinor == rtfHeaderFirst) ;
+	isFirst  = (rtfMinor == rtfHeaderFirst) || (rtfMinor == rtfFooterFirst) ;
+	
+    StopTextStyle();
+
+    hfStartPos = ftell(ofp);
+
+	if (isHeader)
+		PutLitStr("\\lhead{");
+	else
+		PutLitStr("\\lfoot{");
+	
+    while (braceLevel && braceLevel >= level) {
+        RTFGetToken();
+    	RTFRouteToken();
+    }
+    StopTextStyle();
+    PutLitStr("}\n");
+    
+    /* copy header/footer  */
+    hfEndPos = ftell(ofp);
+    len = hfEndPos - hfStartPos;
+    
+    /* Don't bother unless the header contains something */
+    if (len>10) {
+		requireFancyHdrPackage = true;
+		buff = malloc(len+1);
+		fseek(ofp, hfStartPos, 0);
+		fread(buff,1,len,ofp);
+		buff[len] = '\0';
+		
+		if (!isFirst) {
+			s = strdup_together(preambleFancyHeader,buff);
+			if (preambleFancyHeader) free(preambleFancyHeader);
+			preambleFancyHeader = s;
+		} else {
+			s = strdup_together(preambleFancyHeaderFirst,buff);
+			if (preambleFancyHeaderFirst) free(preambleFancyHeaderFirst);
+			preambleFancyHeaderFirst = s;
+		}
+    }
+	fseek(ofp, hfStartPos, 0);
+    
+    suppressLineBreak = false;
+    insideHeaderFooter = false;
 }
 
 /*
@@ -3399,6 +3497,18 @@ static void Destination(void)
     case rtfUnicode:
     case rtfUnicodeFake:
         ReadUnicode();
+        break;
+    case rtfHeaderLeft:
+    case rtfHeaderRight:
+    case rtfFooterLeft:
+    case rtfFooterRight:
+    	RTFSkipGroup();
+    	break;
+    case rtfFooterFirst:
+    case rtfHeaderFirst:
+    case rtfHeader:
+    case rtfFooter:
+        DoHeaderFooter();
         break;
     }
 }
@@ -3460,6 +3570,9 @@ static void RTFSetGenCharSet(void)
             case 10001:
                 genCharCode=cp932CharCode;
                 break;
+            case 10008:
+                genCharCode=cp936CharCode;
+                break;
         }
     }
     
@@ -3491,7 +3604,6 @@ static void ControlClass(void)
         break;
     case rtfListAttr:
         RTFSkipGroup();
-//        RTFRouteToken();
         break;
     case rtfTblAttr:            /* trigger for reading table */
         if (rtfMinor == rtfRowDef && !(insideTable)) {
@@ -3534,6 +3646,7 @@ int BeginLaTeXFile(void)
     insideFootnote = false;
     insideHyperlink = false;
     insideTable = false;
+    insideHeaderFooter = false;
     section.newStyle = false;
     section.cols = 1;
 
@@ -3547,6 +3660,10 @@ int BeginLaTeXFile(void)
     requireHyperrefPackage = false;
     requireMultirowPackage = false;
     requireAmsMathPackage = false;
+    requireFancyHdrPackage = false;
+
+	preambleFancyHeader=NULL;
+	preambleFancyHeaderFirst=NULL;
 
     picture.count = 0;
     picture.type = unknownPict;
