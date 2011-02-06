@@ -3227,6 +3227,14 @@ static void ReadPageRefField(void)
     SkipFieldResult();
 }
 
+/*
+ *  Just emit \pageref{HToc268612944} for {\*\fldinst {...  PAGEREF _Toc268612944 \\h } ..}
+*/
+static void ReadPageField(void)
+{
+    PutLitStr("\\thepage{}");    
+    SkipFieldResult();
+}
 
 /*
  *  Three possible types of fields
@@ -3278,8 +3286,7 @@ static void ReadFieldInst(void)
     }
 
     if (strcmp(buf, "PAGE") == 0) {
-        /* skip ... otherwise a number gets inserted */
-        SkipFieldResult();
+    	ReadPageField();
         return;
     }
 
@@ -3467,24 +3474,34 @@ static void DoHeaderFooter(void)
     len = hfEndPos - hfStartPos;
     
     /* Don't bother unless the header contains something */
-    if (len>strlen(option)+2) {
-		requireFancyHdrPackage = true;
-		buff = malloc(len+1);
+    /* and we are still in the preamble */
+    
+    if (len<=strlen(option)+2) {
+    	/* erase empty command */
 		fseek(ofp, hfStartPos, 0);
-		fread(buff,1,len,ofp);
-		buff[len] = '\0';
-		
-		if (!isFirst) {
-			s = strdup_together(preambleFancyHeader,buff);
-			if (preambleFancyHeader) free(preambleFancyHeader);
-			preambleFancyHeader = s;
-		} else {
-			s = strdup_together(preambleFancyHeaderFirst,buff);
-			if (preambleFancyHeaderFirst) free(preambleFancyHeaderFirst);
-			preambleFancyHeaderFirst = s;
+
+	} else {
+
+		/* save only if still in preamble or it is a first page command */
+		if (isFirst || !wroteBeginDocument) {
+			requireFancyHdrPackage = true;
+			buff = malloc(len+1);
+			fseek(ofp, hfStartPos, 0);
+			fread(buff,1,len,ofp);
+			buff[len] = '\0';
+			
+			if (!isFirst) {
+				s = strdup_together(preambleFancyHeader,buff);
+				if (preambleFancyHeader) free(preambleFancyHeader);
+				preambleFancyHeader = s;
+			} else {
+				s = strdup_together(preambleFancyHeaderFirst,buff);
+				if (preambleFancyHeaderFirst) free(preambleFancyHeaderFirst);
+				preambleFancyHeaderFirst = s;
+			}
+			fseek(ofp, hfStartPos, 0);
 		}
     }
-	fseek(ofp, hfStartPos, 0);
     
     suppressLineBreak = false;
     insideHeaderFooter = false;
