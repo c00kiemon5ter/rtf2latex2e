@@ -92,9 +92,13 @@ short cp437CharCode[CHAR_SET_SIZE];        /* code page 437 */
 short cp850CharCode[CHAR_SET_SIZE];        /* code page 850 */
 short cpMacCharCode[CHAR_SET_SIZE];        /* mac character set */
 short cpNextCharCode[CHAR_SET_SIZE];       /* NeXt character set */
-short cp932CharCode[8000];       /* cp932 character set */
-short cp932Index[8000];       /* cp932 character set index */
-int cp932IndexSize=0;
+short cp932CharCode[7915];       /* cp932 character set */
+short cp932Index[7915];       /* cp932 character set index */
+int cp932IndexSize=7915;
+
+short cp936CharCode[21791];       /* cp936 (GB2312) character set */
+short cp936Index[21791];       /* cp932 (GB2312) character set index */
+int cp936IndexSize=21791;
 
 static short InitStyleTranslationMap(void)
 {
@@ -494,6 +498,27 @@ static int read932CharCodes(void)
 	return 1;
 }
 
+static int read936CharCodes(void)
+{
+    FILE *f;
+    int a,b;
+    int i;
+
+    if ((f = RTFOpenLibFile("cp936raw.txt", "rb")) == NULL)
+        return (0);
+
+	i=0;
+	while (!feof(f)) {
+		fscanf(f,"%d %d", &a, &b);
+		cp936Index[i]= (short)a;
+		cp936CharCode[i]=(short)b;
+		i++;
+	}
+	cp936IndexSize = i-1;
+	fclose(f);
+	return 1;
+}
+
 /*
  * Initialize all character sets needed to interpret the RTF data
  */
@@ -527,6 +552,7 @@ void InitCharSets(void)
         RTFPanic("Cannot read character mapping for Adobe symbol code page!\n");
         
     read932CharCodes();
+    read936CharCodes();
 }
 
 static void InitUserText(void)

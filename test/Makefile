@@ -14,6 +14,7 @@ TEX     =   arch-mac.tex arch.tex equation.tex  mapping.tex \
             RtfInterpreterTest_10.tex  RtfInterpreterTest_4.tex   RtfInterpreterTest_8.tex\
             RtfInterpreterTest_11.tex  RtfInterpreterTest_5.tex   RtfInterpreterTest_9.tex \
             RtfInterpreterTest_12.tex  RtfInterpreterTest_13.tex  RtfInterpreterTest_14.tex \
+            RtfInterpreterTest_15.tex  RtfInterpreterTest_16.tex  RtfInterpreterTest_17.tex \
             russian-short.tex
 
 EQN     = testeqn01.eqn  testeqn02.eqn  testeqn03.eqn  testeqn04.eqn  \
@@ -38,9 +39,6 @@ TEX2    =   Example2.rtfd/TXT.tex \
             RtfParserTest_6.tex\
             RtfParserTest_7.tex\
             RtfParserTest_8.tex\
-            RtfInterpreterTest_15.tex\
-            RtfInterpreterTest_16.tex\
-            RtfInterpreterTest_17.tex\
             RtfInterpreterTest_18.tex\
             RtfInterpreterTest_19.tex\
             RtfInterpreterTest_20.tex\

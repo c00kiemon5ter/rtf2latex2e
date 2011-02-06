@@ -78,9 +78,13 @@ extern short cp850CharCode[CHAR_SET_SIZE];        /* code page 850 */
 extern short cpMacCharCode[CHAR_SET_SIZE];        /* mac character set */
 extern short cpNextCharCode[CHAR_SET_SIZE];       /* NeXt character set */
 
-extern short cp932CharCode[8000];       /* cp932 character set */
-extern short cp932Index[8000];       /* cp932 character set index */
+extern short cp932CharCode[];       /* cp932 character set */
+extern short cp932Index[];       /* cp932 character set index */
 extern int cp932IndexSize;
+
+extern short cp936CharCode[];       /* cp932 character set */
+extern short cp936Index[];       /* cp932 character set index */
+extern int cp936IndexSize;
 
 extern short *genCharCode;
 extern short *curCharCode;

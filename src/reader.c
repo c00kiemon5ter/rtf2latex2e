@@ -540,13 +540,65 @@ static void RTFSet932Token(unsigned char firstByte)
 		free(s1);
 	}
 	
-	rtfClass = rtfControl;
-	rtfMajor = rtfDestination;
-	rtfMinor = rtfUnicodeFake;
-	rtfParam = cp932CharCode[index];
+	if (index == -1) {
+		rtfMinor = '?';
+	} else {
+		rtfClass = rtfControl;
+		rtfMajor = rtfDestination;
+		rtfMinor = rtfUnicodeFake;	
+		rtfParam = cp932CharCode[index];
+	}
 //	fprintf(stderr,"value is %u, index is %d, index[%d]=%u, charcode[%d]=%u\n", value, index, index, (unsigned short) cp932Index[index],index, (unsigned short) cp932CharCode[index]);
 }
 
+/* 
+ * slow, slow lookup because binary search fails for me
+ */
+static int find936Index(short value)
+{
+	int i;
+	
+	for (i=0; i<cp936IndexSize; i++)
+		if (cp936Index[i] == value) return i;
+		
+	//short *ptr = (short *)bsearch(&value, cp936Index, cp936IndexSize, sizeof(short), shortcmp);
+    
+   // if (ptr) return ptr-cp936Index;
+    	
+    return -1;
+}
+
+static void RTFSet936Token(unsigned char firstByte)
+{	
+	int index;
+	unsigned int value;
+	char *s1, *s2;
+	
+	/* ASCII ... leave alone */
+	if (firstByte<0x80) {
+        rtfMinor = cp1252CharCode[firstByte];
+		return;
+	}
+
+	s1 = strdup(rtfTextBuf);
+	_RTFGetToken2();
+	s2 = strdup_together(s1,rtfTextBuf);
+	value = firstByte*256+rtfMajor;
+	index = find936Index(value);
+	strcpy(rtfTextBuf,s2);
+	free(s2);
+	free(s1);
+	
+	if (index == -1) {
+		rtfMinor = '?';
+	} else {
+		rtfClass = rtfControl;
+		rtfMajor = rtfDestination;
+		rtfMinor = rtfUnicodeFake;
+		rtfParam = cp936CharCode[index];
+	}
+//	fprintf(stderr,"value is %u, index is %d, index[%d]=%u, charcode[%d]=%u\n", value, index, index, (unsigned short) cp936Index[index],index, (unsigned short) cp936CharCode[index]);
+}
 
 static void _RTFGetToken(void)
 {
@@ -572,10 +624,17 @@ static void _RTFGetToken(void)
     
     if (rtfClass == rtfText) {   /* map RTF char to standard code */
 
-		if (curCharCode != cp932CharCode)
-        	rtfMinor = RTFMapChar(rtfMajor);
-        else
+        if (curCharCode==cp932CharCode) {
             RTFSet932Token(rtfMajor);
+            return;
+        }
+
+        if (curCharCode==cp936CharCode) {
+            RTFSet936Token(rtfMajor);
+            return;
+        }
+
+       	rtfMinor = RTFMapChar(rtfMajor);
         return;
     }
 
@@ -1019,6 +1078,8 @@ static void ReadFontTbl(void)
                         fp->rtfFCharSet = rtfParam;
                         if (rtfParam == 128 || rtfParam == 78)  /* Japanese */
                         	fp->rtfFCharCode = cp932CharCode;
+                        if (rtfParam == 134 || rtfParam == 80)  /* Chinese GB2312 */
+                        	fp->rtfFCharCode = cp936CharCode;
                         break;
                     case rtfFontPitch:
                         fp->rtfFPitch = rtfParam;
