@@ -2786,7 +2786,7 @@ static boolean ReadEquation(int *groupCount)
         }
     }
 
-    /* save hex-encoded object data a binary objectFileName */
+    /* save hex-encoded object data as a binary objectFileName */
     ReadObjectData(objectFileName, EquationClass, EQUATION_OFFSET);
     (*groupCount)--;
 

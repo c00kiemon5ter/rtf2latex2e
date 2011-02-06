@@ -1,22 +1,23 @@
-/*  MathType equation to LaTeX converter */
-/*  */
-/*  Ported 2000.04.03 by Steve Swanson, steve@mackichan.com */
-/*  Initial implementation by Jack Medd.  Originally part of */
-/*  RTF to LaTeX converter in Scientific WorkPlace (http://www.mackichan.com). */
-/*  */
-/*  The MathType equation format were described at */
-/*    http://www.mathtype.com/support/tech/MTEF4.htm */
-/*    http://www.mathtype.com/support/tech/MTEF5.htm */
-/*    http://www.mathtype.com/support/tech/MTEF_storage.htm */
-/*    http://www.mathtype.com/support/tech/encodings/mtcode.stm */
-/*  Various undocumented details determined by debugging and intuition. */
-/*  */
-/*  Access to these pages is available at */
-/*  http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF5.htm */
-/*  http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF4.htm */
-/*  http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF3.htm */
-/*  http://web.archive.org/web/20010304111449/http://mathtype.com/support/tech/MTEF_storage.htm */
-/*  http://web.archive.org/web/20021020115826/http://www.mathtype.com/support/tech/encodings/mtcode.stm */
+/*  MathType equation to LaTeX converter
+ * 
+ *  Ported 2000.04.03 by Steve Swanson, steve@mackichan.com
+ *  Initial implementation by Jack Medd.  Originally part of
+ *  RTF to LaTeX converter in Scientific WorkPlace (http://www.mackichan.com).
+ * 
+ *  The MathType equation format were described at
+ *    http://www.mathtype.com/support/tech/MTEF4.htm
+ *    http://www.mathtype.com/support/tech/MTEF5.htm
+ *    http://www.mathtype.com/support/tech/MTEF_storage.htm
+ *    http://www.mathtype.com/support/tech/encodings/mtcode.stm
+ *  Various undocumented details determined by debugging and intuition.
+ * 
+ *  Access to these pages is available at
+ *  http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF5.htm
+ *  http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF4.htm
+ *  http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF3.htm
+ *  http://web.archive.org/web/20010304111449/http://mathtype.com/support/tech/MTEF_storage.htm
+ *  http://web.archive.org/web/20021020115826/http://www.mathtype.com/support/tech/encodings/mtcode.stm
+ */
 
 # include       <stdint.h>
 # include       <stdio.h>
@@ -637,9 +638,18 @@ void Eqn_Destroy(MTEquation * eqn)
         free(eqn->atts_table);
         eqn->atts_table = NULL;
     }
+    if (eqn->m_latex_start) {
+        free(eqn->m_latex_start);
+        eqn->m_latex_start = NULL;
+    }
+    if (eqn->m_latex_end) {
+        free(eqn->m_latex_end);
+        eqn->m_latex_end = NULL;
+    }
+    
 }
 
-static void setMathMode(MTEquation * eqn, char * buff, int mode)
+static char * setMathMode(MTEquation * eqn, int mode)
 {
     char s[50];
     *s = '\0';
@@ -713,12 +723,10 @@ static void setMathMode(MTEquation * eqn, char * buff, int mode)
     
     eqn->m_mode = mode;
     
-    if (strlen(s)) {
-        if (buff)
-            strcat(buff,s);
-        else
-            fputs(s, eqn->out_file);
-    }
+    if (strlen(s))
+    	return strdup(s);
+    else
+    	return NULL;
 }
 
 static int GetAttribute(MTEquation * eqn, unsigned char *src, uint8_t *attrs)
@@ -1353,6 +1361,8 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
     eqn->m_mode = EQN_MODE_TEXT;
     eqn->m_inline = 0;
     eqn->m_mtef_ver = eqn_stream[src_index++];
+    eqn->m_latex_start = NULL;
+    eqn->m_latex_end = NULL;
 
     switch (eqn->m_mtef_ver) {
     case 1:
@@ -1550,11 +1560,14 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
         }
     }
 
-    if (*math_attr == MA_FORCE_MATH && eqn->m_mode == EQN_MODE_TEXT) 
-        setMathMode(eqn, NULL, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
-    else if (*math_attr == MA_FORCE_TEXT)
-        setMathMode(eqn, NULL, EQN_MODE_TEXT);
+    if (*math_attr == MA_FORCE_MATH && eqn->m_mode == EQN_MODE_TEXT) {
+        eqn->m_latex_start = setMathMode(eqn, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
+        if (eqn->m_latex_start) fputs(eqn->m_latex_start, eqn->out_file);
 
+    } else if (*math_attr == MA_FORCE_TEXT) {
+        eqn->m_latex_start = setMathMode(eqn, EQN_MODE_TEXT);
+        if (eqn->m_latex_start) fputs(eqn->m_latex_start, eqn->out_file);
+	}
     if (!ztex && set_atts.use_codepoint) {
         if (thechar->character >= 32 && thechar->character <= 127) {
             zch = (char) thechar->character;
@@ -1725,9 +1738,6 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     strcpy(zdata, tex_func);
     strs[num_strs].data = zdata;
     num_strs++;
-
-//    if (*advance && eqn->m_mode == EQN_MODE_TEXT)
-  //      setMathMode(eqn, NULL, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
 
     return Eqn_JoinStrings(eqn, strs, num_strs);
 }
@@ -1935,15 +1945,15 @@ int Is_RelOp(MT_CHAR * charptr)
 static
 char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 {
-
+	char *rv, *start;
     uint32_t buf_limit = 8192;
-    char *rv = (char *) malloc(buf_limit);
     MT_OBJLIST *obj_list;
     int curr_row = 0;
     int right_only = 0;
     char *data;
     uint32_t b_off;
 
+    rv = malloc(buf_limit);
     *rv = 0;
 
     if (eqn->log_level >= 2) {
@@ -1954,7 +1964,8 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 
     strcat(eqn->indent, "  ");
 
-    setMathMode(eqn,rv,EQN_MODE_EQNARRAY);
+	eqn->m_latex_start = setMathMode(eqn, EQN_MODE_EQNARRAY);
+	if (eqn->m_latex_start) strcat(rv,start);
 
     obj_list = pile->line_list;
 
@@ -2191,13 +2202,6 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom
     }
 
     strcat(eqn->indent, "  ");
-/*
-    if (forces_math && eqn->m_mode == EQN_MODE_TEXT) 
-        setMathMode(eqn,rv,EQN_MODE_INLINE);
-    else if (forces_text) 
-        setMathMode(eqn,rv,EQN_MODE_TEXT);
-*/      
-    /*  put "\\begin{array}" */
 
     strcat(rv, "\n");
     strcat(rv, head);
@@ -2208,8 +2212,6 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom
     while (obj_list) {          /*   loop down thru lines */
 
         if (curr_row) {
-/*          if (forces_math)  */
-/*              setMathMode(eqn,rv,EQN_MODE_INLINE); */
             strcat(rv, line_sep);
             strcat(rv, "\n");
         }
@@ -2233,13 +2235,9 @@ char *Eqn_TranslatePILEtoTARGET(MTEquation * eqn, MT_PILE * pile, char *targ_nom
 
     /*  put "\n\\end{array*}\n" */
 
-/*  if (forces_text)  */
-/*      setMathMode(eqn,rv,EQN_MODE_TEXT); */
     strcat(rv, "\n");
     strcat(rv, tail);
     strcat(rv, "\n");
-
-/*  setMathMode(eqn,rv,save_math_mode); */
 
     eqn->indent[strlen(eqn->indent) - 2] = 0;
 
@@ -2373,8 +2371,10 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     int num_strs;
     MT_OBJLIST *obj_list;
 
-    if (eqn->m_mode == EQN_MODE_TEXT) 
-        setMathMode(eqn, NULL, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
+    if (eqn->m_mode == EQN_MODE_TEXT) {
+        eqn->m_latex_start = setMathMode(eqn, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
+        if (eqn->m_latex_start) fputs(eqn->m_latex_start, eqn->out_file);
+    }
 
     if (eqn->m_mtef_ver == 5 && (tmpl->selector != 9))
         tmpl->variation &= 0x000f;
@@ -2465,7 +2465,8 @@ char *Eqn_TranslatePILE(MTEquation * eqn, MT_PILE * pile)
     strs[num_strs].ilk = Z_TEX;
     strs[num_strs].is_line = 0;
 
-    setMathMode(eqn, NULL, EQN_MODE_DISPLAY);   
+    eqn->m_latex_start = setMathMode(eqn, EQN_MODE_DISPLAY); 
+    if (eqn->m_latex_start) fputs(eqn->m_latex_start, eqn->out_file);
 
     if (pile->halign == MT_PILE_OPERATOR)
         strs[num_strs].data = Eqn_TranslateEQNARRAY(eqn, pile);
@@ -2614,7 +2615,8 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
         free(ztex);
     }
 
-    setMathMode(eqn, NULL, EQN_MODE_TEXT);
+    eqn->m_latex_end = setMathMode(eqn, EQN_MODE_TEXT); 
+    if (eqn->m_latex_end) fputs(eqn->m_latex_end, eqn->out_file);
 
     if (eqn->log_level == 2)
         fputs(" %End Equation\n", eqn->out_file);
