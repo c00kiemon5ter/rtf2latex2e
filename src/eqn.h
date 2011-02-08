@@ -46,8 +46,9 @@ typedef struct {
     int m_version_sub;
     int m_inline;
     int m_mode;
-    char * m_latex_start;
-    char * m_latex_end;
+    char *m_latex_start;
+    char *m_latex;
+    char *m_latex_end;
 } MTEquation;
 
 int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size);

@@ -2743,6 +2743,9 @@ boolean ConvertEquationFile(char *objectFileName)
 
         /* this actually writes the equation */
         Eqn_TranslateObjectList(theEquation, ostream, 0);
+        PutLitStr(theEquation->m_latex_start);
+        PutLitStr(theEquation->m_latex);
+        PutLitStr(theEquation->m_latex_end);
         Eqn_Destroy(theEquation);
     }
 

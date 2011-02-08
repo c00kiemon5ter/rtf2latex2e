@@ -137,33 +137,6 @@ void SetComment(EQ_STRREC * strs, int lev, char *src)
         strs[0].data = (char *) NULL;
 }
 
-/* avoid blank lines in equation 
-   perhaps add logic to break lines but so far that is unneedd
-*/
-static
-void BreakTeX(char *ztex, FILE * outfile)
-{
-    char *p;    
-    int line_is_empty = 1;
-    
-    p = ztex;
-    while (*p) {
-
-        if (*p == '\r' || *p == '\n') {
-            if (!line_is_empty) {
-                fputc('\n', outfile);
-                line_is_empty = 1;
-            }
-        } else {
-            fputc(*p, outfile);
-            if (line_is_empty && *p != ' ')
-                line_is_empty = 0;
-        }
-
-        p++;
-    }
-}
-
 void print_tag(uint8_t tag, int src_index)
 {
     switch (tag) {
@@ -646,13 +619,16 @@ void Eqn_Destroy(MTEquation * eqn)
         free(eqn->m_latex_end);
         eqn->m_latex_end = NULL;
     }
+    if (eqn->m_latex) {
+        free(eqn->m_latex);
+        eqn->m_latex = NULL;
+    }
     
 }
 
-static char * setMathMode(MTEquation * eqn, int mode)
+static void setMathMode(MTEquation * eqn, int mode)
 {
     char s[50];
-    *s = '\0';
     if (DEBUG_MODE || g_input_file_type==TYPE_EQN) fprintf(stderr,"old=%d, new=%d\n",eqn->m_mode,mode);
     
     switch (mode) {
@@ -662,12 +638,18 @@ static char * setMathMode(MTEquation * eqn, int mode)
             break;
         case EQN_MODE_INLINE:
             strcpy(s," $");
+            if (eqn->m_latex_end) free(eqn->m_latex_end);
+            eqn->m_latex_end = strdup(s);
             break;     
         case EQN_MODE_DISPLAY:
             strcpy(s," $$\n");
+            if (eqn->m_latex_end) free(eqn->m_latex_end);
+            eqn->m_latex_end = strdup(s);
             break;          
         case EQN_MODE_EQNARRAY:
             strcpy(s,"\\end{eqnarray}\n");
+            if (eqn->m_latex_end) free(eqn->m_latex_end);
+            eqn->m_latex_end = strdup(s);
             break;
         }
         break;
@@ -675,15 +657,16 @@ static char * setMathMode(MTEquation * eqn, int mode)
     case EQN_MODE_INLINE:
         switch (eqn->m_mode) {
         case EQN_MODE_TEXT:
-            strcpy(s,"$");
+            if (eqn->m_latex_start) free(eqn->m_latex_start);
+            eqn->m_latex_start = strdup("$");
             break;
         case EQN_MODE_INLINE:
             break;     
         case EQN_MODE_DISPLAY:
-            strcpy(s," $$\n$");
+            fprintf(stderr,"Bizarre case of switching from display to inline??\n");
             break;          
         case EQN_MODE_EQNARRAY:
-            strcpy(s,"\\end{eqnarray}\n$");
+            fprintf(stderr,"Bizarre case of switching from eqnarray to inline??\n");
             break;
         }
         break;
@@ -691,15 +674,16 @@ static char * setMathMode(MTEquation * eqn, int mode)
     case EQN_MODE_DISPLAY:
         switch (eqn->m_mode) {
         case EQN_MODE_TEXT:
-            strcpy(s,"$$");
+            if (eqn->m_latex_start) free(eqn->m_latex_start);
+            eqn->m_latex_start = strdup("$$");
             break;
         case EQN_MODE_INLINE:
-            strcpy(s," $\n$$");
+            fprintf(stderr,"Bizarre case of switching from inline to display??\n");
             break;     
         case EQN_MODE_DISPLAY:
             break;          
         case EQN_MODE_EQNARRAY:
-            strcpy(s,"\\end{eqnarray}\n$$");
+            fprintf(stderr,"Bizarre case of switching from eqnarry to display??\n");
             break;
         }
         break;
@@ -707,13 +691,14 @@ static char * setMathMode(MTEquation * eqn, int mode)
     case EQN_MODE_EQNARRAY:
         switch (eqn->m_mode) {
         case EQN_MODE_TEXT:
-            strcpy(s,"\\begin{eqnarray}");
+            if (eqn->m_latex_start) free(eqn->m_latex_start);
+            eqn->m_latex_start = strdup("\\begin{eqnarray}");
             break;
         case EQN_MODE_INLINE:
-            strcpy(s," $\n\\begin{eqnarray}");
+            fprintf(stderr,"Bizarre case of switching from inline to eqnarry??\n");
             break;     
         case EQN_MODE_DISPLAY:
-            strcpy(s," $$\n\\begin{eqnarray}");
+            fprintf(stderr,"Bizarre case of switching from display to eqnarry??\n");
             break;          
         case EQN_MODE_EQNARRAY:
             break;
@@ -723,10 +708,10 @@ static char * setMathMode(MTEquation * eqn, int mode)
     
     eqn->m_mode = mode;
     
-    if (strlen(s))
+/*    if (strlen(s))
     	return strdup(s);
     else
-    	return NULL;
+    	return NULL;*/
 }
 
 static int GetAttribute(MTEquation * eqn, unsigned char *src, uint8_t *attrs)
@@ -1363,6 +1348,7 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
     eqn->m_mtef_ver = eqn_stream[src_index++];
     eqn->m_latex_start = NULL;
     eqn->m_latex_end = NULL;
+    eqn->m_latex = NULL;
 
     switch (eqn->m_mtef_ver) {
     case 1:
@@ -1561,12 +1547,10 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
     }
 
     if (*math_attr == MA_FORCE_MATH && eqn->m_mode == EQN_MODE_TEXT) {
-        eqn->m_latex_start = setMathMode(eqn, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
-        if (eqn->m_latex_start) fputs(eqn->m_latex_start, eqn->out_file);
+        setMathMode(eqn, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
 
     } else if (*math_attr == MA_FORCE_TEXT) {
-        eqn->m_latex_start = setMathMode(eqn, EQN_MODE_TEXT);
-        if (eqn->m_latex_start) fputs(eqn->m_latex_start, eqn->out_file);
+        setMathMode(eqn, EQN_MODE_TEXT);
 	}
     if (!ztex && set_atts.use_codepoint) {
         if (thechar->character >= 32 && thechar->character <= 127) {
@@ -1945,7 +1929,7 @@ int Is_RelOp(MT_CHAR * charptr)
 static
 char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 {
-	char *rv, *start;
+	char *rv;
     uint32_t buf_limit = 8192;
     MT_OBJLIST *obj_list;
     int curr_row = 0;
@@ -1964,8 +1948,7 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 
     strcat(eqn->indent, "  ");
 
-	eqn->m_latex_start = setMathMode(eqn, EQN_MODE_EQNARRAY);
-	if (eqn->m_latex_start) strcat(rv,start);
+	setMathMode(eqn, EQN_MODE_EQNARRAY);
 
     obj_list = pile->line_list;
 
@@ -2371,10 +2354,8 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     int num_strs;
     MT_OBJLIST *obj_list;
 
-    if (eqn->m_mode == EQN_MODE_TEXT) {
-        eqn->m_latex_start = setMathMode(eqn, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
-        if (eqn->m_latex_start) fputs(eqn->m_latex_start, eqn->out_file);
-    }
+    if (eqn->m_mode == EQN_MODE_TEXT) 
+        setMathMode(eqn, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
 
     if (eqn->m_mtef_ver == 5 && (tmpl->selector != 9))
         tmpl->variation &= 0x000f;
@@ -2465,8 +2446,7 @@ char *Eqn_TranslatePILE(MTEquation * eqn, MT_PILE * pile)
     strs[num_strs].ilk = Z_TEX;
     strs[num_strs].is_line = 0;
 
-    eqn->m_latex_start = setMathMode(eqn, EQN_MODE_DISPLAY); 
-    if (eqn->m_latex_start) fputs(eqn->m_latex_start, eqn->out_file);
+    setMathMode(eqn, EQN_MODE_DISPLAY); 
 
     if (pile->halign == MT_PILE_OPERATOR)
         strs[num_strs].data = Eqn_TranslateEQNARRAY(eqn, pile);
@@ -2610,19 +2590,19 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
     
     ztex = Eqn_TranslateObjects(eqn, eqn->o_list);
 
-    if (ztex) {
-        BreakTeX(ztex, eqn->out_file);
-        free(ztex);
-    }
-
-    eqn->m_latex_end = setMathMode(eqn, EQN_MODE_TEXT); 
-    if (eqn->m_latex_end) fputs(eqn->m_latex_end, eqn->out_file);
-
-    if (eqn->log_level == 2)
-        fputs(" %End Equation\n", eqn->out_file);
+	if (eqn->m_latex_start && ztex && *ztex) {
+		eqn->m_latex = ztex;
+		if (!eqn->m_latex_end) setMathMode(eqn, EQN_MODE_TEXT);
+		return;
+	} 
+	
+	if (eqn->m_latex_start) free(eqn->m_latex_start);
+	eqn->m_latex_start = NULL;
+	if (eqn->m_latex) free(eqn->m_latex);
+	eqn->m_latex = NULL;
+	if (eqn->m_latex_end) free(eqn->m_latex_end);
+	eqn->m_latex_end = NULL;
 }
-
-/* data */
 
 /* [FUNCTIONS] */
 char *Profile_FUNCTIONS[] = {
