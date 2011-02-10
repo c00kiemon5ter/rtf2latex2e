@@ -2691,12 +2691,98 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 }
 
 /*
+ * After an equation look for an equation number
+ */
+char * EqnNumberString(void)
+{
+    char theNumber[10], comma[2], *s, *t;
+	int index=0;
+	
+	theNumber[0]='\0';
+	comma[0]='\0';
+    /* skip to text following equation, stop looking a \par or \pard  */
+    do  {
+    	RTFGetToken();
+
+		/* paragraph ended ==> no equation number */
+    	if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfPar)) {
+    		RTFUngetToken();
+    		return NULL;
+        }
+    	
+		/* don't emit any tabs */
+    	if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfTab))
+    		continue;
+
+		/* don't emit pictures */
+    	if (RTFCheckCMM(rtfControl, rtfDestination, rtfPict)) {
+    		SkipGroup();
+    		continue;
+    	}
+
+        if (rtfClass == rtfText) {
+        	/* don't stop for spaces */
+        	if (isspace(rtfTextBuf[0])) 
+        		continue;
+
+			/* commas or periods are common punctuation following an equation
+			   so keep them but keep looking for a real equation number */
+        	if (rtfTextBuf[0] == ',' || rtfTextBuf[0] == '.') {
+            	comma[0]=rtfTextBuf[0];
+            	comma[1]='\0';
+        		continue;
+        	}
+        	
+        	/* found a text character that might start an equation number*/
+        	break;
+        }
+
+    	RTFRouteToken();
+    	
+	} while (rtfClass != rtfEOF);
+    
+	/* collect the equation number */
+    do {
+    	if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfPar)) {
+    		RTFUngetToken();
+    		break;;
+        }
+        
+		if (rtfClass == rtfText) {
+			char c=rtfTextBuf[0];
+
+			/* eqn numbers must start with '(', '[', or a digit */
+			if (index==0 && !(isdigit(c) || c == '(' || c == ']') ) break;
+						
+			theNumber[index]=c;
+			index++;
+			if (c==')' || c==']') break;
+		}
+		
+		RTFGetToken();
+	} while (rtfClass != rtfEOF && index<10);
+
+	if (index == 0) {
+    	RTFUngetToken();
+    	return strdup(comma);
+    }
+
+	theNumber[index]='\0';
+	s=strdup_together(comma,"\\eqno");
+	t=strdup_together(s,theNumber);
+	free(s);
+
+    return t;	
+}
+
+/*
  * Convert OLE file containing equation
  */
 
 boolean ConvertEquationFile(char *objectFileName)
 {
     unsigned char *nativeStream;
+    char *EqNo;
     MTEquation *theEquation;
     uint32_t equationSize;
 
@@ -2731,8 +2817,11 @@ boolean ConvertEquationFile(char *objectFileName)
             theEquation->m_inline = 0;
             EndParagraph();
             NewParagraph();
-        } else
+        	EqNo=EqnNumberString();
+        } else {
             theEquation->m_inline = 1;
+            EqNo=NULL;
+        }
 
         if (g_eqn_insert_name) {
             PutLitStr("\\fbox{file://");
@@ -2745,6 +2834,7 @@ boolean ConvertEquationFile(char *objectFileName)
         Eqn_TranslateObjectList(theEquation, ostream, 0);
         PutLitStr(theEquation->m_latex_start);
         PutLitStr(theEquation->m_latex);
+        PutLitStr(EqNo);
         PutLitStr(theEquation->m_latex_end);
         Eqn_Destroy(theEquation);
     }
