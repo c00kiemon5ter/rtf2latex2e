@@ -12,7 +12,7 @@
 \title{\rtf2latex2e Documentation\\
 version 2.0.1} 
 \author{Ujwal S. Sathyam\\ Scott Prahl}
-\date{31 Jan 2011}
+\date{09 Feb 2011}
 
 \begin{document} 
 \maketitle
@@ -88,12 +88,12 @@ has deprecated the PICT format and is pushing PDF.  PICT is an old format, true,
 but I am always stumbling across legacy files with PICT images.  The only way to properly
 convert the PICT vector image to a PDF vector images is to use the \texttt{QDPictCreateWithURL()}
 call.  This function is not available when compiling 64-bit binaries and therefore the \texttt{-m32}
-option is required while compiling an linking. }  Obviously the proper framework is
+option is required while compiling and linking. }  Obviously the proper framework is
 not available on other systems so this option is commented out by default.
 
 \subsection{Windows}
 Windows users get a pre-compiled binary of \rtf2latex2e to be run from
-the MS-DOS prompt. Just run it with the RTF file to be converted as the argument.
+the command prompt. Just run it with the RTF file to be converted as the argument.
 To compile, uncomment the following line in the Makefile
 \begin{verbatim}
     PLATFORM?=-DRTF2LATEX2E_DOS # Windows/DOS
@@ -268,7 +268,7 @@ This file is then processed to produce a string that is inserted into
 the converted latex document.  If something goes wrong with processing
 this particular equation then it is very handy to be able to access this
 equation directly.  So how do you know it was equation 33 and not equation 19?
-Use \texttt{-t 15} according to
+Use \texttt{-e 15} according to
 \begin{verbatim}
   -e #             equation conversion options
       -e1              convert to latex

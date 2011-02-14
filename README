@@ -50,8 +50,8 @@ prompt> rtf2latex -b test/test.rtf
 will try all sorts of things to get the formatting correct.  This comes
 at the expense of extensive formatting ``noise.'' 
 
-Typeset the rtf2LaTeX2eDoc.tex for more information, or print out the 
-rtf2LaTeX2eDoc.pdf file. They are in the documentation directory.
+Typeset the rtf2latexDoc.tex for more information, or print out the 
+rtf2latexDoc.pdf file. They are in the documentation directory.
 
 The file Release-notes.txt usually has more up-to-date info.
 
@@ -85,7 +85,7 @@ say $(HOME)/rtf2latex2e.
 
 WINDOWS:
 --------
-Windows users get a pre-compiled binary of rtf2latex2e to be run 
+Windows users get a pre-compiled binary rtf2latex.exe to be run 
 from the MS-DOS prompt. 
 
 
