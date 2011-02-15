@@ -10,7 +10,7 @@ RMDIR?=rm -rf
 CFLAGS=-g -Wall -Wno-write-strings
 
 PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
-#PLATFORM?=-DRTF2LATEX2E_DOS # Windows/DOS
+#PLATFORM?=-DMSDOS # Windows/DOS
 
 #Base directory - adapt as needed
 # Unix:
