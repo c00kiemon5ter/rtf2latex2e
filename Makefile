@@ -55,7 +55,8 @@ PREFS        = pref/latex-encoding                pref/latex-encoding.mac       
                pref/rtf-encoding.next             pref/rtf-encoding.symbolfont       \
                pref/rtf-ctrl                      pref/r2l-head                      \
                pref/r2l-map                       pref/r2l-pref                      \
-               pref/rtf-encoding.cp1251
+               pref/rtf-encoding.cp1251           pref/rtf-encoding.cp1254           \
+               pref/cp936raw.txt                  pref/cp932raw.txt
 
 DOCS         = doc/GPL_license            doc/ChangeLog\
                doc/rtf2latexSWP.tex       doc/rtfReader.tex          doc/rtf2latexDoc.tex    \
