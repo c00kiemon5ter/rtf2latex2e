@@ -68,12 +68,6 @@ make
 make test
 make install (optional, as root)
 
-MacOS X users should remove '#' on the Makefile lines before building
-to get automatic translation of .pict files to .pdf files.
-
-#CFLAGS  :=$(CFLAGS) -m32 -DPICT2PDF
-#LDFLAGS :=$(LDFLAGS) -m32 -framework ApplicationServices
-
 By default the executable is installed as /usr/local/bin/rtf2latex2e.
 Support files will installed in /usr/local/share/rtf2latex2e
 

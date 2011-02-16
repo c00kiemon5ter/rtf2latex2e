@@ -2203,14 +2203,14 @@ static void IncludeGraphics(char *pictureType)
         }
     }
 #endif
-#ifdef MSDOS
+#ifdef MSWIN
     if (strcmp(pictureType, "wmf") == 0) {
         if (!system("which wmf2eps") && !system("which epstopdf")) {
             int err;
             char *pdfname = strdup(picture.name);
             strcpy(pdfname + strlen(pdfname) - 3, "pdf");
 
-            snprintf(dummyBuf, rtfBufSiz, "w2e.bat %s %s", picture.name, pdfname);            
+            snprintf(dummyBuf, rtfBufSiz, "w2p.bat %s %s", picture.name, pdfname);            
             err = system(dummyBuf);
 
             if (!err) {

@@ -10,7 +10,8 @@ RMDIR?=rm -rf
 CFLAGS=-g -Wall -Wno-write-strings
 
 PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
-#PLATFORM?=-DMSDOS # Windows/DOS
+#PLATFORM?=-DMSWIN  # Windows
+#PLATFORM?=-DMSDOS # DOS - w2p.bat does not work under command.com
 
 #Base directory - adapt as needed
 # Unix:
