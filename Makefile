@@ -110,6 +110,7 @@ doc : doc/rtf2latexSWP.tex doc/rtfReader.tex doc/rtf2latexDoc.tex
 	cd doc && $(MAKE)
 
 test: rtf2latex2e
+	cd test && $(MAKE) clean
 	cd test && $(MAKE)
 
 checkfiles: $(SRCS) $(RTFPREP_SRCS) $(HDRS) $(PREFS) $(TEST) $(DOCS) Makefile

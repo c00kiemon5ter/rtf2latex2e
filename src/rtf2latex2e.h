@@ -116,7 +116,7 @@ typedef struct
     int styleIndex;
 } parStyleStruct;
 
-typedef struct cell
+typedef struct cellStruct
 {
     int x;
     int y;
@@ -130,24 +130,24 @@ typedef struct cell
     boolean textBold;
     boolean textItalic;
     boolean textUnderlined;
-    struct cell *nextCell;
-} cell;
+    struct cellStruct *nextCell;
+} cellStruct;
 
 typedef struct
 {
     boolean inside;
-    int     rows;
-    int     cols;
-    int     cellCount;
-    int     leftEdge;
-    cell    *cellInfo;
-    int     rowInfo[rtfBufSiz];
-    int     *columnBorders;
-    int     cellMergePar;
-    int     previousColumnValue;
-    boolean newRowDef;
-    boolean multiCol;
-    boolean multiRow;
+    int     	rows;
+    int     	cols;
+    int     	cellCount;
+    int     	leftEdge;
+    cellStruct	*cellInfo;
+    int     	rowInfo[rtfBufSiz];
+    int     	*columnBorders;
+    int     	cellMergePar;
+    int     	previousColumnValue;
+    boolean 	newRowDef;
+    boolean 	multiCol;
+    boolean 	multiRow;
 } tableStruct;
 
 short ReadPrefFile (char *file);

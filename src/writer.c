@@ -116,6 +116,7 @@ boolean insideTable;
 boolean insideFootnote;
 boolean insideHyperlink;
 boolean insideHeaderFooter;
+boolean insideMiniPage;
 
 char *preambleFancyHeader;
 char *preambleFancyHeaderFirst;
@@ -1080,35 +1081,35 @@ static void ReadFootnote(void)
  */
 static void ReadCell(void)
 {
-    cell *cellPtr;
+    cellStruct *cell;
     char *fn = "ReadCell";
 
-    cellPtr = New(cell);
-    if (!cellPtr) {
+    cell = New(cellStruct);
+    if (!cell) {
         RTFPanic("%s: cannot allocate cell entry", fn);
         exit(1);
     }
 
     /*fprintf(stderr,"creating cell %d, (x,y)=(%d,%d), right=%d\n",
               table.cellCount, table.rows, (table.rowInfo)[table.rows], rtfParam);*/
-    cellPtr->nextCell = table.cellInfo;
-    cellPtr->x = table.rows;
-    cellPtr->y = (table.rowInfo)[table.rows];
+    cell->nextCell = table.cellInfo;
+    cell->x = table.rows;
+    cell->y = (table.rowInfo)[table.rows];
     if (table.cols == 0)
-        cellPtr->left = table.leftEdge;
+        cell->left = table.leftEdge;
     else
-        cellPtr->left = (table.cellInfo)->right;
-    cellPtr->right = rtfParam;
-    cellPtr->width = (double) (cellPtr->right - cellPtr->left) / rtfTpi;
-    cellPtr->index = table.cellCount;
-    cellPtr->mergePar = table.cellMergePar;
+        cell->left = (table.cellInfo)->right;
+    cell->right = rtfParam;
+    cell->width = (double) (cell->right - cell->left) / rtfTpi;
+    cell->index = table.cellCount;
+    cell->mergePar = table.cellMergePar;
     table.cellMergePar = none;  /* reset */
-    table.cellInfo = cellPtr;
+    table.cellInfo = cell;
 
-    if (cellPtr->right <= table.previousColumnValue)
-        cellPtr->right = table.previousColumnValue + 100;
+    if (cell->right <= table.previousColumnValue)
+        cell->right = table.previousColumnValue + 100;
 
-    table.previousColumnValue = cellPtr->right;
+    table.previousColumnValue = cell->right;
 
 }
 
@@ -1138,19 +1139,19 @@ static void DoTableAttr(void)
  * This function searches the cell list by cell index
  * returns NULL if not found
  */
-static cell *GetCellInfo(int cellNum)
+static cellStruct *GetCellInfo(int cellNum)
 {
-    cell *cellPtr;
+    cellStruct *cell;
 
     if (cellNum == -1)
         return (table.cellInfo);
 
-    for (cellPtr = (table.cellInfo); cellPtr != NULL; cellPtr = cellPtr->nextCell) {
-        if (cellPtr->index == cellNum)
-            return cellPtr;
+    for (cell = (table.cellInfo); cell != NULL; cell = cell->nextCell) {
+        if (cell->index == cellNum)
+            return cell;
     }
 
-    if (!cellPtr)
+    if (!cell)
         RTFPanic("GetCellInfo: Attempting to access invalid cell at index %d\n", cellNum);
 
     return NULL;
@@ -1161,21 +1162,20 @@ static cell *GetCellInfo(int cellNum)
  * This function searches the cell list by cell coordinates
  * returns NULL if not found
  */
-static cell *GetCellByPos(int x, int y)
+static cellStruct *GetCellByPos(int x, int y)
 {
-    cell *cellPtr;
+    cellStruct *cell;
 
     if (!table.cellInfo)
         RTFPanic("GetCellByPos: Attempting to access invalid cell at %d, %d\n", x, y);
 
-    for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
-        if (cellPtr->x == x && cellPtr->y == y)
-            return cellPtr;
+    for (cell = table.cellInfo; cell != NULL; cell = cell->nextCell) {
+        if (cell->x == x && cell->y == y)
+            return cell;
     }
 
     return NULL;
 }
-
 
 
 /*
@@ -1187,7 +1187,7 @@ static void InheritTableRowDef(void)
 {
     int prevRow;
     int cellsInPrevRow;
-    cell *cellPtr, *newCellPtr;
+    cellStruct *cell, *newcell;
     int i;
     char *fn = "InheritTableRowDef";
 
@@ -1198,24 +1198,24 @@ static void InheritTableRowDef(void)
 
     for (i = 0; i < cellsInPrevRow; i++) {
 
-        cellPtr = GetCellByPos(prevRow, i);
+        cell = GetCellByPos(prevRow, i);
 
-        newCellPtr = New(cell);
-        if (!newCellPtr) {
+        newcell = New(cellStruct);
+        if (!newcell) {
             RTFPanic("%s: cannot allocate inheriting cell entry", fn);
             exit(1);
         }
 
-        newCellPtr->nextCell = table.cellInfo;
-        newCellPtr->x = prevRow + 1;
-        newCellPtr->y = cellPtr->y;
-        newCellPtr->left = cellPtr->left;
-        newCellPtr->right = cellPtr->right;
-        newCellPtr->width = cellPtr->width;
-        newCellPtr->index = table.cellCount;
-        newCellPtr->mergePar = cellPtr->mergePar;
+        newcell->nextCell = table.cellInfo;
+        newcell->x = prevRow + 1;
+        newcell->y = cell->y;
+        newcell->left = cell->left;
+        newcell->right = cell->right;
+        newcell->width = cell->width;
+        newcell->index = table.cellCount;
+        newcell->mergePar = cell->mergePar;
         table.cellMergePar = none;      /* reset */
-        table.cellInfo = newCellPtr;
+        table.cellInfo = newcell;
         table.cellCount++;
     }
 }
@@ -1227,21 +1227,21 @@ static void InheritTableRowDef(void)
  * edges of the cell are not consecutive entries in the array,
  * the cell spans multiple columns.
  */
-static int GetColumnSpan(cell * cellPtr)
+static int GetColumnSpan(cellStruct * cell)
 {
     int i, j;
 
     /* if this is the last cell in the row, make its right edge flush with the table right edge */
-    if (cellPtr->y == ((table.rowInfo)[cellPtr->x]) - 1)
-        cellPtr->right = (table.columnBorders)[table.cols];
+    if (cell->y == ((table.rowInfo)[cell->x]) - 1)
+        cell->right = (table.columnBorders)[table.cols];
 
     for (i = 0; i < table.cols; i++) {
-        if ((table.columnBorders)[i] == cellPtr->left)
+        if ((table.columnBorders)[i] == cell->left)
             break;
     }
 
     for (j = i; j < table.cols + 1; j++){
-        if ((table.columnBorders)[j] == cellPtr->right)
+        if ((table.columnBorders)[j] == cell->right)
             break;
     }
 
@@ -1267,7 +1267,7 @@ static void PrescanTable(void)
     boolean foundRow = true;
     boolean foundColumn = true;
     int i, j;
-    cell *cellPtr, *cellPtr1;
+    cellStruct *cell, *cell1;
     char *fn = "PrescanTable";
     short prevChar;
     int maxCols = 0;
@@ -1388,19 +1388,19 @@ static void PrescanTable(void)
     }
 
     table.cols = 0;
-    for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
+    for (cell = table.cellInfo; cell != NULL; cell = cell->nextCell) {
 
         enteredValue = false;
         for (j = 0; j < table.cols; j++)
-            if (rightBorders[j] == cellPtr->right) enteredValue=true;
+            if (rightBorders[j] == cell->right) enteredValue=true;
 
         if (!enteredValue) {
-            rightBorders[table.cols] = cellPtr->right;
+            rightBorders[table.cols] = cell->right;
             (table.cols)++;
         }
 
-        if (cellPtr->y == 0)
-            cellPtr->left = table.leftEdge;
+        if (cell->y == 0)
+            cell->left = table.leftEdge;
     }
 
     /* allocate array for column border entries. */
@@ -1451,41 +1451,41 @@ static void PrescanTable(void)
 
     /* fill in column spans for each cell */
     for (i = 0; i < table.cellCount; i++) {
-        cellPtr = GetCellInfo(i);
-        if (!cellPtr){
+        cell = GetCellInfo(i);
+        if (!cell){
             RTFPanic("%s: Attempting to access invalid cell at index %d\n", fn, i);
             exit(1);
         }
 
-        cellPtr->columnSpan = GetColumnSpan(cellPtr);
-        if (cellPtr->columnSpan > 1)
+        cell->columnSpan = GetColumnSpan(cell);
+        if (cell->columnSpan > 1)
             table.multiCol = true;
 
-        if (g_debug_table_prescan) fprintf(stderr,"* cell %d spans %d columns\n", cellPtr->index, cellPtr->columnSpan);
+        if (g_debug_table_prescan) fprintf(stderr,"* cell %d spans %d columns\n", cell->index, cell->columnSpan);
 
         /* correct the vertical cell position for any multicolumn cells */
-        if ((cellPtr->y) != 0) {
-            cellPtr1 = GetCellInfo(i - 1);
-            if (cellPtr == NULL)
+        if ((cell->y) != 0) {
+            cell1 = GetCellInfo(i - 1);
+            if (cell == NULL)
                 RTFPanic ("%s: Attempting to access invalid cell at index %d\n", fn, i);
-            cellPtr->y = cellPtr1->y + cellPtr1->columnSpan;
+            cell->y = cell1->y + cell1->columnSpan;
         }
 
         tableLeft = (table.columnBorders)[0];
         tableRight = (table.columnBorders)[table.cols];
         tableWidth = tableRight - tableLeft;
 
-        cellPtr->width = (double) (cellPtr->right - cellPtr->left) / rtfTpi;
+        cell->width = (double) (cell->right - cell->left) / rtfTpi;
         if (tableWidth > 4.5 * rtfTpi)
-            cellPtr->width *= 4.5 * rtfTpi / tableWidth;
+            cell->width *= 4.5 * rtfTpi / tableWidth;
 
     }
 
     if (g_debug_table_prescan) {
-        for (cellPtr = table.cellInfo; cellPtr != NULL; cellPtr = cellPtr->nextCell) {
-            fprintf(stderr,"* cell #%d (%d, %d) ", cellPtr->index, cellPtr->x, cellPtr->y);
-            fprintf(stderr,"left=%5d right=%5d ", cellPtr->left, cellPtr->right);
-            fprintf(stderr,"and spans %d columns\n", cellPtr->columnSpan);
+        for (cell = table.cellInfo; cell != NULL; cell = cell->nextCell) {
+            fprintf(stderr,"* cell #%d (%d, %d) ", cell->index, cell->x, cell->y);
+            fprintf(stderr,"left=%5d right=%5d ", cell->left, cell->right);
+            fprintf(stderr,"and spans %d columns\n", cell->columnSpan);
         }
     }
 
@@ -1500,25 +1500,25 @@ static void PrescanTable(void)
  * This routine counts the number of cells to be merged vertically and writes the
  * corresponding \multirow statement.
  */
-static void DoMergedCells(cell * cellPtr)
+static void DoMergedCells(cellStruct * cell)
 {
     int i;
     int x, y;
-    cell *localCellPtr;
+    cellStruct *localcell;
     char buf[rtfBufSiz];
 
-    x = cellPtr->x;
-    y = cellPtr->y;
+    x = cell->x;
+    y = cell->y;
 
     i = 1;
-    localCellPtr = GetCellByPos(x + i, y);
-    for (i = 1; localCellPtr->mergePar == previous; i++)
+    localcell = GetCellByPos(x + i, y);
+    for (i = 1; localcell->mergePar == previous; i++)
         if (x + i > table.rows - 1)
             break;
         else
-            localCellPtr = GetCellByPos(x + i, y);
+            localcell = GetCellByPos(x + i, y);
 
-    snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s ", i - 1, cellPtr->width, justificationList[paragraph.alignment]);
+    snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s ", i - 1, cell->width, justificationList[paragraph.alignment]);
     PutLitStr(buf);
 
     table.multiRow = true;
@@ -1533,47 +1533,51 @@ static void DoMergedCells(cell * cellPtr)
 static void WriteCellHeader(int cellNum)
 {
     char buf[rtfBufSiz];
-    cell *cellPtr;
+    cellStruct *cell;
 
     if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
 
-    cellPtr = GetCellInfo(cellNum);
-    if (!cellPtr) {
+    cell = GetCellInfo(cellNum);
+    if (!cell) {
         RTFPanic("WriteCellHeader: Attempting to access invalid cell at index %d\n", cellNum);
         exit(1);
     }
 
     if (table.multiCol) {
-        snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{", cellPtr->columnSpan);
+        snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{", cell->columnSpan);
         PutLitStr(buf);
 
-        if (cellPtr->columnSpan < 1)
+        if (cell->columnSpan < 1)
             RTFMsg("* Warning: nonsensical table encountered...cell %d spans %d columns.\nProceed with caution!\n",
-                   cellPtr->index, cellPtr->columnSpan);
+                   cell->index, cell->columnSpan);
 
         /* this check is to draw the left vertical boundary of the table */
-        if (cellPtr->y == 0)
+        if (cell->y == 0)
             PutLitChar('|');
 
-        if (cellPtr->mergePar == first) {
-            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}", cellPtr->width, cellPtr->width);
+        if (cell->mergePar == first) {
+            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}", cell->width, cell->width);
             PutLitStr(buf);
+            insideMiniPage = true;
         } else {
-            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}%s", cellPtr->width,cellPtr->width, justificationList[paragraph.alignment]);
+            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}%s", cell->width,cell->width, justificationList[paragraph.alignment]);
             PutLitStr(buf);
             InsertNewLine();
+            insideMiniPage = true;
         }
         
-    } else if (cellPtr->mergePar != first) {
-        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s ", cellPtr->width, justificationList[paragraph.alignment]);
+    } else if (cell->mergePar != first) {
+        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s ", cell->width, justificationList[paragraph.alignment]);
         PutLitStr(buf);
+        insideMiniPage = true;
     } else {
-        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin} ", cellPtr->width);
+        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin} ", cell->width);
         PutLitStr(buf);
+        insideMiniPage = true;
     }
 
-    if (cellPtr->mergePar == first)
-        DoMergedCells(cellPtr);
+    if (cell->mergePar == first)
+        DoMergedCells(cell);
 
     if (g_debug_table_writing)  {
         snprintf(buf, rtfBufSiz, "[cell \\#%d]",cellNum);
@@ -1586,7 +1590,7 @@ static void ProcessTableRow(int rowNum)
 {
     boolean cellIsEmpty = true;
     boolean firstCellInRow = true;
-    cell *cellPtr;
+    cellStruct *cell;
 
     suppressLineBreak = true;
     while (1) {
@@ -1599,7 +1603,10 @@ static void ProcessTableRow(int rowNum)
         /* token that signals end of the row */
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfRow)) {
             if (g_debug_table_writing) fprintf(stderr,"* end of row\n");
+            if (insideMiniPage)
+            	PutLitStr("\\end{minipage}");
             suppressLineBreak = false;
+            insideMiniPage = false;
             return;
         }
 
@@ -1610,16 +1617,18 @@ static void ProcessTableRow(int rowNum)
             if (cellIsEmpty) {
                 if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount - 1);
                 if (!firstCellInRow) PutLitStr(" & ");
-                cellPtr = GetCellInfo(table.cellCount - 1);
+                cell = GetCellInfo(table.cellCount - 1);
                 WriteCellHeader(table.cellCount - 1);
                 firstCellInRow = false;
             } 
             
             StopTextStyle();
-            if (cellPtr->mergePar == first)
+            if (cell->mergePar == first)
                 PutLitChar('}');
 
-            PutLitStr("\\end{minipage}");
+            if (insideMiniPage)
+            	PutLitStr("\\end{minipage}");
+            insideMiniPage = false;
                 
             if (table.multiCol)
                 PutLitChar('}');
@@ -1635,7 +1644,7 @@ static void ProcessTableRow(int rowNum)
                     PutLitStr(" & ");
                 
                 WriteCellHeader(table.cellCount);
-                cellPtr = GetCellInfo(table.cellCount);
+                cell = GetCellInfo(table.cellCount);
                 cellIsEmpty = false;
                 firstCellInRow = false;
             }
@@ -1652,7 +1661,7 @@ static void ProcessTableRow(int rowNum)
 static void DrawTableRowLine(int rowNum)
 {
     int i, cellPosition;
-    cell *cellInfo1, *cellInfo2;
+    cellStruct *cellInfo1, *cellInfo2;
     char buf[rtfBufSiz];
 
     /* if we are at the last row of the table, just draw a straight \hline. */
@@ -1700,7 +1709,7 @@ static void DrawTableRowLine(int rowNum)
 static void DoTable(void)
 {
     int i, rowNum;
-    cell *cellPtr;
+    cellStruct *cell;
     char buf[100];
 
     requireTablePackage = true;
@@ -1708,9 +1717,9 @@ static void DoTable(void)
 
     /* throw away old cell information lists */
     while (table.cellInfo) {
-        cellPtr = (table.cellInfo)->nextCell;
+        cell = (table.cellInfo)->nextCell;
         RTFFree((char *) table.cellInfo);
-        table.cellInfo = cellPtr;
+        table.cellInfo = cell;
     }
 
     /* Prescan table */
@@ -1725,6 +1734,7 @@ static void DoTable(void)
     NewParagraph();
 
     insideTable = true;
+	insideMiniPage = false;
 
     PutLitStr("\\begin{");
     PutLitStr(convertTableName);
@@ -1736,10 +1746,10 @@ static void DoTable(void)
     } else {
         PutLitStr("|");
         for (i = 0; i < table.cols; i++) {
-            cellPtr = GetCellInfo(i);
-            if (cellPtr->x > 0)
+            cell = GetCellInfo(i);
+            if (cell->x > 0)
                 break;
-            snprintf(buf, 100, "p{%1.3fin}|", cellPtr->width);
+            snprintf(buf, 100, "p{%1.3fin}|", cell->width);
             PutLitStr(buf);
         }
         PutLitStr("}");
@@ -1947,7 +1957,7 @@ void EndLaTeXFile(void)
     free(newname);
     fclose(ofp);
     fclose(nfp);
-//    unlink(oldname);
+    unlink(oldname);
 }
 
 /* sets the output stream */
