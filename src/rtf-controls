@@ -111,9 +111,8 @@ minor	rtfNeXTGraphic		NeXTGraphic
 minor	rtfNeXTHelpMarker	NeXTHelpMarker
 minor	rtfNeXTHelpLink		NeXTHelpLink
 minor	rtfDrawTextBoxText	dptxbxtext
-minor	rtfSp				sp
-minor	rtfWord97Object		shp 
-minor	rtfWord97ObjectGroup	shpgrp
+minor	rtfShape			shp 
+minor	rtfShapeGroup		shpgrp
 minor	rtfWord97Picture	shppict
 minor	rtfWord97NoPicture	nonshppict
 minor	rtfDocvar			docvar
@@ -124,6 +123,7 @@ minor	rtfPgdsctbl			pgdsctbl
 minor	rtfTOCN				tcn
 minor	rtfUserPropsGroup	userprops
 minor	rtfWGRFmtFilter		wgrffmtfilter
+minor	rtfBlipTag			bliptag
 
 comment rtfMaxDestination should be set equal to
 comment the final destination symbol.
@@ -1026,16 +1026,39 @@ minor	rtfListTable	listtable
 minor	rtfListOverrideTable	listoverridetable
 
  /*
-  * Word 97 Object Attributes
+  * Shape Attributes
   */
 
-major rtfWord97ObjAttr
+major rtfShapeAttr
 
-minor	rtfWord97ObjResult	shprslt
-minor	rtfWord97ObjInst	shpinst
-minor	rtfWord97ObjText	shptxt
+minor	rtfShapeResult		shprslt
+minor	rtfShapeInst		shpinst
+minor	rtfShapeText		shptxt
 minor	rtfShapeName		sn
 minor	rtfShapeValue		sv
+minor	rtfShapeValueBinary	svb
+minor	rtfShapeProperty	sp
+
+minor	rtfShapeLeft		shpleft
+minor	rtfShapeTop			shptop
+minor	rtfShapeBottom		shpbottom
+minor	rtfShapeRight		shpright
+minor	rtfShapeLid			shplid
+minor	rtfShapeOrderZ		shpz
+minor	rtfShapeHeader		shpfhdr
+minor	rtfShapeXPosPage	shpbxpage 
+minor	rtfShapeXPosMargin	shpbxmargin 
+minor	rtfShapeXPosColumn	shpbxcolumn
+minor	rtfShapeXPosIgnore	shpbxignore
+minor	rtfShapeYPosPage	shpbypage 
+minor	rtfShapeYPosMargin	shpbymargin 
+minor	rtfShapeYPosColumn	shpbycolumn
+minor	rtfShapeYPosIgnore	shpbyignore
+minor	rtfShapeWrap		shpwr
+minor	rtfShapeWrapSides	shpwrk
+minor	rtfShapeRelOrderZ	shpfblwtxt
+minor	rtfShapeAnchor		shplockanchor
+
 
  /*
   * More table attributes

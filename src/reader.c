@@ -92,7 +92,7 @@ static void Lookup(char *s);
 
 void DebugMessage(void);
 
-void ExamineToken(void);
+void ExamineToken(char *title);
 
 /*
  * Public variables (listed in rtf.h)
@@ -136,6 +136,25 @@ static FILE *rtffp;
 static char *inputName = NULL;
 static char *outputName = NULL;
 
+static int RTFBraceLevel(int level)
+{
+	static int braceLevel;
+	if (level == -99)
+		return braceLevel;
+	
+	braceLevel = level;
+	return braceLevel;
+}
+
+static void RTFSetBraceLevel(int level) 
+{
+	(void) RTFBraceLevel(level);
+}
+
+int RTFGetBraceLevel(void)
+{
+	return RTFBraceLevel(-99);
+}
 
 /*
  * This array is used to map standard character names onto their numeric codes.
@@ -393,6 +412,8 @@ void RTFRouteToken(void)
         (*p) ();
 }
 
+#define NO_EXECUTE 0
+#define EXECUTE 1
 
 /*
  * Skip to the end of the current group.  When this returns,
@@ -401,20 +422,63 @@ void RTFRouteToken(void)
  * closing brace.
  */
 
-void RTFSkipGroup(void)
+void RTFDoGroup(int execute, int level)
 {
-    short level = 1;
+	if (level<=0) {fprintf(stderr,"trying doGroup at braceLevel 0??\n"); return;}
 
     while (RTFGetToken() != rtfEOF) {
-        if (rtfClass == rtfGroup) {
-            if (rtfMajor == rtfBeginGroup)
-                ++level;
-            else if (rtfMajor == rtfEndGroup) {
-                if (--level < 1)
-                    break;      /* end of initial group */
-            }
-        }
+
+        if (RTFGetBraceLevel() < level) 
+        	return;
+        	
+        if (execute) RTFRouteToken();
     }
+}
+
+void RTFSkipGroup(void)
+{
+    int level = RTFGetBraceLevel();
+    RTFDoGroup(NO_EXECUTE,level);
+}
+
+void RTFExecuteGroup(void)
+{
+    int level = RTFGetBraceLevel();
+    RTFDoGroup(EXECUTE,level);
+}
+
+void RTFSkipToLevel(int level)
+{
+    RTFDoGroup(NO_EXECUTE,level);
+}
+
+int RTFToToken(int class, int major, int minor, int execute)
+{
+    short level = RTFGetBraceLevel();
+
+	if (level==0) {fprintf(stderr,"trying to skip to something a braceLevel 0??\n"); return 0;}
+	
+    while (RTFGetToken() != rtfEOF) {
+    
+        if (RTFCheckCMM(class,major,minor))
+    		return 1;
+
+        if (RTFGetBraceLevel() < level)
+            return 0;
+            
+        if (execute) RTFRouteToken();
+    }
+    return 0;
+}
+
+int RTFSkipToToken(int class, int major, int minor)
+{
+	return RTFToToken(class, major, minor, NO_EXECUTE);
+}
+
+int RTFExecuteToToken(int class, int major, int minor)
+{
+	return RTFToToken(class, major, minor, EXECUTE);
 }
 
 
@@ -694,7 +758,8 @@ static void _RTFGetToken2(void)
 
     rtfClass = rtfUnknown;
     rtfParam = rtfNoParam;
-    rtfTextBuf[rtfTextLen = 0] = '\0';
+    rtfTextLen = 0;
+    rtfTextBuf[0] = '\0';
 
     /* get first character, which may be a pushback from previous token */
 
@@ -800,11 +865,9 @@ static void _RTFGetToken2(void)
         return;
     }
 
-    /* control word */
-    while (isalpha(c)) {
-        if ((c = GetChar()) == EOF)
-            break;
-    }
+    /* aquire control word */
+    while (isalpha(c) && c != EOF)
+        c = GetChar();
 
     /*
      * At this point, the control word is all collected, so the
@@ -814,11 +877,11 @@ static void _RTFGetToken2(void)
      * looking up.
      */
 
-/*  fprintf(stderr,"command '%s'\n", rtfTextBuf); */
-
     if (c != EOF)
         rtfTextBuf[rtfTextLen - 1] = '\0';
+    
     Lookup(rtfTextBuf);         /* sets class, major, minor */
+    
     if (c != EOF)
         rtfTextBuf[rtfTextLen - 1] = c;
 
@@ -1054,7 +1117,8 @@ static void ReadFontTbl(void)
                 switch (rtfMajor) {
                 default:
                     /* ignore token but announce it */
-                    RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf);
+                    /* RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf); */
+                    break;
                     
                 case rtfFontFamily:
                     fp->rtfFFamily = rtfMinor;
@@ -1850,17 +1914,13 @@ void RTFSetDefaultFont(int fontNumber)
 
 # define        MAX_STACK             100
 
-short *csStack[MAX_STACK];
-short *savedCSStack[MAX_STACK];
-parStyleStruct  parStack[MAX_STACK];
+short *charStyleStack[MAX_STACK];
+parStyleStruct  parStyleStack[MAX_STACK];
 textStyleStruct textStyleStack[MAX_STACK];
-
-int braceLevel;
-int savedbraceLevel;
 
 void RTFInitStack(void)
 {
-    braceLevel=0;
+    RTFSetBraceLevel(0);
     paragraphWritten.firstIndent      = UNINITIALIZED;
     paragraphWritten.leftIndent       = UNINITIALIZED;
     paragraphWritten.lineSpacing      = UNINITIALIZED;
@@ -1881,43 +1941,71 @@ void RTFInitStack(void)
 
 void RTFPushStack(void)
 {
-    csStack[braceLevel] = curCharCode;
-    parStack[braceLevel] = paragraph;
-    textStyleStack[braceLevel] = textStyle;
+	int level = RTFGetBraceLevel();
+    charStyleStack[level] = curCharCode;
+    parStyleStack[level] = paragraph;
+    textStyleStack[level] = textStyle;
 
 //    fprintf(stderr, "push [%d] alignment now written=%d, set=%d\n",braceLevel, paragraphWritten.alignment, paragraph.alignment);
-    braceLevel++;
-    if (braceLevel >= MAX_STACK) {
+    level++;
+    if (level >= MAX_STACK)
         RTFMsg("Exceeding stack capacity of %d items\n",MAX_STACK);
-        braceLevel = MAX_STACK - 1;
-    }
+    else
+    	RTFSetBraceLevel(level);
 }
 
 void RTFPopStack(void)
 {
-    int i;
-    braceLevel--;
-    i=braceLevel;
+	int level = RTFGetBraceLevel();
+    level--;
 
-    if (i < 0) {
+    if (level < 0) {
         RTFMsg("Too many '}'.  Stack Underflow\n");
-        i = 0;
+        return;
     }
-    curCharCode = csStack[i];
 
-    paragraph = parStack[i];
-    textStyle = textStyleStack[i];
+    RTFSetBraceLevel(level);
+    curCharCode = charStyleStack[level];
+    paragraph = parStyleStack[level];
+    textStyle = textStyleStack[level];
 }
 
-void RTFStoreStack(void)
-{
-    memcpy(savedCSStack, csStack, MAX_STACK * sizeof(short));
-    savedbraceLevel = braceLevel;
-}
+extern FILE *ifp, *ofp;
 
-void RTFRestoreStack(void)
+void RTFParserState(int op)
 {
-    memcpy(csStack, savedCSStack, MAX_STACK * sizeof(short));
-    braceLevel = savedbraceLevel;
-    curCharCode = csStack[braceLevel];
+	static size_t saved_file_position = 0;
+    static int savedbraceLevel = 0;
+	static char prevChar = 0;
+	static short *saved_charStyleStack[MAX_STACK];
+	static parStyleStruct  saved_parStyleStack[MAX_STACK];
+	static textStyleStruct saved_textStyleStack[MAX_STACK];
+	static parStyleStruct  saved_paragraphWritten;
+	static textStyleStruct saved_textStyleWritten;
+	
+	if (op == SAVE_PARSER) {
+    	memcpy(saved_charStyleStack, charStyleStack, MAX_STACK * sizeof(short));
+    	memcpy(saved_parStyleStack, parStyleStack, MAX_STACK * sizeof(parStyleStruct));
+    	memcpy(saved_textStyleStack, textStyleStack, MAX_STACK * sizeof(textStyleStruct));
+    	saved_paragraphWritten = paragraphWritten;
+    	saved_textStyleWritten = textStyleWritten;
+		prevChar = RTFPushedChar();
+		saved_file_position = ftell(ifp);
+		savedbraceLevel = RTFGetBraceLevel();
+	}
+
+	if (op == RESTORE_PARSER) {
+		fseek(ifp, saved_file_position, 0);
+		RTFSimpleInit();
+		RTFSetPushedChar(prevChar);
+    	memcpy(charStyleStack, saved_charStyleStack, MAX_STACK * sizeof(short));
+    	memcpy(parStyleStack, saved_parStyleStack, MAX_STACK * sizeof(parStyleStruct));
+    	memcpy(textStyleStack, saved_textStyleStack, MAX_STACK * sizeof(textStyleStruct));
+		RTFSetBraceLevel(savedbraceLevel);
+		curCharCode = charStyleStack[savedbraceLevel];
+		paragraph = parStyleStack[savedbraceLevel];
+		textStyle = textStyleStack[savedbraceLevel];
+    	paragraphWritten = saved_paragraphWritten;
+    	textStyleWritten = saved_textStyleWritten;
+	}
 }

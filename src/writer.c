@@ -42,9 +42,7 @@ void __cole_dump(void *_m, void *_start, uint32_t length, char *msg);
 # define  PREVIOUS_COLUMN_VALUE -10000
 
 void RTFSetOutputStream(FILE * stream);
-static void ReadObject(void);
 
-int braceLevel = 0;            /* a counter for keeping track of opening and closing braces */
 extern FILE *ifp, *ofp;
 
 # define EQUATION_OFFSET 35
@@ -92,11 +90,11 @@ static struct {
 static struct {
     int class;
     char className[rtfBufSiz];
-    int word97;
+    int shape;
 } object;
 
 int wrapCount = 0;
-int word97ObjectType;
+int shapeObjectType;
 boolean nowBetweenParagraphs;
 boolean suppressLineBreak;
 boolean requireSetspacePackage;
@@ -116,14 +114,9 @@ boolean insideTable;
 boolean insideFootnote;
 boolean insideHyperlink;
 boolean insideHeaderFooter;
-boolean insideMiniPage;
 
 char *preambleFancyHeader;
 char *preambleFancyHeaderFirst;
-
-#ifdef PICT2PDF
-char * WritePictAsPDF(char *pict);
-#endif
 
 char *outMap[rtfSC_MaxChar];
 
@@ -195,7 +188,7 @@ void ExamineToken(char * tag)
             case rtfIndexAttr: printf(" (rtfIndexAttr)\n"); break;
             case rtfTOCAttr: printf(" (rtfTOCAttr)\n"); break;
             case rtfNeXTGrAttr: printf(" (rtfNeXTGrAttr)\n"); break;
-            case rtfWord97ObjAttr: printf(" (rtfWord97ObjAttr)\n"); break;
+            case rtfShapeAttr: printf(" (rtfShapeAttr)\n"); break;
             case rtfAnsiCharAttr: printf(" (rtfAnsiCharAttr)\n"); break;
             default: printf(" (unknown)\n"); break;
         }
@@ -204,7 +197,7 @@ void ExamineToken(char * tag)
     printf("* Minor is %3d", rtfMinor);
     if (rtfClass == rtfText) {
         printf(" std=0x%2x\n", rtfMinor);
-    } else {
+	} else {
         printf("\n");
     }
     printf("* Param is %3d\n\n", (int) rtfParam);
@@ -989,13 +982,6 @@ static void DoSectionCleanUp(void)
     }
 }
 
-/* This function causes the present group to be skipped.  */
-static void SkipGroup(void)
-{
-    RTFSkipGroup();
-    RTFRouteToken();
-}
-
 /* This function make sure that the output TeX file does not
  * contain one very, very long line of text.
  */
@@ -1062,11 +1048,11 @@ static void ReadFootnote(void)
     int footnoteGL;
 
     StopTextStyle();
-    footnoteGL = braceLevel;
+    footnoteGL = RTFGetBraceLevel();
     PutLitStr("\\footnote{");
     insideFootnote = true;
     nowBetweenParagraphs = false;  /*no need to end last paragraph */
-    while (braceLevel >= footnoteGL) {
+    while (RTFGetBraceLevel() >= footnoteGL) {
         RTFGetToken();
         RTFRouteToken();
     }
@@ -1178,6 +1164,7 @@ static cellStruct *GetCellByPos(int x, int y)
 }
 
 
+
 /*
  * In RTF, each table row need not start with a table row definition.
  * The next row may decide to use the row definition of the previous
@@ -1187,7 +1174,7 @@ static void InheritTableRowDef(void)
 {
     int prevRow;
     int cellsInPrevRow;
-    cellStruct *cell, *newcell;
+    cellStruct *cell, *newCellPtr;
     int i;
     char *fn = "InheritTableRowDef";
 
@@ -1200,22 +1187,22 @@ static void InheritTableRowDef(void)
 
         cell = GetCellByPos(prevRow, i);
 
-        newcell = New(cellStruct);
-        if (!newcell) {
+        newCellPtr = New(cellStruct);
+        if (!newCellPtr) {
             RTFPanic("%s: cannot allocate inheriting cell entry", fn);
             exit(1);
         }
 
-        newcell->nextCell = table.cellInfo;
-        newcell->x = prevRow + 1;
-        newcell->y = cell->y;
-        newcell->left = cell->left;
-        newcell->right = cell->right;
-        newcell->width = cell->width;
-        newcell->index = table.cellCount;
-        newcell->mergePar = cell->mergePar;
+        newCellPtr->nextCell = table.cellInfo;
+        newCellPtr->x = prevRow + 1;
+        newCellPtr->y = cell->y;
+        newCellPtr->left = cell->left;
+        newCellPtr->right = cell->right;
+        newCellPtr->width = cell->width;
+        newCellPtr->index = table.cellCount;
+        newCellPtr->mergePar = cell->mergePar;
         table.cellMergePar = none;      /* reset */
-        table.cellInfo = newcell;
+        table.cellInfo = newCellPtr;
         table.cellCount++;
     }
 }
@@ -1263,23 +1250,17 @@ static int GetColumnSpan(cellStruct * cell)
 */
 static void PrescanTable(void)
 {
-    size_t tableStart;
     boolean foundRow = true;
     boolean foundColumn = true;
     int i, j;
-    cellStruct *cell, *cell1;
+    cellStruct *cell, *cellPtr1;
     char *fn = "PrescanTable";
-    short prevChar;
     int maxCols = 0;
     int tableLeft, tableRight, tableWidth;
     int *rightBorders;
     boolean enteredValue;
 
-    RTFStoreStack();
-    prevChar = RTFPushedChar();
-
-    /* mark the current cursor position */
-    tableStart = ftell(ifp);
+	RTFParserState(SAVE_PARSER);
 
     RTFGetToken();
 
@@ -1465,10 +1446,10 @@ static void PrescanTable(void)
 
         /* correct the vertical cell position for any multicolumn cells */
         if ((cell->y) != 0) {
-            cell1 = GetCellInfo(i - 1);
+            cellPtr1 = GetCellInfo(i - 1);
             if (cell == NULL)
                 RTFPanic ("%s: Attempting to access invalid cell at index %d\n", fn, i);
-            cell->y = cell1->y + cell1->columnSpan;
+            cell->y = cellPtr1->y + cellPtr1->columnSpan;
         }
 
         tableLeft = (table.columnBorders)[0];
@@ -1490,10 +1471,7 @@ static void PrescanTable(void)
     }
 
     /* go back to beginning of the table */
-    fseek(ifp, tableStart, 0);
-    RTFSimpleInit();
-    RTFSetPushedChar(prevChar);
-    RTFRestoreStack();
+	RTFParserState(RESTORE_PARSER);
 }
 
 /*
@@ -1504,19 +1482,19 @@ static void DoMergedCells(cellStruct * cell)
 {
     int i;
     int x, y;
-    cellStruct *localcell;
+    cellStruct *localCellPtr;
     char buf[rtfBufSiz];
 
     x = cell->x;
     y = cell->y;
 
     i = 1;
-    localcell = GetCellByPos(x + i, y);
-    for (i = 1; localcell->mergePar == previous; i++)
+    localCellPtr = GetCellByPos(x + i, y);
+    for (i = 1; localCellPtr->mergePar == previous; i++)
         if (x + i > table.rows - 1)
             break;
         else
-            localcell = GetCellByPos(x + i, y);
+            localCellPtr = GetCellByPos(x + i, y);
 
     snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s ", i - 1, cell->width, justificationList[paragraph.alignment]);
     PutLitStr(buf);
@@ -1558,22 +1536,18 @@ static void WriteCellHeader(int cellNum)
         if (cell->mergePar == first) {
             snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}", cell->width, cell->width);
             PutLitStr(buf);
-            insideMiniPage = true;
         } else {
             snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}%s", cell->width,cell->width, justificationList[paragraph.alignment]);
             PutLitStr(buf);
             InsertNewLine();
-            insideMiniPage = true;
         }
         
     } else if (cell->mergePar != first) {
         snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s ", cell->width, justificationList[paragraph.alignment]);
         PutLitStr(buf);
-        insideMiniPage = true;
     } else {
         snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin} ", cell->width);
         PutLitStr(buf);
-        insideMiniPage = true;
     }
 
     if (cell->mergePar == first)
@@ -1603,10 +1577,7 @@ static void ProcessTableRow(int rowNum)
         /* token that signals end of the row */
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfRow)) {
             if (g_debug_table_writing) fprintf(stderr,"* end of row\n");
-            if (insideMiniPage)
-            	PutLitStr("\\end{minipage}");
             suppressLineBreak = false;
-            insideMiniPage = false;
             return;
         }
 
@@ -1626,9 +1597,7 @@ static void ProcessTableRow(int rowNum)
             if (cell->mergePar == first)
                 PutLitChar('}');
 
-            if (insideMiniPage)
-            	PutLitStr("\\end{minipage}");
-            insideMiniPage = false;
+            PutLitStr("\\end{minipage}");
                 
             if (table.multiCol)
                 PutLitChar('}');
@@ -1734,7 +1703,6 @@ static void DoTable(void)
     NewParagraph();
 
     insideTable = true;
-	insideMiniPage = false;
 
     PutLitStr("\\begin{");
     PutLitStr(convertTableName);
@@ -1957,7 +1925,7 @@ void EndLaTeXFile(void)
     free(newname);
     fclose(ofp);
     fclose(nfp);
-    unlink(oldname);
+//    unlink(oldname);
 }
 
 /* sets the output stream */
@@ -1978,15 +1946,14 @@ static int HexData(void)
         RTFPeekToken();
         if ((int) (rtfTextBuf[0]) == 10) {
             RTFGetToken();      /* skip any carriage returns */
-            RTFPeekToken();     /* look at the next token to
-                                 * check if there is another row */
+            RTFPeekToken();     /* look at the next token to check if there is another row */
         }
 
         /*
          * there are some groups within the header that contain text data that should not
          * be confused with hex data
          */
-        if (RTFCheckMM(rtfDestination, rtfSp) != 0 || strcmp(rtfTextBuf, "\\*") == 0)
+        if (RTFCheckMM(rtfDestination, rtfShapeProperty) != 0 || strcmp(rtfTextBuf, "\\*") == 0)
         {
             RTFSkipGroup();
             return (0);
@@ -1998,76 +1965,58 @@ static int HexData(void)
         return (1);
 
     /* no such luck, but set picture attributes when encountered */
-    if (RTFCheckCM(rtfControl, rtfPictAttr) != 0) {
-        switch (rtfMinor) {
-        case rtfMacQD:
-            picture.type = pict;
-            break;
-        case rtfWinMetafile:
-            picture.type = wmf;
-            break;
-        case rtfEmf:
-            picture.type = emf;
-            break;
-        case rtfPng:
-            picture.type = png;
-            break;
-        case rtfJpeg:
-            picture.type = jpeg;
-            break;
-        case rtfPicGoalWid:
-            picture.goalWidth = rtfParam;
-            break;
-        case rtfPicGoalHt:
-            picture.goalHeight = rtfParam;
-            break;
-        case rtfPicScaleX:
-            picture.scaleX = rtfParam;
-            break;
-        case rtfPicWid:
-            picture.width = rtfParam;
-            break;
-        case rtfPicHt:
-            picture.height = rtfParam;
-            break;
-        case rtfPicScaleY:
-            picture.scaleY = rtfParam;
-            break;
-        }
+    if (RTFCheckCM(rtfControl, rtfPictAttr)) {
+        RTFRouteToken();
     }
     return (0);
 
 }
 
-/* some picture formats like PICT and WMF require headers that
- * the RTF file does not include.
+/* 
+ * Here we create an Aldus Placeable Metafile by including a 22-byte header
  */
-static void WritePictureHeader(FILE * pictureFile)
+static void WriteWMFHeader(FILE * pictureFile)
 {
     unsigned char wmfhead[22] = {
-        /* key      = */ 0xd7, 0xcd, 0xc6, 0x9a,
-        /* hmf      = */ 0x00, 0x00,
-        /* bbox     = */ 0xfc, 0xff, 0xfc, 0xff,
-        /* width    = */ 0x00, 0x00,
-        /* height   = */ 0x00, 0x00,
-        /* inch     = */ 0x60, 0x00,
-        /* reserved = */ 0x00, 0x00, 0x00, 0x00,
-        /* checksum = */ 0x00, 0x00
+        /* Magic      = */ 0xd7, 0xcd, 0xc6, 0x9a,
+        /* handle     = */ 0x00, 0x00,
+        /* left       = */ 0x00, 0x00,
+        /* top        = */ 0x00, 0x00,
+        /* right      = */ 0xff, 0xff,
+        /* bottom     = */ 0xff, 0xff,
+        /* resolution = */ 0xA0, 0x05,
+        /* reserved   = */ 0x00, 0x00, 0x00, 0x00,
+        /* checksum   = */ 0x00, 0x00
     };
+
     int i;
     int height, width;
 
-    if (picture.goalHeight == 0) {
-        height = ((float) picture.height * picture.scaleY * 96) / ((float) rtfTpi * 100);
-        width = (int)((float) picture.width * picture.scaleX * 96) / (rtfTpi * 100);
+    if (picture.goalHeight) {
+        height = (int)(picture.goalHeight * picture.scaleY * 96.0 / rtfTpi / 100.0);
     } else {
-        height = (int)((float) picture.goalHeight * picture.scaleY * 96) / (rtfTpi * 100);
-        width = (int)((float) picture.goalWidth * picture.scaleX * 96) / (rtfTpi * 100);
+        height = (int)(picture.height * picture.scaleY * 96.0 / rtfTpi / 100.0);
     }
-    wmfhead[10] = (width) % 256;
+
+    if (picture.goalWidth) {
+        width = (int)(picture.goalWidth * picture.scaleX * 96.0 / rtfTpi / 100.0);
+    } else {
+        width = (int)(picture.width * picture.scaleX * 96.0 / rtfTpi / 100.0);
+    }
+    
+	height = picture.goalHeight;
+	width = picture.goalWidth ;
+	wmfhead[10] = (width) % 256;
     wmfhead[11] = (width) / 256;
     wmfhead[12] = (height) % 256;
     wmfhead[13] = (height) / 256;
+
+	/* Normally, there are 1440 twips per inch; however, this number may be changed 
+	 * to scale the image. A value of 720 indicates that the image is double its 
+	 * normal size, or scaled to a factor of 2:1. A value of 360 indicates a scale of 
+	 * 4:1, while a value of 2880 indicates that the image is scaled down in size by 
+	 * a factor of two. A value of 1440 indicates a 1:1 scale ratio.
+	 */
 
     /* compute Checksum */
     wmfhead[20] = 0;
@@ -2078,25 +2027,18 @@ static void WritePictureHeader(FILE * pictureFile)
     }
 
 
-    switch (picture.type) {
-    case pict:                  /* write 512 byte empty header */
-        for (i = 0; i < 512; i++)
-            fputc(' ', pictureFile);
-        break;
-    case wmf:
-        fwrite(wmfhead, 22, 1, pictureFile);
-        break;
-    case emf:
-        break;
-    case png:
-        break;
+    fwrite(wmfhead, 22, 1, pictureFile);
+}
 
-    }
-
+static void WritePICTHeader(FILE * pictureFile)
+{
+	int i;
+	for (i = 0; i < 512; i++)
+        fputc(' ', pictureFile);
 }
 
 /* start reading hex encoded picture */
-static void ConvertHexPicture(char *pictureType)
+static void ConvertHexPicture(char *fileSuffix)
 {
     FILE *pictureFile;
     char dummyBuf[rtfBufSiz];
@@ -2112,12 +2054,12 @@ static void ConvertHexPicture(char *pictureType)
     strcpy(dummyBuf, "");
 
     /* get input file name and create corresponding picture file name */
-    if (pictureType == NULL)
-        strcpy(pictureType, "unknown");
+    if (fileSuffix == NULL)
+        strcpy(fileSuffix, "???");
 
     strcpy(picture.name, RTFGetOutputName());
     picture.name[strlen(picture.name)-4] = '\0';
-    snprintf(dummyBuf, rtfBufSiz, "-fig%03d.%s", picture.count, pictureType);
+    snprintf(dummyBuf, rtfBufSiz, "-fig%03d.%s", picture.count, fileSuffix);
     strcat(picture.name, dummyBuf);
 
     /* open picture file */
@@ -2125,7 +2067,10 @@ static void ConvertHexPicture(char *pictureType)
         RTFPanic("Cannot open input file %s\n", picture.name);
 
     /* write appropriate header */
-    WritePictureHeader(pictureFile);
+    if (picture.type== pict)
+    	WritePICTHeader(pictureFile);
+    if (picture.type== wmf)
+    	WriteWMFHeader(pictureFile);
 
     /* now we have to read the hex code in pairs of two
      * (1 byte total) such as ff, a1, 4c, etc...*/
@@ -2175,7 +2120,6 @@ static void IncludeGraphics(char *pictureType)
 {
     char *figPtr, *suffix;
     char dummyBuf[rtfBufSiz];
-    double scaleX, scaleY;
     int width, height;
 
 #ifdef UNIX
@@ -2189,7 +2133,7 @@ static void IncludeGraphics(char *pictureType)
             err = system(dummyBuf);
 
             if (!err) {
-                unlink(picture.name);
+             //   unlink(picture.name);
                 strcpy(picture.name,pdfname);
             }
             free(pdfname);
@@ -2206,21 +2150,21 @@ static void IncludeGraphics(char *pictureType)
             err = system(dummyBuf);
 
             if (!err) {
-                unlink(picture.name);
+              //  unlink(picture.name);
                 strcpy(picture.name,pdfname);
             }
             free(pdfname);
         }
     }
 #endif
-#ifdef MSWIN
+#ifdef MSDOS
     if (strcmp(pictureType, "wmf") == 0) {
         if (!system("which wmf2eps") && !system("which epstopdf")) {
             int err;
             char *pdfname = strdup(picture.name);
             strcpy(pdfname + strlen(pdfname) - 3, "pdf");
 
-            snprintf(dummyBuf, rtfBufSiz, "w2p.bat %s %s", picture.name, pdfname);            
+            snprintf(dummyBuf, rtfBufSiz, "w2e.bat %s %s", picture.name, pdfname);            
             err = system(dummyBuf);
 
             if (!err) {
@@ -2234,23 +2178,17 @@ static void IncludeGraphics(char *pictureType)
 
     suffix = strrchr(picture.name, '.');
 
-    if (picture.scaleX == 0)
-        scaleX = 1;
-    else
-        scaleX = picture.scaleX / 100.0;
-        
-    if (picture.scaleY == 0)
-        scaleY = 1;
-    else
-        scaleY = picture.scaleY / 100.0;
+    /* prefer picwgoal over picw */
+	if (picture.goalWidth)
+		width = picture.goalWidth / 20;
+	else
+		width = (int) (picture.width * picture.scaleX / 100.0);
 
-    if (picture.goalHeight == 0) {
-        width = (int) picture.width * scaleX;
-        height = (int) picture.height * scaleY;
-    } else {
-        width = (int) picture.goalWidth * scaleX / 20.0;
-        height = (int) picture.goalHeight * scaleY / 20.0;
-    }
+    /* prefer pichgoal over pich */
+	if (picture.goalHeight)
+		height = picture.goalHeight / 20;
+	else
+    	height = (int) (height * picture.scaleY / 100.0);
 
     figPtr = strrchr(picture.name, PATH_SEP);
     if (!figPtr)
@@ -2262,6 +2200,14 @@ static void IncludeGraphics(char *pictureType)
     	int oldWrittenAlignment = -1;
     
         EndParagraph();
+
+        if (1) {
+            PutLitStr("\\fbox{");
+            snprintf(dummyBuf,rtfBufSiz,"scale=(%d,%d), (w,h)=(%d,%d), scaled (w,h)=(%d,%d)\n",
+            picture.scaleX, picture.scaleY,picture.width,picture.height,width,height);
+            PutLitStr(dummyBuf);
+            PutLitStr("}");
+        }
 
         if (height > 50) 
             PutLitStr("\\begin{figure}[htbp]");
@@ -2342,7 +2288,7 @@ static void ReadPicture(void)
         IncludeGraphics("jpg");
         break;
     default:
-        ConvertHexPicture("unknown");
+        ConvertHexPicture("???");
         printf("* Warning: unknown picture type encountered.\n");
         IncludeGraphics("unknown");
         break;
@@ -2405,7 +2351,7 @@ static void ReadNextGraphic(void)
     }
     
     /* skip everything until outer brace */
-    SkipGroup();
+    RTFSkipGroup();
 
     PutLitStr("\\includegraphics");
     if (width || height) {
@@ -2452,89 +2398,72 @@ static void ReadObjWidth(void)
     g_object_width = rtfParam;
 }
 
+/* return a string delimited by space or non-text token*/
+static char * GetWord(void)
+{
+	char word[512];
+	int len = 0;
+	
+	while (rtfClass == rtfText && rtfTextBuf[0] != ' ' && len < 512) {
+		word[len] = rtfTextBuf[0];
+		len++;
+		RTFGetToken();
+	}
+	word[len]='\0';
+//	ExamineToken(word);
+	return strdup(word);
+}
+
 
 /*
 * parses \objectclass and adds the class type to the global variable 'object'
 */
-static void GetObjectClass(int *groupCounter)
+static int GetObjectClass(void)
 {
-    int reachedObjectClass = 0;
-    int reachedEndGroup = 0;
     int i;
+    char *s;
 
-/* keep scanning until \objectclass is found */
-    while (!reachedObjectClass) {
-        RTFGetToken();
-        if (RTFCheckMM(rtfObjAttr, rtfObjWid)!=0)
-            ReadObjWidth();
-        if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0)
-            (*groupCounter)++;
-        else if (RTFCheckCM(rtfGroup, rtfEndGroup) != 0)
-            (*groupCounter)--;
-        if (RTFCheckMM(rtfDestination, rtfObjClass) != 0)
-            reachedObjectClass = 1;
-        if (*groupCounter == 0) {
-            object.class = unknownObjClass;
-            return;
-        }
+	object.class = unknownObjClass;
+
+	if (!RTFSkipToToken(rtfControl, rtfDestination, rtfObjClass))
+		return -1;
+		
+	RTFGetToken();
+	s = GetWord();
+	if (s && s[0]) {
+    	strcpy(object.className, s);
+    	free(s);
     }
-
-/* read the object class */
-    strcpy(object.className, "");
-    while (!reachedEndGroup) {
-        RTFGetToken();
-        if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0)
-            RTFSkipGroup();
-        if (RTFCheckCM(rtfGroup, rtfEndGroup) == 0)
-            strcat(object.className, rtfTextBuf);
-        else {
-            reachedEndGroup = 1;
-            (*groupCounter)--;
-        }
-    }
-
+	
 /* do we recognize this object class? */
     for (i = 0; objectClassList[i] != NULL; i++) {
-        if (my_strcasestr(object.className, objectClassList[i]) != NULL) {
-            object.class = i;
-            break;
+        if (my_strcasestr(object.className, objectClassList[i])) {
+            return i;
         }
-        object.class = 0;
     }
+    return -1;
 }
 
 
 /*
  * The result section of an \object usually contains a picture of the object
  */
-static int ReachedResult(int *groupCount)
+static int ReachedResult(void)
 {
     RTFGetToken();
 
-    if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0) {
-        (*groupCount)++;
-        return (0);
-    }
-
-    if (RTFCheckCM(rtfGroup, rtfEndGroup) != 0) {
-        (*groupCount)--;
-        return (0);
-    }
-
     if (RTFCheckMM(rtfDestination, rtfObjResult) != 0 ||
-        RTFCheckMM(rtfWord97ObjAttr, rtfWord97ObjResult) != 0 ||
+        RTFCheckMM(rtfShapeAttr, rtfShapeResult) != 0 ||
         RTFCheckMM(rtfDestination, rtfPict) != 0 ||
-        RTFCheckMM(rtfWord97ObjAttr, rtfWord97ObjText) != 0) {
+        RTFCheckMM(rtfShapeAttr, rtfShapeText) != 0) {
         if (RTFCheckMM(rtfDestination, rtfPict) != 0)
-            word97ObjectType = word97Picture;
+            shapeObjectType = shapePicture;
         else if (RTFCheckMM(rtfDestination, rtfObjResult) != 0)
-            word97ObjectType = standardObject;
-        else if (RTFCheckMM(rtfWord97ObjAttr, rtfWord97ObjResult) != 0)
-            word97ObjectType = word97Object;
-        else if (RTFCheckMM(rtfWord97ObjAttr, rtfWord97ObjText) != 0)
-            word97ObjectType = word97ObjText;
-        (*groupCount)--;        /* account for opening brace just
-                                 * before result control word */
+            shapeObjectType = standardObject;
+        else if (RTFCheckMM(rtfShapeAttr, rtfShapeResult) != 0)
+            shapeObjectType = shapeObject;
+        else if (RTFCheckMM(rtfShapeAttr, rtfShapeText) != 0)
+            shapeObjectType = shapeObjText;
         return (1);
     }
 
@@ -2744,7 +2673,8 @@ char * EqnNumberString(void)
 
 		/* don't emit pictures */
     	if (RTFCheckCMM(rtfControl, rtfDestination, rtfPict)) {
-    		SkipGroup();
+    		RTFSkipGroup();
+    		RTFRouteToken();
     		continue;
     	}
 
@@ -2881,35 +2811,18 @@ boolean ConvertEquationFile(char *objectFileName)
 /*
  * Translate an object containing a MathType equation
  */
-static boolean ReadEquation(int *groupCount)
+static boolean ReadEquation(void)
 {
     boolean result;
     char objectFileName[rtfBufSiz];
 
-    /* look for start of \objdata  group */
-    while (!RTFCheckMM(rtfDestination, rtfObjData)) {
-
-        RTFGetToken();
-
-        if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0)
-            (*groupCount)++;
-
-        else if (RTFCheckCM(rtfGroup, rtfEndGroup) != 0) {
-            (*groupCount)--;
-            if (*groupCount == 0) {
-                RTFMsg("* ReadEquation: objdata group not found!\n");
-                return (false);
-            }
-
-        } else if (rtfClass == rtfEOF) {
-            RTFPanic("* ReadEquation: EOF reached!\n");
-            exit(1);
-        }
+    if (!RTFSkipToToken(rtfControl, rtfDestination, rtfObjData)) {
+    	RTFMsg("* ReadEquation: objdata group not found!\n");
+        return (false);
     }
 
     /* save hex-encoded object data as a binary objectFileName */
     ReadObjectData(objectFileName, EquationClass, EQUATION_OFFSET);
-    (*groupCount)--;
 
     result = ConvertEquationFile(objectFileName);
 
@@ -2925,214 +2838,172 @@ static boolean ReadEquation(int *groupCount)
  */
 static void ReadObject(void)
 {
-    int i;
-    int groupCounter = 1;       /* one opening brace has been counted */
-    int temp;
-    boolean res;
-    /* char *fn = "ReadObject"; */
-    /*  RTFMsg("%s: * starting ...\n", fn); */
+    int level = RTFGetBraceLevel();
+    boolean res = false;
 
-    GetObjectClass(&groupCounter);
+    object.class = GetObjectClass();
 
     switch (object.class) {
     case unknownObjClass:
     default:
-        /* RTFMsg("%s: * unsupported object '%s', skipping...\n", fn, object.className); */
-        RTFSkipGroup();
+        RTFMsg("*** unsupported object '%s', skipping...\n", object.className);
         break;
 
     case EquationClass:
-        /* RTFMsg("%s: * equation object '%s', processing...\n", fn, object.className); */
 
         if (prefs[pConvertEquation]) {
-            res = ReadEquation(&groupCounter);
+            res = ReadEquation();
             if (!res) fprintf(stderr, "failed to convert equation\n");
-        } else
-            res = false;
-
+        } 
 
         /* if unsuccessful, include the equation as a picture */
         if (!res || g_eqn_insert_image) {
-            temp = groupCounter;
-
-            while (!RTFCheckMM(rtfDestination, rtfPict)) {
-                RTFGetToken();
-                if (RTFCheckCM(rtfGroup, rtfBeginGroup))
-                    groupCounter++;
-                if (RTFCheckCM(rtfGroup, rtfEndGroup))
-                    groupCounter--;
-                if (groupCounter < temp)
-                    break;
-            }
-
-            if (groupCounter > temp) {
-                ReadPicture();
-                if (groupCounter - 1 - temp > 0) {
-                    for (i = 0; i < groupCounter - 1 - temp; i++)
-                        RTFSkipGroup();
-                }
-            }
-            groupCounter = temp;
+			if (RTFSkipToToken(rtfControl,rtfDestination, rtfPict)) 
+				ReadPicture();
         }
         break;
 
     case WordPictureClass:
     case MSGraphChartClass:
-        while (!ReachedResult(&groupCounter));
+    	ExamineToken("WordPictureClass");
+        while (!ReachedResult());
         ReadPicture();
         break;
     }
 
     object.class = 0;
     strcpy(object.className, "");
-
-    /* if there are open groups left, close them */
-    if (groupCounter != 0) {
-        for (i = 0; i < groupCounter; i++)
-            RTFSkipGroup();
-    }
-
-    /* send the last closing brace back into the router */
-    RTFRouteToken();
+    
+	RTFSkipToLevel(level);
 }
 
 
-/* This is the result field of the Word97 object */
-static void ReadWord97Result(void)
+/* 
+ * Word97 through Word 2002 pictures are different
+ * 
+ *   {\*\shppict {\pict \emfblip ...}}{\nonshppict {\pict ...}} 
+ *
+ * \shppict identifies a Word 97 through Word 2002 picture
+ * \nonshppict indicates a {\pict} that Word not read on input and 
+ *             is for compatibility with other readers.
+ */
+static void ReadWord97Picture(void)
 {
-    int i;
-    int groupCount = 1;         /* one opening brace has been counted */
-/*     char *fn = "ReadWord97Result"; */
-/*     RTFMsg("%s: starting ...\n",fn); */
-
-    /* scan until object or picture is reached */
-    while (groupCount != 0) {
-        RTFGetToken();
-        if (RTFCheckMM(rtfDestination, rtfObject) != 0) {
-            ReadObject();
-            groupCount--;
-            break;
-        } else if (RTFCheckMM(rtfDestination, rtfPict) != 0) {
-            ReadPicture();
-            groupCount--;
-            break;
-        } else if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0)
-            groupCount++;
-        else if (RTFCheckCM(rtfGroup, rtfEndGroup) != 0)
-            groupCount--;
-    }
-
-    if (groupCount == 0)
-        printf
-            ("* Warning: no supported structure in Word97 object found.\n");
-
-
-    /* if there are open groups left, skip to the end */
-    if (groupCount > 0)
-        for (i = 0; i < groupCount; i++)
-            RTFSkipGroup();
-
-    RTFRouteToken();
-
+//	ExamineToken("Word97Object");
+	RTFGetToken();
+	if (rtfClass != rtfGroup) {RTFSkipGroup(); return;}
+	
+	RTFGetToken();    /* should be pict */
+	if (rtfMinor != rtfPict) {RTFSkipGroup(); return;}
+	
+	RTFRouteToken();  /* handle pict */
+	RTFGetToken();    /* should be } */
+	RTFRouteToken();  /* handle last brace from shppict */
+	RTFGetToken();    /* should be { */
+	if (rtfClass != rtfGroup) {RTFSkipGroup(); return;}
+	
+	RTFGetToken();    /* should be nonshppict */
+	RTFSkipGroup();   /* because we don't want two pictures in latex file */
 }
 
-
-/* Of course, Word97 has to do everything differently. */
-static void ReadWord97Object(void)
+/* \sp{\sn PropertyName}{\sv PropertyValueInformation} */
+static void ReadShapeProperty(void)
 {
-    int i;
-    long objectStart;
-    int groupCount = 1;         /* one opening brace has been counted */
-    int word97ObjTextGL = 1;
-    short prevChar;
-/*     char *fn = "ReadWord97Object"; */
-/*     RTFMsg("%s: starting ...\n",fn); */
-
-    word97ObjectType = unknownWord97Object;
-
-    /* look for a standard embedded object first: may have an equation */
-    /* mark the current cursor position */
-    prevChar = RTFPushedChar();
-    RTFStoreStack();
-    objectStart = ftell(ifp);
-
-    while (!RTFCheckMM(rtfDestination, rtfObject)) {
-        RTFGetToken();
-
-        if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0)
-            groupCount++;
-
-        else if (RTFCheckCM(rtfGroup, rtfEndGroup) != 0) {
-            groupCount--;
-            /* did not find a standard object */
-            if (groupCount == 0) {
-                fseek(ifp, objectStart, 0);
-                RTFSimpleInit();
-                RTFSetPushedChar(prevChar);
-                RTFRestoreStack();
-                break;
-            }
-        }
-
+	char *name, *value;
+	
+    if (!RTFSkipToToken(rtfControl, rtfShapeAttr, rtfShapeName)) return; 
+    RTFGetToken();
+	name = GetWord();
+    
+    if (strcmp(name,"pib")==0) {
+    	fprintf(stderr,"shape, name=%s\n",name);
+    	RTFExecuteGroup();
+    	free(name);
+    	return;
     }
-
-    /* if we found a standard object, read it and get out */
-    if (RTFCheckMM(rtfDestination, rtfObject)) {
-        ReadObject();
-        groupCount--;
-        /* if there are open groups left, close them */
-        if (groupCount != 0)
-            for (i = 0; i < groupCount; i++)
-                RTFSkipGroup();
-        /* send the last closing brace back into the router */
-        RTFRouteToken();
-        return;
-    }
-
-    groupCount = 1;
-
-    while (!ReachedResult(&groupCount)) {
-        if (groupCount == 0) {
-            RTFMsg("* unknown Word97 object...\n");
-/*             PutLitStr(" [ missing object here ] "); */
-            RTFRouteToken();
-            return;
-        }
-    }
-
-    switch (word97ObjectType) {
-    case word97Picture:
-        ReadPicture();
-        break;
-    case standardObject:
-    case word97Object:
-        ReadWord97Result();
-        break;
-    case word97ObjText:
-        if (!insideTable) {
-            StopTextStyle();
-            word97ObjTextGL = braceLevel;
-            while (braceLevel && braceLevel >= word97ObjTextGL) {
-                RTFGetToken();
-                RTFRouteToken();
-            }
-        }
-        break;
-    }
-
-    if (groupCount == 0)
-        return;
-
-    /* if there are open groups left, close them */
-    if (groupCount != 0)
-        for (i = 0; i < groupCount; i++)
-            RTFSkipGroup();
-
-    object.word97 = 0;
-
-    /* send the last closing brace back into the router */
-    RTFRouteToken();
+    	
+    if (!RTFSkipToToken(rtfControl, rtfShapeAttr, rtfShapeValue)) return;
+    RTFGetToken();
+    value = GetWord();
+    
+    RTFSkipGroup();
+    
+    fprintf(stderr,"shape, name=%s, value=%s\n",name,value);
+    free(name);
+    free(value);
 }
+
+static void ShapeAttr(void)
+{
+//	ExamineToken("shapeattr");
+	switch (rtfMinor) {
+	case rtfShapeProperty:
+		ReadShapeProperty();
+		break;
+	case rtfShapeText:
+		RTFExecuteGroup();
+		break;
+	case rtfShapeName:
+	case rtfShapeValue:
+	case rtfShapeValueBinary:
+	case rtfShapeLeft:
+	case rtfShapeTop:
+	case rtfShapeBottom:
+	case rtfShapeRight:
+	case rtfShapeLid:
+	case rtfShapeOrderZ:
+	case rtfShapeHeader:
+	case rtfShapeXPosPage:
+	case rtfShapeXPosMargin:
+	case rtfShapeXPosColumn:
+	case rtfShapeXPosIgnore:
+	case rtfShapeYPosPage:
+	case rtfShapeYPosMargin:
+	case rtfShapeYPosColumn:
+	case rtfShapeYPosIgnore:
+	case rtfShapeWrap:
+	case rtfShapeWrapSides:
+	case rtfShapeRelOrderZ:
+	case rtfShapeAnchor:
+		break;
+	}
+}
+
+/*
+ * The parameters following \shpgrp are the same as those following \shp. 
+ * The order of the shapes inside a group is from bottom to top in z-order. 
+ * Inside a \shpgrp, no {\shprslt ...} fields are generated (that is, only 
+ * the root-level shape can have a \shprslt field (this field describes the 
+ * entire group). For example:
+ *
+ *  {\shpgrp ... {\shp ... } {\shp ... } {\shprslt ... }}
+ *
+ *  {\shpgrp ... } can be substituted for {\shp ... } to create groups inside groups.
+ *
+ *  We _nearly_ always want to process the \shprslt group  
+ *      {\shp\pict...\pngblip} {\shprslt\pict...} => opt for png
+ *      {\shp\pict...} {\shprslt\object Equation ...} => opt for equation
+ *  for now, we always opt for the result group
+ */
+static void ReadShapeGroup(void)
+{
+	if (RTFSkipToToken(rtfControl,rtfShapeAttr,rtfShapeResult)) {
+	    RTFExecuteGroup();
+	}
+}
+
+/* 
+ * Shape
+ *
+ * {\shp <shpinfo> {\*\shpinst ... } {\*\shprslt ... } }
+ *
+ */
+static void ReadShape(void)
+{
+	if (RTFSkipToToken(rtfControl,rtfShapeAttr,rtfShapeResult)) {
+	    RTFExecuteGroup();
+	}
+}        
 
 static void ReadUnicode(void)
 {
@@ -3221,11 +3092,11 @@ static void ReadHyperlink(void)
 
     PutLitStr("\\href{");
 
-    localGL = braceLevel;
+    localGL = RTFGetBraceLevel();
 
     insideHyperlink = true;
 
-    while (braceLevel && braceLevel >= localGL) {
+    while (RTFGetBraceLevel() && RTFGetBraceLevel() >= localGL) {
         RTFGetToken();
         if (rtfClass == rtfText) {
             if (rtfTextBuf[0] != '"'
@@ -3242,11 +3113,11 @@ static void ReadHyperlink(void)
     while (!RTFCheckCMM(rtfControl, rtfDestination, rtfFieldResult))
         RTFGetToken();
 
-    localGL = braceLevel;
+    localGL = RTFGetBraceLevel();
     /* switch off hyperlink flag */
     insideHyperlink = false;
 
-    while (braceLevel && braceLevel >= localGL) {
+    while (RTFGetBraceLevel() && RTFGetBraceLevel() >= localGL) {
         RTFGetToken();
         RTFRouteToken();
     }
@@ -3442,23 +3313,15 @@ static void HandleOptionalTokens(void)
         break;
         
     case rtfWord97Picture:
-        /* expecting {\*\shppict{\pict{...}}{\nonshppict{\pict{...}} */
-        
-        RTFGetToken();
-        if (rtfClass != rtfGroup) { SkipGroup(); break;}
-        
-        RTFGetToken();    /* should be pict */
-        if (rtfMinor != rtfPict){ SkipGroup(); break;}
-        
-        RTFRouteToken();  /* handle pict */
-        RTFGetToken();    /* should be } */
-        RTFRouteToken();  /* handle last brace from shppict */
-        RTFGetToken();    /* should be { */
-        if (rtfClass != rtfGroup) { SkipGroup(); break;}
-        
-        RTFGetToken();    /* should be nonshppict */
-        SkipGroup();      /* because we don't want two pictures in latex file */
+    	ReadWord97Picture();
         break;
+    
+    case rtfDrawObject:
+    	break;
+    	
+    case rtfShapeInst:
+    case rtfShapeResult:
+    	break;
         
     default:
     //  ExamineToken("HandleOptionalTokesn"); 
@@ -3542,7 +3405,7 @@ static void DoHeaderFooter(void)
 	char *buff, *s, *option;
 	size_t hfStartPos, hfEndPos, len;
 	int isHeader, isFirst;
-	int level = braceLevel;
+	int level = RTFGetBraceLevel();
 	
 	if (insideHeaderFooter) return;
 	
@@ -3583,7 +3446,7 @@ static void DoHeaderFooter(void)
 	}
 
 	PutLitStr(option);	
-    while (braceLevel && braceLevel >= level) {
+    while (RTFGetBraceLevel() && RTFGetBraceLevel() >= level) {
         RTFGetToken();
     	RTFRouteToken();
     }
@@ -3670,6 +3533,18 @@ static void Destination(void)
     case rtfFooter:
         DoHeaderFooter();
         break;
+    case rtfShapeAttr:
+    	ShapeAttr();
+    	break;
+    case rtfShapeGroup:
+    	ReadShapeGroup();
+    	break;
+    case rtfShape:
+    	ReadShape();
+    	break;
+    case rtfBlipTag:
+//    	ExamineToken("BlipTag");
+    	break;
     }
 }
 
@@ -3739,6 +3614,45 @@ static void RTFSetGenCharSet(void)
     curCharCode = genCharCode;
 } 
 
+static void PictureAttr(void)
+{
+	switch (rtfMinor) {
+	case rtfMacQD:
+		picture.type = pict;
+		break;
+	case rtfWinMetafile:
+		picture.type = wmf;
+		break;
+	case rtfEmf:
+		picture.type = emf;
+		break;
+	case rtfPng:
+		picture.type = png;
+		break;
+	case rtfJpeg:
+		picture.type = jpeg;
+		break;
+	case rtfPicGoalWid:
+		picture.goalWidth = rtfParam;
+		break;
+	case rtfPicGoalHt:
+		picture.goalHeight = rtfParam;
+		break;
+	case rtfPicScaleX:
+		picture.scaleX = rtfParam;
+		break;
+	case rtfPicWid:
+		picture.width = rtfParam;
+		break;
+	case rtfPicHt:
+		picture.height = rtfParam;
+		break;
+	case rtfPicScaleY:
+		picture.scaleY = rtfParam;
+		break;
+	}
+}
+
 /* decides what to do when a control word is encountered */
 static void ControlClass(void)
 {
@@ -3779,13 +3693,15 @@ static void ControlClass(void)
     case rtfSectAttr:
         SectAttr();
         break;
-    case rtfWord97ObjAttr:
-        if (rtfMinor == rtfShapeName || rtfMinor == rtfShapeValue)
-            SkipGroup();
-        break;
     case rtfCharSet:
         RTFSetGenCharSet();
         break;
+    case rtfPictAttr:
+    	PictureAttr();
+    	break;
+    case rtfShapeAttr:
+    	ShapeAttr();
+    	break;
     }
 
     /* handles {\*\keyword ...} */
@@ -3829,7 +3745,7 @@ int BeginLaTeXFile(void)
     picture.type = unknownPict;
     oleEquation.count = 0;
     object.class = unknownObjClass;
-    object.word97 = 0;
+    object.shape = 0;
     table.cellCount = 0;
     table.cellInfo = NULL;
     table.cellMergePar = none;
@@ -3852,7 +3768,6 @@ int BeginLaTeXFile(void)
     RTFSetDestinationCallback(rtfObjWid, ReadObjWidth);
     RTFSetDestinationCallback(rtfColorTbl, WriteColors);
     RTFSetDestinationCallback(rtfObject, ReadObject);
-    RTFSetDestinationCallback(rtfWord97Object, ReadWord97Object);
     RTFSetDestinationCallback(rtfPict, ReadPicture);
     RTFSetDestinationCallback(rtfFootnote, ReadFootnote);
 

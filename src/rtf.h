@@ -316,7 +316,7 @@ typedef	void (*RTFFuncPtr) ();		/* generic function pointer */
 /*
  * Public RTF reader routines
  */
-
+int			RTFGetBraceLevel(void);
 void		RTFSimpleInit (void);
 void 		RTFSetDefaultFont (int fontNumber);
 void		RTFInit (void);
@@ -338,6 +338,10 @@ void 		RTFSetReadHook(RTFFuncPtr f);
 RTFFuncPtr	RTFGetReadHook (void);
 void		RTFRouteToken (void);
 void		RTFSkipGroup (void);
+void RTFSkipToLevel(int level);
+void		RTFExecuteGroup (void);
+int 		RTFSkipToToken(int class, int major, int minor);
+int		 	RTFExecuteToToken(int class, int major, int minor);
 void		RTFExpandStyle (short n);
 short    RTFCheckCM(short class, short major);
 short    RTFCheckCMM(short class, short major, short minor);
@@ -395,8 +399,10 @@ extern int g_eqn_insert_name;
 void RTFInitStack(void);
 void RTFPushStack(void);
 void RTFPopStack(void);
-void RTFStoreStack(void);
-void RTFRestoreStack(void);
 
+# define SAVE_PARSER 11
+# define RESTORE_PARSER 12
+
+extern void RTFParserState(int op);
 
 #endif /* _RTF_H */

@@ -114,19 +114,19 @@
 # define		rtfNeXTHelpMarker	84
 # define		rtfNeXTHelpLink	85
 # define		rtfDrawTextBoxText	86
-# define		rtfSp	87
-# define		rtfWord97Object	88
-# define		rtfWord97ObjectGroup	89
-# define		rtfWord97Picture	90
-# define		rtfWord97NoPicture	91
-# define		rtfDocvar	92
-# define		rtfUpr	93
-# define		rtfFchars	94
-# define		rtfLchars	95
-# define		rtfPgdsctbl	96
-# define		rtfTOCN	97
-# define		rtfUserPropsGroup	98
-# define		rtfWGRFmtFilter	99
+# define		rtfShape	87
+# define		rtfShapeGroup	88
+# define		rtfWord97Picture	89
+# define		rtfWord97NoPicture	90
+# define		rtfDocvar	91
+# define		rtfUpr	92
+# define		rtfFchars	93
+# define		rtfLchars	94
+# define		rtfPgdsctbl	95
+# define		rtfTOCN	96
+# define		rtfUserPropsGroup	97
+# define		rtfWGRFmtFilter	98
+# define		rtfBlipTag	99
 
 /* highest destination number */
 # define	rtfMaxDestination	(rtfTOCN)
@@ -1023,55 +1023,78 @@
 # define		rtfListOverrideTable	704
 
  /*
-  * Word 97 Object Attributes
+  * Shape Attributes
   */
 
-# define	rtfWord97ObjAttr	29
+# define	rtfShapeAttr	29
 
-# define		rtfWord97ObjResult	705
-# define		rtfWord97ObjInst	706
-# define		rtfWord97ObjText	707
+# define		rtfShapeResult	705
+# define		rtfShapeInst	706
+# define		rtfShapeText	707
 # define		rtfShapeName	708
 # define		rtfShapeValue	709
+# define		rtfShapeValueBinary	710
+# define		rtfShapeProperty	711
+
+# define		rtfShapeLeft	712
+# define		rtfShapeTop	713
+# define		rtfShapeBottom	714
+# define		rtfShapeRight	715
+# define		rtfShapeLid	716
+# define		rtfShapeOrderZ	717
+# define		rtfShapeHeader	718
+# define		rtfShapeXPosPage	719
+# define		rtfShapeXPosMargin	720
+# define		rtfShapeXPosColumn	721
+# define		rtfShapeXPosIgnore	722
+# define		rtfShapeYPosPage	723
+# define		rtfShapeYPosMargin	724
+# define		rtfShapeYPosColumn	725
+# define		rtfShapeYPosIgnore	726
+# define		rtfShapeWrap	727
+# define		rtfShapeWrapSides	728
+# define		rtfShapeRelOrderZ	729
+# define		rtfShapeAnchor	730
+
 
  /*
   * More table attributes
   */
 
 
-# define		rtfVertTopAlign	710
-# define		rtfVertCenterAlign	711
-# define		rtfVertBottomAlign	712
-# define		rtfVertLeftAlign	713
-# define		rtfVertRightAlign	714
-# define		rtfVertMergeRngFirst	715
-# define		rtfVertMergeRngPrevious	716
+# define		rtfVertTopAlign	731
+# define		rtfVertCenterAlign	732
+# define		rtfVertBottomAlign	733
+# define		rtfVertLeftAlign	734
+# define		rtfVertRightAlign	735
+# define		rtfVertMergeRngFirst	736
+# define		rtfVertMergeRngPrevious	737
 
 
 /* some special ANSI encoding commands */
 
 # define	rtfAnsiCharAttr	30
 
-# define		rtfLowChar	717
-# define		rtfHighChar	718
-# define		rtfDblByteChar	719
+# define		rtfLowChar	738
+# define		rtfHighChar	739
+# define		rtfDblByteChar	740
 
 # define	rtfGoober	31
 
-# define		rtfxmlTbl	720
-# define		rtfxmlNs	721
-# define		rtfxmlOpen	722
-# define		rtfxmlAttr	723
-# define		rtfxmlAttrNs	724
-# define		rtfxmlAttrName	725
-# define		rtfxmlAttrValue	726
-# define		rtfListLevel	727
+# define		rtfxmlTbl	741
+# define		rtfxmlNs	742
+# define		rtfxmlOpen	743
+# define		rtfxmlAttr	744
+# define		rtfxmlAttrNs	745
+# define		rtfxmlAttrName	746
+# define		rtfxmlAttrValue	747
+# define		rtfListLevel	748
 
-# define		rtfThemeflomajor	728
-# define		rtfThemefhimajor	729
-# define		rtfThemefdbmajor	730
-# define		rtfThemefbimajor	731
-# define		rtfThemeflominor	732
-# define		rtfThemefhiminor	733
-# define		rtfThemefdbminor	734
-# define		rtfThemefbiminor	735
+# define		rtfThemeflomajor	749
+# define		rtfThemefhimajor	750
+# define		rtfThemefdbmajor	751
+# define		rtfThemefbimajor	752
+# define		rtfThemeflominor	753
+# define		rtfThemefhiminor	754
+# define		rtfThemefdbminor	755
+# define		rtfThemefbiminor	756

@@ -55,7 +55,7 @@ void RTFSetOutputStream (FILE *ofp);
 
 enum pictType {unknownPict, pict, wmf, gif, jpeg, bin, png, emf};
 enum objClass {unknownObjClass, EquationClass, WordPictureClass, MSGraphChartClass};
-enum word97ObjectClass {unknownWord97Object, word97Object, standardObject, word97Picture, word97ObjText};
+enum shapeObjectClass {unknownShapeObject, shapeObject, standardObject, shapePicture, shapeObjText};
 enum {left, center, right};
 enum {singleSpace, oneAndAHalfSpace, doubleSpace};
 typedef enum {tinySize, scriptSize, footNoteSize, smallSize, normalSize, 
