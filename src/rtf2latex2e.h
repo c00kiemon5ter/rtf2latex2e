@@ -150,6 +150,15 @@ typedef struct
     boolean 	multiRow;
 } tableStruct;
 
+typedef struct
+{
+	int left;
+	int top;
+	int bottom;
+	int right;
+} shapeStruct;
+
+
 short ReadPrefFile (char *file);
 
 extern parStyleStruct paragraph, paragraphWritten;

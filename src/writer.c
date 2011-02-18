@@ -114,6 +114,7 @@ boolean insideTable;
 boolean insideFootnote;
 boolean insideHyperlink;
 boolean insideHeaderFooter;
+boolean insideShapeGroup;
 
 char *preambleFancyHeader;
 char *preambleFancyHeaderFirst;
@@ -127,6 +128,7 @@ int current_vspace;
 pictureStruct picture;
 equationStruct oleEquation;
 tableStruct table;
+shapeStruct shape;
 
 int g_debug_par_start       = 0;
 int g_debug_table_prescan   = 0;
@@ -2011,11 +2013,13 @@ static void WriteWMFHeader(FILE * pictureFile)
     wmfhead[12] = (height) % 256;
     wmfhead[13] = (height) / 256;
 
-	/* Normally, there are 1440 twips per inch; however, this number may be changed 
+	/* Normally, the resolution is 1440 twips per inch; however, this number may be changed 
 	 * to scale the image. A value of 720 indicates that the image is double its 
 	 * normal size, or scaled to a factor of 2:1. A value of 360 indicates a scale of 
 	 * 4:1, while a value of 2880 indicates that the image is scaled down in size by 
 	 * a factor of two. A value of 1440 indicates a 1:1 scale ratio.
+	 * 
+	 * For now it is left as 1440 0x05A0
 	 */
 
     /* compute Checksum */
@@ -2025,8 +2029,6 @@ static void WriteWMFHeader(FILE * pictureFile)
         wmfhead[20] ^= wmfhead[i];
         wmfhead[21] ^= wmfhead[i + 1];
     }
-
-
     fwrite(wmfhead, 22, 1, pictureFile);
 }
 
@@ -2045,7 +2047,7 @@ static void ConvertHexPicture(char *fileSuffix)
     char pictByte;
     int groupEnd = false;
     short hexNumber;
-    short hexEvenOdd = 0;       /* check if we read in even number of hex characters */
+    short hexEvenOdd = 0;       /* check if we read in an even number of hex characters */
 
     strcpy(picture.name, "");
 
@@ -2180,15 +2182,15 @@ static void IncludeGraphics(char *pictureType)
 
     /* prefer picwgoal over picw */
 	if (picture.goalWidth)
-		width = picture.goalWidth / 20;
+		width = (int) (picture.goalWidth * picture.scaleX / 100.0 / 20.0 + 0.5);
 	else
-		width = (int) (picture.width * picture.scaleX / 100.0);
+		width = (int) (picture.width * picture.scaleX / 100.0 + 0.5);
 
     /* prefer pichgoal over pich */
 	if (picture.goalHeight)
-		height = picture.goalHeight / 20;
+		height = (int) (picture.goalHeight * picture.scaleY / 100.0 / 20.0 + 0.5);
 	else
-    	height = (int) (height * picture.scaleY / 100.0);
+    	height = (int) (height * picture.scaleY / 100.0 + 0.5);
 
     figPtr = strrchr(picture.name, PATH_SEP);
     if (!figPtr)
@@ -2201,7 +2203,7 @@ static void IncludeGraphics(char *pictureType)
     
         EndParagraph();
 
-        if (1) {
+        if (0) {
             PutLitStr("\\fbox{");
             snprintf(dummyBuf,rtfBufSiz,"scale=(%d,%d), (w,h)=(%d,%d), scaled (w,h)=(%d,%d)\n",
             picture.scaleX, picture.scaleY,picture.width,picture.height,width,height);
@@ -2916,7 +2918,7 @@ static void ReadShapeProperty(void)
 	name = GetWord();
     
     if (strcmp(name,"pib")==0) {
-    	fprintf(stderr,"shape, name=%s\n",name);
+//    	fprintf(stderr,"shape, name=%s\n",name);
     	RTFExecuteGroup();
     	free(name);
     	return;
@@ -2928,7 +2930,17 @@ static void ReadShapeProperty(void)
     
     RTFSkipGroup();
     
-    fprintf(stderr,"shape, name=%s, value=%s\n",name,value);
+//    fprintf(stderr,"shape, name=%s, value=%s\n",name,value);
+    
+    if (strcasecmp(name,"relleft")==0)
+    	sscanf(value, "%d", &(shape.left));
+    if (strcasecmp(name,"relright")==0)
+    	sscanf(value, "%d", &(shape.right));
+    if (strcasecmp(name,"reltop")==0)
+    	sscanf(value, "%d", &(shape.top));
+    if (strcasecmp(name,"relbottom")==0)
+    	sscanf(value, "%d", &(shape.bottom));
+
     free(name);
     free(value);
 }
@@ -2941,15 +2953,21 @@ static void ShapeAttr(void)
 		ReadShapeProperty();
 		break;
 	case rtfShapeText:
+//		ExamineToken("ShapeText");
 		RTFExecuteGroup();
 		break;
-	case rtfShapeName:
-	case rtfShapeValue:
-	case rtfShapeValueBinary:
 	case rtfShapeLeft:
+		shape.left = rtfParam;
+		break;
 	case rtfShapeTop:
+		shape.top = rtfParam;
+		break;
 	case rtfShapeBottom:
+		shape.bottom = rtfParam;
+		break;
 	case rtfShapeRight:
+		shape.right = rtfParam;
+		break;
 	case rtfShapeLid:
 	case rtfShapeOrderZ:
 	case rtfShapeHeader:
@@ -2965,6 +2983,7 @@ static void ShapeAttr(void)
 	case rtfShapeWrapSides:
 	case rtfShapeRelOrderZ:
 	case rtfShapeAnchor:
+	default:
 		break;
 	}
 }
@@ -2987,9 +3006,12 @@ static void ShapeAttr(void)
  */
 static void ReadShapeGroup(void)
 {
-	if (RTFSkipToToken(rtfControl,rtfShapeAttr,rtfShapeResult)) {
-	    RTFExecuteGroup();
+	insideShapeGroup = 1;
+//	ExamineToken("ShapeGroup");
+	if (RTFExecuteToToken(rtfControl,rtfShapeAttr,rtfShapeResult)) {
+	    RTFSkipGroup();
 	}
+	insideShapeGroup = 0;
 }
 
 /* 
@@ -3000,6 +3022,12 @@ static void ReadShapeGroup(void)
  */
 static void ReadShape(void)
 {
+//	ExamineToken("Shape");
+	if (insideShapeGroup) {
+	    RTFExecuteGroup();
+	    return;
+	}
+	
 	if (RTFSkipToToken(rtfControl,rtfShapeAttr,rtfShapeResult)) {
 	    RTFExecuteGroup();
 	}
