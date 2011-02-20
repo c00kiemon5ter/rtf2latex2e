@@ -205,14 +205,19 @@ void ExamineToken(char * tag)
     printf("* Param is %3d\n\n", (int) rtfParam);
 }
 
+char lastCharWritten;
+
 static void PutIntAsUtf8(int x)
 {
     x &= 0x0000FFFF;
     if (x < 0x80){
         fputc((char) x, ostream);
         wrapCount++;
+        lastCharWritten = (char) x;
         return;
     }
+
+    lastCharWritten = 0x80;;
 
     if (x < 0xA0) {
         fprintf(stderr, "there should be no such character c='%c'=0x%02x\n",(char) x,x);
@@ -1041,9 +1046,8 @@ static void TextClass(void)
     WrapText();
 }
 
-/* reads footnote. Just puts a footnote wrapper around whatever is
- * inside the footnote. Table footnotes are skipped for now
- * until I figure out a way that TeX likes.
+/* 
+ * Put a footnote wrapper around whatever is inside the footnote. 
  */
 static void ReadFootnote(void)
 {
@@ -2120,9 +2124,15 @@ static void ConvertHexPicture(char *fileSuffix)
  */
 static void IncludeGraphics(char *pictureType)
 {
-    char *figPtr, *suffix;
+    char *filename;
     char dummyBuf[rtfBufSiz];
     int width, height;
+    int displayFigure = 0;
+
+    if (insideTable || insideFootnote) return;
+    
+    /* it seems that when cropping is -4319 or -6084 the picture is empty */
+    if (picture.cropTop<-1000) return;
 
 #ifdef UNIX
     if (strcmp(pictureType, "pict") == 0) {
@@ -2178,8 +2188,6 @@ static void IncludeGraphics(char *pictureType)
     }
 #endif
 
-    suffix = strrchr(picture.name, '.');
-
     /* prefer picwgoal over picw */
 	if (picture.goalWidth)
 		width = (int) (picture.goalWidth * picture.scaleX / 100.0 / 20.0 + 0.5);
@@ -2192,53 +2200,43 @@ static void IncludeGraphics(char *pictureType)
 	else
     	height = (int) (height * picture.scaleY / 100.0 + 0.5);
 
-    figPtr = strrchr(picture.name, PATH_SEP);
-    if (!figPtr)
-        figPtr = picture.name;
+    filename = strrchr(picture.name, PATH_SEP);
+    if (!filename)
+        filename = picture.name;
     else
-        figPtr++;
+        filename++;
 
-    if (!insideTable && !insideFootnote) {
-    	int oldWrittenAlignment = -1;
-    
-        EndParagraph();
+	if (nowBetweenParagraphs) {
+		displayFigure = 1;
+		EndParagraph();
+		NewParagraph();
+		PutLitStr("%%\\begin{figure}[htbp]");
+	} else {
+   		// EndParagraph();
+		displayFigure = 0;
+		StopTextStyle();
+	}
 
-        if (0) {
-            PutLitStr("\\fbox{");
-            snprintf(dummyBuf,rtfBufSiz,"scale=(%d,%d), (w,h)=(%d,%d), scaled (w,h)=(%d,%d)\n",
-            picture.scaleX, picture.scaleY,picture.width,picture.height,width,height);
-            PutLitStr(dummyBuf);
-            PutLitStr("}");
-        }
-
-        if (height > 50) 
-            PutLitStr("\\begin{figure}[htbp]");
-        
-        if (height > 20) {
-            PutLitStr("\n\\begin{center}");
-            oldWrittenAlignment =  paragraphWritten.alignment;
-            paragraphWritten.alignment = center;
-        }
-        
-        snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%dpt, height=%dpt]{%s}", width, height, figPtr);
-        PutLitStr(dummyBuf);
-        
-        if (height > 50) {
-            PutLitStr("\n\\caption{This should be the caption for \\texttt{");
-            PutEscapedLitStr(figPtr);
-            PutLitStr("}.}");
-        }
-        
-        if (height > 20) {
-            PutLitStr("\n\\end{center}");
-            paragraphWritten.alignment=oldWrittenAlignment;
-        }
-
-        if (height > 50) 
-            PutLitStr("\n\\end{figure}");
-            
-        nowBetweenParagraphs = true;
-    }
+	if (0) {
+		PutLitStr("\n\\fbox{");
+		snprintf(dummyBuf,rtfBufSiz,"crop (t,b)=(%d,%d), scaled (w,h)=(%d,%d)\n",
+		picture.cropTop,picture.cropBottom,width,height);
+		PutLitStr(dummyBuf);
+		PutLitStr("}\n\n");
+	}
+	
+	snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%dpt, height=%dpt]{%s}\n", 
+	         width, height, filename);
+	PutLitStr(dummyBuf);
+	
+	if (displayFigure) {
+		PutLitStr("%%\\caption{This should be the caption for \\texttt{");
+		PutEscapedLitStr(filename);
+		PutLitStr("}.}\n");
+		PutLitStr("%%\\end{figure}\n");
+		EndParagraph();
+		nowBetweenParagraphs = true;
+	}
 }
 
 /* This function reads in a picture */
@@ -2792,10 +2790,30 @@ boolean ConvertEquationFile(char *objectFileName)
 
         /* this actually writes the equation */
         Eqn_TranslateObjectList(theEquation, ostream, 0);
+        if (theEquation->m_inline){
+        	/* Add a space unless the last character was punctuation */
+        	if (lastCharWritten != ' ' && lastCharWritten != '(' && 
+                lastCharWritten != '[' && lastCharWritten != '{' ) 
+                   PutLitChar(' ');
+        }
+            
         PutLitStr(theEquation->m_latex_start);
         PutLitStr(theEquation->m_latex);
         PutLitStr(EqNo);
         PutLitStr(theEquation->m_latex_end);
+        
+        if (theEquation->m_inline) {
+        	/* Add a space unless the next character is punctuation */
+        	RTFPeekToken();
+        	if (rtfClass == rtfText) {
+        		if (rtfTextBuf[0]!='.' && 
+        		    rtfTextBuf[0]!=',' && 
+        		    rtfTextBuf[0]!=':' && 
+        		    rtfTextBuf[0]!=';' && 
+        		    rtfTextBuf[0]!=']' && 
+        		    rtfTextBuf[0]!=')') PutLitChar(' ');
+        	}
+        }
         Eqn_Destroy(theEquation);
     }
 
@@ -3346,7 +3364,8 @@ static void HandleOptionalTokens(void)
     
     case rtfDrawObject:
     	break;
-    	
+    
+    case rtfPicProp:
     case rtfShapeInst:
     case rtfShapeResult:
     	break;
@@ -3678,6 +3697,18 @@ static void PictureAttr(void)
 	case rtfPicScaleY:
 		picture.scaleY = rtfParam;
 		break;
+	case rtfPicCropTop:
+		picture.cropTop = rtfParam;
+		break;
+	case rtfPicCropBottom:
+		picture.cropBottom = rtfParam;
+		break;
+	case rtfPicCropLeft:
+		picture.cropLeft = rtfParam;
+		break;
+	case rtfPicCropRight:
+		picture.cropRight = rtfParam;
+		break;		
 	}
 }
 

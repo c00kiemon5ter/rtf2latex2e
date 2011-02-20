@@ -1,8 +1,6 @@
 Post 2-0-0 Improvements
    standardize insertion of table/equation/image to account for paragraph state
-   translate page header
    translate word fields
-   incorporate line numbers in equations
    improve up table formatting
    support for font changing
    incorporate SafeBuf stuff?

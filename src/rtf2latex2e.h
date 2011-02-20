@@ -77,6 +77,10 @@ typedef struct
     int     urx;
     int     ury;
     char    name[rtfBufSiz];
+	int 	cropTop;
+	int		cropBottom;
+	int		cropLeft;
+	int 	cropRight;
 } pictureStruct;
 
 typedef struct
