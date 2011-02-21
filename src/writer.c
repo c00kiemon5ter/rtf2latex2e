@@ -2198,7 +2198,7 @@ static void IncludeGraphics(char *pictureType)
 	if (picture.goalHeight)
 		height = (int) (picture.goalHeight * picture.scaleY / 100.0 / 20.0 + 0.5);
 	else
-    	height = (int) (height * picture.scaleY / 100.0 + 0.5);
+    	height = (int) (picture.height * picture.scaleY / 100.0 + 0.5);
 
     filename = strrchr(picture.name, PATH_SEP);
     if (!filename)
@@ -2398,23 +2398,6 @@ static void ReadObjWidth(void)
     g_object_width = rtfParam;
 }
 
-/* return a string delimited by space or non-text token*/
-static char * GetWord(void)
-{
-	char word[512];
-	int len = 0;
-	
-	while (rtfClass == rtfText && rtfTextBuf[0] != ' ' && len < 512) {
-		word[len] = rtfTextBuf[0];
-		len++;
-		RTFGetToken();
-	}
-	word[len]='\0';
-//	ExamineToken(word);
-	return strdup(word);
-}
-
-
 /*
 * parses \objectclass and adds the class type to the global variable 'object'
 */
@@ -2428,8 +2411,7 @@ static int GetObjectClass(void)
 	if (!RTFSkipToToken(rtfControl, rtfDestination, rtfObjClass))
 		return -1;
 		
-	RTFGetToken();
-	s = GetWord();
+	s = RTFGetTextWord();
 	if (s && s[0]) {
     	strcpy(object.className, s);
     	free(s);
@@ -2866,7 +2848,7 @@ static void ReadObject(void)
     switch (object.class) {
     case unknownObjClass:
     default:
-        RTFMsg("*** unsupported object '%s', skipping...\n", object.className);
+//        RTFMsg("*** unsupported object '%s', skipping...\n", object.className);
         break;
 
     case EquationClass:
@@ -2932,19 +2914,18 @@ static void ReadShapeProperty(void)
 	char *name, *value;
 	
     if (!RTFSkipToToken(rtfControl, rtfShapeAttr, rtfShapeName)) return; 
-    RTFGetToken();
-	name = GetWord();
+
+	name = RTFGetTextWord();
     
     if (strcmp(name,"pib")==0) {
-//    	fprintf(stderr,"shape, name=%s\n",name);
     	RTFExecuteGroup();
     	free(name);
     	return;
     }
     	
     if (!RTFSkipToToken(rtfControl, rtfShapeAttr, rtfShapeValue)) return;
-    RTFGetToken();
-    value = GetWord();
+
+    value = RTFGetTextWord();
     
     RTFSkipGroup();
     
@@ -3009,8 +2990,8 @@ static void ShapeAttr(void)
 /*
  * The parameters following \shpgrp are the same as those following \shp. 
  * The order of the shapes inside a group is from bottom to top in z-order. 
- * Inside a \shpgrp, no {\shprslt ...} fields are generated (that is, only 
- * the root-level shape can have a \shprslt field (this field describes the 
+ * Inside a \shpgrp, no {\shprslt ...} tokens are generated (that is, only 
+ * the root-level shape can have a \shprslt token (this token describes the 
  * entire group). For example:
  *
  *  {\shpgrp ... {\shp ... } {\shp ... } {\shprslt ... }}
@@ -3132,7 +3113,7 @@ static void SkipFieldResult(void)
     RTFRouteToken();
 }
 
-static void ReadHyperlink(void)
+static void ReadHyperlinkField(void)
 {
     int localGL;
 
@@ -3282,56 +3263,51 @@ static void ReadPageField(void)
  */
 static void ReadFieldInst(void)
 {
-    char buf[100];
-    int i;
-    int groupCount = 1;
+    char *fieldName;
+    int level = RTFGetBraceLevel();
 
-    /* skip to text identifying the type of FIELD  */
-    while (rtfClass != rtfText || rtfMinor == rtfSC_space) {
-        RTFGetToken();
-        if (RTFCheckCM(rtfGroup, rtfBeginGroup))
-            groupCount++;
-        if (RTFCheckCM(rtfGroup, rtfEndGroup))
-            groupCount--;
-        if (groupCount == 0) {
-            RTFRouteToken();
-            return;
-        }
-    }
-
-    /* extract text identifying the FIELD into buf */
-    strcpy(buf, rtfTextBuf);
-    while (strcmp(rtfTextBuf, " ") != 0 && rtfClass != rtfGroup) {
-        RTFGetToken();
-        if (strcmp(rtfTextBuf, " ") != 0 && rtfClass != rtfGroup)
-            strcat(buf, rtfTextBuf);
-    }
-/*    RTFMsg("%s: FIELD type is %s\n",fn,buf);*/
-
-    if (prefs[pConvertHypertext] && strcmp(buf, "HYPERLINK") == 0 ) {
-        ReadHyperlink();
+	fieldName = RTFGetTextWord();
+	if (fieldName == NULL) return;
+	
+    if (strcasecmp(fieldName, "HYPERLINK") == 0 ) {
+        if (prefs[pConvertHypertext])
+        	ReadHyperlinkField();
+        else
+        	RTFSkipToLevel(level);
+        free(fieldName);
         return;
     }
 
-    if (strcmp(buf, "SYMBOL") == 0) {
+    if (strcasecmp(fieldName, "SYMBOL") == 0) {
         ReadSymbolField();
+        free(fieldName);
         return;
     }
 
-    if (strcmp(buf, "PAGEREF") == 0) {
+    if (strcasecmp(fieldName, "PAGEREF") == 0) {
         ReadPageRefField();
+        free(fieldName);
         return;
     }
 
-    if (strcmp(buf, "PAGE") == 0) {
+    if (strcasecmp(fieldName, "PAGE") == 0) {
     	ReadPageField();
+        free(fieldName);
         return;
     }
+
+    if (strcasecmp(fieldName, "HYPERLINK") == 0) {
+    	ReadPageField();
+        free(fieldName);
+        return;
+    }
+    RTFMsg("FIELD type is '%s'\n",fieldName);
 
     /* Unsupported FIELD type ... the best we can do is bail from rtfFieldInst
        and hope rtfFieldResult can be processed  */
-    for (i = 0; i < groupCount; i++)
-        RTFSkipGroup();
+    
+	RTFSkipToLevel(level);
+    free(fieldName);
 }
 
 /*
@@ -3365,7 +3341,6 @@ static void HandleOptionalTokens(void)
     case rtfDrawObject:
     	break;
     
-    case rtfPicProp:
     case rtfShapeInst:
     case rtfShapeResult:
     	break;

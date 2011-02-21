@@ -481,6 +481,35 @@ int RTFExecuteToToken(int class, int major, int minor)
 	return RTFToToken(class, major, minor, EXECUTE);
 }
 
+/* 
+ * return the next (non-space) word delimited by whitespace
+ */
+char *RTFGetTextWord(void)
+{
+	char word[256];
+	int len = 0;
+	short level = RTFGetBraceLevel();
+	
+	/* Skip over spaces */
+    while (rtfClass != rtfText || (rtfClass == rtfText && rtfTextBuf[0] == ' ')) {
+    	RTFGetToken();
+    	if (rtfClass == rtfEOF) return NULL;
+    	if (level > RTFGetBraceLevel()) return NULL;
+    }
+
+	/* Collect the word */
+	while (rtfClass == rtfText) {
+		word[len] = rtfTextBuf[0];
+		len++;
+    	if (RTFGetToken() == rtfEOF) return NULL;
+    	if (level > RTFGetBraceLevel()) break;
+    	if (rtfTextBuf[0] == ' ') break;
+    	if (len >= 256) break;
+	}
+	word[len]='\0';
+	return strdup(word);
+}
+
 
 /*
  * Read one token.  Call the read hook if there is one.  The
