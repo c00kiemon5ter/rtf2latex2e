@@ -224,7 +224,6 @@ void RTFInit(void)
 
     /* install built-in destination readers */
     RTFSetDestinationCallback(rtfFontTbl, ReadFontTbl);
-    RTFSetDestinationCallback(rtfColorTbl, ReadColorTbl);
     RTFSetDestinationCallback(rtfStyleSheet, ReadStyleSheet);
     RTFSetDestinationCallback(rtfInfo, ReadInfoGroup);
     RTFSetDestinationCallback(rtfPict, ReadPictGroup);

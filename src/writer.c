@@ -84,6 +84,7 @@ const char *fontSizeList[] = {
 
 static struct {
     int cols;
+    int writtenCols;
     boolean newSection;  /* true when \sect token has been seen */
     boolean newPage;
 } section;
@@ -773,6 +774,19 @@ static void setLineSpacing(void)
     paragraphWritten.lineSpacing = paragraph.lineSpacing;
 }
 
+static void NewSection(void)
+{
+    char buff[100];
+    if (section.cols > 1) {
+        snprintf(buff, 100, "\n\\begin{multicols}{%d}\n", section.cols);
+        PutLitStr(buff);
+        requireMultiColPackage = true;
+        section.writtenCols = section.cols;
+    }
+    
+    section.newSection = false;
+}
+
 static void NewParagraph(void)
 {
     char buff[100];
@@ -791,6 +805,8 @@ static void NewParagraph(void)
         }
     }
 
+	if (section.newSection) NewSection();
+	
     if (prefs[pConvertParagraphStyle] && paragraph.styleIndex != -1) {
         PutLitStr(Style2LatexOpen[paragraph.styleIndex]);
         paragraphWritten.styleIndex = paragraph.styleIndex;
@@ -835,25 +851,17 @@ static void NewParagraph(void)
         }
     }
 
-    if (section.cols > 1) {
-        snprintf(buff, 100, "\n\\begin{multicols}{%d}\n", section.cols);
-        PutLitStr(buff);
-        requireMultiColPackage = true;
-    }
 }
 
 static void EndSection(void)
 {
-    if (section.cols > 1) {
+    if (section.writtenCols > 1) {
         PutLitStr("\n\\end{multicols}\n");
-        InsertNewLine();
-        section.cols = 1;
+        section.writtenCols = 1;
     }
     
     if (section.newPage)
     	PutLitStr("\\newpage\n");
-    	
-    section.newSection = false;
 }
 
 
@@ -908,6 +916,7 @@ static void EndParagraph(void)
 
     InsertNewLine();
     InsertNewLine();
+    
     if (section.newSection) EndSection();
 }
 
@@ -3306,7 +3315,7 @@ static void ReadFieldInst(void)
         free(fieldName);
         return;
     }
-    RTFMsg("FIELD type is '%s'\n",fieldName);
+//    RTFMsg("FIELD type is '%s'\n",fieldName);
 
     /* Unsupported FIELD type ... the best we can do is bail from rtfFieldInst
        and hope rtfFieldResult can be processed  */
@@ -3768,6 +3777,7 @@ int BeginLaTeXFile(void)
     insideHeaderFooter = false;
     section.newPage = 1;
     section.cols = 1;
+    section.writtenCols = 1;
     section.newSection = false;
 
     requireSetspacePackage = false;
