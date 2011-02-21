@@ -83,8 +83,9 @@ const char *fontSizeList[] = {
 };
 
 static struct {
-    boolean newStyle;
     int cols;
+    boolean newSection;  /* true when \sect token has been seen */
+    boolean newPage;
 } section;
 
 static struct {
@@ -841,6 +842,21 @@ static void NewParagraph(void)
     }
 }
 
+static void EndSection(void)
+{
+    if (section.cols > 1) {
+        PutLitStr("\n\\end{multicols}\n");
+        InsertNewLine();
+        section.cols = 1;
+    }
+    
+    if (section.newPage)
+    	PutLitStr("\\newpage\n");
+    	
+    section.newSection = false;
+}
+
+
 /* 
  * Everything that is emitted is in some sort of paragraph
  * This routine just closes the environments that have been written
@@ -892,6 +908,7 @@ static void EndParagraph(void)
 
     InsertNewLine();
     InsertNewLine();
+    if (section.newSection) EndSection();
 }
 
 
@@ -975,17 +992,6 @@ static void WriteLaTeXHeader(void)
         for (i = 0; i < 100; i++)
             PutLitChar(' ');
         PutLitChar('\n');
-    }
-}
-
-static void DoSectionCleanUp(void)
-{
-    if (section.cols > 1) {
-        if (nowBetweenParagraphs)  /*finish paragraph before multicols */
-            EndParagraph();
-        PutLitStr("\n\\end{multicols}");
-        InsertNewLine();
-        section.cols = 1;
     }
 }
 
@@ -1841,15 +1847,14 @@ static void SectAttr(void)
     switch (rtfMinor) {
     case rtfColumns:
         section.cols = rtfParam;
-        section.newStyle = true;
         break;
     case rtfSectDef:
-        DoSectionCleanUp();
         section.cols = 1;
-/*                       section.newStyle = true; */
+        section.newPage = 1;
         break;
+    default:
+    	break;
     }
-
 }
 
 /*
@@ -1865,7 +1870,7 @@ void EndLaTeXFile(void)
     
     /* last few bits */
     EndParagraph();
-    DoSectionCleanUp();
+    EndSection();
     PutLitStr("\n\n\\end{document}\n");
 
     /* open new file, changing name from file.ltx to file.tex*/
@@ -3360,13 +3365,17 @@ static void HandleOptionalTokens(void)
 static void SpecialChar(void)
 {
     switch (rtfMinor) {
-    case rtfSect:
     case rtfLine:
     case rtfPar:
         if (nowBetweenParagraphs)
             current_vspace += abs(paragraph.lineSpacing);
         nowBetweenParagraphs = true;
         break;
+
+    case rtfSect:    
+    	section.newSection = true;
+        break;
+        
     case rtfNoBrkSpace:
         if (nowBetweenParagraphs)
             paragraph.extraIndent += 0;
@@ -3757,8 +3766,9 @@ int BeginLaTeXFile(void)
     insideHyperlink = false;
     insideTable = false;
     insideHeaderFooter = false;
-    section.newStyle = false;
+    section.newPage = 1;
     section.cols = 1;
+    section.newSection = false;
 
     requireSetspacePackage = false;
     requireTablePackage = false;
@@ -3770,7 +3780,7 @@ int BeginLaTeXFile(void)
     requireHyperrefPackage = false;
     requireMultirowPackage = false;
     requireAmsMathPackage = false;
-    requireFancyHdrPackage = false;
+    requireFancyHdrPackage = true;
 
 	preambleFancyHeader=NULL;
 	preambleFancyHeaderFirst=NULL;
