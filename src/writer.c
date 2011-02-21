@@ -117,6 +117,7 @@ boolean insideFootnote;
 boolean insideHyperlink;
 boolean insideHeaderFooter;
 boolean insideShapeGroup;
+int blackColor;
 
 char *preambleFancyHeader;
 char *preambleFancyHeaderFirst;
@@ -367,6 +368,9 @@ static void DefineColors(int ignoreUsedColors)
         Green = rtfColorPtr->rtfCGreen / 255.0;
         Blue = rtfColorPtr->rtfCBlue / 255.0;
         
+        if (Red==0 && Green==0 && Blue==0) 
+        	blackColor = i;
+        
         if (ignoreUsedColors || (!ignoreUsedColors && UsedColor[i])) {
             snprintf(buf, rtfBufSiz, "\\definecolor{color%02d}{rgb}",i);
             PutLitStr(buf);
@@ -381,6 +385,7 @@ static void DefineColors(int ignoreUsedColors)
 static void WriteColors(void)
 {
     ReadColorTbl();
+    
     if (!prefs[pConvertTextColor]) return;
     DefineColors(true);
 }
@@ -475,7 +480,7 @@ static void InitTextStyle(void)
     textStyle.smallCaps = 0;
     textStyle.subScript = 0;
     textStyle.superScript = 0;
-    textStyle.foreColor = 0;
+    textStyle.foreColor = 0; /* black */
     textStyle.fontNumber = -1;
     textStyle.charCode = genCharCode;
 
@@ -535,7 +540,7 @@ static void StopTextStyle(void)
 
     if (prefs[pConvertTextColor] && textStyleWritten.foreColor) {
         PutLitStr("}");
-        textStyleWritten.foreColor=0;
+        textStyleWritten.foreColor=0; /* black */
     }
 
     if (textStyleWritten.subScript) {
@@ -712,7 +717,10 @@ static void SetTextStyle(void)
         textStyle.dbUnderlined = (rtfParam) ? true : false;
         break;
     case rtfForeColor:
-        textStyle.foreColor = rtfParam;
+    	if (rtfParam == blackColor) 
+    		textStyle.foreColor = 0;
+    	else
+        	textStyle.foreColor = rtfParam;
         break;
     case rtfSubScrShrink:
     case rtfSubScript:
@@ -2247,7 +2255,7 @@ static void IncludeGraphics(char *pictureType)
 		PutLitStr("%%\\caption{This should be the caption for \\texttt{");
 		PutEscapedLitStr(filename);
 		PutLitStr("}.}\n");
-		PutLitStr("%%\\end{figure}\n");
+		PutLitStr("%%\\end{figure}");
 		EndParagraph();
 		nowBetweenParagraphs = true;
 	}
