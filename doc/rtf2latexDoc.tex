@@ -92,11 +92,11 @@ option is required while compiling and linking. }  Obviously the proper framewor
 not available on other systems so this option is commented out by default.
 
 \subsection{Windows}
-Windows users get a pre-compiled binary of \rtf2latex2e to be run from
+Windows users get a pre-compiled binary rtf2latex2e.exe to be run from
 the command prompt. Just run it with the RTF file to be converted as the argument.
 To compile, uncomment the following line in the Makefile
 \begin{verbatim}
-    PLATFORM?=-DRTF2LATEX2E_DOS # Windows/DOS
+    PLATFORM?=-DMSWIN # Windows
 \end{verbatim}
 
 \section{Using \rtf2latex2e}

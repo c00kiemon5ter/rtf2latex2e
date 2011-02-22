@@ -16,7 +16,7 @@ This is rtf2latex2e version 2.0 that
 
 WHAT YOU WILL GET:
 =============
-rtf2latex converts an RTF file to LaTeX and saves any image
+rtf2latex2e converts an RTF file to LaTeX and saves any image
 files found inside.  Using pdflatex on the resulting latex
 file will require that these images be converted by you to 
 some image format supported by pdflatex. 
@@ -34,18 +34,18 @@ entirely.
 The user has some control over how good the visual fidelity is.  For
 example
 
-prompt> rtf2latex -t 0 -p 0 test/test.rtf
+prompt> rtf2latex2e -t 0 -p 0 test/test.rtf
 
 will produce a file 'test/test.tex' that has no paragraph formatting
 or text formatting.  Two other useful variants are
 
-prompt> rtf2latex -n test/test.rtf
+prompt> rtf2latex2e -n test/test.rtf
 
 which makes a file with reasonable latex mark-up.  Fussy details about
 paragraph indenting and spacing are left to latex and some work will be
 needed to identify paragraphs that should not be indented, etc.,  Finally
 
-prompt> rtf2latex -b test/test.rtf
+prompt> rtf2latex2e -b test/test.rtf
 
 will try all sorts of things to get the formatting correct.  This comes
 at the expense of extensive formatting ``noise.'' 
@@ -79,7 +79,7 @@ say $(HOME)/rtf2latex2e.
 
 WINDOWS:
 --------
-Windows users get a pre-compiled binary rtf2latex.exe to be run 
+Windows users get a pre-compiled binary rtf2latex2e.exe to be run 
 from the MS-DOS prompt. 
 
 
