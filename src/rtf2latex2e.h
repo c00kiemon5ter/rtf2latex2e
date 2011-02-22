@@ -130,10 +130,6 @@ typedef struct cellStruct
     int     columnSpan;
     int     index;
     int     mergePar;   
-    long    textColor;
-    boolean textBold;
-    boolean textItalic;
-    boolean textUnderlined;
     struct cellStruct *nextCell;
 } cellStruct;
 
