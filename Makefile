@@ -11,20 +11,22 @@ CFLAGS=-g -Wall -Wno-write-strings
 
 PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
 #PLATFORM?=-DMSWIN  # Windows
-#PLATFORM?=-DMSDOS # DOS - w2p.bat does not work under command.com
+#PLATFORM?=-DMSDOS  # DOS - w2p.bat does not work under command.com
 
 #Base directory - adapt as needed
 # Unix:
 PREFIX?=/usr/local
-#Uncomment next lines for DOS/Windows
+#Uncomment next lines for Windows
 #PREFIX_DRIVE=C:
-#PREFIX?=$(PREFIX_DRIVE)/PROGRA~1/rtf2latex
+#PREFIX?=$(PREFIX_DRIVE)/PROGRA~1/rtf2latex2e
 
 BINARY_NAME=rtf2latex2e
 
 # Location of binary, man, info, and support files - adapt as needed
 BIN_INSTALL    =$(PREFIX)/bin
 SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex2e
+#Uncomment next line for Windows:
+#SUPPORT_INSTALL=$(PREFIX)/pref
 
 # Uncomment to get debugging information about OLE translation
 #CFLAGS:=$(CFLAGS) -DCOLE_VERBOSE
