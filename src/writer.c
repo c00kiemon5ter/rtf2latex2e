@@ -202,7 +202,7 @@ void ExamineToken(char * tag)
     printf("* Minor is %3d", rtfMinor);
     if (rtfClass == rtfText) {
         printf(" std=0x%2x\n", rtfMinor);
-	} else {
+    } else {
         printf("\n");
     }
     printf("* Param is %3d\n\n", (int) rtfParam);
@@ -369,7 +369,7 @@ static void DefineColors(int ignoreUsedColors)
         Blue = rtfColorPtr->rtfCBlue / 255.0;
         
         if (Red==0 && Green==0 && Blue==0) 
-        	blackColor = i;
+            blackColor = i;
         
         if (ignoreUsedColors || (!ignoreUsedColors && UsedColor[i])) {
             snprintf(buf, rtfBufSiz, "\\definecolor{color%02d}{rgb}",i);
@@ -658,7 +658,7 @@ static void WriteTextStyle(void)
     }
 
     if (textStyleWritten.charCode != textStyle.charCode) {
-    	curCharCode = textStyle.charCode;
+        curCharCode = textStyle.charCode;
         textStyleWritten.charCode=textStyle.charCode;
     }
 }
@@ -674,13 +674,13 @@ static void WriteTextStyle(void)
  */
 static void SetFontStyle(void)
 {
-	RTFFont *font;
+    RTFFont *font;
 
-	textStyle.fontNumber = rtfParam;
-	font = RTFGetFont(rtfParam);
-//	fprintf(stderr, "Font %3d, cs=%3d, lookup=%p, name='%s'\n", font->rtfFNum, font->rtfFCharSet, font->rtfFCharCode, font->rtfFName);
-	textStyle.charCode = font->rtfFCharCode;
-	curCharCode = font->rtfFCharCode;
+    textStyle.fontNumber = rtfParam;
+    font = RTFGetFont(rtfParam);
+//  fprintf(stderr, "Font %3d, cs=%3d, lookup=%p, name='%s'\n", font->rtfFNum, font->rtfFCharSet, font->rtfFCharCode, font->rtfFName);
+    textStyle.charCode = font->rtfFCharCode;
+    curCharCode = font->rtfFCharCode;
 }
 
 /*
@@ -688,7 +688,7 @@ static void SetFontStyle(void)
  */
 static void SetTextStyle(void)
 {
-	if (insideHyperlink)
+    if (insideHyperlink)
         return;
 
     switch (rtfMinor) {
@@ -717,10 +717,10 @@ static void SetTextStyle(void)
         textStyle.dbUnderlined = (rtfParam) ? true : false;
         break;
     case rtfForeColor:
-    	if (rtfParam == blackColor) 
-    		textStyle.foreColor = 0;
-    	else
-        	textStyle.foreColor = rtfParam;
+        if (rtfParam == blackColor) 
+            textStyle.foreColor = 0;
+        else
+            textStyle.foreColor = rtfParam;
         break;
     case rtfSubScrShrink:
     case rtfSubScript:
@@ -754,8 +754,8 @@ static void SetTextStyle(void)
             textStyle.fontSize = GiganticSize;
         break;
     case rtfFontNum:
-    	SetFontStyle();
-    	break;
+        SetFontStyle();
+        break;
     case rtfDeleted:
         RTFSkipGroup();
         break;
@@ -813,8 +813,8 @@ static void NewParagraph(void)
         }
     }
 
-	if (section.newSection) NewSection();
-	
+    if (section.newSection) NewSection();
+    
     if (prefs[pConvertParagraphStyle] && paragraph.styleIndex != -1) {
         PutLitStr(Style2LatexOpen[paragraph.styleIndex]);
         paragraphWritten.styleIndex = paragraph.styleIndex;
@@ -869,7 +869,7 @@ static void EndSection(void)
     }
     
     if (section.newPage)
-    	PutLitStr("\\newpage\n");
+        PutLitStr("\\newpage\n");
 }
 
 
@@ -882,8 +882,8 @@ static void EndParagraph(void)
 {
     char buf[rtfBufSiz];
 
-	if (insideHeaderFooter) return;
-	
+    if (insideHeaderFooter) return;
+    
     if (CheckForBeginDocument()) return;
 
     StopTextStyle();
@@ -892,7 +892,7 @@ static void EndParagraph(void)
         PutLitStr("\\linebreak\n");
         return;
     }
-	
+    
     if (insideFootnote) {
         InsertNewLine();
         InsertNewLine();
@@ -1064,7 +1064,7 @@ static void PrepareForChar(void)
 
 static void TextClass(void)
 {
-	PrepareForChar();
+    PrepareForChar();
     PutStdChar(rtfMinor);
     WrapText();
 }
@@ -1091,7 +1091,7 @@ static void ReadFootnote(void)
 
 /*
  * This routine sets attributes for the detected cell and
- * adds it to the table.cellInfo list. Memory for cells is
+ * adds it to the table.theCell list. Memory for cells is
  * allocated dynamically as each cell is encountered.
  */
 static cellStruct * CellNew(void)
@@ -1106,13 +1106,13 @@ static cellStruct * CellNew(void)
 
     /*fprintf(stderr,"creating cell %d, (x,y)=(%d,%d)\n",
               table.cellCount, table.rows, (table.rowInfo)[table.rows]);*/
-    cell->nextCell = table.cellInfo;
+    cell->nextCell = table.theCell;
     cell->x = table.rows;
     cell->y = (table.rowInfo)[table.rows];
     if (table.cols == 0)
         cell->left = table.leftEdge;
     else
-        cell->left = (table.cellInfo)->right;
+        cell->left = (table.theCell)->right;
     cell->width = (double) (cell->right - cell->left) / rtfTpi;
     cell->index = table.cellCount;
     cell->mergePar = table.cellMergePar;
@@ -1123,20 +1123,20 @@ static cellStruct * CellNew(void)
  * This function searches the cell list by cell index
  * returns NULL if not found
  */
-static cellStruct *CellGetInfo(int cellNum)
+static cellStruct *CellGetByIndex(int cellNum)
 {
     cellStruct *cell;
 
     if (cellNum == -1)
-        return (table.cellInfo);
+        return (table.theCell);
 
-    for (cell = (table.cellInfo); cell != NULL; cell = cell->nextCell) {
+    for (cell = (table.theCell); cell != NULL; cell = cell->nextCell) {
         if (cell->index == cellNum)
             return cell;
     }
 
     if (!cell)
-        RTFPanic("CellGetInfo: Attempting to access invalid cell at index %d\n", cellNum);
+        RTFPanic("CellGetByIndex: Attempting to access invalid cell at index %d\n", cellNum);
 
     return NULL;
 }
@@ -1149,10 +1149,10 @@ static cellStruct *CellGetByPosition(int x, int y)
 {
     cellStruct *cell;
 
-    if (!table.cellInfo)
+    if (!table.theCell)
         RTFPanic("CellGetByPosition: Attempting to access invalid cell at %d, %d\n", x, y);
 
-    for (cell = table.cellInfo; cell != NULL; cell = cell->nextCell) {
+    for (cell = table.theCell; cell != NULL; cell = cell->nextCell) {
         if (cell->x == x && cell->y == y)
             return cell;
     }
@@ -1175,22 +1175,45 @@ cellStruct *cell;
         table.leftEdge = rtfParam;
         break;
     case rtfCellPos:  /* only \cellx is a required cell token */
-    	cell = CellNew();
-    	cell->right = rtfParam;
-    	table.cellMergePar = none;  /* reset */
-    	table.cellInfo = cell;
-    	if (cell->right <= table.previousColumnValue)
-        	cell->right = table.previousColumnValue + 100;
-    	table.previousColumnValue = cell->right;
+        cell = CellNew();
+        if (rtfParam > table.previousColumnValue)
+        	cell->right = rtfParam;
+        else
+	         cell->right = table.previousColumnValue + 100;
+	         
+        cell->leftBorder   = table.limboCellLeftBorder;
+        cell->rightBorder  = table.limboCellRightBorder;
+        cell->topBorder    = table.limboCellTopBorder;
+        cell->bottomBorder = table.limboCellBottomBorder;
+
+        table.theCell = cell;
+        table.cellMergePar = none;  /* reset */
+        table.previousColumnValue = cell->right;
         table.cellCount++;
         ((table.rowInfo)[table.rows])++;
         (table.cols)++;
+        table.limboCellLeftBorder   = false;
+        table.limboCellRightBorder  = false;
+        table.limboCellTopBorder    = false;
+        table.limboCellBottomBorder = false;
         break;
     case rtfVertMergeRngFirst:
         table.cellMergePar = first;
         break;
     case rtfVertMergeRngPrevious:
         table.cellMergePar = previous;
+        break;
+    case rtfCellBordTop:
+        table.limboCellTopBorder = true;
+        break;
+    case rtfCellBordBottom:
+        table.limboCellBottomBorder = true;
+        break;
+    case rtfCellBordRight:
+        table.limboCellRightBorder = true;
+        break;
+    case rtfCellBordLeft:
+        table.limboCellLeftBorder = true;
         break;
     }
 }
@@ -1209,7 +1232,7 @@ static void InheritTableRowSettings(void)
     int i;
     char *fn = "InheritTableRowSettings";
 
-	(table.rows)--;
+    (table.rows)--;
     prevRow = table.rows;
     cellsInPrevRow = (table.rowInfo)[prevRow];
 
@@ -1225,7 +1248,7 @@ static void InheritTableRowSettings(void)
             exit(1);
         }
 
-        newCell->nextCell = table.cellInfo;
+        newCell->nextCell = table.theCell;
         newCell->x = prevRow + 1;
         newCell->y = cell->y;
         newCell->left = cell->left;
@@ -1234,10 +1257,10 @@ static void InheritTableRowSettings(void)
         newCell->index = table.cellCount;
         newCell->mergePar = cell->mergePar;
         table.cellMergePar = none;      /* reset */
-        table.cellInfo = newCell;
+        table.theCell = newCell;
         table.cellCount++;
     }
-	(table.rows)++;
+    (table.rows)++;
 }
 
 /*
@@ -1253,15 +1276,15 @@ static int GetColumnSpan(cellStruct * cell)
 
     /* if this is the last cell in the row, make its right edge flush with the table right edge */
     if (cell->y == ((table.rowInfo)[cell->x]) - 1)
-        cell->right = (table.columnBorders)[table.cols];
+        cell->right = (table.rightColumnBorders)[table.cols];
 
     for (i = 0; i < table.cols; i++) {
-        if ((table.columnBorders)[i] == cell->left)
+        if ((table.rightColumnBorders)[i] == cell->left)
             break;
     }
 
     for (j = i; j < table.cols + 1; j++){
-        if ((table.columnBorders)[j] == cell->right)
+        if ((table.rightColumnBorders)[j] == cell->right)
             break;
     }
 
@@ -1290,13 +1313,13 @@ static void PrescanTable(void)
     int *rightBorders;
     boolean enteredValue, useLastRowSettings;
 
-	RTFParserState(SAVE_PARSER);
+    RTFParserState(SAVE_PARSER);
 
     RTFGetToken(); /* consume \trowd */
 
     table.rows = 0;
     table.cols = 0;
-    table.cellInfo = NULL;
+    table.theCell = NULL;
 
     /* Prescan each row until end of the table. */
     foundRow = true;
@@ -1304,7 +1327,7 @@ static void PrescanTable(void)
         table.cols = 0;
         (table.rowInfo)[table.rows] = 0;
 
-		/* scan an entire row, save info in cells along the way */
+        /* scan an entire row, save info in cells along the way */
         while (RTFGetToken() != rtfEOF) {
 
             if (RTFCheckMM(rtfSpecialChar, rtfRow))
@@ -1322,24 +1345,25 @@ static void PrescanTable(void)
         table.newRowDef = false;
         foundRow = false;
 
-        /* Now look for another row. The only tokens guaranteed are rtfRowDef or rtfInTable 
+        /***********************************************************************************************
+         * Now look for another row. The only tokens guaranteed are rtfRowDef or rtfInTable 
          * 
-		 * <row>    = (<tbldef> <cell>+ <tbldef> \row) | (<tbldef> <cell>+ \row) | (<cell>+ <tbldef> \row) 
-		 * <cell>   = (<nestrow>? <tbldef>?) & <textpar>+ \cell
-		 * <tbldef> = \trowd \irowN \irowbandN \tsN \trgaphN ...
-		 * 
-		 * the only way to distinguish between <textpar> in a cell and <textpar> otherwise
-		 * is to look for the \intbl token, which also means that the previous row settings
-		 * should be used
-		 */
+         * <row>    = (<tbldef> <cell>+ <tbldef> \row) | (<tbldef> <cell>+ \row) | (<cell>+ <tbldef> \row) 
+         * <cell>   = (<nestrow>? <tbldef>?) & <textpar>+ \cell
+         * <tbldef> = \trowd \irowN \irowbandN \tsN \trgaphN ...
+         * 
+         * the only way to distinguish between <textpar> in a cell and <textpar> otherwise
+         * is to look for the \intbl token, which also means that the previous row settings
+         * should be used
+         */
 
         foundRow = false;
         useLastRowSettings = true;
-		while (RTFGetToken() != rtfEOF) {
+        while (RTFGetToken() != rtfEOF) {
 
             if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
                 foundRow = true;
-            	useLastRowSettings = false;
+                useLastRowSettings = false;
                 break;
             }
 
@@ -1358,49 +1382,51 @@ static void PrescanTable(void)
                 RTFSkipGroup();
         }
 
-		if ((table.rowInfo)[table.rows] == 0)
-			(table.rowInfo)[table.rows] = (table.rowInfo)[table.rows - 1];
+        if ((table.rowInfo)[table.rows] == 0)
+            (table.rowInfo)[table.rows] = (table.rowInfo)[table.rows - 1];
 
-		if (table.cols > maxCols)
-			maxCols = table.cols;
+        if (table.cols > maxCols)
+            maxCols = table.cols;
 
-		if (g_debug_table_prescan) fprintf(stderr,"* read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]);
-		(table.rows)++;
-		table.previousColumnValue = UNDEFINED_COLUMN_VALUE;
+        if (g_debug_table_prescan) fprintf(stderr,"* read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]);
+        (table.rows)++;
+        table.previousColumnValue = UNDEFINED_COLUMN_VALUE;
 
-		if (g_debug_table_prescan) fprintf(stderr,"* foundRow is %d, new row def is %d\n", foundRow, table.newRowDef);
+        if (g_debug_table_prescan) fprintf(stderr,"* foundRow is %d, new row def is %d\n", foundRow, table.newRowDef);
 
-		if (foundRow && useLastRowSettings) {
-			InheritTableRowSettings();
-			if (g_debug_table_prescan) fprintf(stderr,"* Inherited: read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]);
-		}
+        if (foundRow && useLastRowSettings) {
+            InheritTableRowSettings();
+            if (g_debug_table_prescan) fprintf(stderr,"* Inherited: read row %d with %d cells\n", table.rows, (table.rowInfo)[table.rows]);
+        }
     }
-
-
-    table.cols = maxCols;
 
     /*************************************************************************
      * Determine the number of columns and positions in the table by creating
      * a list containing one entry for each unique right border
-     * This list is retained as table.columnBorders
+     * This list is retained as table.rightColumnBorders
      * The number of columns is table.cols
     */
 
     /* largest possible list */
     rightBorders = (int *) RTFAlloc((table.cellCount) * sizeof(int));
+    rightBorders[0] = 0;
     if (!rightBorders) {
         RTFPanic("Cannot allocate memory for cell borders when scanning table\n");
         exit(1);
     }
 
     table.cols = 0;
-    for (cell = table.cellInfo; cell != NULL; cell = cell->nextCell) {
+    for (cell = table.theCell; cell != NULL; cell = cell->nextCell) {
+        boolean cellBorderExistsAlready = false;
 
-        enteredValue = false;
-        for (j = 0; j < table.cols; j++)
-            if (rightBorders[j] == cell->right) enteredValue=true;
+        for (j = 0; j < table.cols; j++) {
+            if (rightBorders[j] == cell->right) {
+                cellBorderExistsAlready=true;
+                break;
+            }
+        }
 
-        if (!enteredValue) {
+        if (!cellBorderExistsAlready) {
             rightBorders[table.cols] = cell->right;
             (table.cols)++;
         }
@@ -1409,25 +1435,21 @@ static void PrescanTable(void)
             cell->left = table.leftEdge;
     }
 
-    /* allocate array for column border entries. */
-    table.columnBorders = (int *) RTFAlloc(((table.cols) + 1) * sizeof(int));
+    /* since rightBorders is too large, allocate correct size array for column border entries. */
+    table.rightColumnBorders = (int *) RTFAlloc(((table.cols) + 1) * sizeof(int));
 
-    if (!table.columnBorders) {
+    if (!table.rightColumnBorders) {
         RTFPanic("Cannot allocate array for column borders in table\n");
         exit(1);
     }
 
+    (table.rightColumnBorders)[0] = table.leftEdge;
     for (i = 0; i < table.cols; i++)
-        (table.columnBorders)[i + 1] = rightBorders[i];
+        (table.rightColumnBorders)[i + 1] = rightBorders[i];
 
     RTFFree((char *)rightBorders);
 
-
-    /******* Table parsing can be messy, and it is still buggy. *******/
-
     if (g_debug_table_prescan) fprintf(stderr,"* table has %d rows and %d cols \n", table.rows, table.cols);
-
-    (table.columnBorders)[0] = table.leftEdge;
 
     /***************************************************************************
      * sort the column border array in ascending order.
@@ -1438,30 +1460,17 @@ static void PrescanTable(void)
     if (g_debug_table_prescan) fprintf(stderr,"* sorting borders...\n");
     for (i = 0; i < (table.cols); i++)
         for (j = i + 1; j < (table.cols + 1); j++)
-            if ((table.columnBorders)[i] > (table.columnBorders)[j])
-                Swap((table.columnBorders)[i], (table.columnBorders)[j]);
+            if ((table.rightColumnBorders)[i] > (table.rightColumnBorders)[j])
+                Swap((table.rightColumnBorders)[i], (table.rightColumnBorders)[j]);
 
-    if (g_debug_table_prescan) fprintf(stderr,"* table left border is at %d\n", (table.columnBorders)[0]);
+    if (g_debug_table_prescan) fprintf(stderr,"* table left border is at %d\n", (table.rightColumnBorders)[0]);
 
-    for (i = 1; i < (table.cols + 1); i++) {
-        /* Sometimes RTF does something stupid and assigns two adjoining cell
-           the same right border value. Dunno why. If this happens, I move the
-           second cell's right border by 10 twips. Microsoft really has some
-           morons!
-         */
-        if (table.columnBorders[i] == table.columnBorders[i - 1])
-            table.columnBorders[i] += 10;
-
-        if (g_debug_table_prescan) fprintf(stderr,"* cell right border is at %d\n", table.columnBorders[i]);
-    }
-
-    /* fill in column spans for each cell */
+    /*******************************************************************************************
+     * fill in column spans for each cell.  GetColumnSpan uses table.rightColumnBorders
+     * to decide if a cell spans multiple columns.
+     */
     for (i = 0; i < table.cellCount; i++) {
-        cell = CellGetInfo(i);
-        if (!cell){
-            RTFPanic("Invalid cell encountered when scanning table\n", i);
-            exit(1);
-        }
+        cell = CellGetByIndex(i);
 
         cell->columnSpan = GetColumnSpan(cell);
         if (cell->columnSpan > 1)
@@ -1470,26 +1479,20 @@ static void PrescanTable(void)
         if (g_debug_table_prescan) fprintf(stderr,"* cell %d spans %d columns\n", cell->index, cell->columnSpan);
 
         /* correct the vertical cell position for any multicolumn cells */
-        if ((cell->y) != 0) {
-            cell2 = CellGetInfo(i - 1);
-            if (cell == NULL)
-            	RTFPanic("Invalid cell encountered when scanning table\n", i);
-            else
-            	cell->y = cell2->y + cell2->columnSpan;
+        if (cell->y > 0) {
+            cell2 = CellGetByIndex(i - 1);
+            cell->y = cell2->y + cell2->columnSpan;
         }
 
-        tableLeft = (table.columnBorders)[0];
-        tableRight = (table.columnBorders)[table.cols];
-        tableWidth = tableRight - tableLeft;
-
         cell->width = (double) (cell->right - cell->left) / rtfTpi;
-        if (tableWidth > 4.5 * rtfTpi)
-            cell->width *= 4.5 * rtfTpi / tableWidth;
-
     }
 
+    tableLeft = (table.rightColumnBorders)[0];
+    tableRight = (table.rightColumnBorders)[table.cols];
+    tableWidth = tableRight - tableLeft;
+
     if (g_debug_table_prescan) {
-        for (cell = table.cellInfo; cell != NULL; cell = cell->nextCell) {
+        for (cell = table.theCell; cell != NULL; cell = cell->nextCell) {
             fprintf(stderr,"* cell #%d (%d, %d) ", cell->index, cell->x, cell->y);
             fprintf(stderr,"left=%5d right=%5d ", cell->left, cell->right);
             fprintf(stderr,"and spans %d columns\n", cell->columnSpan);
@@ -1497,7 +1500,7 @@ static void PrescanTable(void)
     }
 
     /* go back to beginning of the table */
-	RTFParserState(RESTORE_PARSER);
+    RTFParserState(RESTORE_PARSER);
 }
 
 /*
@@ -1541,7 +1544,7 @@ static void CellWriteHeader(int cellNum)
 
     if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
 
-    cell = CellGetInfo(cellNum);
+    cell = CellGetByIndex(cellNum);
     if (!cell) {
         RTFPanic("CellWriteHeader: Attempting to access invalid cell at index %d\n", cellNum);
         exit(1);
@@ -1614,7 +1617,7 @@ static void ProcessTableRow(int rowNum)
             if (cellIsEmpty) {
                 if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount - 1);
                 if (!firstCellInRow) PutLitStr(" & ");
-                cell = CellGetInfo(table.cellCount - 1);
+                cell = CellGetByIndex(table.cellCount - 1);
                 CellWriteHeader(table.cellCount - 1);
                 firstCellInRow = false;
             } 
@@ -1639,7 +1642,7 @@ static void ProcessTableRow(int rowNum)
                     PutLitStr(" & ");
                 
                 CellWriteHeader(table.cellCount);
-                cell = CellGetInfo(table.cellCount);
+                cell = CellGetByIndex(table.cellCount);
                 cellIsEmpty = false;
                 firstCellInRow = false;
             }
@@ -1656,7 +1659,7 @@ static void ProcessTableRow(int rowNum)
 static void DrawTableRowLine(int rowNum)
 {
     int i, cellPosition;
-    cellStruct *cellInfo1, *cellInfo2;
+    cellStruct *theCell1, *theCell2;
     char buf[rtfBufSiz];
 
     /* if we are at the last row of the table, just draw a straight \hline. */
@@ -1671,19 +1674,19 @@ static void DrawTableRowLine(int rowNum)
     cellPosition = 0;
     for (i = 0; i < (table.rowInfo)[rowNum]; i++) {
 
-        cellInfo1 = CellGetByPosition(rowNum, cellPosition);
-        cellPosition += cellInfo1->columnSpan;
+        theCell1 = CellGetByPosition(rowNum, cellPosition);
+        cellPosition += theCell1->columnSpan;
 
-        if (cellInfo1->mergePar == none) {
-            snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", cellInfo1->y + 1, cellInfo1->y + cellInfo1->columnSpan);
+        if (theCell1->mergePar == none) {
+            snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", theCell1->y + 1, theCell1->y + theCell1->columnSpan);
             PutLitStr(buf);
             continue;
         }
 
-        if (cellInfo1->mergePar == previous) {
-            cellInfo2 = CellGetByPosition(rowNum + 1, i);
-            if (cellInfo2->mergePar != previous) {
-                snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", cellInfo1->y + 1, cellInfo1->y + cellInfo1->columnSpan);
+        if (theCell1->mergePar == previous) {
+            theCell2 = CellGetByPosition(rowNum + 1, i);
+            if (theCell2->mergePar != previous) {
+                snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", theCell1->y + 1, theCell1->y + theCell1->columnSpan);
                 PutLitStr(buf);
             }
         }
@@ -1711,10 +1714,10 @@ static void DoTable(void)
     table.previousColumnValue = UNDEFINED_COLUMN_VALUE;
 
     /* throw away old cell information lists */
-    while (table.cellInfo) {
-        cell = (table.cellInfo)->nextCell;
-        RTFFree((char *) table.cellInfo);
-        table.cellInfo = cell;
+    while (table.theCell) {
+        cell = (table.theCell)->nextCell;
+        RTFFree((char *) table.theCell);
+        table.theCell = cell;
     }
 
     /* Prescan table */
@@ -1740,7 +1743,7 @@ static void DoTable(void)
     } else {
         PutLitStr("|");
         for (i = 0; i < table.cols; i++) {
-            cell = CellGetInfo(i);
+            cell = CellGetByIndex(i);
             if (cell->x > 0)
                 break;
             snprintf(buf, 100, "p{%1.3fin}|", cell->width);
@@ -1779,7 +1782,7 @@ static void DoTable(void)
     PutLitStr(buf);
     nowBetweenParagraphs = true;
 
-    RTFFree((char *) table.columnBorders);
+    RTFFree((char *) table.rightColumnBorders);
     insideTable = false;       /* end of table */
     table.previousColumnValue = UNDEFINED_COLUMN_VALUE;
     table.multiCol = false;
@@ -1856,8 +1859,8 @@ static void ParAttr(void)
 
 static void SectAttr(void)
 {
-	if (insideHeaderFooter) return;
-	
+    if (insideHeaderFooter) return;
+    
     switch (rtfMinor) {
     case rtfColumns:
         section.cols = rtfParam;
@@ -1867,7 +1870,7 @@ static void SectAttr(void)
         section.newPage = 1;
         break;
     default:
-    	break;
+        break;
     }
 }
 
@@ -1921,21 +1924,21 @@ void EndLaTeXFile(void)
     PutLitByteStr(preambleOurDefs);    /* e.g., \tab */
     InsertNewLine();
 
-	if (preambleFancyHeader){
-		PutLitByteStr("\\pagestyle{fancy}\n");
-		PutLitByteStr("\\rhead{}\n\\rfoot{}\n\\chead{}\n\\cfoot{}\n");
-		PutLitByteStr(preambleFancyHeader);
-    	InsertNewLine();
-	}
-		
-	if (preambleFancyHeaderFirst){
-		PutLitByteStr("\\fancypagestyle{plain}{\n");
-		PutLitByteStr("  \\rhead{}\n  \\rfoot{}\n  \\chead{}\n  \\cfoot{}\n");
-		PutLitByteStr(preambleFancyHeaderFirst);
-		PutLitByteStr("}\n");
-		PutLitByteStr("\\thispagestyle{plain}\n");
-    	InsertNewLine();
-	}
+    if (preambleFancyHeader){
+        PutLitByteStr("\\pagestyle{fancy}\n");
+        PutLitByteStr("\\rhead{}\n\\rfoot{}\n\\chead{}\n\\cfoot{}\n");
+        PutLitByteStr(preambleFancyHeader);
+        InsertNewLine();
+    }
+        
+    if (preambleFancyHeaderFirst){
+        PutLitByteStr("\\fancypagestyle{plain}{\n");
+        PutLitByteStr("  \\rhead{}\n  \\rfoot{}\n  \\chead{}\n  \\cfoot{}\n");
+        PutLitByteStr(preambleFancyHeaderFirst);
+        PutLitByteStr("}\n");
+        PutLitByteStr("\\thispagestyle{plain}\n");
+        InsertNewLine();
+    }
 
     
     /* now copy the body of the document */
@@ -2029,21 +2032,21 @@ static void WriteWMFHeader(FILE * pictureFile)
         width = (int)(picture.width * picture.scaleX * 96.0 / rtfTpi / 100.0);
     }
     
-	height = picture.goalHeight;
-	width = picture.goalWidth ;
-	wmfhead[10] = (width) % 256;
+    height = picture.goalHeight;
+    width = picture.goalWidth ;
+    wmfhead[10] = (width) % 256;
     wmfhead[11] = (width) / 256;
     wmfhead[12] = (height) % 256;
     wmfhead[13] = (height) / 256;
 
-	/* Normally, the resolution is 1440 twips per inch; however, this number may be changed 
-	 * to scale the image. A value of 720 indicates that the image is double its 
-	 * normal size, or scaled to a factor of 2:1. A value of 360 indicates a scale of 
-	 * 4:1, while a value of 2880 indicates that the image is scaled down in size by 
-	 * a factor of two. A value of 1440 indicates a 1:1 scale ratio.
-	 * 
-	 * For now it is left as 1440 0x05A0
-	 */
+    /* Normally, the resolution is 1440 twips per inch; however, this number may be changed 
+     * to scale the image. A value of 720 indicates that the image is double its 
+     * normal size, or scaled to a factor of 2:1. A value of 360 indicates a scale of 
+     * 4:1, while a value of 2880 indicates that the image is scaled down in size by 
+     * a factor of two. A value of 1440 indicates a 1:1 scale ratio.
+     * 
+     * For now it is left as 1440 0x05A0
+     */
 
     /* compute Checksum */
     wmfhead[20] = 0;
@@ -2057,8 +2060,8 @@ static void WriteWMFHeader(FILE * pictureFile)
 
 static void WritePICTHeader(FILE * pictureFile)
 {
-	int i;
-	for (i = 0; i < 512; i++)
+    int i;
+    for (i = 0; i < 512; i++)
         fputc(' ', pictureFile);
 }
 
@@ -2093,9 +2096,9 @@ static void ConvertHexPicture(char *fileSuffix)
 
     /* write appropriate header */
     if (picture.type== pict)
-    	WritePICTHeader(pictureFile);
+        WritePICTHeader(pictureFile);
     if (picture.type== wmf)
-    	WriteWMFHeader(pictureFile);
+        WriteWMFHeader(pictureFile);
 
     /* now we have to read the hex code in pairs of two
      * (1 byte total) such as ff, a1, 4c, etc...*/
@@ -2208,16 +2211,16 @@ static void IncludeGraphics(char *pictureType)
 #endif
 
     /* prefer picwgoal over picw */
-	if (picture.goalWidth)
-		width = (int) (picture.goalWidth * picture.scaleX / 100.0 / 20.0 + 0.5);
-	else
-		width = (int) (picture.width * picture.scaleX / 100.0 + 0.5);
+    if (picture.goalWidth)
+        width = (int) (picture.goalWidth * picture.scaleX / 100.0 / 20.0 + 0.5);
+    else
+        width = (int) (picture.width * picture.scaleX / 100.0 + 0.5);
 
     /* prefer pichgoal over pich */
-	if (picture.goalHeight)
-		height = (int) (picture.goalHeight * picture.scaleY / 100.0 / 20.0 + 0.5);
-	else
-    	height = (int) (picture.height * picture.scaleY / 100.0 + 0.5);
+    if (picture.goalHeight)
+        height = (int) (picture.goalHeight * picture.scaleY / 100.0 / 20.0 + 0.5);
+    else
+        height = (int) (picture.height * picture.scaleY / 100.0 + 0.5);
 
     filename = strrchr(picture.name, PATH_SEP);
     if (!filename)
@@ -2225,37 +2228,37 @@ static void IncludeGraphics(char *pictureType)
     else
         filename++;
 
-	if (nowBetweenParagraphs) {
-		displayFigure = 1;
-		EndParagraph();
-		NewParagraph();
-		PutLitStr("%%\\begin{figure}[htbp]");
-	} else {
-   		// EndParagraph();
-		displayFigure = 0;
-		StopTextStyle();
-	}
+    if (nowBetweenParagraphs) {
+        displayFigure = 1;
+        EndParagraph();
+        NewParagraph();
+        PutLitStr("%%\\begin{figure}[htbp]");
+    } else {
+        // EndParagraph();
+        displayFigure = 0;
+        StopTextStyle();
+    }
 
-	if (0) {
-		PutLitStr("\n\\fbox{");
-		snprintf(dummyBuf,rtfBufSiz,"crop (t,b)=(%d,%d), scaled (w,h)=(%d,%d)\n",
-		picture.cropTop,picture.cropBottom,width,height);
-		PutLitStr(dummyBuf);
-		PutLitStr("}\n\n");
-	}
-	
-	snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%dpt, height=%dpt]{%s}\n", 
-	         width, height, filename);
-	PutLitStr(dummyBuf);
-	
-	if (displayFigure) {
-		PutLitStr("%%\\caption{This should be the caption for \\texttt{");
-		PutEscapedLitStr(filename);
-		PutLitStr("}.}\n");
-		PutLitStr("%%\\end{figure}");
-		EndParagraph();
-		nowBetweenParagraphs = true;
-	}
+    if (0) {
+        PutLitStr("\n\\fbox{");
+        snprintf(dummyBuf,rtfBufSiz,"crop (t,b)=(%d,%d), scaled (w,h)=(%d,%d)\n",
+        picture.cropTop,picture.cropBottom,width,height);
+        PutLitStr(dummyBuf);
+        PutLitStr("}\n\n");
+    }
+    
+    snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%dpt, height=%dpt]{%s}\n", 
+             width, height, filename);
+    PutLitStr(dummyBuf);
+    
+    if (displayFigure) {
+        PutLitStr("%%\\caption{This should be the caption for \\texttt{");
+        PutEscapedLitStr(filename);
+        PutLitStr("}.}\n");
+        PutLitStr("%%\\end{figure}");
+        EndParagraph();
+        nowBetweenParagraphs = true;
+    }
 }
 
 /* This function reads in a picture */
@@ -2425,17 +2428,17 @@ static int GetObjectClass(void)
     int i;
     char *s;
 
-	object.class = unknownObjClass;
+    object.class = unknownObjClass;
 
-	if (!RTFSkipToToken(rtfControl, rtfDestination, rtfObjClass))
-		return -1;
-		
-	s = RTFGetTextWord();
-	if (s && s[0]) {
-    	strcpy(object.className, s);
-    	free(s);
+    if (!RTFSkipToToken(rtfControl, rtfDestination, rtfObjClass))
+        return -1;
+        
+    s = RTFGetTextWord();
+    if (s && s[0]) {
+        strcpy(object.className, s);
+        free(s);
     }
-	
+    
 /* do we recognize this object class? */
     for (i = 0; objectClassList[i] != NULL; i++) {
         if (my_strcasestr(object.className, objectClassList[i])) {
@@ -2654,84 +2657,84 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 char * EqnNumberString(void)
 {
     char theNumber[10], comma[2], *s, *t;
-	int index=0;
-	
-	theNumber[0]='\0';
-	comma[0]='\0';
+    int index=0;
+    
+    theNumber[0]='\0';
+    comma[0]='\0';
     /* skip to text following equation, stop looking a \par or \pard  */
     do  {
-    	RTFGetToken();
+        RTFGetToken();
 
-		/* paragraph ended ==> no equation number */
-    	if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfPar)) {
-    		RTFUngetToken();
-    		return NULL;
-        }
-    	
-		/* don't emit any tabs */
-    	if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfTab))
-    		continue;
-
-		/* don't emit pictures */
-    	if (RTFCheckCMM(rtfControl, rtfDestination, rtfPict)) {
-    		RTFSkipGroup();
-    		RTFRouteToken();
-    		continue;
-    	}
-
-        if (rtfClass == rtfText) {
-        	/* don't stop for spaces */
-        	if (isspace(rtfTextBuf[0])) 
-        		continue;
-
-			/* commas or periods are common punctuation following an equation
-			   so keep them but keep looking for a real equation number */
-        	if (rtfTextBuf[0] == ',' || rtfTextBuf[0] == '.') {
-            	comma[0]=rtfTextBuf[0];
-            	comma[1]='\0';
-        		continue;
-        	}
-        	
-        	/* found a text character that might start an equation number*/
-        	break;
-        }
-
-    	RTFRouteToken();
-    	
-	} while (rtfClass != rtfEOF);
-    
-	/* collect the equation number */
-    do {
-    	if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfPar)) {
-    		RTFUngetToken();
-    		break;;
+        /* paragraph ended ==> no equation number */
+        if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfPar)) {
+            RTFUngetToken();
+            return NULL;
         }
         
-		if (rtfClass == rtfText) {
-			char c=rtfTextBuf[0];
+        /* don't emit any tabs */
+        if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfTab))
+            continue;
 
-			/* eqn numbers must start with '(', '[', or a digit */
-			if (index==0 && !(isdigit(c) || c == '(' || c == ']') ) break;
-						
-			theNumber[index]=c;
-			index++;
-			if (c==')' || c==']') break;
-		}
-		
-		RTFGetToken();
-	} while (rtfClass != rtfEOF && index<10);
+        /* don't emit pictures */
+        if (RTFCheckCMM(rtfControl, rtfDestination, rtfPict)) {
+            RTFSkipGroup();
+            RTFRouteToken();
+            continue;
+        }
 
-	if (index == 0) {
-    	RTFUngetToken();
-    	return strdup(comma);
+        if (rtfClass == rtfText) {
+            /* don't stop for spaces */
+            if (isspace(rtfTextBuf[0])) 
+                continue;
+
+            /* commas or periods are common punctuation following an equation
+               so keep them but keep looking for a real equation number */
+            if (rtfTextBuf[0] == ',' || rtfTextBuf[0] == '.') {
+                comma[0]=rtfTextBuf[0];
+                comma[1]='\0';
+                continue;
+            }
+            
+            /* found a text character that might start an equation number*/
+            break;
+        }
+
+        RTFRouteToken();
+        
+    } while (rtfClass != rtfEOF);
+    
+    /* collect the equation number */
+    do {
+        if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfPar)) {
+            RTFUngetToken();
+            break;;
+        }
+        
+        if (rtfClass == rtfText) {
+            char c=rtfTextBuf[0];
+
+            /* eqn numbers must start with '(', '[', or a digit */
+            if (index==0 && !(isdigit(c) || c == '(' || c == ']') ) break;
+                        
+            theNumber[index]=c;
+            index++;
+            if (c==')' || c==']') break;
+        }
+        
+        RTFGetToken();
+    } while (rtfClass != rtfEOF && index<10);
+
+    if (index == 0) {
+        RTFUngetToken();
+        return strdup(comma);
     }
 
-	theNumber[index]='\0';
-	s=strdup_together(comma,"\\eqno");
-	t=strdup_together(s,theNumber);
-	free(s);
+    theNumber[index]='\0';
+    s=strdup_together(comma,"\\eqno");
+    t=strdup_together(s,theNumber);
+    free(s);
 
-    return t;	
+    return t;   
 }
 
 /*
@@ -2776,7 +2779,7 @@ boolean ConvertEquationFile(char *objectFileName)
             theEquation->m_inline = 0;
             EndParagraph();
             NewParagraph();
-        	EqNo=EqnNumberString();
+            EqNo=EqnNumberString();
         } else {
             theEquation->m_inline = 1;
             EqNo=NULL;
@@ -2792,8 +2795,8 @@ boolean ConvertEquationFile(char *objectFileName)
         /* this actually writes the equation */
         Eqn_TranslateObjectList(theEquation, ostream, 0);
         if (theEquation->m_inline){
-        	/* Add a space unless the last character was punctuation */
-        	if (lastCharWritten != ' ' && lastCharWritten != '(' && 
+            /* Add a space unless the last character was punctuation */
+            if (lastCharWritten != ' ' && lastCharWritten != '(' && 
                 lastCharWritten != '[' && lastCharWritten != '{' ) 
                    PutLitChar(' ');
         }
@@ -2804,16 +2807,16 @@ boolean ConvertEquationFile(char *objectFileName)
         PutLitStr(theEquation->m_latex_end);
         
         if (theEquation->m_inline) {
-        	/* Add a space unless the next character is punctuation */
-        	RTFPeekToken();
-        	if (rtfClass == rtfText) {
-        		if (rtfTextBuf[0]!='.' && 
-        		    rtfTextBuf[0]!=',' && 
-        		    rtfTextBuf[0]!=':' && 
-        		    rtfTextBuf[0]!=';' && 
-        		    rtfTextBuf[0]!=']' && 
-        		    rtfTextBuf[0]!=')') PutLitChar(' ');
-        	}
+            /* Add a space unless the next character is punctuation */
+            RTFPeekToken();
+            if (rtfClass == rtfText) {
+                if (rtfTextBuf[0]!='.' && 
+                    rtfTextBuf[0]!=',' && 
+                    rtfTextBuf[0]!=':' && 
+                    rtfTextBuf[0]!=';' && 
+                    rtfTextBuf[0]!=']' && 
+                    rtfTextBuf[0]!=')') PutLitChar(' ');
+            }
         }
         Eqn_Destroy(theEquation);
     }
@@ -2838,7 +2841,7 @@ static boolean ReadEquation(void)
     char objectFileName[rtfBufSiz];
 
     if (!RTFSkipToToken(rtfControl, rtfDestination, rtfObjData)) {
-    	RTFMsg("* ReadEquation: objdata group not found!\n");
+        RTFMsg("* ReadEquation: objdata group not found!\n");
         return (false);
     }
 
@@ -2879,14 +2882,14 @@ static void ReadObject(void)
 
         /* if unsuccessful, include the equation as a picture */
         if (!res || g_eqn_insert_image) {
-			if (RTFSkipToToken(rtfControl,rtfDestination, rtfPict)) 
-				ReadPicture();
+            if (RTFSkipToToken(rtfControl,rtfDestination, rtfPict)) 
+                ReadPicture();
         }
         break;
 
     case WordPictureClass:
     case MSGraphChartClass:
-    	ExamineToken("WordPictureClass");
+        ExamineToken("WordPictureClass");
         while (!ReachedResult());
         ReadPicture();
         break;
@@ -2895,7 +2898,7 @@ static void ReadObject(void)
     object.class = 0;
     strcpy(object.className, "");
     
-	RTFSkipToLevel(level);
+    RTFSkipToLevel(level);
 }
 
 
@@ -2910,38 +2913,38 @@ static void ReadObject(void)
  */
 static void ReadWord97Picture(void)
 {
-//	ExamineToken("Word97Object");
-	RTFGetToken();
-	if (rtfClass != rtfGroup) {RTFSkipGroup(); return;}
-	
-	RTFGetToken();    /* should be pict */
-	if (rtfMinor != rtfPict) {RTFSkipGroup(); return;}
-	
-	RTFRouteToken();  /* handle pict */
-	RTFGetToken();    /* should be } */
-	RTFRouteToken();  /* handle last brace from shppict */
-	RTFGetToken();    /* should be { */
-	if (rtfClass != rtfGroup) {RTFSkipGroup(); return;}
-	
-	RTFGetToken();    /* should be nonshppict */
-	RTFSkipGroup();   /* because we don't want two pictures in latex file */
+//  ExamineToken("Word97Object");
+    RTFGetToken();
+    if (rtfClass != rtfGroup) {RTFSkipGroup(); return;}
+    
+    RTFGetToken();    /* should be pict */
+    if (rtfMinor != rtfPict) {RTFSkipGroup(); return;}
+    
+    RTFRouteToken();  /* handle pict */
+    RTFGetToken();    /* should be } */
+    RTFRouteToken();  /* handle last brace from shppict */
+    RTFGetToken();    /* should be { */
+    if (rtfClass != rtfGroup) {RTFSkipGroup(); return;}
+    
+    RTFGetToken();    /* should be nonshppict */
+    RTFSkipGroup();   /* because we don't want two pictures in latex file */
 }
 
 /* \sp{\sn PropertyName}{\sv PropertyValueInformation} */
 static void ReadShapeProperty(void)
 {
-	char *name, *value;
-	
+    char *name, *value;
+    
     if (!RTFSkipToToken(rtfControl, rtfShapeAttr, rtfShapeName)) return; 
 
-	name = RTFGetTextWord();
+    name = RTFGetTextWord();
     
     if (strcmp(name,"pib")==0) {
-    	RTFExecuteGroup();
-    	free(name);
-    	return;
+        RTFExecuteGroup();
+        free(name);
+        return;
     }
-    	
+        
     if (!RTFSkipToToken(rtfControl, rtfShapeAttr, rtfShapeValue)) return;
 
     value = RTFGetTextWord();
@@ -2951,13 +2954,13 @@ static void ReadShapeProperty(void)
 //    fprintf(stderr,"shape, name=%s, value=%s\n",name,value);
     
     if (strcasecmp(name,"relleft")==0)
-    	sscanf(value, "%d", &(shape.left));
+        sscanf(value, "%d", &(shape.left));
     if (strcasecmp(name,"relright")==0)
-    	sscanf(value, "%d", &(shape.right));
+        sscanf(value, "%d", &(shape.right));
     if (strcasecmp(name,"reltop")==0)
-    	sscanf(value, "%d", &(shape.top));
+        sscanf(value, "%d", &(shape.top));
     if (strcasecmp(name,"relbottom")==0)
-    	sscanf(value, "%d", &(shape.bottom));
+        sscanf(value, "%d", &(shape.bottom));
 
     free(name);
     free(value);
@@ -2965,45 +2968,45 @@ static void ReadShapeProperty(void)
 
 static void ShapeAttr(void)
 {
-//	ExamineToken("shapeattr");
-	switch (rtfMinor) {
-	case rtfShapeProperty:
-		ReadShapeProperty();
-		break;
-	case rtfShapeText:
-//		ExamineToken("ShapeText");
-		RTFExecuteGroup();
-		break;
-	case rtfShapeLeft:
-		shape.left = rtfParam;
-		break;
-	case rtfShapeTop:
-		shape.top = rtfParam;
-		break;
-	case rtfShapeBottom:
-		shape.bottom = rtfParam;
-		break;
-	case rtfShapeRight:
-		shape.right = rtfParam;
-		break;
-	case rtfShapeLid:
-	case rtfShapeOrderZ:
-	case rtfShapeHeader:
-	case rtfShapeXPosPage:
-	case rtfShapeXPosMargin:
-	case rtfShapeXPosColumn:
-	case rtfShapeXPosIgnore:
-	case rtfShapeYPosPage:
-	case rtfShapeYPosMargin:
-	case rtfShapeYPosColumn:
-	case rtfShapeYPosIgnore:
-	case rtfShapeWrap:
-	case rtfShapeWrapSides:
-	case rtfShapeRelOrderZ:
-	case rtfShapeAnchor:
-	default:
-		break;
-	}
+//  ExamineToken("shapeattr");
+    switch (rtfMinor) {
+    case rtfShapeProperty:
+        ReadShapeProperty();
+        break;
+    case rtfShapeText:
+//      ExamineToken("ShapeText");
+        RTFExecuteGroup();
+        break;
+    case rtfShapeLeft:
+        shape.left = rtfParam;
+        break;
+    case rtfShapeTop:
+        shape.top = rtfParam;
+        break;
+    case rtfShapeBottom:
+        shape.bottom = rtfParam;
+        break;
+    case rtfShapeRight:
+        shape.right = rtfParam;
+        break;
+    case rtfShapeLid:
+    case rtfShapeOrderZ:
+    case rtfShapeHeader:
+    case rtfShapeXPosPage:
+    case rtfShapeXPosMargin:
+    case rtfShapeXPosColumn:
+    case rtfShapeXPosIgnore:
+    case rtfShapeYPosPage:
+    case rtfShapeYPosMargin:
+    case rtfShapeYPosColumn:
+    case rtfShapeYPosIgnore:
+    case rtfShapeWrap:
+    case rtfShapeWrapSides:
+    case rtfShapeRelOrderZ:
+    case rtfShapeAnchor:
+    default:
+        break;
+    }
 }
 
 /*
@@ -3024,12 +3027,12 @@ static void ShapeAttr(void)
  */
 static void ReadShapeGroup(void)
 {
-	insideShapeGroup = 1;
-//	ExamineToken("ShapeGroup");
-	if (RTFExecuteToToken(rtfControl,rtfShapeAttr,rtfShapeResult)) {
-	    RTFSkipGroup();
-	}
-	insideShapeGroup = 0;
+    insideShapeGroup = 1;
+//  ExamineToken("ShapeGroup");
+    if (RTFExecuteToToken(rtfControl,rtfShapeAttr,rtfShapeResult)) {
+        RTFSkipGroup();
+    }
+    insideShapeGroup = 0;
 }
 
 /* 
@@ -3040,33 +3043,33 @@ static void ReadShapeGroup(void)
  */
 static void ReadShape(void)
 {
-//	ExamineToken("Shape");
-	if (insideShapeGroup) {
-	    RTFExecuteGroup();
-	    return;
-	}
-	
-	if (RTFSkipToToken(rtfControl,rtfShapeAttr,rtfShapeResult)) {
-	    RTFExecuteGroup();
-	}
+//  ExamineToken("Shape");
+    if (insideShapeGroup) {
+        RTFExecuteGroup();
+        return;
+    }
+    
+    if (RTFSkipToToken(rtfControl,rtfShapeAttr,rtfShapeResult)) {
+        RTFExecuteGroup();
+    }
 }        
 
 static void ReadUnicode(void)
 {
-	int thechar;
-	
-	if (rtfParam<0)
-		thechar = rtfParam + 65536;
-	else	
-		thechar = rtfParam;
-	
-	/* \uNNNNY, drop Y is a default unicode char */
-	if (rtfMinor == rtfUnicode)
-		RTFGetToken();
-		
-	PrepareForChar();
+    int thechar;
+    
+    if (rtfParam<0)
+        thechar = rtfParam + 65536;
+    else    
+        thechar = rtfParam;
+    
+    /* \uNNNNY, drop Y is a default unicode char */
+    if (rtfMinor == rtfUnicode)
+        RTFGetToken();
+        
+    PrepareForChar();
 
-//	fprintf(stderr, "Unicode --- %d, 0x%04X\n", thechar, thechar);
+//  fprintf(stderr, "Unicode --- %d, 0x%04X\n", thechar, thechar);
     if (thechar == 8212) {
         PutLitStr("---");
         return;
@@ -3285,14 +3288,14 @@ static void ReadFieldInst(void)
     char *fieldName;
     int level = RTFGetBraceLevel();
 
-	fieldName = RTFGetTextWord();
-	if (fieldName == NULL) return;
-	
+    fieldName = RTFGetTextWord();
+    if (fieldName == NULL) return;
+    
     if (strcasecmp(fieldName, "HYPERLINK") == 0 ) {
         if (prefs[pConvertHypertext])
-        	ReadHyperlinkField();
+            ReadHyperlinkField();
         else
-        	RTFSkipToLevel(level);
+            RTFSkipToLevel(level);
         free(fieldName);
         return;
     }
@@ -3310,13 +3313,13 @@ static void ReadFieldInst(void)
     }
 
     if (strcasecmp(fieldName, "PAGE") == 0) {
-    	ReadPageField();
+        ReadPageField();
         free(fieldName);
         return;
     }
 
     if (strcasecmp(fieldName, "HYPERLINK") == 0) {
-    	ReadPageField();
+        ReadPageField();
         free(fieldName);
         return;
     }
@@ -3325,7 +3328,7 @@ static void ReadFieldInst(void)
     /* Unsupported FIELD type ... the best we can do is bail from rtfFieldInst
        and hope rtfFieldResult can be processed  */
     
-	RTFSkipToLevel(level);
+    RTFSkipToLevel(level);
     free(fieldName);
 }
 
@@ -3354,15 +3357,15 @@ static void HandleOptionalTokens(void)
         break;
         
     case rtfWord97Picture:
-    	ReadWord97Picture();
+        ReadWord97Picture();
         break;
     
     case rtfDrawObject:
-    	break;
+        break;
     
     case rtfShapeInst:
     case rtfShapeResult:
-    	break;
+        break;
         
     default:
     //  ExamineToken("HandleOptionalTokesn"); 
@@ -3387,7 +3390,7 @@ static void SpecialChar(void)
         break;
 
     case rtfSect:    
-    	section.newSection = true;
+        section.newSection = true;
         break;
         
     case rtfNoBrkSpace:
@@ -3447,53 +3450,53 @@ static void SpecialChar(void)
 
 static void DoHeaderFooter(void)
 {
-	char *buff, *s, *option;
-	size_t hfStartPos, hfEndPos, len;
-	int isHeader, isFirst;
-	int level = RTFGetBraceLevel();
-	
-	if (insideHeaderFooter) return;
-	
-	insideHeaderFooter = true;
-	suppressLineBreak = true;
-	isHeader = (rtfMinor == rtfHeader) || (rtfMinor == rtfHeaderFirst) ;
-	isFirst  = (rtfMinor == rtfHeaderFirst) || (rtfMinor == rtfFooterFirst) ;
-	
+    char *buff, *s, *option;
+    size_t hfStartPos, hfEndPos, len;
+    int isHeader, isFirst;
+    int level = RTFGetBraceLevel();
+    
+    if (insideHeaderFooter) return;
+    
+    insideHeaderFooter = true;
+    suppressLineBreak = true;
+    isHeader = (rtfMinor == rtfHeader) || (rtfMinor == rtfHeaderFirst) ;
+    isFirst  = (rtfMinor == rtfHeaderFirst) || (rtfMinor == rtfFooterFirst) ;
+    
     StopTextStyle();
 
     hfStartPos = ftell(ofp);
 
-	switch (rtfMinor) {
-	case rtfHeader:
-		option = "\\lhead{";
-		break;
-	case rtfHeaderRight:
-		option = "\\fancyhead[LO]{";
-		break;
-	case rtfHeaderLeft:
-		option = "\\fancyhead[LE]{";
-		break;
-	case rtfHeaderFirst:
-		option = "  \\lhead{";
-		break;
-	case rtfFooter:
-		option = "\\lfoot{";
-		break;
-	case rtfFooterRight:
-		option = "\\fancyfoot[LO]{";
-		break;
-	case rtfFooterLeft:
-		option = "\\fancyfoot[LE]{";
-		break;
-	case rtfFooterFirst:
-		option = "  \\lfoot{";
-		break;
-	}
+    switch (rtfMinor) {
+    case rtfHeader:
+        option = "\\lhead{";
+        break;
+    case rtfHeaderRight:
+        option = "\\fancyhead[LO]{";
+        break;
+    case rtfHeaderLeft:
+        option = "\\fancyhead[LE]{";
+        break;
+    case rtfHeaderFirst:
+        option = "  \\lhead{";
+        break;
+    case rtfFooter:
+        option = "\\lfoot{";
+        break;
+    case rtfFooterRight:
+        option = "\\fancyfoot[LO]{";
+        break;
+    case rtfFooterLeft:
+        option = "\\fancyfoot[LE]{";
+        break;
+    case rtfFooterFirst:
+        option = "  \\lfoot{";
+        break;
+    }
 
-	PutLitStr(option);	
+    PutLitStr(option);  
     while (RTFGetBraceLevel() && RTFGetBraceLevel() >= level) {
         RTFGetToken();
-    	RTFRouteToken();
+        RTFRouteToken();
     }
     StopTextStyle();
     PutLitStr("}\n");
@@ -3506,30 +3509,30 @@ static void DoHeaderFooter(void)
     /* and we are still in the preamble */
     
     if (len<=strlen(option)+2) {
-    	/* erase empty command */
-		fseek(ofp, hfStartPos, 0);
+        /* erase empty command */
+        fseek(ofp, hfStartPos, 0);
 
-	} else {
+    } else {
 
-		/* save only if still in preamble or it is a first page command */
-		if (isFirst || !wroteBeginDocument) {
-			requireFancyHdrPackage = true;
-			buff = malloc(len+1);
-			fseek(ofp, hfStartPos, 0);
-			fread(buff,1,len,ofp);
-			buff[len] = '\0';
-			
-			if (!isFirst) {
-				s = strdup_together(preambleFancyHeader,buff);
-				if (preambleFancyHeader) free(preambleFancyHeader);
-				preambleFancyHeader = s;
-			} else {
-				s = strdup_together(preambleFancyHeaderFirst,buff);
-				if (preambleFancyHeaderFirst) free(preambleFancyHeaderFirst);
-				preambleFancyHeaderFirst = s;
-			}
-			fseek(ofp, hfStartPos, 0);
-		}
+        /* save only if still in preamble or it is a first page command */
+        if (isFirst || !wroteBeginDocument) {
+            requireFancyHdrPackage = true;
+            buff = malloc(len+1);
+            fseek(ofp, hfStartPos, 0);
+            fread(buff,1,len,ofp);
+            buff[len] = '\0';
+            
+            if (!isFirst) {
+                s = strdup_together(preambleFancyHeader,buff);
+                if (preambleFancyHeader) free(preambleFancyHeader);
+                preambleFancyHeader = s;
+            } else {
+                s = strdup_together(preambleFancyHeaderFirst,buff);
+                if (preambleFancyHeaderFirst) free(preambleFancyHeaderFirst);
+                preambleFancyHeaderFirst = s;
+            }
+            fseek(ofp, hfStartPos, 0);
+        }
     }
     
     suppressLineBreak = false;
@@ -3579,17 +3582,17 @@ static void Destination(void)
         DoHeaderFooter();
         break;
     case rtfShapeAttr:
-    	ShapeAttr();
-    	break;
+        ShapeAttr();
+        break;
     case rtfShapeGroup:
-    	ReadShapeGroup();
-    	break;
+        ReadShapeGroup();
+        break;
     case rtfShape:
-    	ReadShape();
-    	break;
+        ReadShape();
+        break;
     case rtfBlipTag:
-//    	ExamineToken("BlipTag");
-    	break;
+//      ExamineToken("BlipTag");
+        break;
     }
 }
 
@@ -3661,53 +3664,53 @@ static void RTFSetGenCharSet(void)
 
 static void PictureAttr(void)
 {
-	switch (rtfMinor) {
-	case rtfMacQD:
-		picture.type = pict;
-		break;
-	case rtfWinMetafile:
-		picture.type = wmf;
-		break;
-	case rtfEmf:
-		picture.type = emf;
-		break;
-	case rtfPng:
-		picture.type = png;
-		break;
-	case rtfJpeg:
-		picture.type = jpeg;
-		break;
-	case rtfPicGoalWid:
-		picture.goalWidth = rtfParam;
-		break;
-	case rtfPicGoalHt:
-		picture.goalHeight = rtfParam;
-		break;
-	case rtfPicScaleX:
-		picture.scaleX = rtfParam;
-		break;
-	case rtfPicWid:
-		picture.width = rtfParam;
-		break;
-	case rtfPicHt:
-		picture.height = rtfParam;
-		break;
-	case rtfPicScaleY:
-		picture.scaleY = rtfParam;
-		break;
-	case rtfPicCropTop:
-		picture.cropTop = rtfParam;
-		break;
-	case rtfPicCropBottom:
-		picture.cropBottom = rtfParam;
-		break;
-	case rtfPicCropLeft:
-		picture.cropLeft = rtfParam;
-		break;
-	case rtfPicCropRight:
-		picture.cropRight = rtfParam;
-		break;		
-	}
+    switch (rtfMinor) {
+    case rtfMacQD:
+        picture.type = pict;
+        break;
+    case rtfWinMetafile:
+        picture.type = wmf;
+        break;
+    case rtfEmf:
+        picture.type = emf;
+        break;
+    case rtfPng:
+        picture.type = png;
+        break;
+    case rtfJpeg:
+        picture.type = jpeg;
+        break;
+    case rtfPicGoalWid:
+        picture.goalWidth = rtfParam;
+        break;
+    case rtfPicGoalHt:
+        picture.goalHeight = rtfParam;
+        break;
+    case rtfPicScaleX:
+        picture.scaleX = rtfParam;
+        break;
+    case rtfPicWid:
+        picture.width = rtfParam;
+        break;
+    case rtfPicHt:
+        picture.height = rtfParam;
+        break;
+    case rtfPicScaleY:
+        picture.scaleY = rtfParam;
+        break;
+    case rtfPicCropTop:
+        picture.cropTop = rtfParam;
+        break;
+    case rtfPicCropBottom:
+        picture.cropBottom = rtfParam;
+        break;
+    case rtfPicCropLeft:
+        picture.cropLeft = rtfParam;
+        break;
+    case rtfPicCropRight:
+        picture.cropRight = rtfParam;
+        break;      
+    }
 }
 
 /* decides what to do when a control word is encountered */
@@ -3754,11 +3757,11 @@ static void ControlClass(void)
         RTFSetGenCharSet();
         break;
     case rtfPictAttr:
-    	PictureAttr();
-    	break;
+        PictureAttr();
+        break;
     case rtfShapeAttr:
-    	ShapeAttr();
-    	break;
+        ShapeAttr();
+        break;
     }
 
     /* handles {\*\keyword ...} */
@@ -3797,8 +3800,8 @@ int BeginLaTeXFile(void)
     requireAmsMathPackage = false;
     requireFancyHdrPackage = true;
 
-	preambleFancyHeader=NULL;
-	preambleFancyHeaderFirst=NULL;
+    preambleFancyHeader=NULL;
+    preambleFancyHeaderFirst=NULL;
 
     picture.count = 0;
     picture.type = unknownPict;
@@ -3806,7 +3809,7 @@ int BeginLaTeXFile(void)
     object.class = unknownObjClass;
     object.shape = 0;
     table.cellCount = 0;
-    table.cellInfo = NULL;
+    table.theCell = NULL;
     table.cellMergePar = none;
     table.multiCol = false;
     table.multiRow = false;

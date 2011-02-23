@@ -77,10 +77,10 @@ typedef struct
     int     urx;
     int     ury;
     char    name[rtfBufSiz];
-	int 	cropTop;
-	int		cropBottom;
-	int		cropLeft;
-	int 	cropRight;
+    int     cropTop;
+    int     cropBottom;
+    int     cropLeft;
+    int     cropRight;
 } pictureStruct;
 
 typedef struct
@@ -122,40 +122,48 @@ typedef struct
 
 typedef struct cellStruct
 {
-    int x;
-    int y;
-    int left;
-    int right;
+    int     x;
+    int     y;
+    int     left;
+    int     right;
     double  width;
     int     columnSpan;
     int     index;
     int     mergePar;   
+    boolean leftBorder;
+    boolean rightBorder;
+    boolean topBorder;
+    boolean bottomBorder;
     struct cellStruct *nextCell;
 } cellStruct;
 
 typedef struct
 {
     boolean inside;
-    int     	rows;
-    int     	cols;
-    int     	cellCount;
-    int     	leftEdge;
-    cellStruct	*cellInfo;
-    int     	rowInfo[rtfBufSiz];
-    int     	*columnBorders;
-    int     	cellMergePar;
-    int     	previousColumnValue;
-    boolean 	newRowDef;
-    boolean 	multiCol;
-    boolean 	multiRow;
+    int         rows;
+    int         cols;
+    int         cellCount;
+    int         leftEdge;
+    cellStruct  *theCell;
+    int         rowInfo[rtfBufSiz];
+    int         *rightColumnBorders;
+    int         cellMergePar;
+    int         previousColumnValue;
+    boolean     newRowDef;
+    boolean     multiCol;
+    boolean     multiRow;
+    boolean     limboCellLeftBorder;
+    boolean     limboCellRightBorder;
+    boolean     limboCellTopBorder;
+    boolean     limboCellBottomBorder;
 } tableStruct;
 
 typedef struct
 {
-	int left;
-	int top;
-	int bottom;
-	int right;
+    int left;
+    int top;
+    int bottom;
+    int right;
 } shapeStruct;
 
 
