@@ -1110,10 +1110,10 @@ static cellStruct * CellNew(void)
 static void CellInitialize(cellStruct *cell)
 {
     /*fprintf(stderr,"initializing cell %d, (x,y)=(%d,%d)\n",
-              table.cellCount, table.rows, (table.rowInfo)[table.rows]);*/
+              table.cellCount, table.rows, (table.cellsInRow)[table.rows]);*/
     cell->nextCell       = table.theCell;
     cell->row            = table.rows;
-    cell->col            = (table.rowInfo)[table.rows];
+    cell->col            = (table.cellsInRow)[table.rows];
     if (table.cols == 0 || table.theCell == NULL)
         cell->left = table.leftEdge;
     else
@@ -1191,7 +1191,7 @@ cellStruct *cell;
         table.theCell = cell;
         table.cellMergePar = none;  /* reset */
         table.cellCount++;
-        ((table.rowInfo)[table.rows])++;
+        ((table.cellsInRow)[table.rows])++;
         (table.cols)++;
         table.limboCellLeftBorder   = false;
         table.limboCellRightBorder  = false;
@@ -1233,20 +1233,13 @@ static void InheritTableRowSettings(void)
     int i;
 
     prevRow = table.rows-1;
-    cellsInPrevRow = (table.rowInfo)[prevRow];
+    cellsInPrevRow = (table.cellsInRow)[prevRow];
 
-    (table.rowInfo)[prevRow + 1] = (table.rowInfo)[prevRow];
+    (table.cellsInRow)[prevRow + 1] = (table.cellsInRow)[prevRow];
 
     for (i = 0; i < cellsInPrevRow; i++) {
-
         cell = CellGetByPosition(prevRow, i);
-
-        newCell = New(cellStruct);
-        if (!newCell) {
-            RTFPanic("Cannot allocate inheriting cell entry");
-            exit(1);
-        }
-
+        newCell = CellNew();
         newCell->nextCell = table.theCell;
         newCell->row   = prevRow + 1;
         newCell->col   = cell->col;
@@ -1255,7 +1248,7 @@ static void InheritTableRowSettings(void)
         newCell->width = cell->width;
         newCell->index = table.cellCount;
         newCell->mergePar = cell->mergePar;
-        table.cellMergePar = none;      /* reset */
+        table.cellMergePar = none;
         table.theCell = newCell;
         table.cellCount++;
     }
@@ -1301,9 +1294,9 @@ static int GetColumnSpan(cellStruct * cell)
  */
 static void PrescanTable(void)
 {
-    int i, j, *rightBorders, irow;
+    int i, j, *rightBorders;
     cellStruct *cell, *cell2;
-    boolean inheritPreviousRowSettings, foundRow, lastRow, repeatedInstructions;
+    boolean gatherCellInfo, foundRow, lastRow;
 
     RTFParserState(SAVE_PARSER);
 
@@ -1314,36 +1307,45 @@ static void PrescanTable(void)
     /* Prescan each row until end of the table. */
     foundRow = true;
     lastRow = false;
-    irow = -2;
+
+	/*
+	 * Scan the whole table.  First, gather the cell layout information and then
+	 * check to see if another row of the table exists.  repeat until no more rows
+	 * are found.  The overall structure is
+	 * 
+	 * <row>     = (<tbldef> <cell>+ <tbldef> \row) | (<tbldef> <cell>+ \row) | (<cell>+ <tbldef> \row) 
+	 * <cell>    = (<nestrow>? <tbldef>?) & <textpar>+ \cell
+	 * <tbldef>  = \trowd \irowN  ... <celldef>+
+	 * <celldef> = ... \cellxN
+	 */
+
     while (foundRow) {
         table.cols = 0;
-        (table.rowInfo)[table.rows] = 0;
 
         if (g_debug_table_prescan) fprintf(stderr,"*********** starting row %d\n", table.rows);
         
-        /***********************************************************************************************
-         * scan an entire row. The only tokens guaranteed are rtfRowDef or rtfInTable 
+        /* Gather cell layout information ... the three possible token streams are:
          * 
-         * <row>     = (<tbldef> <cell>+ <tbldef> \row) | (<tbldef> <cell>+ \row) | (<cell>+ <tbldef> \row) 
-         * <cell>    = (<nestrow>? <tbldef>?) & <textpar>+ \cell
-         * <tbldef>  = \trowd \irowN  ... <celldef>+
-         * <celldef> = ... \cellxN
-         *
-         *   \trowd .... \cellxN ... \cellxM ... \trowd ... \cellxN ... \cellxM ...\row
-         *
-         *   \trowd .... \cellxN ... \cellxM ...\row
-         * or for inherited rows
-         *          .... \cellxN ... \cellxM ...\row
-         */
-         
-    	repeatedInstructions = 0;
-        do {
+         *  1) \trowd .... \cellxN ... \cellxM ... \trowd ... \cellxN ... \cellxM ...\row
+         *  2) \trowd .... \cellxN ... \cellxM ...\row
+         *  3)        .... \cellxN ... \cellxM ...\row
+         */    
+
+    	if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
+    		gatherCellInfo = true;
+        	(table.cellsInRow)[table.rows] = 0;
+        } else {
+        	InheritTableRowSettings();
+    		gatherCellInfo = false;
+    	}
+    		    	
+        while (RTFGetToken() != rtfEOF) {
 
 			if (RTFCheckMM(rtfSpecialChar, rtfRow))
                 break;
 
             if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
-           		repeatedInstructions++;
+           		gatherCellInfo=false;
                 continue;
             }
 
@@ -1353,31 +1355,25 @@ static void PrescanTable(void)
             }
 
             if (RTFCheckCM(rtfControl, rtfTblAttr)) {
-                if (repeatedInstructions<2) RTFRouteToken();
+                if (gatherCellInfo) RTFRouteToken();
             }
 
             if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
                 RTFSkipGroup();
                 
-        } while (RTFGetToken() != rtfEOF);
+        } 
         
         if (g_debug_table_prescan) fprintf(stderr,"* reached end of row %d\n", table.rows);
-
-		if ((table.rowInfo)[table.rows] == 0)
-			(table.rowInfo)[table.rows] = (table.rowInfo)[table.rows - 1];
 		
 		(table.rows)++;
 		if (lastRow) break;
-        
-		foundRow = false;
-		inheritPreviousRowSettings = false;
 
-        /***********************************************************************************************
-         * Now look for another row. The only tokens guaranteed are rtfRowDef or rtfInTable 
-         * and as far as I can tell \intbl follows \widctrpar (if no \trowd then use setting from 
-         * previous row
+        /* Look for another row, indicated by either \trowd or \intbl
+         * \intbl should always follow \widctrpar
          */
 		
+		foundRow = false;
+
         while (RTFGetToken() != rtfEOF) {
 
             if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
@@ -1393,7 +1389,6 @@ static void PrescanTable(void)
 
             if (RTFCheckMM(rtfParAttr, rtfInTable)) {
                 foundRow = true;
-                inheritPreviousRowSettings = true;
                 break;
             }
 
@@ -1406,10 +1401,6 @@ static void PrescanTable(void)
             if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
                 RTFSkipGroup();
         }
-
-        if (foundRow) {
-       		if (inheritPreviousRowSettings) InheritTableRowSettings();
-        } 
     }
 
     /*************************************************************************
@@ -1417,7 +1408,7 @@ static void PrescanTable(void)
      * a list containing one entry for each unique right border
      * This list is retained as table.rightColumnBorders
      * The number of columns is table.cols
-    */
+     */
 
     /* largest possible list */
     rightBorders = (int *) RTFAlloc((table.cellCount) * sizeof(int));
@@ -1663,7 +1654,7 @@ static void DrawTableRowLine(int rowNum)
     /* otherwise use \cline for every cell */
     /* this is to count cell positions as if the table is a matrix. */
     cellPosition = 0;
-    for (i = 0; i < (table.rowInfo)[rowNum]; i++) {
+    for (i = 0; i < (table.cellsInRow)[rowNum]; i++) {
 
         theCell1 = CellGetByPosition(rowNum, cellPosition);
         cellPosition += theCell1->columnSpan;

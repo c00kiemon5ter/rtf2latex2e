@@ -145,7 +145,7 @@ typedef struct
     int         cellCount;
     int         leftEdge;
     cellStruct  *theCell;
-    int         rowInfo[rtfBufSiz];
+    int         cellsInRow[rtfBufSiz];
     int         *rightColumnBorders;
     int         cellMergePar;
     boolean     multiCol;
