@@ -1303,7 +1303,7 @@ static void PrescanTable(void)
 {
     int i, j, *rightBorders, irow;
     cellStruct *cell, *cell2;
-    boolean useLastRowSettings, foundRow, lastRow, repeatedInstructions;
+    boolean inheritPreviousRowSettings, foundRow, lastRow, repeatedInstructions;
 
     RTFParserState(SAVE_PARSER);
 
@@ -1320,7 +1320,6 @@ static void PrescanTable(void)
         (table.rowInfo)[table.rows] = 0;
 
         if (g_debug_table_prescan) fprintf(stderr,"*********** starting row %d\n", table.rows);
-//        ExamineToken("starting row token");
         
         /***********************************************************************************************
          * scan an entire row. The only tokens guaranteed are rtfRowDef or rtfInTable 
@@ -1328,25 +1327,23 @@ static void PrescanTable(void)
          * <row>     = (<tbldef> <cell>+ <tbldef> \row) | (<tbldef> <cell>+ \row) | (<cell>+ <tbldef> \row) 
          * <cell>    = (<nestrow>? <tbldef>?) & <textpar>+ \cell
          * <tbldef>  = \trowd \irowN  ... <celldef>+
-         * <celldef> = (...)\cellxN
+         * <celldef> = ... \cellxN
          *
-         * So a <tbldef> starts with \trowd and contains at least one \cellx
-         *      <cell> will always have a \pard in it
-         * thus for the first <tbldef> we can terminate on \pard, \trowd, or \row
-         * So
          *   \trowd .... \cellxN ... \cellxM ... \trowd ... \cellxN ... \cellxM ...\row
-         * or
+         *
          *   \trowd .... \cellxN ... \cellxM ...\row
+         * or for inherited rows
+         *          .... \cellxN ... \cellxM ...\row
          */
          
-    	repeatedInstructions = false;
-        while (RTFGetToken() != rtfEOF) {
+    	repeatedInstructions = 0;
+        do {
 
 			if (RTFCheckMM(rtfSpecialChar, rtfRow))
                 break;
 
             if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
-           		repeatedInstructions = true;
+           		repeatedInstructions++;
                 continue;
             }
 
@@ -1356,30 +1353,31 @@ static void PrescanTable(void)
             }
 
             if (RTFCheckCM(rtfControl, rtfTblAttr)) {
-                if (!repeatedInstructions) RTFRouteToken();
+                if (repeatedInstructions<2) RTFRouteToken();
             }
 
             if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
                 RTFSkipGroup();
-        }
+                
+        } while (RTFGetToken() != rtfEOF);
         
         if (g_debug_table_prescan) fprintf(stderr,"* reached end of row %d\n", table.rows);
+
+		if ((table.rowInfo)[table.rows] == 0)
+			(table.rowInfo)[table.rows] = (table.rowInfo)[table.rows - 1];
+		
+		(table.rows)++;
+		if (lastRow) break;
+        
+		foundRow = false;
+		inheritPreviousRowSettings = false;
 
         /***********************************************************************************************
          * Now look for another row. The only tokens guaranteed are rtfRowDef or rtfInTable 
          * and as far as I can tell \intbl follows \widctrpar (if no \trowd then use setting from 
          * previous row
          */
-
-        foundRow = false;
-        useLastRowSettings = false;
-        
-       if ((table.rowInfo)[table.rows] == 0)
-            (table.rowInfo)[table.rows] = (table.rowInfo)[table.rows - 1];
-
-       (table.rows)++;
-       if (lastRow) break;
-        
+		
         while (RTFGetToken() != rtfEOF) {
 
             if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
@@ -1395,7 +1393,7 @@ static void PrescanTable(void)
 
             if (RTFCheckMM(rtfParAttr, rtfInTable)) {
                 foundRow = true;
-                useLastRowSettings = true;
+                inheritPreviousRowSettings = true;
                 break;
             }
 
@@ -1410,7 +1408,7 @@ static void PrescanTable(void)
         }
 
         if (foundRow) {
-       		if (useLastRowSettings) InheritTableRowSettings();
+       		if (inheritPreviousRowSettings) InheritTableRowSettings();
         } 
     }
 
