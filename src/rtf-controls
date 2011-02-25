@@ -568,6 +568,7 @@ minor	rtfDropCapType		dropcapt
 major	rtfTblAttr
 
 minor	rtfRowDef		trowd
+minor   rtfIRow         irow
 minor	rtfRowGapH		trgaph
 minor	rtfCellPos		cellx
 minor	rtfMergeRngFirst	clmgf
@@ -723,6 +724,7 @@ minor	rtfFNoteSep		chftnsep
 minor	rtfFNoteCont		chftnsepc
 minor	rtfCell			cell
 minor	rtfRow			row
+minor	rtfLastRow		lastrow
 /*
  * newline and carriage return are synonyms for
  * \par when they are preceded by a \ character

@@ -1701,7 +1701,13 @@ void DebugMessage(void)
 
 char * RTFAlloc(size_t size)
 {
-    return ((char *) malloc(size));
+	char * memory = malloc(size);
+
+    if (!memory) {
+        RTFPanic("Cannot allocate needed memory\n");
+        exit(1);
+    }
+    return memory;
 }
 
 
@@ -2010,6 +2016,16 @@ void RTFParserState(int op)
 	static textStyleStruct saved_textStyleStack[MAX_STACK];
 	static parStyleStruct  saved_paragraphWritten;
 	static textStyleStruct saved_textStyleWritten;
+    static int savedpushedClass;
+    static int savedpushedMajor;
+    static int savedpushedMinor;
+    static int savedpushedParam;
+    static char savedpushedTextBuf[rtfBufSiz];
+    static char savedTextBuf[rtfBufSiz];
+    static int savedClass;
+    static int savedMajor;
+    static int savedMinor;
+    static int savedParam;
 	
 	if (op == SAVE_PARSER) {
     	memcpy(saved_charStyleStack, charStyleStack, MAX_STACK * sizeof(short));
@@ -2020,6 +2036,17 @@ void RTFParserState(int op)
 		prevChar = RTFPushedChar();
 		saved_file_position = ftell(ifp);
 		savedbraceLevel = RTFGetBraceLevel();
+    	savedClass = rtfClass;
+    	savedMajor = rtfMajor;
+    	savedMinor = rtfMinor;
+    	savedParam = rtfParam;
+    	strcpy(savedTextBuf,rtfTextBuf);
+    	savedpushedClass = pushedClass;
+    	savedpushedMajor = pushedMajor;
+    	savedpushedMinor = pushedMinor;
+    	savedpushedParam = pushedParam;
+    	strcpy(savedpushedTextBuf,pushedTextBuf);
+		return;
 	}
 
 	if (op == RESTORE_PARSER) {
@@ -2035,5 +2062,15 @@ void RTFParserState(int op)
 		textStyle = textStyleStack[savedbraceLevel];
     	paragraphWritten = saved_paragraphWritten;
     	textStyleWritten = saved_textStyleWritten;
+    	rtfClass = savedClass;
+    	rtfMajor = savedMajor;
+    	rtfMinor = savedMinor;
+    	rtfParam = savedParam;
+    	strcpy(rtfTextBuf,savedTextBuf);
+    	pushedClass = savedpushedClass;
+    	pushedMajor = savedpushedMajor;
+    	pushedMinor = savedpushedMinor;
+    	pushedParam = savedpushedParam;
+    	strcpy(pushedTextBuf,savedpushedTextBuf);
 	}
 }
