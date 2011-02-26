@@ -822,7 +822,6 @@ static void NewParagraph(void)
         return;
     }
 
-
     if (prefs[pConvertParagraphAlignment]) {
         if (paragraphWritten.alignment != paragraph.alignment) {
     
@@ -915,11 +914,19 @@ static void EndParagraph(void)
             PutLitStr(buf);
         }
 
-        if (paragraphWritten.alignment == right)
+        if (paragraphWritten.alignment == right){
             PutLitStr("\n\\end{flushright}");
+			paragraphWritten.alignment = -900;
+			paragraphWritten.leftIndent = -900;
+			paragraphWritten.lineSpacing = -900;
+		}
 
-        if (paragraphWritten.alignment == center)
+        if (paragraphWritten.alignment == center){
             PutLitStr("\n\\end{center}");
+			paragraphWritten.alignment = -900;
+			paragraphWritten.leftIndent = -900;
+			paragraphWritten.lineSpacing = -900;
+		}
     }
 
     InsertNewLine();
@@ -2767,20 +2774,21 @@ boolean ConvertEquationFile(char *objectFileName)
             requireHyperrefPackage = true;
         }
 
-        /* this actually writes the equation */
+        /* this returns the translated equation in m_latex record */
         Eqn_TranslateObjectList(theEquation, ostream, 0);
-        if (theEquation->m_inline){
-            /* Add a space unless the last character was punctuation */
-            if (lastCharWritten != ' ' && lastCharWritten != '(' && 
-                lastCharWritten != '[' && lastCharWritten != '{' ) 
-                   PutLitChar(' ');
-        }
             
         PutLitStr(theEquation->m_latex_start);
         PutLitStr(theEquation->m_latex);
         PutLitStr(EqNo);
         PutLitStr(theEquation->m_latex_end);
         
+        if (theEquation->m_inline){
+            /* Add a space unless the last character was punctuation */
+            if (lastCharWritten != ' ' && lastCharWritten != '(' && 
+                lastCharWritten != '[' && lastCharWritten != '{' ) 
+                   PutLitChar(' ');
+        }
+
         if (theEquation->m_inline) {
             /* Add a space unless the next character is punctuation */
             RTFPeekToken();
