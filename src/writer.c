@@ -3195,16 +3195,15 @@ static void ReadSymbolField(void)
 }
 
 /* the following streams should just emit ... HToc268803753
- *    PAGEREF _Toc268803753 \\h
- *    HYPERLINK \\l "_Toc268803753"
+ *    PAGEREF _Toc268803753 \h
+ *    HYPERLINK \l "_Toc268803753"
  *     _Toc268803753
  */
 static void emitBookmark(void)
 {
-    int started = 0;
+    boolean started = false;
 
-    RTFGetToken();
-    while (rtfClass == rtfText) {
+    while (RTFGetToken() == rtfText) {
         switch (rtfTextBuf[0]) {
         case ' ':
             if (started) {     /* assume that bookmarks optionally start and end with spaces */
@@ -3218,15 +3217,14 @@ static void emitBookmark(void)
             RTFGetToken(); /* drop backslash and the next letter */
             break;
         case '_':
-            started = 1;
-            PutLitStr("H");
+            started = true;
+            PutLitChar('H');
             break;
         default:
-            started = 1;
-            PutLitStr(rtfTextBuf);
+            started = true;
+            PutLitChar(rtfTextBuf[0]);
             break;
         }
-        RTFGetToken();
     }
 }
 
@@ -3315,7 +3313,6 @@ static void ReadBookmarkStart(void)
     PutLitStr("\\label{");
     emitBookmark();
     PutLitStr("}");
-    RTFRouteToken();
 }
 
 static void HandleOptionalTokens(void)
@@ -3366,6 +3363,7 @@ static void SpecialChar(void)
 
     case rtfSect:    
         section.newSection = true;
+        nowBetweenParagraphs = true;
         break;
         
     case rtfNoBrkSpace:
