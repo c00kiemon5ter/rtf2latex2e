@@ -95,6 +95,9 @@ print_usage(void)
     fprintf(stdout, "      -t2              font color\n");
     fprintf(stdout, "      -t4              font formatting\n");
     fprintf(stdout, "      -t8              replace tabs with spaces\n");
+    fprintf(stdout, "  -T #             table conversion options\n");
+    fprintf(stdout, "      -T1              resize tables to \\textwidth\n");
+    fprintf(stdout, "      -T2              ignore  color\n");
     fprintf(stdout, "  -v               version information\n");
     fprintf(stdout, "\n");
     fprintf(stdout, "Examples:\n");
@@ -256,7 +259,7 @@ int
 main(int argc, char **argv)
 {
     char            c, *input_filename, *output_filename;
-    int             fileCounter, cli_paragraph, cli_text, cli_equation;
+    int             fileCounter, cli_paragraph, cli_text, cli_equation, cli_table;
     long            cursorPos;
     extern char    *optarg;
     extern int      optind;
@@ -265,7 +268,8 @@ main(int argc, char **argv)
     cli_paragraph = -1;
     cli_text = -1;
     cli_equation = -1;
-    while ((c = my_getopt(argc, argv, "bDe:hnp:P:t:v")) != EOF) {
+    cli_table = -1;
+    while ((c = my_getopt(argc, argv, "bDe:hnp:P:t:T:v")) != EOF) {
         switch (c) {
 
         case 'b':
@@ -298,6 +302,10 @@ main(int argc, char **argv)
 
         case 't':
             sscanf(optarg, "%d", &cli_text);
+            break;
+
+        case 'T':
+            sscanf(optarg, "%d", &cli_table);
             break;
 
         case 'v':
@@ -339,6 +347,10 @@ main(int argc, char **argv)
         g_eqn_insert_image      = cli_equation & 2;
         g_eqn_keep_file         = cli_equation & 4;
         g_eqn_insert_name       = cli_equation & 8;
+    }
+
+    if (cli_table >= 0) {
+        prefs[pConvertTablesSimply] = cli_table & 1;
     }
 
     for (fileCounter = 0; fileCounter < argc; fileCounter++) {

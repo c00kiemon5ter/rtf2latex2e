@@ -98,3 +98,5 @@ convertTableName	longtable
 # Convert embedded macintosh PICT files to PDF files
 convertPict	true
 
+#
+convertTablesSimply	true

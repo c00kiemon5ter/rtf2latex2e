@@ -98,6 +98,7 @@ static struct {
 int wrapCount = 0;
 int shapeObjectType;
 boolean nowBetweenParagraphs;
+boolean nowBetweenCells;
 boolean suppressLineBreak;
 boolean suppressSpaceBetweenParagraphs;
 boolean requireSetspacePackage;
@@ -783,6 +784,199 @@ static void setLineSpacing(void)
     paragraphWritten.lineSpacing = paragraph.lineSpacing;
 }
 
+/*
+ * This routine sets attributes for the detected cell and
+ * adds it to the table.theCell list. Memory for cells is
+ * allocated dynamically as each cell is encountered.
+ */
+static cellStruct * CellAllocate(void)
+{
+    cellStruct *cell;
+
+    cell = New(cellStruct);
+    if (!cell) {
+        RTFPanic("Cannot allocate memory for cell entry");
+        exit(1);
+    }
+
+	return cell;
+}
+
+static void CellInitialize(cellStruct *cell)
+{
+    /*fprintf(stderr,"initializing cell %d, (x,y)=(%d,%d)\n",
+              table.cellCount, table.rows, (table.cellsInRow)[table.rows]);*/
+    cell->nextCell       = table.theCell;
+    cell->row            = table.rows;
+    cell->col            = (table.cellsInRow)[table.rows];
+    if (table.cols == 0 || table.theCell == NULL)
+        cell->left = table.leftEdge;
+    else
+        cell->left = (table.theCell)->right;
+    cell->right        = rtfParam;
+    cell->width        = cell->right - cell->left;
+    cell->index        = table.cellCount;
+    cell->mergePar     = table.cellMergePar;
+	cell->leftBorder   = table.limboCellLeftBorder;
+	cell->rightBorder  = table.limboCellRightBorder;
+	cell->topBorder    = table.limboCellTopBorder;
+	cell->bottomBorder = table.limboCellBottomBorder;
+}
+
+/*
+ * This function searches the cell list by cell index
+ * returns NULL if not found
+ */
+static cellStruct *CellGetByIndex(int cellNum)
+{
+    cellStruct *cell;
+
+    if (cellNum == -1)
+        return (table.theCell);
+
+    for (cell = (table.theCell); cell != NULL; cell = cell->nextCell) {
+        if (cell->index == cellNum)
+            return cell;
+    }
+
+    if (!cell)
+        RTFPanic("CellGetByIndex: Attempting to access invalid cell at index %d\n", cellNum);
+
+    return NULL;
+}
+
+/*
+ * This function searches the cell list by cell coordinates
+ * returns NULL if not found
+ */
+static cellStruct *CellGetByPosition(int therow, int thecol)
+{
+    cellStruct *cell;
+
+    if (!table.theCell)
+        RTFPanic("CellGetByPosition: Attempting to access invalid cell at row=%d, col=%d\n", therow, thecol);
+
+    for (cell = table.theCell; cell != NULL; cell = cell->nextCell) {
+        if (cell->row == therow && cell->col == thecol)
+            return cell;
+    }
+
+    return NULL;
+}
+
+/*
+ * This routine counts the number of cells to be merged vertically and writes the
+ * corresponding \multirow statement.
+ */
+static void CellMultirow(cellStruct * cell)
+{
+    int i;
+    int x, y;
+    cellStruct *localCellPtr;
+    char buf[rtfBufSiz];
+
+    x = cell->row;
+    y = cell->col;
+
+    i = 1;
+    localCellPtr = CellGetByPosition(x + i, y);
+    for (i = 1; localCellPtr->mergePar == previous; i++)
+        if (x + i > table.rows - 1)
+            break;
+        else
+            localCellPtr = CellGetByPosition(x + i, y);
+
+    snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s ", i - 1, cell->width, justificationList[paragraph.alignment]);
+    PutLitStr(buf);
+
+    table.multiRow = true;
+    requireMultirowPackage = true;
+}
+
+/*
+ * Writes cell information for each cell. Similiar to NewParagraph()
+ * Each cell is defined in a multicolumn
+ * environment for maximum flexibility. Useful when we have merged rows and columns.
+ */
+static void NewCell(void)
+{
+    char buf[rtfBufSiz];
+    cellStruct *cell;
+    int cellNum;
+
+	if (!nowBetweenCells) return;
+	
+	cellNum = table.cellCount;
+    cell = CellGetByIndex(cellNum);
+
+    if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
+
+
+    if (cell->col != 0) PutLitStr(" & ");
+
+    if (table.multiCol) {
+        snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{", cell->columnSpan);
+        PutLitStr(buf);
+
+        if (cell->columnSpan < 1)
+            RTFMsg("* Warning: nonsensical table encountered...cell %d spans %d columns.\nProceed with caution!\n",
+                   cell->index, cell->columnSpan);
+
+        /* this check is to draw the left vertical boundary of the table */
+        if (cell->col == 0)
+            PutLitChar('|');
+
+        if (cell->mergePar == first) {
+            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}", cell->width, cell->width);
+            PutLitStr(buf);
+        } else {
+            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}%s", cell->width,cell->width, justificationList[paragraph.alignment]);
+            PutLitStr(buf);
+            InsertNewLine();
+        }
+        
+    } else if (cell->mergePar != first) {
+        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s ", cell->width, justificationList[paragraph.alignment]);
+        PutLitStr(buf);
+    } else {
+        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin} ", cell->width);
+        PutLitStr(buf);
+    }
+
+    if (cell->mergePar == first)
+        CellMultirow(cell);
+
+    if (g_debug_table_writing)  {
+        snprintf(buf, rtfBufSiz, "[cell \\#%d]",cellNum);
+        PutLitStr(buf);
+    }
+    nowBetweenCells = false;
+}
+
+static void EndCell(void)
+{
+    cellStruct *cell;
+	if (nowBetweenCells) {
+		if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount);
+		NewCell();
+	} 
+	
+	StopTextStyle();
+	cell = CellGetByIndex(table.cellCount);
+	if (cell->mergePar == first)
+		PutLitChar('}');
+
+	PutLitStr("\\end{minipage}");
+		
+	if (table.multiCol)
+		PutLitChar('}');
+
+	(table.cellCount)++;
+	nowBetweenCells = true;
+	paragraph.alignment = left;
+}
+
+
 static void NewSection(void)
 {
     char buff[100];
@@ -1038,7 +1232,12 @@ static void WrapText(void)
 
 static void PrepareForChar(void)
 {
-    if (nowBetweenParagraphs) {
+	if (insideTable && nowBetweenCells) {
+		NewCell();
+        return;
+	}
+	
+	if (nowBetweenParagraphs) {
 
         if (rtfMinor == rtfSC_space) {
             paragraph.extraIndent += 72;
@@ -1102,86 +1301,6 @@ static void ReadFootnote(void)
     insideFootnote = false;
 }
 
-/*
- * This routine sets attributes for the detected cell and
- * adds it to the table.theCell list. Memory for cells is
- * allocated dynamically as each cell is encountered.
- */
-static cellStruct * CellNew(void)
-{
-    cellStruct *cell;
-
-    cell = New(cellStruct);
-    if (!cell) {
-        RTFPanic("Cannot allocate memory for cell entry");
-        exit(1);
-    }
-
-	return cell;
-}
-
-static void CellInitialize(cellStruct *cell)
-{
-    /*fprintf(stderr,"initializing cell %d, (x,y)=(%d,%d)\n",
-              table.cellCount, table.rows, (table.cellsInRow)[table.rows]);*/
-    cell->nextCell       = table.theCell;
-    cell->row            = table.rows;
-    cell->col            = (table.cellsInRow)[table.rows];
-    if (table.cols == 0 || table.theCell == NULL)
-        cell->left = table.leftEdge;
-    else
-        cell->left = (table.theCell)->right;
-    cell->right        = rtfParam;
-    cell->width        = cell->right - cell->left;
-    cell->index        = table.cellCount;
-    cell->mergePar     = table.cellMergePar;
-	cell->leftBorder   = table.limboCellLeftBorder;
-	cell->rightBorder  = table.limboCellRightBorder;
-	cell->topBorder    = table.limboCellTopBorder;
-	cell->bottomBorder = table.limboCellBottomBorder;
-}
-
-/*
- * This function searches the cell list by cell index
- * returns NULL if not found
- */
-static cellStruct *CellGetByIndex(int cellNum)
-{
-    cellStruct *cell;
-
-    if (cellNum == -1)
-        return (table.theCell);
-
-    for (cell = (table.theCell); cell != NULL; cell = cell->nextCell) {
-        if (cell->index == cellNum)
-            return cell;
-    }
-
-    if (!cell)
-        RTFPanic("CellGetByIndex: Attempting to access invalid cell at index %d\n", cellNum);
-
-    return NULL;
-}
-
-/*
- * This function searches the cell list by cell coordinates
- * returns NULL if not found
- */
-static cellStruct *CellGetByPosition(int therow, int thecol)
-{
-    cellStruct *cell;
-
-    if (!table.theCell)
-        RTFPanic("CellGetByPosition: Attempting to access invalid cell at row=%d, col=%d\n", therow, thecol);
-
-    for (cell = table.theCell; cell != NULL; cell = cell->nextCell) {
-        if (cell->row == therow && cell->col == thecol)
-            return cell;
-    }
-
-    return NULL;
-}
-
 /* <celldef> = (\clmgf? & \clmrg? & \clvmgf? & \clvmrg? <celldgu>? & <celldgl>? & 
                <cellalign>? & <celltop>? & <cellleft>? & <cellbot>? & <cellright>? & 
                <cellshad>? & <cellflow>? & clFitText? & clNoWrap? & <cellwidth>? <cellrev>? & 
@@ -1198,7 +1317,7 @@ cellStruct *cell;
         break;
     case rtfCellPos:  /* only \cellx is a required cell token */
     
-        cell = CellNew();
+        cell = CellAllocate();
         CellInitialize(cell);
 
         table.theCell = cell;
@@ -1252,7 +1371,7 @@ static void InheritTableRowSettings(void)
 
     for (i = 0; i < cellsInPrevRow; i++) {
         cell = CellGetByPosition(prevRow, i);
-        newCell = CellNew();
+        newCell = CellAllocate();
         newCell->nextCell = table.theCell;
         newCell->row   = prevRow + 1;
         newCell->col   = cell->col;
@@ -1456,9 +1575,9 @@ static void PrescanTable(void)
 
     RTFFree((char *)rightBorders);
 
-    if (0&&g_debug_table_prescan) fprintf(stderr,"* table has %d rows and %d cols \n", table.rows, table.cols);
+    if (g_debug_table_prescan) fprintf(stderr,"* table has %d rows and %d cols \n", table.rows, table.cols);
 
-    /***************************************************************************
+    /*
      * sort rightColumnBorders into ascending order.
      */
 
@@ -1467,7 +1586,7 @@ static void PrescanTable(void)
             if ((table.rightColumnBorders)[i] > (table.rightColumnBorders)[j])
                 Swap((table.rightColumnBorders)[i], (table.rightColumnBorders)[j]);
 
-    /*******************************************************************************************
+    /*
      * fill in column spans for each cell.  GetColumnSpan uses table.rightColumnBorders
      * to decide if a cell spans multiple columns.
      */
@@ -1499,98 +1618,14 @@ static void PrescanTable(void)
     RTFParserState(RESTORE_PARSER);
 }
 
-/*
- * This routine counts the number of cells to be merged vertically and writes the
- * corresponding \multirow statement.
- */
-static void DoMergedCells(cellStruct * cell)
+/* This is where we translate each row to latex. */
+static void TableWriteRow(int rowNum)
 {
-    int i;
-    int x, y;
-    cellStruct *localCellPtr;
-    char buf[rtfBufSiz];
+    nowBetweenCells = true;
 
-    x = cell->row;
-    y = cell->col;
-
-    i = 1;
-    localCellPtr = CellGetByPosition(x + i, y);
-    for (i = 1; localCellPtr->mergePar == previous; i++)
-        if (x + i > table.rows - 1)
-            break;
-        else
-            localCellPtr = CellGetByPosition(x + i, y);
-
-    snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s ", i - 1, cell->width, justificationList[paragraph.alignment]);
-    PutLitStr(buf);
-
-    table.multiRow = true;
-    requireMultirowPackage = true;
-}
-
-
-/*
- * Writes cell information for each cell. Each cell is defined in a multicolumn
- * environment for maximum flexibility. Useful when we have merged rows and columns.
- */
-static void CellWriteHeader(int cellNum)
-{
-    char buf[rtfBufSiz];
-    cellStruct *cell;
-
-    if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
-
-    cell = CellGetByIndex(cellNum);
-
-    if (table.multiCol) {
-        snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{", cell->columnSpan);
-        PutLitStr(buf);
-
-        if (cell->columnSpan < 1)
-            RTFMsg("* Warning: nonsensical table encountered...cell %d spans %d columns.\nProceed with caution!\n",
-                   cell->index, cell->columnSpan);
-
-        /* this check is to draw the left vertical boundary of the table */
-        if (cell->col == 0)
-            PutLitChar('|');
-
-        if (cell->mergePar == first) {
-            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}", cell->width, cell->width);
-            PutLitStr(buf);
-        } else {
-            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}%s", cell->width,cell->width, justificationList[paragraph.alignment]);
-            PutLitStr(buf);
-            InsertNewLine();
-        }
-        
-    } else if (cell->mergePar != first) {
-        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s ", cell->width, justificationList[paragraph.alignment]);
-        PutLitStr(buf);
-    } else {
-        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin} ", cell->width);
-        PutLitStr(buf);
-    }
-
-    if (cell->mergePar == first)
-        DoMergedCells(cell);
-
-    if (g_debug_table_writing)  {
-        snprintf(buf, rtfBufSiz, "[cell \\#%d]",cellNum);
-        PutLitStr(buf);
-    }
-}
-
-/* This is where we translate each table row to latex. */
-static void ProcessTableRow(int rowNum)
-{
-    boolean cellIsEmpty = true;
-    boolean firstCellInRow = true;
-    cellStruct *cell;
-
-    suppressLineBreak = true;
     while (RTFGetToken() != rtfEOF) {
 
-        /* these should have been processed during prescanning */
+        /* these will have been processed during prescanning */
         if (RTFCheckCM(rtfControl, rtfTblAttr))
             continue;
 
@@ -1607,40 +1642,8 @@ static void ProcessTableRow(int rowNum)
 
         /* token that signals the end of the current cell */
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfCell)) {
-            (table.cellCount)++;
-
-            if (cellIsEmpty) {
-                if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount - 1);
-                if (!firstCellInRow) PutLitStr(" & ");
-                cell = CellGetByIndex(table.cellCount - 1);
-                CellWriteHeader(table.cellCount - 1);
-                firstCellInRow = false;
-            } 
-            
-            StopTextStyle();
-            if (cell->mergePar == first)
-                PutLitChar('}');
-
-            PutLitStr("\\end{minipage}");
-                
-            if (table.multiCol)
-                PutLitChar('}');
-
-            cellIsEmpty = true;
-            paragraph.alignment = left;
+			EndCell();
             continue;
-        }
-
-        if (cellIsEmpty) {
-            if (rtfMajor == rtfDestination || rtfMajor ==rtfSpecialChar || rtfClass == rtfText) {
-                if (!firstCellInRow)
-                    PutLitStr(" & ");
-                
-                CellWriteHeader(table.cellCount);
-                cell = CellGetByIndex(table.cellCount);
-                cellIsEmpty = false;
-                firstCellInRow = false;
-            }
         }
 
         RTFRouteToken();
@@ -1694,7 +1697,7 @@ static void DrawTableRowLine(int rowNum)
 /* All right, the big monster. When we reach a table,
  * we don't know anything about it, i.e., number of rows
  * and columns, whether any rows or columns are merged,
- * etc. We have to prescan the table first, where we
+ * etc. We have to prescan the table first, to
  * get vital table parameters, and then come re-read the table to
  * convert the table for real.  This is necessary because
  * latex formats the table at the start.
@@ -1754,7 +1757,7 @@ static void DoTable(void)
         PutLitStr(buf);
 
         if (g_debug_table_writing) fprintf(stderr,"* Starting new row #%d\n",i);
-        ProcessTableRow(rowNum);
+        TableWriteRow(rowNum);
 
         PutLitStr("\\\\");
         InsertNewLine();

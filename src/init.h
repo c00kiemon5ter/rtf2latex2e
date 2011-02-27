@@ -27,6 +27,7 @@ enum prefName {
     pConvertParagraphMargin,     /* 20 */
     pConvertParagraphAlignment,
     pConvertTextNoTab,
+    pConvertTablesSimply,
     pLast
 };
 
