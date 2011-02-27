@@ -60,7 +60,7 @@ enum {left, center, right};
 enum {singleSpace, oneAndAHalfSpace, doubleSpace};
 typedef enum {tinySize, scriptSize, footNoteSize, smallSize, normalSize, 
             largeSize, LargeSize, LARGESize, giganticSize, GiganticSize} fontSize;
-enum cellMergeFlag {none, first, previous};
+enum cellVerticalMergeFlag {mergeNone, mergeTop, mergeAbove};
 
 typedef struct 
 {
@@ -129,7 +129,7 @@ typedef struct cellStruct
     double  width;
     int     columnSpan;
     int     index;
-    int     mergePar;   
+    int     verticalMerge;   
     boolean leftBorder;
     boolean rightBorder;
     boolean topBorder;
@@ -148,7 +148,7 @@ typedef struct
     int         cellsInRow[rtfBufSiz];
     int         *rightColumnBorders;
     int         cellMergePar;
-    boolean     multiCol;
+    boolean     usesMultiColumn;
     boolean     multiRow;
     boolean     limboCellLeftBorder;
     boolean     limboCellRightBorder;

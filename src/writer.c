@@ -785,9 +785,7 @@ static void setLineSpacing(void)
 }
 
 /*
- * This routine sets attributes for the detected cell and
- * adds it to the table.theCell list. Memory for cells is
- * allocated dynamically as each cell is encountered.
+ * Allocate memory for new table cell
  */
 static cellStruct * CellAllocate(void)
 {
@@ -802,6 +800,11 @@ static cellStruct * CellAllocate(void)
 	return cell;
 }
 
+/*
+ * This routine sets attributes for the detected cell and
+ * adds it to the table.theCell list. Memory for cells is
+ * allocated dynamically as each cell is encountered.
+ */
 static void CellInitialize(cellStruct *cell)
 {
     /*fprintf(stderr,"initializing cell %d, (x,y)=(%d,%d)\n",
@@ -816,7 +819,7 @@ static void CellInitialize(cellStruct *cell)
     cell->right        = rtfParam;
     cell->width        = cell->right - cell->left;
     cell->index        = table.cellCount;
-    cell->mergePar     = table.cellMergePar;
+    cell->verticalMerge     = table.cellMergePar;
 	cell->leftBorder   = table.limboCellLeftBorder;
 	cell->rightBorder  = table.limboCellRightBorder;
 	cell->topBorder    = table.limboCellTopBorder;
@@ -846,8 +849,8 @@ static cellStruct *CellGetByIndex(int cellNum)
 }
 
 /*
- * This function searches the cell list by cell coordinates
- * returns NULL if not found
+ * This function returns the cell from the current table 
+ * for the specified row and column
  */
 static cellStruct *CellGetByPosition(int therow, int thecol)
 {
@@ -865,7 +868,7 @@ static cellStruct *CellGetByPosition(int therow, int thecol)
 }
 
 /*
- * This routine counts the number of cells to be merged vertically and writes the
+ * Counts the number of rows to be merged vertically and writes the
  * corresponding \multirow statement.
  */
 static void CellMultirow(cellStruct * cell)
@@ -880,14 +883,17 @@ static void CellMultirow(cellStruct * cell)
 
     i = 1;
     localCellPtr = CellGetByPosition(x + i, y);
-    for (i = 1; localCellPtr->mergePar == previous; i++)
+    for (i = 1; localCellPtr->verticalMerge == mergeAbove; i++)
         if (x + i > table.rows - 1)
             break;
         else
             localCellPtr = CellGetByPosition(x + i, y);
 
-    snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s ", i - 1, cell->width, justificationList[paragraph.alignment]);
-    PutLitStr(buf);
+    if (prefs[pConvertTableAlignment]) 
+    	snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s ", i - 1, cell->width, justificationList[paragraph.alignment]);
+	else
+    	snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{ ", i - 1, cell->width);
+	PutLitStr(buf);
 
     table.multiRow = true;
     requireMultirowPackage = true;
@@ -903,50 +909,51 @@ static void NewCell(void)
     char buf[rtfBufSiz];
     cellStruct *cell;
     int cellNum;
-
-	if (!nowBetweenCells) return;
 	
 	cellNum = table.cellCount;
     cell = CellGetByIndex(cellNum);
 
     if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
 
-
     if (cell->col != 0) PutLitStr(" & ");
 
-    if (table.multiCol) {
-        snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{", cell->columnSpan);
+    if (cell->columnSpan == 1) {
+
+        if (prefs[pConvertTableAlignment]) {   
+			if (cell->verticalMerge != mergeTop) {
+				snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s ", cell->width, justificationList[paragraph.alignment]);
+				PutLitStr(buf);
+			} else {
+				snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin} ", cell->width);
+				PutLitStr(buf);
+			}
+		}
+
+    } else {
+
+        if (cell->col == 0) 
+        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{|p{%1.3fin}|}{", cell->columnSpan, cell->width);
+        else
+        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{p{%1.3fin}|}{",  cell->columnSpan, cell->width);
         PutLitStr(buf);
 
-        if (cell->columnSpan < 1)
-            RTFMsg("* Warning: nonsensical table encountered...cell %d spans %d columns.\nProceed with caution!\n",
-                   cell->index, cell->columnSpan);
-
-        /* this check is to draw the left vertical boundary of the table */
-        if (cell->col == 0)
-            PutLitChar('|');
-
-        if (cell->mergePar == first) {
-            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}", cell->width, cell->width);
-            PutLitStr(buf);
-        } else {
-            snprintf(buf, rtfBufSiz, "p{%1.3fin}|}{\\begin{minipage}[t]{%1.3fin}%s", cell->width,cell->width, justificationList[paragraph.alignment]);
-            PutLitStr(buf);
-            InsertNewLine();
+        if (prefs[pConvertTableAlignment]) {   
+			if (cell->verticalMerge == mergeTop) {
+				snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}", cell->width);
+				PutLitStr(buf);
+			} else {
+				snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s", cell->width, justificationList[paragraph.alignment]);
+				PutLitStr(buf);
+				InsertNewLine();
+			}
         }
         
-    } else if (cell->mergePar != first) {
-        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s ", cell->width, justificationList[paragraph.alignment]);
-        PutLitStr(buf);
-    } else {
-        snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin} ", cell->width);
-        PutLitStr(buf);
-    }
+    } 
 
-    if (cell->mergePar == first)
+    if (cell->verticalMerge == mergeTop)
         CellMultirow(cell);
 
-    if (g_debug_table_writing)  {
+    if (0 && g_debug_table_writing)  {
         snprintf(buf, rtfBufSiz, "[cell \\#%d]",cellNum);
         PutLitStr(buf);
     }
@@ -956,19 +963,21 @@ static void NewCell(void)
 static void EndCell(void)
 {
     cellStruct *cell;
+    
 	if (nowBetweenCells) {
 		if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount);
-		NewCell();
-	} 
+		NewCell();	
+	}
 	
 	StopTextStyle();
 	cell = CellGetByIndex(table.cellCount);
-	if (cell->mergePar == first)
+	if (cell->verticalMerge == mergeTop)
 		PutLitChar('}');
 
-	PutLitStr("\\end{minipage}");
+    if (prefs[pConvertTableAlignment])
+		PutLitStr("\\end{minipage}");
 		
-	if (table.multiCol)
+    if (cell->columnSpan > 1) 
 		PutLitChar('}');
 
 	(table.cellCount)++;
@@ -1321,7 +1330,7 @@ cellStruct *cell;
         CellInitialize(cell);
 
         table.theCell = cell;
-        table.cellMergePar = none;  /* reset */
+        table.cellMergePar = mergeNone;  /* reset */
         table.cellCount++;
         ((table.cellsInRow)[table.rows])++;
         (table.cols)++;
@@ -1331,10 +1340,10 @@ cellStruct *cell;
         table.limboCellBottomBorder = false;
         break;
     case rtfVertMergeRngFirst:
-        table.cellMergePar = first;
+        table.cellMergePar = mergeTop;
         break;
     case rtfVertMergeRngPrevious:
-        table.cellMergePar = previous;
+        table.cellMergePar = mergeAbove;
         break;
     case rtfCellBordTop:
         table.limboCellTopBorder = true;
@@ -1379,8 +1388,8 @@ static void InheritTableRowSettings(void)
         newCell->right = cell->right;
         newCell->width = cell->width;
         newCell->index = table.cellCount;
-        newCell->mergePar = cell->mergePar;
-        table.cellMergePar = none;
+        newCell->verticalMerge = cell->verticalMerge;
+        table.cellMergePar = mergeNone;
         table.theCell = newCell;
         table.cellCount++;
     }
@@ -1427,7 +1436,7 @@ static int GetColumnSpan(cellStruct * cell)
 static void PrescanTable(void)
 {
     int i, j, *rightBorders;
-    cellStruct *cell, *cell2;
+    cellStruct *cell, *previousCell;
     boolean gatherCellInfo, foundRow, lastRow;
 
     RTFParserState(SAVE_PARSER);
@@ -1595,15 +1604,14 @@ static void PrescanTable(void)
 
         cell->columnSpan = GetColumnSpan(cell);
         if (cell->columnSpan > 1)
-            table.multiCol = true;
+            table.usesMultiColumn = true;
 
-        /* correct the vertical cell position for any multicolumn cells */
-        if (cell->col > 0) {
-            cell2 = CellGetByIndex(i - 1);
-            cell->col = cell2->col + cell2->columnSpan;
-        }
+        /* update the column to account for multicolumn cells */
+        if (cell->col > 0) 
+            cell->col = previousCell->col + previousCell->columnSpan;
 
         cell->width = (double) (cell->right - cell->left) / rtfTpi;
+        previousCell = cell;
     }
 
     if (g_debug_table_prescan) {
@@ -1675,15 +1683,15 @@ static void DrawTableRowLine(int rowNum)
         theCell1 = CellGetByPosition(rowNum, cellPosition);
         cellPosition += theCell1->columnSpan;
 
-        if (theCell1->mergePar == none) {
+        if (theCell1->verticalMerge == mergeNone) {
             snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", theCell1->col + 1, theCell1->col + theCell1->columnSpan);
             PutLitStr(buf);
             continue;
         }
 
-        if (theCell1->mergePar == previous) {
+        if (theCell1->verticalMerge == mergeAbove) {
             theCell2 = CellGetByPosition(rowNum + 1, i);
-            if (theCell2->mergePar != previous) {
+            if (theCell2->verticalMerge != mergeAbove) {
                 snprintf(buf, rtfBufSiz, "\\cline{%d-%d}", theCell1->col + 1, theCell1->col + theCell1->columnSpan);
                 PutLitStr(buf);
             }
@@ -1728,24 +1736,22 @@ static void DoTable(void)
     PutLitStr("\\begin{");
     PutLitStr(convertTableName);
     PutLitStr("}{");
-    if (table.multiCol) {
+    if (0 && table.usesMultiColumn) {
         for (i = 0; i < table.cols; i++)
             PutLitChar('l');
         PutLitStr("}");
     } else {
+    	
         PutLitStr("|");
         for (i = 0; i < table.cols; i++) {
-            cell = CellGetByIndex(i);
-            if (cell->row > 0)
-                break;
-            snprintf(buf, 100, "p{%1.3fin}|", cell->width);
+        	float width = (float)(table.rightColumnBorders[i+1]-table.rightColumnBorders[i]) / rtfTpi;
+            snprintf(buf, 100, "p{%1.3fin}|", width);
             PutLitStr(buf);
         }
         PutLitStr("}");
     }
     PutLitStr("\n\\hline");
     InsertNewLine();
-
 
     paragraph.alignment = left; /* default justification */
 
@@ -1754,7 +1760,7 @@ static void DoTable(void)
 /*      printf ("* processing table rows...\n");        */
     for (i = 0; i < table.rows; i++) {
         snprintf(buf, 100, "%% ROW %d\n", i + 1);
-        PutLitStr(buf);
+//        PutLitStr(buf);
 
         if (g_debug_table_writing) fprintf(stderr,"* Starting new row #%d\n",i);
         TableWriteRow(rowNum);
@@ -1776,7 +1782,7 @@ static void DoTable(void)
 
     RTFFree((char *) table.rightColumnBorders);
     insideTable = false;       /* end of table */
-    table.multiCol = false;
+    table.usesMultiColumn = false;
     table.multiRow = false;
 
 }
@@ -3803,8 +3809,8 @@ int BeginLaTeXFile(void)
     object.shape = 0;
     table.cellCount = 0;
     table.theCell = NULL;
-    table.cellMergePar = none;
-    table.multiCol = false;
+    table.cellMergePar = mergeNone;
+    table.usesMultiColumn = false;
     table.multiRow = false;
     
     InitTextStyle();

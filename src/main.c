@@ -96,8 +96,8 @@ print_usage(void)
     fprintf(stdout, "      -t4              font formatting\n");
     fprintf(stdout, "      -t8              replace tabs with spaces\n");
     fprintf(stdout, "  -T #             table conversion options\n");
-    fprintf(stdout, "      -T1              resize tables to \\textwidth\n");
-    fprintf(stdout, "      -T2              ignore  color\n");
+    fprintf(stdout, "      -T1              keep column widths\n");
+    fprintf(stdout, "      -T2              keep column alignment\n");
     fprintf(stdout, "  -v               version information\n");
     fprintf(stdout, "\n");
     fprintf(stdout, "Examples:\n");
@@ -350,7 +350,9 @@ main(int argc, char **argv)
     }
 
     if (cli_table >= 0) {
-        prefs[pConvertTablesSimply] = cli_table & 1;
+        prefs[pConvertTableWidths]    = cli_table & 1;
+        prefs[pConvertTableAlignment] = cli_table & 2;
+        prefs[pConvertTableBorders]   = cli_table & 4;
     }
 
     for (fileCounter = 0; fileCounter < argc; fileCounter++) {

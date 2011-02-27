@@ -99,4 +99,6 @@ convertTableName	longtable
 convertPict	true
 
 #
-convertTablesSimply	true
+convertTableWidths true
+convertTableAlignment false
+convertTableBorders true

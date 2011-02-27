@@ -67,7 +67,9 @@ const char *prefString[] = {
     "convertParagraphMargin",     /* 20 */
     "convertParagraphAlignment",
     "convertTextNoTab",
-    "convertTablesSimply"
+    "convertTableWidths",
+    "convertTableAlignment",
+    "convertTableBorders"         /* 25 */
 };
 
 char *preambleFirstText = NULL;
