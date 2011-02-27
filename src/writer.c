@@ -99,6 +99,7 @@ int wrapCount = 0;
 int shapeObjectType;
 boolean nowBetweenParagraphs;
 boolean suppressLineBreak;
+boolean suppressSpaceBetweenParagraphs;
 boolean requireSetspacePackage;
 boolean requireTablePackage;
 boolean requireMultirowPackage;
@@ -806,7 +807,7 @@ static void NewParagraph(void)
     if (insideFootnote || insideTable || insideHeaderFooter) return;
 
     if (prefs[pConvertInterParagraphSpace]) {
-        if (current_vspace || paragraph.spaceBefore) {
+        if (!suppressSpaceBetweenParagraphs && (current_vspace || paragraph.spaceBefore) ) {
             snprintf(buff,100,"\\vspace{%dpt}\n", (current_vspace+paragraph.spaceBefore)/20);
             PutLitStr(buff);
             current_vspace = 0;
@@ -858,6 +859,7 @@ static void NewParagraph(void)
         }
     }
 
+	suppressSpaceBetweenParagraphs = false;
 }
 
 static void EndSection(void)
@@ -886,13 +888,13 @@ static void EndParagraph(void)
     if (CheckForBeginDocument()) return;
 
     StopTextStyle();
-
+	
     if (insideTable) {
         PutLitStr("\\linebreak\n");
         return;
     }
     
-    if (insideFootnote) {
+    if (insideFootnote && !suppressSpaceBetweenParagraphs) {
         InsertNewLine();
         InsertNewLine();
         return;
@@ -902,8 +904,10 @@ static void EndParagraph(void)
         PutLitStr(Style2LatexClose[paragraphWritten.styleIndex]);
         suppressLineBreak = false;
         paragraphWritten.styleIndex=-1;
-        InsertNewLine();
-        InsertNewLine();
+        if (!suppressSpaceBetweenParagraphs) {
+        	InsertNewLine();
+        	InsertNewLine();
+        }
         return;
     }
 
@@ -929,8 +933,10 @@ static void EndParagraph(void)
 		}
     }
 
-    InsertNewLine();
-    InsertNewLine();
+    if (!suppressSpaceBetweenParagraphs) {
+    	InsertNewLine();
+    	InsertNewLine();
+    }
     
     if (section.newSection) EndSection();
 }
@@ -2216,7 +2222,6 @@ static void IncludeGraphics(char *pictureType)
         NewParagraph();
         PutLitStr("%%\\begin{figure}[htbp]");
     } else {
-        // EndParagraph();
         displayFigure = 0;
         StopTextStyle();
     }
@@ -2759,8 +2764,11 @@ boolean ConvertEquationFile(char *objectFileName)
 
         if (nowBetweenParagraphs) {
             theEquation->m_inline = 0;
+			suppressSpaceBetweenParagraphs=true;
             EndParagraph();
-            NewParagraph();
+            if (lastCharWritten != '\n') 
+            	PutLitChar('\n');
+			current_vspace = 0;
             EqNo=EqnNumberString();
         } else {
             theEquation->m_inline = 1;
@@ -2777,11 +2785,6 @@ boolean ConvertEquationFile(char *objectFileName)
         /* this returns the translated equation in m_latex record */
         Eqn_TranslateObjectList(theEquation, ostream, 0);
             
-        PutLitStr(theEquation->m_latex_start);
-        PutLitStr(theEquation->m_latex);
-        PutLitStr(EqNo);
-        PutLitStr(theEquation->m_latex_end);
-        
         if (theEquation->m_inline){
             /* Add a space unless the last character was punctuation */
             if (lastCharWritten != ' ' && lastCharWritten != '(' && 
@@ -2789,6 +2792,11 @@ boolean ConvertEquationFile(char *objectFileName)
                    PutLitChar(' ');
         }
 
+        PutLitStr(theEquation->m_latex_start);
+        PutLitStr(theEquation->m_latex);
+        PutLitStr(EqNo);
+        PutLitStr(theEquation->m_latex_end);
+        
         if (theEquation->m_inline) {
             /* Add a space unless the next character is punctuation */
             RTFPeekToken();
@@ -2799,8 +2807,10 @@ boolean ConvertEquationFile(char *objectFileName)
                     rtfTextBuf[0]!=';' && 
                     rtfTextBuf[0]!=']' && 
                     rtfTextBuf[0]!=')') PutLitChar(' ');
-            }
+            } else 
+            	PutLitChar(' ');
         }
+
         Eqn_Destroy(theEquation);
     }
 
@@ -3364,7 +3374,7 @@ static void SpecialChar(void)
     switch (rtfMinor) {
     case rtfLine:
     case rtfPar:
-        if (nowBetweenParagraphs)
+        if (nowBetweenParagraphs && !suppressSpaceBetweenParagraphs)
             current_vspace += abs(paragraph.lineSpacing);
         nowBetweenParagraphs = true;
         break;
@@ -3801,6 +3811,7 @@ int BeginLaTeXFile(void)
     paragraphWritten = paragraph;
     nowBetweenParagraphs = true;
     suppressLineBreak = false;
+	suppressSpaceBetweenParagraphs=false;
 
     /* install class callbacks */
     RTFSetClassCallback(rtfText, TextClass);
