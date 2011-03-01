@@ -597,7 +597,7 @@ static void WriteTextStyle(void)
     
     if (prefs[pConvertTextSize] && textStyleWritten.fontSize != textStyle.fontSize) {
         if (textStyle.fontSize != normalSize) {
-            snprintf(buf, 100, "{%s ", fontSizeList[textStyle.fontSize]);
+            snprintf(buf, 100, "{%s{}", fontSizeList[textStyle.fontSize]);
             PutLitStr(buf);
         }
         textStyleWritten.fontSize=textStyle.fontSize;
@@ -890,101 +890,14 @@ static void CellMultirow(cellStruct * cell)
             localCellPtr = CellGetByPosition(x + i, y);
 
     if (prefs[pConvertTableAlignment]) 
-    	snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s ", i - 1, cell->width, justificationList[paragraph.alignment]);
+    	snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s{}", i - 1, cell->width, justificationList[paragraph.alignment]);
 	else
     	snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{ ", i - 1, cell->width);
-	PutLitStr(buf);
+//	PutLitStr(buf);
 
     table.multiRow = true;
     requireMultirowPackage = true;
 }
-
-/*
- * Writes cell information for each cell. Similiar to NewParagraph()
- * Each cell is defined in a multicolumn
- * environment for maximum flexibility. Useful when we have merged rows and columns.
- */
-static void NewCell(void)
-{
-    char buf[rtfBufSiz];
-    cellStruct *cell;
-    int cellNum;
-	
-	cellNum = table.cellCount;
-    cell = CellGetByIndex(cellNum);
-
-    if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
-
-    if (cell->col != 0) PutLitStr(" & ");
-
-    if (cell->columnSpan == 1) {
-
-        if (prefs[pConvertTableAlignment]) {   
-			if (cell->verticalMerge != mergeTop) {
-				snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s ", cell->width, justificationList[paragraph.alignment]);
-				PutLitStr(buf);
-			} else {
-				snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin} ", cell->width);
-				PutLitStr(buf);
-			}
-		}
-
-    } else {
-
-        if (cell->col == 0) 
-        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{|p{%1.3fin}|}{", cell->columnSpan, cell->width);
-        else
-        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{p{%1.3fin}|}{",  cell->columnSpan, cell->width);
-        PutLitStr(buf);
-
-        if (prefs[pConvertTableAlignment]) {   
-			if (cell->verticalMerge == mergeTop) {
-				snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}", cell->width);
-				PutLitStr(buf);
-			} else {
-				snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s", cell->width, justificationList[paragraph.alignment]);
-				PutLitStr(buf);
-				InsertNewLine();
-			}
-        }
-        
-    } 
-
-    if (cell->verticalMerge == mergeTop)
-        CellMultirow(cell);
-
-    if (0 && g_debug_table_writing)  {
-        snprintf(buf, rtfBufSiz, "[cell \\#%d]",cellNum);
-        PutLitStr(buf);
-    }
-    nowBetweenCells = false;
-}
-
-static void EndCell(void)
-{
-    cellStruct *cell;
-    
-	if (nowBetweenCells) {
-		if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount);
-		NewCell();	
-	}
-	
-	StopTextStyle();
-	cell = CellGetByIndex(table.cellCount);
-	if (cell->verticalMerge == mergeTop)
-		PutLitChar('}');
-
-    if (prefs[pConvertTableAlignment])
-		PutLitStr("\\end{minipage}");
-		
-    if (cell->columnSpan > 1) 
-		PutLitChar('}');
-
-	(table.cellCount)++;
-	nowBetweenCells = true;
-	paragraph.alignment = left;
-}
-
 
 static void NewSection(void)
 {
@@ -1007,9 +920,9 @@ static void NewParagraph(void)
 
     nowBetweenParagraphs = false;
 
-    if (insideFootnote || insideTable || insideHeaderFooter) return;
+    if (insideFootnote || insideHeaderFooter) return;
 
-    if (prefs[pConvertInterParagraphSpace]) {
+    if (prefs[pConvertInterParagraphSpace] && !insideTable) {
         if (!suppressSpaceBetweenParagraphs && (current_vspace || paragraph.spaceBefore) ) {
             snprintf(buff,100,"\\vspace{%dpt}\n", (current_vspace+paragraph.spaceBefore)/20);
             PutLitStr(buff);
@@ -1017,7 +930,7 @@ static void NewParagraph(void)
         }
     }
 
-    if (section.newSection) NewSection();
+    if (section.newSection && !insideTable) NewSection();
     
     if (prefs[pConvertParagraphStyle] && paragraph.styleIndex != -1) {
         PutLitStr(Style2LatexOpen[paragraph.styleIndex]);
@@ -1026,7 +939,8 @@ static void NewParagraph(void)
         return;
     }
 
-    if (prefs[pConvertParagraphAlignment]) {
+    if ((!insideTable && prefs[pConvertParagraphAlignment]) || 
+        ( insideTable && prefs[pConvertTableAlignment]    )) {
         if (paragraphWritten.alignment != paragraph.alignment) {
     
             if (paragraph.alignment == right)
@@ -1038,6 +952,8 @@ static void NewParagraph(void)
             paragraphWritten.alignment = paragraph.alignment;
         }
     }
+
+    if (insideTable) return;
 
     setLineSpacing();
 
@@ -1078,11 +994,10 @@ static void EndSection(void)
 
 
 /* 
- * Everything that is emitted is in some sort of paragraph
  * This routine just closes the environments that have been written
  */
 
-static void EndParagraph(void)
+static void FinalizeParagraph(void)
 {
     char buf[rtfBufSiz];
 
@@ -1092,29 +1007,14 @@ static void EndParagraph(void)
 
     StopTextStyle();
 	
-    if (insideTable) {
-        PutLitStr("\\linebreak\n");
-        return;
-    }
-    
-    if (insideFootnote && !suppressSpaceBetweenParagraphs) {
-        InsertNewLine();
-        InsertNewLine();
-        return;
-    }
-
     if (prefs[pConvertParagraphStyle] && (paragraphWritten.styleIndex != -1)) {
         PutLitStr(Style2LatexClose[paragraphWritten.styleIndex]);
         suppressLineBreak = false;
         paragraphWritten.styleIndex=-1;
-        if (!suppressSpaceBetweenParagraphs) {
-        	InsertNewLine();
-        	InsertNewLine();
-        }
         return;
     }
 
-    if (paragraphWritten.alignment != paragraph.alignment) {
+    if (paragraphWritten.alignment != paragraph.alignment || (insideTable && nowBetweenCells)) {
 
         if (g_debug_par_start) {
             snprintf(buf, rtfBufSiz, "[oldalign=%d, newalign=%d]", paragraphWritten.alignment, paragraph.alignment);
@@ -1135,7 +1035,29 @@ static void EndParagraph(void)
 			paragraphWritten.lineSpacing = -900;
 		}
     }
+    
+    if (section.newSection) EndSection();
+}
 
+/* 
+ * Closes last paragraph and insert some line feeds.
+ */
+
+static void EndParagraph(void)
+{
+    FinalizeParagraph();
+	
+    if (insideFootnote && !suppressSpaceBetweenParagraphs) {
+        InsertNewLine();
+        InsertNewLine();
+        return;
+    }
+
+    if (insideTable) {
+        PutLitStr("\\linebreak\n");
+        return;
+    }
+    
     if (!suppressSpaceBetweenParagraphs) {
     	InsertNewLine();
     	InsertNewLine();
@@ -1143,6 +1065,98 @@ static void EndParagraph(void)
     
     if (section.newSection) EndSection();
 }
+
+static void NewParagraphInCell(void)
+{
+}
+
+static void FinalizeParagraphInCell(void)
+{
+}
+
+static void EndParagraphInCell(void)
+{
+}
+/*
+ * Writes cell information for each cell. Similiar to NewParagraph()
+ * Each cell is defined in a multicolumn
+ * environment for maximum flexibility. Useful when we have merged rows and columns.
+ */
+static void NewCell(void)
+{
+    char buf[rtfBufSiz];
+    cellStruct *cell;
+    int cellNum;
+	
+	cellNum = table.cellCount;
+    cell = CellGetByIndex(cellNum);
+
+    if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
+
+    if (cell->col != 0) PutLitStr(" & ");
+
+    if (cell->columnSpan == 1) {
+
+        if (prefs[pConvertTableAlignment]) {   
+//			snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s{}", cell->width, justificationList[paragraph.alignment]);
+			snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}", cell->width);
+			PutLitStr(buf);
+		}
+
+    } else {
+
+        if (cell->col == 0) 
+        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{|p{%1.3fin}|}{", cell->columnSpan, cell->width);
+        else
+        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{p{%1.3fin}|}{",  cell->columnSpan, cell->width);
+        PutLitStr(buf);
+
+        if (prefs[pConvertTableAlignment]) {   
+			snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}", cell->width);
+//			snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s{}", cell->width, justificationList[paragraph.alignment]);
+			PutLitStr(buf);
+			InsertNewLine();
+        }
+        
+    } 
+
+//    if (cell->verticalMerge == mergeTop)
+//        CellMultirow(cell);
+
+    if (0 && g_debug_table_writing)  {
+        snprintf(buf, rtfBufSiz, "[cell \\#%d]",cellNum);
+        PutLitStr(buf);
+    }
+    nowBetweenCells = false;
+	NewParagraph();
+}
+
+static void EndCell(void)
+{
+    cellStruct *cell;
+    
+	if (nowBetweenCells) {
+		if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount);
+		NewCell();	
+	}
+	
+	nowBetweenCells = true;
+	FinalizeParagraph();
+//	StopTextStyle();
+	cell = CellGetByIndex(table.cellCount);
+//	if (cell->verticalMerge == mergeTop)
+	//	PutLitChar('}');
+
+    if (prefs[pConvertTableAlignment])
+		PutLitStr("\\end{minipage}");
+		
+    if (cell->columnSpan > 1) 
+		PutLitChar('}');
+
+	(table.cellCount)++;
+//	paragraph.alignment = left;
+}
+
 
 
 static void setPreamblePackages(int ignoreUsedColor)
@@ -1753,7 +1767,7 @@ static void DoTable(void)
     PutLitStr("\n\\hline");
     InsertNewLine();
 
-    paragraph.alignment = left; /* default justification */
+//    paragraph.alignment = left; /* default justification */
 
     rowNum = 0;
 
@@ -1769,7 +1783,7 @@ static void DoTable(void)
         InsertNewLine();
         if (i < (table.rows - 1))
             DrawTableRowLine(rowNum);
-        paragraph.alignment = left;
+//        paragraph.alignment = left;
         rowNum++;
 
         InitTextStyle();
@@ -2771,19 +2785,21 @@ boolean ConvertEquationFile(char *objectFileName)
             return (false);
         }
 
-        if (nowBetweenParagraphs) {
-            theEquation->m_inline = 0;
+		theEquation->m_inline = 1;
+		EqNo=NULL;
+		
+		if (insideTable) {
+			if (nowBetweenCells) NewCell();
+		} else if (nowBetweenParagraphs) {
+			theEquation->m_inline = 0;
 			suppressSpaceBetweenParagraphs=true;
-            EndParagraph();
-            if (lastCharWritten != '\n') 
-            	PutLitChar('\n');
+			EndParagraph();
+			if (lastCharWritten != '\n') 
+				PutLitChar('\n');
 			current_vspace = 0;
-            EqNo=EqnNumberString();
-        } else {
-            theEquation->m_inline = 1;
-            EqNo=NULL;
-        }
-
+			EqNo=EqnNumberString();
+		}
+ 
         if (g_eqn_insert_name) {
             PutLitStr("\\fbox{file://");
             PutEscapedLitStr(objectFileName);
