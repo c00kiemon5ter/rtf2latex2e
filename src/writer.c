@@ -139,7 +139,8 @@ int g_debug_par_start       = 0;
 int g_debug_table_prescan   = 0;
 int g_debug_table_writing   = 0;
 int g_debug_char_style      = 0;
-
+int textWidth               = 345*20; /* \textwidth for 10pt article size in twips*/
+int latexColumnSeparation   = 12 *20;  /*default intercolumn separation of tabular in twips */
 char *UnicodeSymbolFontToLatex[];
 char *UnicodeGreekToLatex[];
 
@@ -809,21 +810,20 @@ static void CellInitialize(cellStruct *cell)
 {
     /*fprintf(stderr,"initializing cell %d, (x,y)=(%d,%d)\n",
               table.cellCount, table.rows, (table.cellsInRow)[table.rows]);*/
-    cell->nextCell       = table.theCell;
-    cell->row            = table.rows;
-    cell->col            = (table.cellsInRow)[table.rows];
+    cell->nextCell         = table.theCell;
+    cell->row              = table.rows;
+    cell->col              = (table.cellsInRow)[table.rows];
     if (table.cols == 0 || table.theCell == NULL)
-        cell->left = table.leftEdge;
+        cell->originalLeft = table.leftEdge;
     else
-        cell->left = (table.theCell)->right;
-    cell->right        = rtfParam;
-    cell->width        = cell->right - cell->left;
-    cell->index        = table.cellCount;
-    cell->verticalMerge     = table.cellMergePar;
-	cell->leftBorder   = table.limboCellLeftBorder;
-	cell->rightBorder  = table.limboCellRightBorder;
-	cell->topBorder    = table.limboCellTopBorder;
-	cell->bottomBorder = table.limboCellBottomBorder;
+        cell->originalLeft = (table.theCell)->originalRight;
+    cell->originalRight    = rtfParam;
+    cell->index            = table.cellCount;
+    cell->verticalMerge    = table.cellMergePar;
+	cell->leftBorder       = table.limboCellLeftBorder;
+	cell->rightBorder      = table.limboCellRightBorder;
+	cell->topBorder        = table.limboCellTopBorder;
+	cell->bottomBorder     = table.limboCellBottomBorder;
 }
 
 /*
@@ -867,6 +867,15 @@ static cellStruct *CellGetByPosition(int therow, int thecol)
     return NULL;
 }
 
+/* returns the width of the current cell in points*/
+static int CellWidth(cellStruct *cell)
+{
+	int left = (table.rightColumnBorders)[cell->col];
+	int right = (table.rightColumnBorders)[cell->col+cell->columnSpan];
+	
+	return (right-left)/20;
+}
+
 /*
  * Counts the number of rows to be merged vertically and writes the
  * corresponding \multirow statement.
@@ -890,9 +899,9 @@ static void CellMultirow(cellStruct * cell)
             localCellPtr = CellGetByPosition(x + i, y);
 
     if (prefs[pConvertTableAlignment]) 
-    	snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{%s{}", i - 1, cell->width, justificationList[paragraph.alignment]);
+    	snprintf(buf, rtfBufSiz, "\\multirow{%d}{%dpt}{%s{}", i - 1, CellWidth(cell), justificationList[paragraph.alignment]);
 	else
-    	snprintf(buf, rtfBufSiz, "\\multirow{%d}{%1.3fin}{ ", i - 1, cell->width);
+    	snprintf(buf, rtfBufSiz, "\\multirow{%d}{%dpt}{ ", i - 1, CellWidth(cell));
 //	PutLitStr(buf);
 
     table.multiRow = true;
@@ -1014,7 +1023,8 @@ static void FinalizeParagraph(void)
         return;
     }
 
-    if (paragraphWritten.alignment != paragraph.alignment || (insideTable && nowBetweenCells)) {
+    if ( (!insideTable && paragraphWritten.alignment != paragraph.alignment) || 
+         (insideTable && prefs[pConvertTableAlignment] && nowBetweenCells)) {
 
         if (g_debug_par_start) {
             snprintf(buf, rtfBufSiz, "[oldalign=%d, newalign=%d]", paragraphWritten.alignment, paragraph.alignment);
@@ -1077,6 +1087,7 @@ static void FinalizeParagraphInCell(void)
 static void EndParagraphInCell(void)
 {
 }
+
 /*
  * Writes cell information for each cell. Similiar to NewParagraph()
  * Each cell is defined in a multicolumn
@@ -1098,22 +1109,22 @@ static void NewCell(void)
     if (cell->columnSpan == 1) {
 
         if (prefs[pConvertTableAlignment]) {   
-//			snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s{}", cell->width, justificationList[paragraph.alignment]);
-			snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}", cell->width);
+//			snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%dpt}%s{}", CellWidth(cell), justificationList[paragraph.alignment]);
+			snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%dpt}", CellWidth(cell));
 			PutLitStr(buf);
 		}
 
     } else {
 
         if (cell->col == 0) 
-        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{|p{%1.3fin}|}{", cell->columnSpan, cell->width);
+        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{|p{%dpt}|}{", cell->columnSpan, CellWidth(cell));
         else
-        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{p{%1.3fin}|}{",  cell->columnSpan, cell->width);
+        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{p{%dpt}|}{",  cell->columnSpan, CellWidth(cell));
         PutLitStr(buf);
 
         if (prefs[pConvertTableAlignment]) {   
-			snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}", cell->width);
-//			snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%1.3fin}%s{}", cell->width, justificationList[paragraph.alignment]);
+			snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%dpt}", CellWidth(cell));
+//			snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%dpt}%s{}", CellWidth(cell), justificationList[paragraph.alignment]);
 			PutLitStr(buf);
 			InsertNewLine();
         }
@@ -1398,9 +1409,8 @@ static void InheritTableRowSettings(void)
         newCell->nextCell = table.theCell;
         newCell->row   = prevRow + 1;
         newCell->col   = cell->col;
-        newCell->left  = cell->left;
-        newCell->right = cell->right;
-        newCell->width = cell->width;
+        newCell->originalLeft  = cell->originalLeft;
+        newCell->originalRight = cell->originalRight;
         newCell->index = table.cellCount;
         newCell->verticalMerge = cell->verticalMerge;
         table.cellMergePar = mergeNone;
@@ -1422,16 +1432,22 @@ static int GetColumnSpan(cellStruct * cell)
 
 	/* index of border that equals the left side of the cell */
     for (i = 0; i < table.cols; i++) {
-        if ((table.rightColumnBorders)[i] == cell->left)
+        if ((table.rightColumnBorders)[i] == cell->originalLeft)
             break;
     }
 
 	/* index of border that equals the right side of the cell */
     for (j = i; j < table.cols + 1; j++){
-        if ((table.rightColumnBorders)[j] == cell->right)
+        if ((table.rightColumnBorders)[j] == cell->originalRight)
             break;
     }
 
+//	fprintf(stderr, "sought (%5d,%5d), found (%5d,%5d), for (%d,%d)\n",
+	//        cell->originalLeft, cell->originalRight,
+	  //      (table.rightColumnBorders)[i],
+	    //    (table.rightColumnBorders)[j],
+	      //  i,j);
+	        
     return (j - i);
 }
 
@@ -1449,7 +1465,7 @@ static int GetColumnSpan(cellStruct * cell)
  */
 static void PrescanTable(void)
 {
-    int i, j, *rightBorders;
+    int i, j, *rightBorders, maxCol;
     cellStruct *cell, *previousCell;
     boolean gatherCellInfo, foundRow, lastRow;
 
@@ -1574,19 +1590,19 @@ static void PrescanTable(void)
         boolean cellBorderExistsAlready = false;
 
         for (i = 0; i < table.cols; i++) {
-            if (rightBorders[i] == cell->right) {
+            if (rightBorders[i] == cell->originalRight) {
                 cellBorderExistsAlready=true;
                 break;
             }
         }
 
         if (!cellBorderExistsAlready) {
-            rightBorders[table.cols] = cell->right;
+            rightBorders[table.cols] = cell->originalRight;
             (table.cols)++;
         }
 
         if (cell->col == 0)
-            cell->left = table.leftEdge;
+            cell->originalLeft = table.leftEdge;
     }
 
     /* since rightBorders is too large, allocate correct size array for column border entries. */
@@ -1613,25 +1629,37 @@ static void PrescanTable(void)
      * fill in column spans for each cell.  GetColumnSpan uses table.rightColumnBorders
      * to decide if a cell spans multiple columns.
      */
+    maxCol = 0;
+    
     for (i = 0; i < table.cellCount; i++) {
         cell = CellGetByIndex(i);
 
         cell->columnSpan = GetColumnSpan(cell);
-        if (cell->columnSpan > 1)
-            table.usesMultiColumn = true;
 
         /* update the column to account for multicolumn cells */
         if (cell->col > 0) 
             cell->col = previousCell->col + previousCell->columnSpan;
 
-        cell->width = (double) (cell->right - cell->left) / rtfTpi;
         previousCell = cell;
+    }
+	
+	/* adjust spacing for extra intercolumn space added by latex */
+    for (i = 1; i <= table.cols; i++)
+        (table.rightColumnBorders)[i] -= i*latexColumnSeparation;
+        
+    /* if the table is wider than textWidth, scale it appropriately */
+	if (table.rightColumnBorders[table.cols]+latexColumnSeparation*table.cols > textWidth) {
+		float scale = 1.0*(textWidth-latexColumnSeparation*table.cols)/table.rightColumnBorders[table.cols];
+
+        for (i = 1; i <= table.cols; i++)
+        	table.rightColumnBorders[i] = (int) (table.rightColumnBorders[i]*scale+0.5);
     }
 
     if (g_debug_table_prescan) {
         for (cell = table.theCell; cell != NULL; cell = cell->nextCell) {
             fprintf(stderr,"* cell #%3d (%2d, %2d) ", cell->index, cell->row, cell->col);
-            fprintf(stderr,"left=%5d right=%5d ", cell->left, cell->right);
+            fprintf(stderr,"left=%3dpt right=%3dpt ", cell->originalLeft/20, cell->originalRight/20);
+            fprintf(stderr,"width=%3dpt ", CellWidth(cell));
             fprintf(stderr,"and spans %d columns\n", cell->columnSpan);
         }
     }
@@ -1641,13 +1669,13 @@ static void PrescanTable(void)
 }
 
 /* This is where we translate each row to latex. */
-static void TableWriteRow(int rowNum)
+static void TableWriteRow(void)
 {
     nowBetweenCells = true;
 
     while (RTFGetToken() != rtfEOF) {
 
-        /* these will have been processed during prescanning */
+        /* these have already been processed during prescanning */
         if (RTFCheckCM(rtfControl, rtfTblAttr))
             continue;
 
@@ -1658,7 +1686,7 @@ static void TableWriteRow(int rowNum)
             return;
         }
 
-        /* token that signals end of lastrow */
+        /* token that signals last row in table */
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfLastRow)) 
         	continue;
 
@@ -1716,20 +1744,35 @@ static void DrawTableRowLine(int rowNum)
 }
 
 
-/* All right, the big monster. When we reach a table,
- * we don't know anything about it, i.e., number of rows
- * and columns, whether any rows or columns are merged,
- * etc. We have to prescan the table first, to
- * get vital table parameters, and then come re-read the table to
- * convert the table for real.  This is necessary because
- * latex formats the table at the start.
+/* 
+ * When we reach a table, we don't know anything about it.  Initially,
+ * we need to know the number of columns and width of each column. Later,
+ * we need to know if a cell spans multiple columns.  One day, the
+ * borders on cells might be used ... but not now.
+ *
+ * Therefore, we prescan the data and collect information about every 
+ * cell into a linked list of cells.  The table structure is filled in
+ * with information that describes the table as a whole and a pointer
+ * to the linked list of cells.
+ *
+ * After prescanning the table, the entire table is reread, but this time
+ * the contents of each cell are translated.
  */
 static void DoTable(void)
 {
-    int i, rowNum;
+    int i;
     cellStruct *cell;
+    int oldwritten, oldparagraph;
     char buf[100];
 
+    EndParagraph();
+    NewParagraph();
+
+	oldwritten = paragraphWritten.alignment;
+	oldparagraph = paragraph.alignment;
+	paragraphWritten.alignment = left;
+	paragraph.alignment = left;
+	
     requireTablePackage = true;
 
     /* throw away old cell information lists */
@@ -1741,64 +1784,42 @@ static void DoTable(void)
 
     PrescanTable();
     table.cellCount = 0;
-
-    EndParagraph();
-    NewParagraph();
-
     insideTable = true;
 
     PutLitStr("\\begin{");
     PutLitStr(convertTableName);
     PutLitStr("}{");
-    if (0 && table.usesMultiColumn) {
-        for (i = 0; i < table.cols; i++)
-            PutLitChar('l');
-        PutLitStr("}");
-    } else {
-    	
-        PutLitStr("|");
-        for (i = 0; i < table.cols; i++) {
-        	float width = (float)(table.rightColumnBorders[i+1]-table.rightColumnBorders[i]) / rtfTpi;
-            snprintf(buf, 100, "p{%1.3fin}|", width);
-            PutLitStr(buf);
-        }
-        PutLitStr("}");
-    }
-    PutLitStr("\n\\hline");
-    InsertNewLine();
 
-//    paragraph.alignment = left; /* default justification */
+	PutLitStr("|");
+	for (i = 0; i < table.cols; i++) {
+		snprintf(buf, 100, "p{%dpt}|", (table.rightColumnBorders[i+1]-table.rightColumnBorders[i]) / 20);
+		PutLitStr(buf);
+	}
+	PutLitStr("}\n\\hline\n");
 
-    rowNum = 0;
-
-/*      printf ("* processing table rows...\n");        */
     for (i = 0; i < table.rows; i++) {
-        snprintf(buf, 100, "%% ROW %d\n", i + 1);
-//        PutLitStr(buf);
+        if (g_debug_table_writing) fprintf(stderr,"* Starting row #%d\n",i+1);
+        TableWriteRow();
 
-        if (g_debug_table_writing) fprintf(stderr,"* Starting new row #%d\n",i);
-        TableWriteRow(rowNum);
+        PutLitStr("\\\\\n");
 
-        PutLitStr("\\\\");
-        InsertNewLine();
         if (i < (table.rows - 1))
-            DrawTableRowLine(rowNum);
-//        paragraph.alignment = left;
-        rowNum++;
-
-        InitTextStyle();
+            DrawTableRowLine(i);
     }
 
     PutLitStr("\\hline\n");
-    snprintf(buf, 100, "\\end{%s}\n", convertTableName);
-    PutLitStr(buf);
+    PutLitStr("\\end{");
+    PutLitStr(convertTableName);
+    PutLitStr("}");
+
     nowBetweenParagraphs = true;
 
     RTFFree((char *) table.rightColumnBorders);
     insideTable = false;       /* end of table */
-    table.usesMultiColumn = false;
     table.multiRow = false;
 
+	paragraphWritten.alignment = oldwritten;
+	paragraph.alignment = oldparagraph;
 }
 
 /* set paragraph attributes that might be useful */
@@ -3826,7 +3847,6 @@ int BeginLaTeXFile(void)
     table.cellCount = 0;
     table.theCell = NULL;
     table.cellMergePar = mergeNone;
-    table.usesMultiColumn = false;
     table.multiRow = false;
     
     InitTextStyle();

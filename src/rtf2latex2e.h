@@ -124,9 +124,8 @@ typedef struct cellStruct
 {
     int     row;
     int     col;
-    int     left;
-    int     right;
-    double  width;
+    int     originalLeft;
+    int     originalRight;
     int     columnSpan;
     int     index;
     int     verticalMerge;   
@@ -148,7 +147,6 @@ typedef struct
     int         cellsInRow[rtfBufSiz];
     int         *rightColumnBorders;
     int         cellMergePar;
-    boolean     usesMultiColumn;
     boolean     multiRow;
     boolean     limboCellLeftBorder;
     boolean     limboCellRightBorder;
