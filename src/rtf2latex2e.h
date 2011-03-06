@@ -76,7 +76,7 @@ typedef struct
     int     lly;
     int     urx;
     int     ury;
-    char    name[rtfBufSiz];
+    char    *name;
     int     cropTop;
     int     cropBottom;
     int     cropLeft;

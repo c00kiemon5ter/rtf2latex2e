@@ -1076,18 +1076,6 @@ static void EndParagraph(void)
     if (section.newSection) EndSection();
 }
 
-static void NewParagraphInCell(void)
-{
-}
-
-static void FinalizeParagraphInCell(void)
-{
-}
-
-static void EndParagraphInCell(void)
-{
-}
-
 /*
  * Writes cell information for each cell. Similiar to NewParagraph()
  * Each cell is defined in a multicolumn
@@ -2097,30 +2085,41 @@ static void WritePICTHeader(FILE * pictureFile)
         fputc(' ', pictureFile);
 }
 
+static char * NewFigureName(char *fileSuffix)
+{
+    char dummyBuf[rtfBufSiz];
+    char *name;
+
+	if (fileSuffix && fileSuffix[0] == '.') fileSuffix++;
+
+    /* get input file name and create corresponding picture file name */	
+    name = strdup(RTFGetOutputName());
+    if (strlen(name) > 4)
+    	name[strlen(name)-4] = '\0';
+    	
+    if (fileSuffix == NULL)
+    	snprintf(dummyBuf, rtfBufSiz, "%s-fig%03d.???", name, picture.count);
+    else
+    	snprintf(dummyBuf, rtfBufSiz, "%s-fig%03d.%s", name, picture.count, fileSuffix);
+
+    free(name);
+    return strdup(dummyBuf);
+}
+
 /* start reading hex encoded picture */
 static void ConvertHexPicture(char *fileSuffix)
 {
     FILE *pictureFile;
-    char dummyBuf[rtfBufSiz];
     char pictByte;
     int groupEnd = false;
     short hexNumber;
     short hexEvenOdd = 0;       /* check if we read in an even number of hex characters */
 
-    strcpy(picture.name, "");
-
-    /* increment the picture counter and clear dummy buffer */
+    /* increment the picture counter */
     (picture.count)++;
-    strcpy(dummyBuf, "");
 
-    /* get input file name and create corresponding picture file name */
-    if (fileSuffix == NULL)
-        strcpy(fileSuffix, "???");
-
-    strcpy(picture.name, RTFGetOutputName());
-    picture.name[strlen(picture.name)-4] = '\0';
-    snprintf(dummyBuf, rtfBufSiz, "-fig%03d.%s", picture.count, fileSuffix);
-    strcat(picture.name, dummyBuf);
+    if (picture.name) free(picture.name);
+    picture.name=NewFigureName(fileSuffix);
 
     /* open picture file */
     if ((pictureFile = fopen(picture.name, "wb")) == NULL)
@@ -2200,9 +2199,10 @@ static void IncludeGraphics(char *pictureType)
 
             if (!err) {
              //   unlink(picture.name);
-                strcpy(picture.name,pdfname);
-            }
-            free(pdfname);
+             	free(picture.name);
+             	picture.name = pdfname;
+            } else
+            	free(pdfname);
         }
     }
 
@@ -2217,9 +2217,10 @@ static void IncludeGraphics(char *pictureType)
 
             if (!err) {
               //  unlink(picture.name);
-                strcpy(picture.name,pdfname);
-            }
-            free(pdfname);
+             	free(picture.name);
+             	picture.name = pdfname;
+            } else
+            	free(pdfname);
         }
     }
 #endif
@@ -2235,9 +2236,10 @@ static void IncludeGraphics(char *pictureType)
 
             if (!err) {
                 unlink(picture.name);
-                strcpy(picture.name,pdfname);
-            }
-            free(pdfname);
+             	free(picture.name);
+             	picture.name = pdfname;
+            } else
+            	free(pdfname);
         }
     }
 #endif
@@ -2358,7 +2360,46 @@ static void ReadPicture(void)
     picture.goalHeight = 0;
     picture.scaleX = 100;
     picture.scaleY = 100;
-    strcpy(picture.name, "");
+    picture.name = NULL;
+}
+
+static char * FileDirectory(char *path)
+{
+	char *s, *dir;
+	
+	if (!path) return NULL;
+	
+	dir = strdup(path);
+	s = strrchr(dir,PATH_SEP);
+	if (s) {
+		*s ='\0';
+		return dir;
+	}
+	
+	free(dir);
+	return NULL;
+}
+
+static void CopyFile(char *in_path, char *out_path)
+{
+    FILE *in, *out;
+    char buffer[512];
+    size_t numr;
+
+	in = fopen(in_path,"rb");
+	out = fopen(out_path,"wb");
+	
+	if (!in || !out) {
+		fprintf(stderr, "failed to copy '%s' as '%s'\n", in_path, out_path);
+		return;
+	}
+	
+    while(!feof(in)){  
+        numr = fread(buffer,1,512,in);
+        fwrite(buffer,1,numr,out);
+    }
+    fclose(in);
+    fclose(out);
 }
 
 /* 
@@ -2369,42 +2410,53 @@ static void ReadPicture(void)
  */
 static void ReadNextGraphic(void)
 {
-    char filename[100], buff[100];
-    int i=0;
+    char *filename, *rtf_path, *in_path, *in_dir, *out_path;
+    char *out_name, *fileSuffix, buff[100];
     int width=0;
     int height=0;
 
     requireGraphicxPackage = true;
+	if (nowBetweenParagraphs)
+		NewParagraph();
+		
+	filename = RTFGetTextWord();
+	
+	if (!filename) {
+		RTFSkipGroup();
+		return;
+	}
+	
+	/* determine the directory containing the rtf file */
+    rtf_path = RTFGetInputName();
+    in_dir  = FileDirectory(rtf_path);
 
-    /* skip to first letter of file name */
-    RTFGetToken();
-    while (rtfClass == rtfText && rtfMajor == ' ')
-        RTFGetToken();  
+	/* now establish the full path to the NextGraphic */
+	in_path=append_file_to_path(in_dir,filename);
+	if (in_dir) free(in_dir);
+	
+	/* create the path for the new graphic */
+    (picture.count)++;
+	fileSuffix=strrchr(filename,'.');
+	out_path=NewFigureName(fileSuffix);
+	free(filename);
 
-    /* read the file name */
-    i=0;
-    while (rtfClass == rtfText && rtfMajor != ' ' && i < 100) {
-        filename[i++] = rtfMajor;
-        RTFGetToken();  
-    }
-    filename[i] = '\0';
+	CopyFile(in_path,out_path);
 
-    while (!RTFCheckCM(rtfGroup, rtfEndGroup)) {
-        switch (rtfMinor) {
-        case rtfNeXTGHeight:
-            height = rtfParam/20;
-            break;
-        case rtfNeXTGWidth:
-            width = rtfParam/20;
-            break;
-        default:
-            break;
-        }
-        RTFGetToken();
+    while (RTFGetToken() != rtfEOF) {
+ 		if (RTFCheckCM(rtfGroup, rtfEndGroup)) break; 		
+ 		if (rtfMinor == rtfNeXTGHeight) height = rtfParam/20;
+ 		if (rtfMinor == rtfNeXTGWidth) width = rtfParam/20;
     }
     
     /* skip everything until outer brace */
     RTFSkipGroup();
+
+	/* need the local name of the file */
+	out_name = strchr(out_path,PATH_SEP);
+	if (out_name) 
+		out_name++;
+	else
+		out_name = out_path;
 
     PutLitStr("\\includegraphics");
     if (width || height) {
@@ -2420,8 +2472,10 @@ static void ReadNextGraphic(void)
         PutLitStr("]");
     }
     PutLitStr("{");
-    PutLitStr(filename);
+    PutLitStr(out_name);
     PutLitStr("}\n");
+    if (in_path) free(in_path);
+    if (out_path) free(out_path);
 }
 
 /*

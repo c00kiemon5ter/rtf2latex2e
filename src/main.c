@@ -229,15 +229,32 @@ static char * make_output_filename(char * name)
     char *s, *dir, *file, *out;
     if (!name) return NULL;
     
-    if (!g_create_new_directory 
-        || g_input_file_type == TYPE_RTFD
-        || g_input_file_type == TYPE_EQN) {
+    /* always create a new folder for RTFD files */
+    if (g_input_file_type == TYPE_RTFD) {
+
+        dir = malloc(strlen(name)+strlen("-latex"));
+        strcpy(dir,name);
+        s = strstr(dir, ".rtfd");
+        if (!s) 
+        	s = strstr(dir, ".RTFD");
+
+        if (s)
+        	strcpy(s,"-latex");
+        else
+        	strcat(dir,"-latex");
+        
+        mkdir(dir, 0755);
+        out = append_file_to_path(dir,"TXT.ltx");
+        return out;
+    }
+
+    if (!g_create_new_directory || g_input_file_type == TYPE_EQN) {
         s = strdup(name);
         strcpy(s+strlen(s)-4, ".ltx");
         return s;
     } 
     
-    if (g_input_file_type == TYPE_RTF) {
+    if (g_input_file_type == TYPE_RTF || g_input_file_type == TYPE_RTFD) {
         file = short_name(name);        
         strcpy(file+strlen(file)-4, ".ltx");
 
@@ -360,7 +377,10 @@ main(int argc, char **argv)
         RTFInit();
         
         input_filename = establish_filename(argv[fileCounter]);
-                    
+    	
+    	if (g_input_file_type == TYPE_RTFD)
+    		g_create_new_directory = 1;
+    		
         if (g_input_file_type == TYPE_UNKNOWN) {
             if (!input_filename)
                 RTFMsg("* Skipping non-existent file '%s'\n", argv[fileCounter]);

@@ -213,9 +213,9 @@ void RTFInit(void)
         pushedTextBuf[0] = '\0';
     }
 
-    RTFFree(inputName);
-    RTFFree(outputName);
-    inputName = outputName = NULL;
+//    RTFFree(inputName);
+//    RTFFree(outputName);
+//    inputName = outputName = NULL;
 
     for (i = 0; i < rtfMaxClass; i++)
         RTFSetClassCallback(i, NULL);
@@ -280,7 +280,8 @@ void RTFSetStream(FILE *stream)
  */
 void RTFSetInputName(char *name)
 {
-    if ((inputName = RTFStrSave(name)) == NULL)
+    inputName = strdup(name);
+    if (!inputName)
         RTFPanic("RTFSetInputName: out of memory");
 }
 
@@ -293,7 +294,8 @@ char *RTFGetInputName(void)
 
 void RTFSetOutputName(char *name)
 {
-    if ((outputName = RTFStrSave(name)) == NULL)
+    outputName = strdup(name);
+    if (!outputName)
         RTFPanic("RTFSetOutputName: out of memory");
 }
 
