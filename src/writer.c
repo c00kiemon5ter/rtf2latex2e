@@ -1636,7 +1636,7 @@ static void PrescanTable(void)
         (table.rightColumnBorders)[i] -= i*latexColumnSeparation;
         
     /* if the table is wider than textWidth, scale it appropriately */
-	if (table.rightColumnBorders[table.cols]+latexColumnSeparation*table.cols > textWidth) {
+	if (prefs[pConvertTableWidths] && table.rightColumnBorders[table.cols]+latexColumnSeparation*table.cols > textWidth) {
 		float scale = 1.0*(textWidth-latexColumnSeparation*table.cols)/table.rightColumnBorders[table.cols];
 
         for (i = 1; i <= table.cols; i++)
@@ -2452,7 +2452,7 @@ static void ReadNextGraphic(void)
     RTFSkipGroup();
 
 	/* need the local name of the file */
-	out_name = strchr(out_path,PATH_SEP);
+	out_name = strrchr(out_path,PATH_SEP);
 	if (out_name) 
 		out_name++;
 	else

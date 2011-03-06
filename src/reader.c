@@ -841,7 +841,7 @@ static void _RTFGetToken2(void)
         while (c == '\n' || c == '\r')  
             c = GetChar();
     
-        if (c != ' ') {
+        if (1||c != ' ') {
             pushedChar = c;
             strcpy(rtfTextBuf,"\\par");
             Lookup("\\par"); 

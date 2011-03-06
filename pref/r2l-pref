@@ -12,7 +12,7 @@
 preambleFirstText        %&LaTeX
 
 # Another line, just like the one above
-# Use quotes because value contains spaces
+# Enclose in quotes because value contains spaces
 preambleSecondText       '% !TEX encoding = UTF-8 Unicode'
 
 # This is your chance to customize the type of latex document created
