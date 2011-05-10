@@ -1555,6 +1555,11 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
     if (!ztex && set_atts.use_codepoint) {
         if (thechar->character >= 32 && thechar->character <= 127) {
             zch = (char) thechar->character;
+            if (thechar->character == 38) {
+                snprintf(buff,20,"\\&");
+                ztex = (char *) malloc(strlen(buff) + 1);
+                strcpy(ztex, buff);
+            }
             if (thechar->typeface == 135) {
                 snprintf(buff,20,"\\mathbf{%c}", zch);
                 ztex = (char *) malloc(strlen(buff) + 1);
@@ -2637,14 +2642,14 @@ char *Profile_FUNCTIONS[] = {
     "sup=\\sup ",
     "tan=\\tan ",
     "tanh=\\tanh ",
-    "mod=\\limfunc{mod} ",
-    "glb=\\limfunc{glb} ",
-    "lub=\\limfunc{lub} ",
-    "int=\\limfunc{int} ",
-    "Im=\\limfunc{Im} ",
-    "Re=\\limfunc{Re} ",
-    "var=\\limfunc{var} ",
-    "cov=\\limfunc{cov} ",
+    "mod=\\mathop{\\rm mod} ",
+    "glb=\\mathop{\\rm glb} ",
+    "lub=\\mathop{\\rm lub} ",
+    "int=\\mathop{\\rm int} ",
+    "Im=\\mathop{\\rm Im} ",
+    "Re=\\mathop{\\rm Re} ",
+    "var=\\mathop{\\rm var} ",
+    "cov=\\mathop{\\rm cov} ",
     0
 };
 
