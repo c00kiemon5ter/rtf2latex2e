@@ -15,18 +15,18 @@ PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
 
 #Base directory - adapt as needed
 # Unix:
-PREFIX?=/usr/local
+DESTDIR?=/usr/local
 #Uncomment next lines for Windows
-#PREFIX_DRIVE=C:
-#PREFIX?=$(PREFIX_DRIVE)/PROGRA~1/rtf2latex2e
+#DESTDIR_DRIVE=C:
+#DESTDIR?=$(DESTDIR_DRIVE)/PROGRA~1/rtf2latex2e
 
 BINARY_NAME=rtf2latex2e
 
 # Location of binary, man, info, and support files - adapt as needed
-BIN_INSTALL    =$(PREFIX)/bin
-SUPPORT_INSTALL=$(PREFIX)/share/rtf2latex2e
+BIN_INSTALL    =$(DESTDIR)/bin
+SUPPORT_INSTALL=$(DESTDIR)/share/rtf2latex2e
 #Uncomment next line for Windows:
-#SUPPORT_INSTALL=$(PREFIX)/pref
+#SUPPORT_INSTALL=$(DESTDIR)/pref
 
 # Uncomment to get debugging information about OLE translation
 #CFLAGS:=$(CFLAGS) -DCOLE_VERBOSE
