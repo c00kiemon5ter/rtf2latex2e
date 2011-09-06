@@ -1,10 +1,6 @@
 VERSION = 2-0-2
 
 CC?=gcc
-TAR?=gnutar
-RM?=rm -f
-MKDIR?=mkdir -p
-RMDIR?=rm -rf
 
 #reasonable default set of compiler flags
 CFLAGS=-g -Wall -Wno-write-strings
@@ -23,10 +19,10 @@ DESTDIR?=/usr/local
 BINARY_NAME=rtf2latex2e
 
 # Location of binary, man, info, and support files - adapt as needed
-BIN_INSTALL    =$(DESTDIR)/bin
-SUPPORT_INSTALL=$(DESTDIR)/share/rtf2latex2e
+BINDIR    =/bin
+SUPPORTDIR=/share/rtf2latex2e
 #Uncomment next line for Windows:
-#SUPPORT_INSTALL=$(DESTDIR)/pref
+#SUPPORTDIR=/pref
 
 # Uncomment to get debugging information about OLE translation
 #CFLAGS:=$(CFLAGS) -DCOLE_VERBOSE
@@ -103,10 +99,10 @@ rtf2latex2e: $(OBJS) $(HDRS)
 	cp $(BINARY_NAME) rtf2latex
 
 src/init.o: src/init.c
-	$(CC) $(CFLAGS) -DLIBDIR=\"$(SUPPORT_INSTALL)\" -c src/init.c -o src/init.o
+	$(CC) $(CFLAGS) -DLIBDIR=\"$(DESTDIR)$(SUPPORTDIR)\" -c src/init.c -o src/init.o
 
 src/main.o: src/main.c
-	$(CC) $(CFLAGS) -DLIBDIR=\"$(SUPPORT_INSTALL)\" -DVERSION=\"$(VERSION)\" -c src/main.c -o src/main.o
+	$(CC) $(CFLAGS) -DLIBDIR=\"$(DESTDIR)$(SUPPORTDIR)\" -DVERSION=\"$(VERSION)\" -c src/main.c -o src/main.o
 
 doc : doc/rtf2latexSWP.tex doc/rtfReader.tex doc/rtf2latexDoc.tex
 	cd doc && $(MAKE)
@@ -123,12 +119,12 @@ depend: $(SRCS)
 
 dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $(DOCS) Makefile
 	make doc
-	$(MKDIR)           rtf2latex2e-$(VERSION)
-	$(MKDIR)           rtf2latex2e-$(VERSION)/pref
-	$(MKDIR)           rtf2latex2e-$(VERSION)/doc
-	$(MKDIR)           rtf2latex2e-$(VERSION)/test
-	$(MKDIR)           rtf2latex2e-$(VERSION)/test/sample.rtfd
-	$(MKDIR)           rtf2latex2e-$(VERSION)/src
+	mkdir -p           rtf2latex2e-$(VERSION)
+	mkdir -p           rtf2latex2e-$(VERSION)/pref
+	mkdir -p           rtf2latex2e-$(VERSION)/doc
+	mkdir -p           rtf2latex2e-$(VERSION)/test
+	mkdir -p           rtf2latex2e-$(VERSION)/test/sample.rtfd
+	mkdir -p           rtf2latex2e-$(VERSION)/src
 	ln README          rtf2latex2e-$(VERSION)
 	ln Makefile        rtf2latex2e-$(VERSION)
 	ln $(SRCS)         rtf2latex2e-$(VERSION)/src
@@ -145,17 +141,23 @@ dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $
 	rm -rf rtf2latex2e-$(VERSION)
 	
 install: rtf2latex2e doc
-	$(MKDIR)                   $(BIN_INSTALL)
-	$(MKDIR)                   $(SUPPORT_INSTALL)
-	cp $(BINARY_NAME)          $(BIN_INSTALL)
-	cp $(PREFS)                $(SUPPORT_INSTALL)
-	cp doc/rtf2latexDoc.pdf    $(SUPPORT_INSTALL)
+	mkdir -p                $(DESTDIR)$(BINDIR)
+	mkdir -p                $(DESTDIR)$(SUPPORTDIR)
+	
+	rm -f $(DESTDIR)$(BINDIR)$(BINARY_NAME)
+	cp $(BINARY_NAME)       $(DESTDIR)$(BINDIR)
+	
+	cp $(PREFS)             $(DESTDIR)$(SUPPORTDIR)
+	
+	rm -f $(DESTDIR)$(BINDIR)$(SUPPORTDIR)/rtf2latexDoc.pdf
+	cp doc/rtf2latexDoc.pdf $(DESTDIR)$(SUPPORTDIR)
+	
 	@echo "******************************************************************"
 	@echo "*** rtf2latex2e successfully installed as \"$(BINARY_NAME)\""
-	@echo "*** in directory \"$(BIN_INSTALL)\""
+	@echo "*** in directory \"$(DESTDIR)$(BINDIR)\""
 	@echo "***"
 	@echo "*** rtf2latex2e was compiled to search for its configuration files in"
-	@echo "***           \"$(SUPPORT_INSTALL)\" "
+	@echo "***           \"$(DESTDIR)$(SUPPORTDIR)\" "
 	@echo "***"
 	@echo "*** If the configuration files are moved then either"
 	@echo "***   1) set the environment variable RTFPATH to this new location, or"
@@ -185,6 +187,7 @@ appleclean:
 	sudo xattr -r -d com.apple.FinderInfo ./
 	sudo xattr -r -d com.apple.TextEncoding ./
 	sudo xattr -r -d com.apple.quarantine ./
+	
 splint: 
 	splint -weak $(SRCS) $(HDRS)
 	
