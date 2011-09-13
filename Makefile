@@ -12,7 +12,7 @@ PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
 #Base directory - adapt as needed
 # Unix:
 DESTDIR?=/usr/local
-#Uncomment next lines for Windows
+#Uncomment next 2 lines for Windows
 #DESTDIR_DRIVE=C:
 #DESTDIR?=$(DESTDIR_DRIVE)/PROGRA~1/rtf2latex2e
 
@@ -21,7 +21,8 @@ BINARY_NAME=rtf2latex2e
 # Location of binary, man, info, and support files - adapt as needed
 BINDIR    =/bin
 SUPPORTDIR=/share/rtf2latex2e
-#Uncomment next line for Windows:
+#Uncomment next 2 lines for Windows:
+#BINDIR    =
 #SUPPORTDIR=/pref
 
 # Uncomment to get debugging information about OLE translation
