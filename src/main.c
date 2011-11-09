@@ -45,6 +45,7 @@ int   g_create_new_directory = 0;
 int   g_eqn_insert_image     = 0;
 int   g_eqn_keep_file        = 0;
 int   g_eqn_insert_name      = 0;
+int   g_shouldIncludePreamble= 1;
 
 enum INPUT_FILE_TYPE g_input_file_type;
 
@@ -75,6 +76,7 @@ print_usage(void)
     fprintf(stdout, "Options:\n");
     fprintf(stdout, "  -h               display help\n");
     fprintf(stdout, "  -b               best attempt at matching RTF formatting\n");
+    fprintf(stdout, "  -f               fractional document, omit latex preamble\n");
     fprintf(stdout, "  -D               make a new directory for latex and extracted images\n");
     fprintf(stdout, "  -e #             equation conversion options\n");
     fprintf(stdout, "      -e1              convert to latex\n");
@@ -286,7 +288,7 @@ main(int argc, char **argv)
     cli_text = -1;
     cli_equation = -1;
     cli_table = -1;
-    while ((c = my_getopt(argc, argv, "bDe:hnp:P:t:T:v")) != EOF) {
+    while ((c = my_getopt(argc, argv, "bDe:fhnp:P:t:T:v")) != EOF) {
         switch (c) {
 
         case 'b':
@@ -301,6 +303,10 @@ main(int argc, char **argv)
 
         case 'e':
             sscanf(optarg, "%d", &cli_equation);
+            break;
+
+        case 'f':
+            g_shouldIncludePreamble = 0;
             break;
 
         case 'n':

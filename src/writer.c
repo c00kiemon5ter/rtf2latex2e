@@ -462,7 +462,8 @@ static int CheckForBeginDocument(void)
         PutLitByteStr(preambleOurDefs);
 
         beginDocumentPos = ftell(ofp);
-        PutLitStr("\\begin{document}\n");
+        if (g_shouldIncludePreamble)
+        	PutLitStr("\\begin{document}\n");
         wroteBeginDocument = true;
         return 1;
     }
@@ -1908,7 +1909,8 @@ void EndLaTeXFile(void)
     /* last few bits */
     EndParagraph();
     EndSection();
-    PutLitStr("\n\n\\end{document}\n");
+    if (g_shouldIncludePreamble)
+    	PutLitStr("\n\n\\end{document}\n");
 
     /* open new file, changing name from file.ltx to file.tex*/
     oldname = RTFGetOutputName();
@@ -1923,41 +1925,43 @@ void EndLaTeXFile(void)
     RTFSetOutputStream(nfp);
     RTFSetOutputName(newname);
     
-    /* write improved header */
-    suppressLineBreak = false;
-    PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
-    InsertNewLine();
-    PutLitStr(preambleSecondText); /* from pref/r2l-pref     */
-    InsertNewLine();
-    PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
-    InsertNewLine();
-    PutLitStr(preambleEncoding);   /* from pref/latex-encoding */
-    InsertNewLine();
-    InsertNewLine();
-    setPreamblePackages(false);
-    PutLitStr(preamblePackages);   /* as needed */
-
-    PutLitStr(preambleUserText);   /* from pref/r2l-head      */
-    InsertNewLine();
-    DefineColors(false);
-    InsertNewLine();
-    PutLitByteStr(preambleOurDefs);    /* e.g., \tab */
-    InsertNewLine();
-
-    if (preambleFancyHeader){
-        PutLitByteStr("\\pagestyle{fancy}\n");
-        PutLitByteStr("\\rhead{}\n\\rfoot{}\n\\chead{}\n\\cfoot{}\n");
-        PutLitByteStr(preambleFancyHeader);
-        InsertNewLine();
-    }
-        
-    if (preambleFancyHeaderFirst){
-        PutLitByteStr("\\fancypagestyle{plain}{\n");
-        PutLitByteStr("  \\rhead{}\n  \\rfoot{}\n  \\chead{}\n  \\cfoot{}\n");
-        PutLitByteStr(preambleFancyHeaderFirst);
-        PutLitByteStr("}\n");
-        PutLitByteStr("\\thispagestyle{plain}\n");
-        InsertNewLine();
+    if (g_shouldIncludePreamble) {
+		/* write improved header */
+		suppressLineBreak = false;
+		PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
+		InsertNewLine();
+		PutLitStr(preambleSecondText); /* from pref/r2l-pref     */
+		InsertNewLine();
+		PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
+		InsertNewLine();
+		PutLitStr(preambleEncoding);   /* from pref/latex-encoding */
+		InsertNewLine();
+		InsertNewLine();
+		setPreamblePackages(false);
+		PutLitStr(preamblePackages);   /* as needed */
+	
+		PutLitStr(preambleUserText);   /* from pref/r2l-head      */
+		InsertNewLine();
+		DefineColors(false);
+		InsertNewLine();
+		PutLitByteStr(preambleOurDefs);    /* e.g., \tab */
+		InsertNewLine();
+	
+		if (preambleFancyHeader){
+			PutLitByteStr("\\pagestyle{fancy}\n");
+			PutLitByteStr("\\rhead{}\n\\rfoot{}\n\\chead{}\n\\cfoot{}\n");
+			PutLitByteStr(preambleFancyHeader);
+			InsertNewLine();
+		}
+			
+		if (preambleFancyHeaderFirst){
+			PutLitByteStr("\\fancypagestyle{plain}{\n");
+			PutLitByteStr("  \\rhead{}\n  \\rfoot{}\n  \\chead{}\n  \\cfoot{}\n");
+			PutLitByteStr(preambleFancyHeaderFirst);
+			PutLitByteStr("}\n");
+			PutLitByteStr("\\thispagestyle{plain}\n");
+			InsertNewLine();
+		}
     }
 
     

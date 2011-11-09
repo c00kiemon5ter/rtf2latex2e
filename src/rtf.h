@@ -397,6 +397,8 @@ extern int g_eqn_insert_image;
 extern int g_eqn_keep_file;
 extern int g_eqn_insert_name;
 
+extern int g_shouldIncludePreamble;
+
 void RTFInitStack(void);
 void RTFPushStack(void);
 void RTFPopStack(void);
