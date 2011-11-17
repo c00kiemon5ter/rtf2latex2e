@@ -162,6 +162,11 @@ minor	rtfFTypeNil		ftnil
 minor	rtfFTypeTrueType	fttruetype
 minor	rtfAnsiCodePage		ansicpg
 
+minor	rtfflomajor	flomajor
+minor	rtffdbmajor	fdbmajor
+minor	rtffhimajor	fhimajor
+minor	rtffbimajor	fbimajor
+
 /*
  * Color names
  */
@@ -171,6 +176,12 @@ major	rtfColorName
 minor	rtfRed			red
 minor	rtfGreen		green
 minor	rtfBlue			blue
+
+minor	rtfTint			ctint
+minor	rtfShade		cshade
+minor	rtfColorHyperlink	chyperlink
+minor	rtfColorAccent	caccentone
+minor	rtfColorTextTwo	ctexttwo
 
 /*
  * File table attributes

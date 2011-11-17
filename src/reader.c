@@ -1166,6 +1166,11 @@ static void ReadFontTbl(void)
                     
                 case rtfFontAttr:
                     switch (rtfMinor) {
+
+                    case rtfflomajor:
+                    case rtffdbmajor:
+                    case rtffhimajor:
+                    case rtffbimajor:
                     default:
                         break;  /* ignore unknown? */
                     case rtfFontCharSet:
@@ -1200,6 +1205,7 @@ static void ReadFontTbl(void)
                 }
                 *bp = '\0';
                 fp->rtfFName = RTFStrSave(buf);
+                fprintf(stderr,"fontname=%s\n",buf);
                 if (fp->rtfFName == NULL)
                     RTFPanic("%s: cannot allocate font name", fn);
                     
@@ -1286,6 +1292,22 @@ void ReadColorTbl(void)
             case rtfBlue:
                 cp->rtfCBlue = rtfParam;
                 break;
+            case rtfShade:
+            	fprintf(stderr,"rtfShade\n");
+            	break;
+            case rtfTint:
+            	fprintf(stderr,"rtfTint\n");
+            	break;
+            case rtfColorHyperlink:
+            	fprintf(stderr,"rtfColorHyperlink\n");
+            	break;
+            case rtfColorAccent:
+            	fprintf(stderr,"rtfColorAccent\n");
+            	break;
+            case rtfColorTextTwo:
+            	fprintf(stderr,"rtfColorTextTwo\n");
+            	break;
+
             }
             RTFGetToken();
         }
@@ -1680,7 +1702,7 @@ static void Lookup(char *s)
 
 void DebugMessage(void)
 {
-    if (0 && g_debug_level > 0)
+    if (1 || g_debug_level > 0)
         if (strcmp(rtfCtrl[rtfTokenIndex]->str,"objdata"))
             fprintf(stderr, "%s (%d,%d,%d)\n",rtfCtrl[rtfTokenIndex]->str,rtfClass,rtfMajor,rtfMinor);
 }
