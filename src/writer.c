@@ -1942,11 +1942,7 @@ void EndLaTeXFile(void)
 	
 		PutLitStr(preambleUserText);   /* from pref/r2l-head      */
 		InsertNewLine();
-		DefineColors(false);
-		InsertNewLine();
-		PutLitByteStr(preambleOurDefs);    /* e.g., \tab */
-		InsertNewLine();
-	
+
 		if (preambleFancyHeader){
 			PutLitByteStr("\\pagestyle{fancy}\n");
 			PutLitByteStr("\\rhead{}\n\\rfoot{}\n\\chead{}\n\\cfoot{}\n");
@@ -1964,7 +1960,12 @@ void EndLaTeXFile(void)
 		}
     }
 
-    
+    InsertNewLine();
+    DefineColors(false);
+    InsertNewLine();
+    PutLitByteStr(preambleOurDefs);    /* e.g., \tab */
+    InsertNewLine();
+
     /* now copy the body of the document */
     fseek(ofp, beginDocumentPos, 0);
 

@@ -1303,7 +1303,6 @@ void ReadColorTbl(void)
             case rtfColorAccent:
             case rtfColorTextTwo:
             	break;
-
             }
             RTFGetToken();
         }

@@ -96,6 +96,7 @@ convertTableName	longtable
 
 # Macintosh only
 # Convert embedded macintosh PICT files to PDF files
+# only works for MacOS X before Lion (10.7)
 convertPict	true
 
 #
