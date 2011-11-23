@@ -1,5 +1,5 @@
 RTF2LATEX= ../rtf2latex2e
-OPTIONS  = -P ../pref
+OPTIONS  = -T2 -P ../pref
 LATEX= pdflatex -interaction=nonstopmode
 LATEX_LOG = > latex.log
 EQN_LOG =  &> eqn.log

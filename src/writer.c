@@ -844,7 +844,7 @@ static cellStruct *CellGetByIndex(int cellNum)
     }
 
     if (!cell)
-        RTFPanic("CellGetByIndex: Attempting to access invalid cell at index %d\n", cellNum);
+        RTFPanic("CellGetByIndex: Attempting to access invalid cell with index %d\n", cellNum);
 
     return NULL;
 }
@@ -878,35 +878,35 @@ static int CellWidth(cellStruct *cell)
 }
 
 /*
- * Counts the number of rows to be merged vertically and writes the
- * corresponding \multirow statement.
+ * Counts the number of rows to be merged vertically for the
+ * current column and writes the corresponding \multirow statement.
+ * 
+ * not used at the moment ... still needs work
  */
 static void CellMultirow(cellStruct * cell)
 {
-    int i;
-    int x, y;
-    cellStruct *localCellPtr;
+    int merged;
     char buf[rtfBufSiz];
 
-    x = cell->row;
-    y = cell->col;
+    merged = 0;
+    while (cell->row + merged + 1 < table.rows) {
+		cellStruct *c = CellGetByPosition(cell->row + merged + 1, cell->col);
+		if (c->verticalMerge != mergeAbove) break;
+		merged++;
+	}
 
-    i = 1;
-    localCellPtr = CellGetByPosition(x + i, y);
-    for (i = 1; localCellPtr->verticalMerge == mergeAbove; i++)
-        if (x + i > table.rows - 1)
-            break;
-        else
-            localCellPtr = CellGetByPosition(x + i, y);
-
-    if (prefs[pConvertTableAlignment]) 
-    	snprintf(buf, rtfBufSiz, "\\multirow{%d}{%dpt}{%s{}", i - 1, CellWidth(cell), justificationList[paragraph.alignment]);
-	else
-    	snprintf(buf, rtfBufSiz, "\\multirow{%d}{%dpt}{ ", i - 1, CellWidth(cell));
-//	PutLitStr(buf);
-
-    table.multiRow = true;
-    requireMultirowPackage = true;
+	if (merged) {
+		if (prefs[pConvertTableAlignment]) 
+			snprintf(buf, rtfBufSiz, "\\multirow{%d}{%dpt}{%s{}", merged, 
+			         CellWidth(cell), justificationList[paragraph.alignment]);
+		else
+			snprintf(buf, rtfBufSiz, "\\multirow{%d}{%dpt}{ ", merged, 
+			         CellWidth(cell));
+	
+        PutLitStr(buf);
+		table.multiRow = true;
+		requireMultirowPackage = true;
+    }
 }
 
 static void NewSection(void)
@@ -949,8 +949,9 @@ static void NewParagraph(void)
         return;
     }
 
-    if ((!insideTable && prefs[pConvertParagraphAlignment]) || 
-        ( insideTable && prefs[pConvertTableAlignment]    )) {
+//    if ((!insideTable && prefs[pConvertParagraphAlignment]) || 
+//        ( insideTable && prefs[pConvertTableAlignment]    )) {
+    if (!insideTable && prefs[pConvertParagraphAlignment]) {
         if (paragraphWritten.alignment != paragraph.alignment) {
     
             if (paragraph.alignment == right)
@@ -1024,8 +1025,18 @@ static void FinalizeParagraph(void)
         return;
     }
 
-    if ( (!insideTable && paragraphWritten.alignment != paragraph.alignment) || 
-         (insideTable && prefs[pConvertTableAlignment] && nowBetweenCells)) {
+//    if ( (!insideTable && paragraphWritten.alignment != paragraph.alignment) || 
+//         (insideTable && prefs[pConvertTableAlignment] && nowBetweenCells)) {
+
+    if (insideTable && prefs[pConvertTableAlignment] ) {
+        if (paragraphWritten.alignment == right || paragraphWritten.alignment == center){
+			paragraphWritten.alignment = -900;
+			paragraphWritten.leftIndent = -900;
+			paragraphWritten.lineSpacing = -900;
+		}
+    }
+    
+    if ( !insideTable && paragraphWritten.alignment != paragraph.alignment) {
 
         if (g_debug_par_start) {
             snprintf(buf, rtfBufSiz, "[oldalign=%d, newalign=%d]", paragraphWritten.alignment, paragraph.alignment);
@@ -1085,21 +1096,14 @@ static void EndParagraph(void)
 static void NewCell(void)
 {
     char buf[rtfBufSiz];
-    cellStruct *cell;
-    int cellNum;
+    cellStruct *cell = CellGetByIndex(table.cellCount);
 	
-	cellNum = table.cellCount;
-    cell = CellGetByIndex(cellNum);
-
-    if (g_debug_table_writing) fprintf(stderr,"* Writing cell header for cell #%d\n",cellNum);
-
     if (cell->col != 0) PutLitStr(" & ");
 
     if (cell->columnSpan == 1) {
 
-        if (prefs[pConvertTableAlignment]) {   
-//			snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%dpt}%s{}", CellWidth(cell), justificationList[paragraph.alignment]);
-			snprintf(buf,rtfBufSiz, "\\begin{minipage}[t]{%dpt}", CellWidth(cell));
+        if (prefs[pConvertTableAlignment] && paragraph.alignment != left) {
+			snprintf(buf,rtfBufSiz, "%s ", justificationList[paragraph.alignment]);
 			PutLitStr(buf);
 		}
 
@@ -1112,9 +1116,10 @@ static void NewCell(void)
         PutLitStr(buf);
 
         if (prefs[pConvertTableAlignment]) {   
-			snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%dpt}", CellWidth(cell));
-//			snprintf(buf, rtfBufSiz, "\\begin{minipage}[t]{%dpt}%s{}", CellWidth(cell), justificationList[paragraph.alignment]);
-			PutLitStr(buf);
+			if (paragraph.alignment!=left){
+			    snprintf(buf,rtfBufSiz, "%s ", justificationList[paragraph.alignment]);
+				PutLitStr(buf);
+			}
 			InsertNewLine();
         }
         
@@ -1124,7 +1129,7 @@ static void NewCell(void)
 //        CellMultirow(cell);
 
     if (0 && g_debug_table_writing)  {
-        snprintf(buf, rtfBufSiz, "[cell \\#%d]",cellNum);
+        snprintf(buf, rtfBufSiz, "[cell \\#%d]", table.cellCount);
         PutLitStr(buf);
     }
     nowBetweenCells = false;
@@ -1134,6 +1139,8 @@ static void NewCell(void)
 static void EndCell(void)
 {
     cellStruct *cell;
+
+	if (g_debug_table_writing) fprintf(stderr,"* Ending cell #%d\n", table.cellCount);
     
 	if (nowBetweenCells) {
 		if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount);
@@ -1144,17 +1151,18 @@ static void EndCell(void)
 	FinalizeParagraph();
 //	StopTextStyle();
 	cell = CellGetByIndex(table.cellCount);
+
 //	if (cell->verticalMerge == mergeTop)
 	//	PutLitChar('}');
 
-    if (prefs[pConvertTableAlignment])
-		PutLitStr("\\end{minipage}");
+//    if (prefs[pConvertTableAlignment])
+//		PutLitStr("\\end{minipage}");
 		
     if (cell->columnSpan > 1) 
 		PutLitChar('}');
 
 	(table.cellCount)++;
-//	paragraph.alignment = left;
+	paragraph.alignment = left;
 }
 
 
@@ -1170,7 +1178,7 @@ static void setPreamblePackages(int ignoreUsedColor)
     if (requireGraphicxPackage)
         strcat(preamblePackages,"\\usepackage{graphicx}\n");
     if (requireTablePackage)
-        strcat(preamblePackages,"\\usepackage{longtable}\n");
+        strcat(preamblePackages,"\\usepackage{array}\n");
     if (requireMultirowPackage)
         strcat(preamblePackages,"\\usepackage{multirow}\n");
     if (requireAmsSymbPackage)
@@ -1339,7 +1347,6 @@ cellStruct *cell;
         table.leftEdge = rtfParam;
         break;
     case rtfCellPos:  /* only \cellx is a required cell token */
-    
         cell = CellAllocate();
         CellInitialize(cell);
 
@@ -1517,10 +1524,9 @@ static void PrescanTable(void)
             if (RTFCheckCM(rtfControl, rtfTblAttr)) {
                 if (gatherCellInfo) RTFRouteToken();
             }
-
+            
             if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
-                RTFSkipGroup();
-                
+                RTFSkipGroup();   
         } 
         
         if (g_debug_table_prescan) fprintf(stderr,"* reached end of row %d\n", table.rows);
@@ -1540,8 +1546,8 @@ static void PrescanTable(void)
                 foundRow = true;
                 break;
             }
-
-			/* \intbl must follow \widctlpar or the next paragraph is not part of the table */
+            
+ 			/* \intbl must follow \widctlpar or the next paragraph is not part of the table */
             if (RTFCheckMM(rtfParAttr, rtfNoWidowControl) || RTFCheckMM(rtfParAttr, rtfWidowCtlPar)) {
             	RTFGetToken();
 				if (!RTFCheckMM(rtfParAttr, rtfInTable)) break;
@@ -1732,6 +1738,28 @@ static void DrawTableRowLine(int rowNum)
     InsertNewLine();
 }
 
+/*
+\begin{tabular}{\textwidth}{|>{\raggedright}p{99pt}|>{\raggedright}p{99pt}|...}
+...
+\end{tabular}
+*/
+static void DoTablePreamble()
+{
+	char buf[200];
+	int i, width;
+	
+	width = (table.rightColumnBorders[table.cols]-table.rightColumnBorders[0])/20;
+
+	snprintf(buf, 200, "\\begin{tabular}{");
+	PutLitStr(buf);
+	
+	for (i = 0; i < table.cols; i++) {
+		snprintf(buf, 200, "|>{\\raggedright}p{\%dpt}", (table.rightColumnBorders[i+1]-table.rightColumnBorders[i])/20);
+		PutLitStr(buf);
+	}
+
+	PutLitStr("|}\n\\hline\n");
+}
 
 /* 
  * When we reach a table, we don't know anything about it.  Initially,
@@ -1752,7 +1780,6 @@ static void DoTable(void)
     int i;
     cellStruct *cell;
     int oldwritten, oldparagraph;
-    char buf[100];
 
     EndParagraph();
     NewParagraph();
@@ -1775,31 +1802,21 @@ static void DoTable(void)
     table.cellCount = 0;
     insideTable = true;
 
-    PutLitStr("\\begin{");
-    PutLitStr(convertTableName);
-    PutLitStr("}{");
-
-	PutLitStr("|");
-	for (i = 0; i < table.cols; i++) {
-		snprintf(buf, 100, "p{%dpt}|", (table.rightColumnBorders[i+1]-table.rightColumnBorders[i]) / 20);
-		PutLitStr(buf);
-	}
-	PutLitStr("}\n\\hline\n");
+	DoTablePreamble();
 
     for (i = 0; i < table.rows; i++) {
         if (g_debug_table_writing) fprintf(stderr,"* Starting row #%d\n",i+1);
         TableWriteRow();
 
-        PutLitStr("\\\\\n");
+//        PutLitStr("\\\\\n");
+        PutLitStr("\\tabularnewline\n");
 
         if (i < (table.rows - 1))
             DrawTableRowLine(i);
     }
 
     PutLitStr("\\hline\n");
-    PutLitStr("\\end{");
-    PutLitStr(convertTableName);
-    PutLitStr("}");
+    PutLitStr("\\end{tabular}");
 
     nowBetweenParagraphs = true;
 
@@ -1816,18 +1833,6 @@ static void ParAttr(void)
 {
     if (insideFootnote || insideHyperlink || insideHeaderFooter)
         return;
-
-    if (insideTable) {
-        switch (rtfMinor) {
-        case rtfQuadCenter:
-            paragraph.alignment = center;
-            break;
-        case rtfQuadRight:
-            paragraph.alignment = right;
-            break;
-        }
-        return;
-    }
 
     switch (rtfMinor) {
     case rtfSpaceBetween:
@@ -3835,12 +3840,11 @@ static void ControlClass(void)
     case rtfListAttr:
         RTFSkipGroup();
         break;
-    case rtfTblAttr:            /* trigger for reading table */
-        if (rtfMinor == rtfRowDef && !(insideTable)) {
-            DoTable();          /* if we are not already inside a table, get into it */
-        } else
-            DoTableAttr();      /* if we are already inside
-                                 * a table, set table attributes */
+    case rtfTblAttr:
+        if (rtfMinor == rtfRowDef && !(insideTable))
+            DoTable();          /* not inside a table, start one */
+        else
+            DoTableAttr();      /* currently inside a table, set table attribute */
         break;
     case rtfParAttr:
         ParAttr();

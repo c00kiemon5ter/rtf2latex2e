@@ -122,13 +122,13 @@ typedef struct
 
 typedef struct cellStruct
 {
-    int     row;
-    int     col;
-    int     originalLeft;
-    int     originalRight;
-    int     columnSpan;
-    int     index;
-    int     verticalMerge;   
+    int row;
+    int col;
+    int originalLeft;
+    int originalRight;
+    int columnSpan;
+    int index;
+    int verticalMerge;   
     boolean leftBorder;
     boolean rightBorder;
     boolean topBorder;
