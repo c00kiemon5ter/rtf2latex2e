@@ -136,8 +136,8 @@ tableStruct table;
 shapeStruct shape;
 
 int g_debug_par_start       = 0;
-int g_debug_table_prescan   = 0;
-int g_debug_table_writing   = 0;
+int g_debug_table_prescan   = 1;
+int g_debug_table_writing   = 1;
 int g_debug_char_style      = 0;
 int textWidth               = 345*20; /* \textwidth for 10pt article size in twips*/
 int latexColumnSeparation   = 12 *20;  /*default intercolumn separation of tabular in twips */
@@ -1128,7 +1128,7 @@ static void NewCell(void)
 //    if (cell->verticalMerge == mergeTop)
 //        CellMultirow(cell);
 
-    if (0 && g_debug_table_writing)  {
+    if (g_debug_table_writing)  {
         snprintf(buf, rtfBufSiz, "[cell \\#%d]", table.cellCount);
         PutLitStr(buf);
     }
@@ -1489,7 +1489,7 @@ static void PrescanTable(void)
     while (foundRow) {
         table.cols = 0;
 
-        if (g_debug_table_prescan) fprintf(stderr,"*********** starting row %d\n", table.rows);
+        if (0 && g_debug_table_prescan) fprintf(stderr,"*********** starting row %d\n", table.rows);
         
         /* Gather cell layout information ... the three possible token streams are:
          * 
@@ -1529,7 +1529,7 @@ static void PrescanTable(void)
                 RTFSkipGroup();   
         } 
         
-        if (g_debug_table_prescan) fprintf(stderr,"* reached end of row %d\n", table.rows);
+        if (0 && g_debug_table_prescan) fprintf(stderr,"* reached end of row %d\n", table.rows);
 		
 		(table.rows)++;
 		if (lastRow) break;
@@ -1609,7 +1609,7 @@ static void PrescanTable(void)
 
     RTFFree((char *)rightBorders);
 
-    if (g_debug_table_prescan) fprintf(stderr,"* table has %d rows and %d cols \n", table.rows, table.cols);
+    if (0 && g_debug_table_prescan) fprintf(stderr,"* table has %d rows and %d cols \n", table.rows, table.cols);
 
     /*
      * sort rightColumnBorders into ascending order.
@@ -1655,7 +1655,8 @@ static void PrescanTable(void)
             fprintf(stderr,"* cell #%3d (%2d, %2d) ", cell->index, cell->row, cell->col);
             fprintf(stderr,"left=%3dpt right=%3dpt ", cell->originalLeft/20, cell->originalRight/20);
             fprintf(stderr,"width=%3dpt ", CellWidth(cell));
-            fprintf(stderr,"and spans %d columns\n", cell->columnSpan);
+            fprintf(stderr,"and spans %d columns", cell->columnSpan);
+            fprintf(stderr," [vertical merge = %d]\n", cell->verticalMerge);
         }
     }
 
