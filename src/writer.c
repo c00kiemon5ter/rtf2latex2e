@@ -878,6 +878,20 @@ static int CellWidth(cellStruct *cell)
 }
 
 /*
+ * Given a cell in the first row of a multirow cell, count the number
+ * of cells below that should be merged vertically 
+ */
+static int rowsInMultirow(cellStruct * cell)
+{
+	int i;
+	for (i=cell->row+1; i++; i < table.rows) {
+		cellStruct *c = CellGetByPosition(i, cell->col);
+		if (c->verticalMerge != mergeAbove) break;
+	}
+	return i-cell->row;
+}
+
+/*
  * Counts the number of rows to be merged vertically for the
  * current column and writes the corresponding \multirow statement.
  * 
@@ -885,28 +899,22 @@ static int CellWidth(cellStruct *cell)
  */
 static void CellMultirow(cellStruct * cell)
 {
-    int merged;
+    int rows;
     char buf[rtfBufSiz];
 
-    merged = 0;
-    while (cell->row + merged + 1 < table.rows) {
-		cellStruct *c = CellGetByPosition(cell->row + merged + 1, cell->col);
-		if (c->verticalMerge != mergeAbove) break;
-		merged++;
-	}
-
-	if (merged) {
-		if (prefs[pConvertTableAlignment]) 
-			snprintf(buf, rtfBufSiz, "\\multirow{%d}{%dpt}{%s{}", merged, 
-			         CellWidth(cell), justificationList[paragraph.alignment]);
-		else
-			snprintf(buf, rtfBufSiz, "\\multirow{%d}{%dpt}{ ", merged, 
-			         CellWidth(cell));
+	rows = rowsInMultirow(cell);
 	
-        PutLitStr(buf);
-		table.multiRow = true;
-		requireMultirowPackage = true;
-    }
+    /* rows should always be at least 2 */
+    if (rows < 2) return;
+    
+	if (prefs[pConvertTableAlignment] && paragraph.alignment != left) 
+		snprintf(buf, rtfBufSiz, "\\multirow{%d}{*}{%s{}", rows, justificationList[paragraph.alignment]);
+	else
+		snprintf(buf, rtfBufSiz, "\\multirow{%d}{*}{ ", rows);
+
+	PutLitStr(buf);
+	table.multiRow = true;
+	requireMultirowPackage = true;
 }
 
 static void NewSection(void)
@@ -1458,6 +1466,9 @@ static int GetColumnSpan(cellStruct * cell)
  * The latter is useful in figuring out whether a cell spans
  * multiple columns. 
  *
+ * Finally, it turns out that to support vertically merged cells, the
+ * contents of each cell need to also be collected.  This has yet to be
+ * implemented.
  */
 static void PrescanTable(void)
 {
