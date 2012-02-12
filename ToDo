@@ -1,7 +1,7 @@
 Post 2-0-0 Improvements
    standardize insertion of table/equation/image to account for paragraph state
    translate word fields
-   improve up table formatting
+   improve table formatting
    support for font changing
    incorporate SafeBuf stuff?
    fix-up enc-utf8x.rtf translation
