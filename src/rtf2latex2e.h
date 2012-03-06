@@ -105,6 +105,7 @@ typedef struct
     int backColor;
     int fontNumber;
     short *charCode;
+    int unicodeSkipN;
 } textStyleStruct;
 
 typedef struct

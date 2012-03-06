@@ -145,7 +145,7 @@ char *UnicodeSymbolFontToLatex[];
 char *UnicodeGreekToLatex[];
 
 /*
- * a useful diagnostic function to examine the token just read.
+ * a useful diagnostic (debugging) function to examine the token just read.
  */
 void ExamineToken(char * tag)
 {
@@ -3169,18 +3169,25 @@ static void ReadShape(void)
     }
 }        
 
+static void ReadUnicodeSkipN(void)
+{
+	textStyle.unicodeSkipN= rtfParam;
+}
+
 static void ReadUnicode(void)
 {
-    int thechar;
+    int thechar,i;
     
     if (rtfParam<0)
         thechar = rtfParam + 65536;
     else    
         thechar = rtfParam;
     
-    /* \uNNNNY, drop Y is a default unicode char */
-    if (rtfMinor == rtfUnicode)
-        RTFGetToken();
+    if (rtfMinor == rtfUnicode) {
+        /* \uNNNNY, drop Y as fallback char (assuming \uc1) */
+        for (i=0; i<textStyle.unicodeSkipN; i++) 
+        	RTFGetToken();
+    }
         
     PrepareForChar();
 
@@ -3679,6 +3686,9 @@ static void Destination(void)
         break;
     case rtfNeXTGraphic:
         ReadNextGraphic();
+        break;
+    case rtfUnicodeSkipN:
+		ReadUnicodeSkipN();
         break;
     case rtfUnicode:
     case rtfUnicodeFake:

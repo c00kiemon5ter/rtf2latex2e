@@ -1934,6 +1934,7 @@ void RTFInitStack(void)
     textStyle.fontSize    = normalSize;
     textStyle.charCode    = genCharCode;
     textStyle.fontNumber  = defaultFontNumber;
+    textStyle.unicodeSkipN= 1;
 
     RTFPushStack();
 }
