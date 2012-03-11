@@ -32,8 +32,6 @@
 #include     "eqn.h"
 #include     "init.h"
 
-int mkdir (const char *filename, mode_t mode);
-
 FILE         *ifp, *ofp;
 
 char  *g_library_path        = NULL;
@@ -211,7 +209,7 @@ static char * establish_filename(char * name)
 }
 
 
-char * short_name(char *path)
+static char * short_name(char *path)
 {
     char *s;
     s = strrchr(path,PATH_SEP);

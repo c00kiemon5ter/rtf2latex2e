@@ -50,15 +50,6 @@ extern const char *prefString[];
 extern int prefs[pLast];
 extern char *convertTableName;
 
-extern char *preambleFirstText;
-extern char *preambleSecondText;
-extern char *preambleDocClass;
-extern char *preambleUserText;
-extern char *preambleEncoding;
-extern char *preamblePackages;
-extern char *preambleColorTable;
-extern char *preambleOurDefs;
-
 FILE *OpenLibFile(char *name, char *mode);
 char *strdup_together(const char *s, const char *t);
 char *append_file_to_path(char *path, char *file);
