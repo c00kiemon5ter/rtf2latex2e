@@ -136,8 +136,8 @@ tableStruct table;
 shapeStruct shape;
 
 int g_debug_par_start       = 0;
-int g_debug_table_prescan   = 1;
-int g_debug_table_writing   = 1;
+int g_debug_table_prescan   = 0;
+int g_debug_table_writing   = 0;
 int g_debug_char_style      = 0;
 int textWidth               = 345*20; /* \textwidth for 10pt article size in twips*/
 int latexColumnSeparation   = 12 *20;  /*default intercolumn separation of tabular in twips */
@@ -880,23 +880,25 @@ static int CellWidth(cellStruct *cell)
 /*
  * Given a cell in the first row of a multirow cell, count the number
  * of cells below that should be merged vertically 
- */
+ * 
+ * unused at the moment
+
 static int rowsInMultirow(cellStruct * cell)
 {
 	int i;
-	for (i=cell->row+1; i++; i < table.rows) {
+	for (i=cell->row+1; i < table.rows; i++) {
 		cellStruct *c = CellGetByPosition(i, cell->col);
 		if (c->verticalMerge != mergeAbove) break;
 	}
 	return i-cell->row;
 }
 
-/*
+ *
  * Counts the number of rows to be merged vertically for the
  * current column and writes the corresponding \multirow statement.
  * 
  * not used at the moment ... still needs work
- */
+ *
 static void CellMultirow(cellStruct * cell)
 {
     int rows;
@@ -904,7 +906,6 @@ static void CellMultirow(cellStruct * cell)
 
 	rows = rowsInMultirow(cell);
 	
-    /* rows should always be at least 2 */
     if (rows < 2) return;
     
 	if (prefs[pConvertTableAlignment] && paragraph.alignment != left) 
@@ -916,6 +917,7 @@ static void CellMultirow(cellStruct * cell)
 	table.multiRow = true;
 	requireMultirowPackage = true;
 }
+*/
 
 static void NewSection(void)
 {
