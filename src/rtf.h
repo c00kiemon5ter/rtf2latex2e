@@ -310,40 +310,40 @@ struct RTFStyleElt
 };
 
 
-typedef	void (*RTFFuncPtr) ();		/* generic function pointer */
+typedef	void (*RTFFuncPtr) (char *s);		/* generic function pointer */
 
 
 /*
  * Public RTF reader routines
  */
-int			RTFGetBraceLevel(void);
-void		RTFSimpleInit (void);
-void 		RTFSetDefaultFont (int fontNumber);
-void		RTFInit (void);
-void 		RTFSetStream(FILE *stream);
-char 		*RTFGetInputName(void);
-void 		RTFSetInputName(char *name);
-void 		RTFSetOutputName(char *name);
-char		*RTFGetOutputName (void);
-void 		RTFSetClassCallback(short class, RTFFuncPtr callback);
+int	RTFGetBraceLevel(void);
+void RTFSimpleInit (void);
+void RTFSetDefaultFont (int fontNumber);
+void RTFInit (void);
+void RTFSetStream(FILE *stream);
+char *RTFGetInputName(void);
+void RTFSetInputName(char *name);
+void RTFSetOutputName(char *name);
+char *RTFGetOutputName (void);
+void RTFSetClassCallback(short class, RTFFuncPtr callback);
 RTFFuncPtr 	RTFGetClassCallback(short class);
-void 		RTFSetDestinationCallback(short dest, RTFFuncPtr callback);
+void RTFSetDestinationCallback(short dest, RTFFuncPtr callback);
 RTFFuncPtr 	RTFGetDestinationCallback(short dest);
-void		RTFRead (void);
+void RTFRead (void);
 short	RTFGetToken (void);	/* writer should rarely need this */
-void		RTFUngetToken (void);
+void RTFUngetToken (void);
 short	RTFPeekToken (void);
-void 		RTFSetToken(short class, short major, short minor, int32_t param, char *text);
-void 		RTFSetReadHook(RTFFuncPtr f);
+void RTFSetToken(short class, short major, short minor, int32_t param, char *text);
+void RTFSetReadHook(RTFFuncPtr f);
 RTFFuncPtr	RTFGetReadHook (void);
-void		RTFRouteToken (void);
-void		RTFSkipGroup (void);
+void RTFRouteToken (void);
+void RTFSkipGroup (void);
 void RTFSkipToLevel(int level);
-void		RTFExecuteGroup (void);
+void RTFExecuteGroup (void);
 int 		RTFSkipToToken(int class, int major, int minor);
 int		 	RTFExecuteToToken(int class, int major, int minor);
 char 		*RTFGetTextWord(void);
-void		RTFExpandStyle (short n);
+void RTFExpandStyle (short n);
 short    RTFCheckCM(short class, short major);
 short    RTFCheckCMM(short class, short major, short minor);
 short    RTFCheckMM(short major, short minor);
@@ -352,30 +352,32 @@ RTFColor	*RTFGetColor (short num);
 RTFStyle	*RTFGetStyle (short num);
 char        *RTFAlloc(size_t size);
 char 	    *RTFStrSave(char *s);
-void 		RTFFree(char *p);
+void RTFFree(char *p);
 short 	RTFCharToHex(char c);
 short 	RTFHexToChar(short i);
 int RTFHexStrToInt(char * s);
-void 		RTFSetMsgProc(RTFFuncPtr proc);
-void 		RTFSetPanicProc(RTFFuncPtr proc);
+void RTFSetMsgProc(RTFFuncPtr proc);
+void RTFSetPanicProc(RTFFuncPtr proc);
 short	RTFPushedChar (void);
-void		RTFSetPushedChar (short lastChar);
-void		ReadColorTbl (void); /* made public and brought over from reader.c by Ujwal Sathyam */
+void RTFSetPushedChar (short lastChar);
+void ReadColorTbl (void); /* made public and brought over from reader.c by Ujwal Sathyam */
 
-void		RTFMsg (char *fmt, ...);
-void		RTFPanic (char *fmt, ...);
+void RTFMsg (char *fmt, ...);
+void RTFPanic (char *fmt, ...);
 
-void 		RTFSetCharSetMap(char *name, short csId);
+void RTFSetCharSetMap(char *name, short csId);
 short 	RTFStdCharCode(char *name);
 char		*RTFStdCharName (short code);
 short	RTFMapChar (short c);
 short	RTFGetCharSet(void);
-void		RTFSetCharSet(short csId);
+void RTFSetCharSet(short csId);
 short 	RTFReadOutputMap(char *file, char *outMap[], short reinit); 
-void 		RTFPushStack (void);
-void 		RTFPopStack (void); 
-void		RTFStoreStack (void);
-void		RTFRestoreStack (void);
+
+void RTFInitStack(void);
+void RTFPushStack (void);
+void RTFPopStack (void); 
+void RTFStoreStack (void);
+void RTFRestoreStack (void);
 
 /*char		*RTFGetLibPrefix(void);*/
 void RTFSetOpenLibFileProc(FILE * (*proc) (char *file, char *mode));
@@ -398,10 +400,6 @@ extern int g_eqn_keep_file;
 extern int g_eqn_insert_name;
 
 extern int g_shouldIncludePreamble;
-
-void RTFInitStack(void);
-void RTFPushStack(void);
-void RTFPopStack(void);
 
 # define SAVE_PARSER 11
 # define RESTORE_PARSER 12
