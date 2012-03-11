@@ -1851,7 +1851,7 @@ void RTFPanic(char *fmt, ...)
     (void) strcat(buf, "\n");
     if (prevChar != EOF && rtfTextBuf != NULL) {
         snprintf(buf + strlen(buf), rtfBufSiz-strlen(buf),
-                "Last token read was \"%s\" near line %d, position %hd.\n",
+                "Last token read was \"%s\" near line %d, position %d.\n",
                 rtfTextBuf, (int)rtfLineNum, (int)rtfLinePos);
     }
     (*panicProc) (buf);

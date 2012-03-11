@@ -109,7 +109,7 @@ print_usage(void)
     fprintf(stdout, "  rtf2latex2e foo.rtfd         convert to foo.rtfd/TXT.tex\n");
     fprintf(stdout, "\n");
     fprintf(stdout, "Preference Directory:\n");
-    fprintf(stdout, "  Default  = '%s'\n", (LIBDIR) ? LIBDIR : "not defined");
+    fprintf(stdout, "  Default  = '%s'\n", (PREFS_DIR) ? PREFS_DIR : "not defined");
     fprintf(stdout, "  $RTFPATH = '%s'\n", (getenv("RTFPATH")) ? getenv("RTFPATH") : "not defined");
     fprintf(stdout, "\n");
     fprintf(stdout, "Report bugs at http://sourceforge.net/projects/rtf2latex2e/\n\n");

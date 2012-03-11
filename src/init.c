@@ -826,7 +826,7 @@ try_path(char *path, char *file, char *mode)
     FILE           *fp = NULL;
 
     both = append_file_to_path(path, file);
-    if (0) fprintf(stderr, "trying filename='%s'\n\n", both);
+    if (0) fprintf(stderr, "trying both='%s'\n\n", both);
     fp = fopen(both, mode);
     free(both);
     return fp;
@@ -835,8 +835,7 @@ try_path(char *path, char *file, char *mode)
 /****************************************************************************
 purpose: open library files by trying multiple paths
  ****************************************************************************/
-FILE           *
-OpenLibFile(char *name, char *mode)
+FILE *OpenLibFile(char *name, char *mode)
 {
     char           *env_path, *p, *p1;
     char           *lib_path;
@@ -866,8 +865,9 @@ OpenLibFile(char *name, char *mode)
         }
         free(env_path);
     }
-    /* last resort.  try LIBDIR from compile time */
-    lib_path = strdup(LIBDIR);
+    
+    /* last resort.  try PREFS_DIR from compile time */
+    lib_path = strdup(PREFS_DIR);
     if (lib_path) {
         p = lib_path;
         while (p) {
@@ -891,12 +891,12 @@ OpenLibFile(char *name, char *mode)
 	fprintf(stderr, "The default install location for these files is\n");
 	fprintf(stderr, "   /usr/local/share/rtf2latex2e/\n");
 	fprintf(stderr, "When this program was compiled the location was\n");
-	fprintf(stderr, "   %s\n", LIBDIR);
+	fprintf(stderr, "   %s\n", PREFS_DIR);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "After locating the proper directory you can \n");
 	fprintf(stderr, "   (1) define the environment variable $RTFPATH, *or*\n");
 	fprintf(stderr, "   (2) use command line path option '-P /path/to/prefs' *or*\n");
-	fprintf(stderr, "   (3) recompile rtf2latex2e with a different LIBDIR defined properly\n");
+	fprintf(stderr, "   (3) recompile rtf2latex2e (after modifying datadir in Makefile)\n");
 	fprintf(stderr, "Giving up.  Please don't hate me.\n");
 	exit(1);
     

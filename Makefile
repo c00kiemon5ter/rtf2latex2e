@@ -1,11 +1,10 @@
 VERSION = 2-0-2
 
-CC?=gcc
+#reasonable default set of compiler flags while developing
+#CFLAGS = -g -D_FORTIFY_SOURCE=2 -Wall -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wshadow -Wstrict-prototypes -Wformat=2
 
-#reasonable default set of compiler flags
-CFLAGS=-g -Wall -Wno-write-strings
-CFLAGS= -D_FORTIFY_SOURCE=2 -Wall -Waggregate-return -Wmissing-declarations \
-        -Wmissing-prototypes -Wredundant-decls -Wshadow -Wstrict-prototypes -Wformat=2
+#release flags 
+CFLAGS =
 
 PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
 #PLATFORM?=-DMSWIN  # Windows
@@ -13,26 +12,31 @@ PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
 
 #Base directory - adapt as needed
 # Unix:
-DESTDIR?=/usr/local
+prefix?=/usr/local
+exec_prefix?=$(prefix)
+
 #Uncomment next 2 lines for Windows
-#DESTDIR_DRIVE=C:
-#DESTDIR?=$(DESTDIR_DRIVE)/PROGRA~1/rtf2latex2e
+#prefix_DRIVE=C:
+#prefix?=$(prefix_DRIVE)/PROGRA~1/rtf2latex2e
 
 BINARY_NAME=rtf2latex2e
 
 # Location of binary, man, info, and support files - adapt as needed
-BINDIR    =/bin
-SUPPORTDIR=/share/rtf2latex2e
+packagename  =rtf2latex2e
+bindir      ?=$(exec_prefix)/bin
+datarootdir ?=$(prefix)/share
+datadir     ?=$(datarootdir)
+docdir      ?=$(datarootdir)/doc/$(packagename)
+pdfdir      ?=$(docdir)
+
 #Uncomment next 2 lines for Windows:
-#BINDIR    =
-#SUPPORTDIR=/pref
+#bindir    =
+#datarootdir=$(prefix)/pref
 
 # Uncomment to get debugging information about OLE translation
 #CFLAGS:=$(CFLAGS) -DCOLE_VERBOSE
 
 # Nothing to change below this line
-
-CFLAGS:=$(CFLAGS) $(PLATFORM)
 
 SRCS         = src/cole.c                 src/cole_decode.c          src/cole_support.c      \
                src/eqn.c                  src/main.c                 src/mygetopt.c          \
@@ -60,7 +64,7 @@ PREFS        = pref/latex-encoding                pref/latex-encoding.mac       
                pref/cp936raw.txt                  pref/cp932raw.txt                  \
                pref/rtf-encoding.cp1251           
 
-DOCS         = doc/GPL_license            doc/ChangeLog\
+DOCS         = doc/GPL_license            doc/ChangeLog \
                doc/rtf2latexSWP.tex       doc/rtfReader.tex          doc/rtf2latexDoc.tex    \
                doc/Makefile
                
@@ -95,21 +99,46 @@ OBJS         = src/cole.o                 src/cole_decode.o          src/cole_su
 all : checkfiles rtf2latex2e
 
 src/rtfprep: src/tokenscan.o src/rtfprep.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $(RTFPREP_OBJS) -o src/rtfprep
+	$(CC) $(PLATFORM) $(LDFLAGS) $(CFLAGS) $(RTFPREP_OBJS) -o src/rtfprep
 
 rtf2latex2e: $(OBJS) $(HDRS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $(BINARY_NAME)
+	$(CC) $(PLATFORM) $(CFLAGS) $(OBJS) -o $(BINARY_NAME)
 	cp $(BINARY_NAME) rtf2latex
 
+src/cole.o: src/cole.c src/cole.h src/cole_support.h
+	$(CC) $(PLATFORM) $(CFLAGS) -c src/cole.c -o src/cole.o
+
+src/cole_decode.o: src/cole_decode.c src/cole.h src/cole_support.h
+	$(CC) $(PLATFORM) $(CFLAGS) -c src/cole_decode.c -o src/cole_decode.o
+
+src/cole_support.o: src/cole_support.c src/cole_support.h
+	$(CC) $(PLATFORM) $(CFLAGS) -c src/cole_support.c -o src/cole_support.o
+
+src/eqn.o: src/eqn.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/rtf2latex2e.h src/cole_support.h src/eqn.h src/eqn_support.h
+	$(CC) $(PLATFORM) $(CFLAGS) -c src/eqn.c -o src/eqn.o
+
 src/init.o: src/init.c
-	$(CC) $(CFLAGS) -DLIBDIR=\"$(DESTDIR)$(SUPPORTDIR)\" -c src/init.c -o src/init.o
+	$(CC) $(PLATFORM) -DPREFS_DIR=\"$(datadir)/$(packagename)\" $(CFLAGS) -c src/init.c -o src/init.o
 
 src/main.o: src/main.c
-	$(CC) $(CFLAGS) -DLIBDIR=\"$(DESTDIR)$(SUPPORTDIR)\" -DVERSION=\"$(VERSION)\" -c src/main.c -o src/main.o
+	$(CC) $(PLATFORM) -DPREFS_DIR=\"$(datadir)/$(packagename)\" -DVERSION=\"$(VERSION)\" $(CFLAGS) -c src/main.c -o src/main.o
 
-doc : doc/rtf2latexSWP.tex doc/rtfReader.tex doc/rtf2latexDoc.tex
+src/mygetopt.o: src/mygetopt.c src/mygetopt.h
+	$(CC) $(PLATFORM) $(CFLAGS) -c src/mygetopt.c -o src/mygetopt.o
+
+src/reader.o: src/reader.c src/tokenscan.h src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/rtf2latex2e.h src/stdcharnames.h
+	$(CC) $(PLATFORM) $(CFLAGS) -c src/reader.c -o src/reader.o
+
+src/tokenscan.o: src/tokenscan.c src/tokenscan.h
+	$(CC) $(PLATFORM) $(CFLAGS) -c src/tokenscan.c -o src/tokenscan.o
+
+src/writer.o: src/writer.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/tokenscan.h src/cole.h src/cole_support.h src/rtf2latex2e.h src/eqn.h
+	$(CC) $(PLATFORM) $(CFLAGS) -c src/writer.c -o src/writer.o
+
+pdf : doc/rtf2latexSWP.tex doc/rtfReader.tex doc/rtf2latexDoc.tex
 	cd doc && $(MAKE)
 
+check:
 test: rtf2latex2e
 	cd test && $(MAKE) clean
 	cd test && $(MAKE)
@@ -144,29 +173,30 @@ dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $
 	rm -rf rtf2latex2e-$(VERSION)
 	
 install: rtf2latex2e doc
-	mkdir -p                $(DESTDIR)$(BINDIR)
-	mkdir -p                $(DESTDIR)$(SUPPORTDIR)
+	mkdir -p                $(DESTDIR)$(bindir)
+	mkdir -p                $(DESTDIR)$(datadir)/$(packagename)
 	
-	rm -f $(DESTDIR)$(BINDIR)/$(BINARY_NAME)
-	cp $(BINARY_NAME)       $(DESTDIR)$(BINDIR)
-	
-	cp $(PREFS)             $(DESTDIR)$(SUPPORTDIR)
-	
-	rm -f $(DESTDIR)$(BINDIR)$(SUPPORTDIR)/rtf2latexDoc.pdf
-	cp doc/rtf2latexDoc.pdf $(DESTDIR)$(SUPPORTDIR)
+	cp $(BINARY_NAME)       $(DESTDIR)$(bindir)
+	cp $(PREFS)             $(DESTDIR)$(datadir)/$(packagename)
 	
 	@echo "******************************************************************"
 	@echo "*** rtf2latex2e successfully installed as \"$(BINARY_NAME)\""
-	@echo "*** in directory \"$(DESTDIR)$(BINDIR)\""
+	@echo "*** in directory \"$(bindir)\""
 	@echo "***"
 	@echo "*** rtf2latex2e was compiled to search for its configuration files in"
-	@echo "***           \"$(DESTDIR)$(SUPPORTDIR)\" "
+	@echo "***           \"$(datarootdir)/$(packagename)\" "
 	@echo "***"
 	@echo "*** If the configuration files are moved then either"
 	@echo "***   1) set the environment variable RTFPATH to this new location, or"
 	@echo "***   2) use the command line option -P /path/to/prefs, or"
 	@echo "***   3) edit the Makefile and recompile"
 	@echo "******************************************************************"
+
+install-pdf: 
+	mkdir -p $(pdfdir)
+	cp doc/rtf2latexSWP.pdf $(DESTDIR)$(pdfdir)
+	cp doc/rtfReader.pdf    $(DESTDIR)$(pdfdir)
+	cp doc/rtf2latexDoc.pdf $(DESTDIR)$(pdfdir)
 
 clean: 
 	rm -f $(OBJS) $(RTFPREP_OBJS) $(BINARY_NAME) rtf2latex
@@ -195,16 +225,3 @@ splint:
 	splint -weak $(SRCS) $(HDRS)
 	
 .PHONY: all checkfiles clean depend dist doc install realclean test
-
-# created using "make depend"
-src/cole.o:          src/cole.c src/cole.h src/cole_support.h
-src/cole_decode.o:   src/cole_decode.c src/cole.h src/cole_support.h
-src/cole_support.o:  src/cole_support.c src/cole_support.h
-src/eqn.o:           src/eqn.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h \
-                     src/rtf2latex2e.h src/cole_support.h src/eqn.h src/eqn_support.h
-src/main.o:          src/main.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/mygetopt.h src/rtf2latex2e.h
-src/mygetopt.o:      src/mygetopt.c src/mygetopt.h
-src/reader.o:        src/reader.c src/tokenscan.h src/rtf.h src/rtf-ctrldef.h \
-                     src/rtf-namedef.h src/rtf2latex2e.h src/stdcharnames.h
-src/writer.o:        src/writer.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h \
-                     src/tokenscan.h src/cole.h src/cole_support.h src/rtf2latex2e.h src/eqn.h

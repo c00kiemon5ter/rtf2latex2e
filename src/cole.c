@@ -775,12 +775,6 @@ uint32_t cole_ftell(COLEFILE * colefile)
 int
 cole_fseek(COLEFILE * colefile, uint32_t delta, COLE_SEEK_FLAG direction, COLERRNO * colerrno)
 {
-    if (delta < 0) {
-        if (colerrno != NULL)
-            *colerrno = COLE_EFSEEKDELTA;
-        return 1;
-    }
-
     switch (direction) {
     case COLE_SEEK_SET:
         if (delta <= colefile->filesize) {
