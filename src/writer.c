@@ -1091,7 +1091,7 @@ static void EndParagraph(void)
     }
 
     if (insideTable) {
-        PutLitStr("\\linebreak\n");
+        PutLitStr("\\linebreak{}\n");
         return;
     }
     
