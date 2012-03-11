@@ -24,14 +24,14 @@ struct TSScanner
 };
 
 
-void	TSScanInit ();
-char	*TSScan ();
-void	TSSetScanner ();
-void	TSGetScanner ();
-void	TSSetScanPos ();
-char	*TSGetScanPos ();
-int	TSIsScanDelim ();
-int	TSIsScanQuote ();
-int	TSIsScanEscape ();
-int	TSIsScanEos ();
-int	TSTestScanFlags ();
+void TSScanInit (char *p);
+void TSSetScanner (TSScanner *p);
+void TSGetScanner (TSScanner *p);
+void TSSetScanPos (char *p);
+char *TSGetScanPos (void);
+int TSIsScanDelim (char c);
+int TSIsScanQuote (char c);
+int TSIsScanEscape (char c);
+int TSIsScanEos (char c);
+int TSTestScanFlags (int flags);
+char	*TSScan (void);

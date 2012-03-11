@@ -4,6 +4,8 @@ CC?=gcc
 
 #reasonable default set of compiler flags
 CFLAGS=-g -Wall -Wno-write-strings
+CFLAGS= -D_FORTIFY_SOURCE=2 -Wall -Waggregate-return -Wmissing-declarations \
+        -Wmissing-prototypes -Wredundant-decls -Wshadow -Wstrict-prototypes -Wformat=2
 
 PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
 #PLATFORM?=-DMSWIN  # Windows
@@ -55,8 +57,8 @@ PREFS        = pref/latex-encoding                pref/latex-encoding.mac       
                pref/rtf-encoding.next             pref/rtf-encoding.symbolfont       \
                pref/rtf-ctrl                      pref/r2l-head                      \
                pref/r2l-map                       pref/r2l-pref                      \
-               pref/rtf-encoding.cp1251           pref/rtf-encoding.cp1254           \
-               pref/cp936raw.txt                  pref/cp932raw.txt
+               pref/cp936raw.txt                  pref/cp932raw.txt                  \
+               pref/rtf-encoding.cp1251           
 
 DOCS         = doc/GPL_license            doc/ChangeLog\
                doc/rtf2latexSWP.tex       doc/rtfReader.tex          doc/rtf2latexDoc.tex    \

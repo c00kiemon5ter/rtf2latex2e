@@ -35,16 +35,12 @@
 */
 
 # include	<stdio.h>
-
 # include	"tokenscan.h"
-
 
 typedef void (*VoidProc) ();
 typedef char * (*CharPtrProc) ();
 
-
-static int	Search ();
-static char	*CanonScan ();
+static char	*CanonScan (void);
 
 static TSScanner	defScan =
 	{ (VoidProc) NULL, CanonScan, " \t", "\"'", "\\", "\n\r", 0 };
@@ -54,10 +50,7 @@ static TSScanner	curScan =
 static char	*curPos;
 static int	emptyToken;
 
-
-void
-TSScanInit (p)
-char	*p;
+void TSScanInit (char *p)
 {
 	curPos = p;
 	emptyToken = 0;
@@ -65,10 +58,7 @@ char	*p;
 		(*curScan.scanInit) (p);
 }
 
-
-void
-TSSetScanner (p)
-TSScanner	*p;
+void TSSetScanner (TSScanner *p)
 {
 	if (p == (TSScanner *) NULL || p->scanInit == (VoidProc) NULL)
 		curScan.scanInit = defScan.scanInit;
@@ -103,9 +93,7 @@ TSScanner	*p;
 }
 
 
-void
-TSGetScanner (p)
-TSScanner	*p;
+void TSGetScanner (TSScanner *p)
 {
 	p->scanInit = curScan.scanInit;
 	p->scanScan = curScan.scanScan;
@@ -119,16 +107,13 @@ TSScanner	*p;
 }
 
 
-void
-TSSetScanPos (p)
-char	*p;
+void TSSetScanPos (char *p)
 {
 	curPos = p;
 }
 
 
-char *
-TSGetScanPos ()
+char * TSGetScanPos (void)
 {
 	return (curPos);
 }
@@ -138,10 +123,7 @@ TSGetScanPos ()
  * Search a (possibly NULL) string for a character.
  */
 
-static int
-Search (s, c)
-char	*s;
-char	c;
+static int Search (char *s, char c)
 {
 char	c2;
 
@@ -156,58 +138,34 @@ char	c2;
 	return (0);
 }
 
-
-int
-TSIsScanDelim (c)
-char	c;
+int TSIsScanDelim (char c)
 {
 	return (Search (curScan.scanDelim, c));
 }
 
-
-int
-TSIsScanQuote (c)
-char	c;
+int TSIsScanQuote (char c)
 {
 	return (Search (curScan.scanQuote, c));
 }
 
-
-int
-TSIsScanEscape (c)
-char	c;
+int TSIsScanEscape (char c)
 {
 	return (Search (curScan.scanEscape, c));
 }
 
-
-int
-TSIsScanEos (c)
-char	c;
+int TSIsScanEos (char c)
 {
 	if (c == '\0')		/* null character ALWAYS terminates string */
 		return (1);
 	return (Search (curScan.scanEos, c));
 }
 
-
-int
-TSTestScanFlags (flags)
-int	flags;
+int TSTestScanFlags (int flags)
 {
 	return ((curScan.scanFlags & flags) == flags);
 }
 
-
-char *
-TSScan ()
-{
-	return ((*curScan.scanScan) ());
-}
-
-
-static char *
-CanonScan ()
+static char * CanonScan (void)
 {
 char	*pos, *start, *p, c, quote = 0;
 int	escape = 0, haveToken = 0;
@@ -272,3 +230,9 @@ int	escape = 0, haveToken = 0;
 	TSSetScanPos (pos);
 	return (haveToken ? start : (char *) NULL);
 }
+
+char * TSScan (void)
+{
+	return ((*curScan.scanScan) ());
+}
+
