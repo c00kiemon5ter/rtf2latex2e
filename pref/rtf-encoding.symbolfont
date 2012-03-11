@@ -186,6 +186,7 @@ sum				0xe5
 apple			0xf0
 rangle			0xf1
 integral		0xf2
+square          0xff
 
 # these aren't quite right because they are just pieces
 lceil			0xe9

@@ -145,7 +145,7 @@ install: rtf2latex2e doc
 	mkdir -p                $(DESTDIR)$(BINDIR)
 	mkdir -p                $(DESTDIR)$(SUPPORTDIR)
 	
-	rm -f $(DESTDIR)$(BINDIR)$(BINARY_NAME)
+	rm -f $(DESTDIR)$(BINDIR)/$(BINARY_NAME)
 	cp $(BINARY_NAME)       $(DESTDIR)$(BINDIR)
 	
 	cp $(PREFS)             $(DESTDIR)$(SUPPORTDIR)

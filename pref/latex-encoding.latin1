@@ -1,6 +1,14 @@
 # Create latex files using ISO Latin characters
 
-# Rename this file "latex-encoding" to use
+# If you add an entry to this file, you must also add an entry
+# to the file 'standard-names' in the source directory.  Then
+# you need to do the following
+#    rename this file to 'latex-encoding'
+#    make parser      --- re-create stdcharnames.h
+#    make             --- recompile rtf2latex2e
+#    make install     --- copy this file to correct location
+# While testing, you can omit the make install step by using
+# the -P option to explicitly specify the location of this file
 
 # The '%' is NOT a COMMENT sign, it indicates that rtf2latex2e should insert the 
 # following string into the preamble of the generated LaTeX file
@@ -348,6 +356,7 @@ scedilla	\c{s}
 second		\ensuremath{"''"}
 section		{\S}
 spade		\ensuremath{\spadesuit}
+square  	\ensuremath{\blacksquare}
 sterling	{\pounds}
 subset		\ensuremath{\subset}
 subseteq	\ensuremath{\subseteq}

@@ -297,6 +297,7 @@
 "diamond",
 "heart",
 "spade",
+"square",
 "arrowboth",
 "arrowleft",
 "arrowup",
