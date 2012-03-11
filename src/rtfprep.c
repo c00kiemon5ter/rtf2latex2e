@@ -91,18 +91,74 @@ static short	nCtrls = 0;
 
 static short	nNames = 0;
 
-/* static char	*usage = "Usage: rtfprep"; */
+/*
+ * Tokenize rest of input buffer following first word
+ */
+
+static void Tokenize (void)
+{
+char	*p;
+
+	nFlds = 0;
+	while ((p = TSScan ()) != (char *) NULL)
+	{
+		if (nFlds >= maxFld)	/* shouldn't happen */
+		{
+			fprintf (stderr, "Too many fields in line: %s\n", buf2);
+			exit (1);
+		}
+		fld[nFlds++] = p;
+	}
+}
 
 
-static void	Tokenize ();
-static void	Unescape ();
-int Defined (void);
+int Defined (void)
+{
+int i = 0;
+	if (majorCount == 0) return (0);
+	for (i = 0; i < majorCount; i++)
+	{
+		if (strcmp(rememberFld[i], fld[0]) == 0) 
+		{
+			defined = rememberMajor[i];
+			return (1);
+		}
+	}
+return (0);
+}
 
+static void Unescape (char *p1)
+{
+char	*p2, c;
 
-int
-main (argc, argv)
-int	argc;
-char	*argv[];
+	/* reprocess string to remove embedded escapes */
+	p2 = p1;
+	while ((c = *p1++) != '\0')
+	{
+		/*
+		 * Escaped character.  Default is to use next
+		 * character unmodified, but \n and \r are
+		 * turned into linefeed and carriage return.
+		 */
+		if (c == '\\')
+		{
+			c = *p1++;
+			switch (c)
+			{
+			case 'n':
+				c = '\n';
+				break;
+			case 'r':
+				c = '\r';
+				break;
+			}
+		}
+		*p2++ = c;
+	}
+	*p2 = '\0';
+}
+
+int main (int argc, char *argv[])
 {
 FILE	*f;
 FILE	*of1, *of2;
@@ -324,75 +380,4 @@ char		*scanEscape;
 	fclose(of2);
 
 	exit (0);
-}
-
-
-/*
- * Tokenize rest of input buffer following first word
- */
-
-static void
-Tokenize ()
-{
-char	*p;
-
-	nFlds = 0;
-	while ((p = TSScan ()) != (char *) NULL)
-	{
-		if (nFlds >= maxFld)	/* shouldn't happen */
-		{
-			fprintf (stderr, "Too many fields in line: %s\n", buf2);
-			exit (1);
-		}
-		fld[nFlds++] = p;
-	}
-}
-
-
-int Defined (void)
-{
-int i = 0;
-	if (majorCount == 0) return (0);
-	for (i = 0; i < majorCount; i++)
-	{
-		if (strcmp(rememberFld[i], fld[0]) == 0) 
-		{
-			defined = rememberMajor[i];
-			return (1);
-		}
-	}
-return (0);
-}
-
-static void
-Unescape (p1)
-char	*p1;
-{
-char	*p2, c;
-
-	/* reprocess string to remove embedded escapes */
-	p2 = p1;
-	while ((c = *p1++) != '\0')
-	{
-		/*
-		 * Escaped character.  Default is to use next
-		 * character unmodified, but \n and \r are
-		 * turned into linefeed and carriage return.
-		 */
-		if (c == '\\')
-		{
-			c = *p1++;
-			switch (c)
-			{
-			case 'n':
-				c = '\n';
-				break;
-			case 'r':
-				c = '\r';
-				break;
-			}
-		}
-		*p2++ = c;
-	}
-	*p2 = '\0';
 }
