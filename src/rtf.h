@@ -310,7 +310,8 @@ struct RTFStyleElt
 };
 
 
-typedef	void (*RTFFuncPtr) (char *s);		/* generic function pointer */
+typedef	void (*RTFFuncPtr) (void);		  /* generic function pointer */
+typedef	void (*RTFFuncMsgPtr) (char *s);  /* generic function pointer */
 
 
 /*
@@ -356,8 +357,8 @@ void RTFFree(char *p);
 short 	RTFCharToHex(char c);
 short 	RTFHexToChar(short i);
 int RTFHexStrToInt(char * s);
-void RTFSetMsgProc(RTFFuncPtr proc);
-void RTFSetPanicProc(RTFFuncPtr proc);
+void RTFSetMsgProc(RTFFuncMsgPtr proc);
+void RTFSetPanicProc(RTFFuncMsgPtr proc);
 short	RTFPushedChar (void);
 void RTFSetPushedChar (short lastChar);
 void ReadColorTbl (void); /* made public and brought over from reader.c by Ujwal Sathyam */

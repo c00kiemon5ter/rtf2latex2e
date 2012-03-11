@@ -120,8 +120,7 @@ char *ToBuffer(char *src, char *buffer, uint32_t *off, uint32_t *lim)
     return buffer;
 }
 
-static
-void SetComment(EQ_STRREC * strs, int lev, char *src)
+static void SetComment(EQ_STRREC * strs, int lev, char *src)
 {
     strs[0].log_level = lev;
     strs[0].do_delete = 1;
@@ -137,7 +136,7 @@ void SetComment(EQ_STRREC * strs, int lev, char *src)
         strs[0].data = (char *) NULL;
 }
 
-void print_tag(uint8_t tag, int src_index)
+static void print_tag(uint8_t tag, int src_index)
 {
     switch (tag) {
     case 0:
@@ -754,8 +753,8 @@ int GetNudge(unsigned char *src, int16_t *x, int16_t *y)
 
     return nudge_length;
 }
-MT_RULER *Eqn_inputRULER(MTEquation * eqn, unsigned char *src,
-                         int *src_index)
+
+static MT_RULER *Eqn_inputRULER(MTEquation * eqn, unsigned char *src, int *src_index)
 {
     MT_RULER *new_ruler;
     MT_TABSTOP *head, *curr, *new_stop;
@@ -806,7 +805,7 @@ MT_RULER *Eqn_inputRULER(MTEquation * eqn, unsigned char *src,
     * object list contents of line (a single pile, characters and templates, or nothing)
 */
 
-MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
+static MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
                        int *src_index)
 {
     unsigned char attrs;
@@ -839,7 +838,7 @@ MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
 }
 
 
-MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src, int *src_index)
+static MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src, int *src_index)
 {
     unsigned char attrs, tag;
     MT_EMBELL *head = NULL;
@@ -889,7 +888,7 @@ MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src, int *src_index)
     * [embellishment list] if xfEMBELL is set (embellishments)
 */
 
-MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
+static MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
 {
     unsigned char attrs;
     MT_CHAR *new_char = (MT_CHAR *) malloc(sizeof(MT_CHAR));
@@ -955,7 +954,7 @@ MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_index)
     return new_char;
 }
 
-MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_index)
+static MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_index)
 {
     unsigned char attrs;
     MT_TMPL *new_tmpl = (MT_TMPL *) malloc(sizeof(MT_TMPL));
@@ -993,7 +992,7 @@ MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_index)
 }
 
 
-MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
+static MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
                        int *src_index)
 {
     unsigned char attrs;
@@ -1022,7 +1021,7 @@ MT_PILE *Eqn_inputPILE(MTEquation * eqn, unsigned char *src,
 }
 
 
-MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
+static MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
                            int *src_index)
 {
     uint8_t attrs, i, bytes;
@@ -1066,7 +1065,7 @@ MT_MATRIX *Eqn_inputMATRIX(MTEquation * eqn, unsigned char *src,
     return new_matrix;
 }
 
-MT_FONT *Eqn_inputFONT(MTEquation * eqn, unsigned char *src,
+static MT_FONT *Eqn_inputFONT(MTEquation * eqn, unsigned char *src,
                        int *src_index)
 {
     uint32_t zln;
@@ -1087,7 +1086,7 @@ MT_FONT *Eqn_inputFONT(MTEquation * eqn, unsigned char *src,
     return new_font;
 }
 
-MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
+static MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
                        int *src_index)
 {
     unsigned char tag, option;
@@ -1506,15 +1505,15 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
     if (thechar->typeface >= 129 && thechar->typeface < 129 + NUM_TYPEFACE_SLOTS) {
         set_atts = eqn->atts_table[thechar->typeface - 129];
     } else {                    /*  unexpected charset */
-        char buff[16];
+        char buffer[16];
         char key[16];
         uint32_t zln;
         snprintf(key, 16, "%d", (int) thechar->typeface);
-        zln = GetProfileStr(eqn->m_atts_table, key, buff, 16);
+        zln = GetProfileStr(eqn->m_atts_table, key, buffer, 16);
         if (zln) {
-            set_atts.mathattr = buff[0] - '0';
-            set_atts.do_lookup = buff[2] - '0';
-            set_atts.use_codepoint = buff[4] - '0';
+            set_atts.mathattr = buffer[0] - '0';
+            set_atts.do_lookup = buffer[2] - '0';
+            set_atts.use_codepoint = buffer[4] - '0';
         } else {
             set_atts.mathattr = 1;
             set_atts.do_lookup = 1;
@@ -2005,10 +2004,9 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 /*  handle the relop */
 
             if (curr_node) {
-                char *data =
-                    Eqn_TranslateCHAR(eqn, (MT_CHAR *) curr_node->obj_ptr);
-                strcat(rv, data);
-                free(data);
+                char *data2 = Eqn_TranslateCHAR(eqn, (MT_CHAR *) curr_node->obj_ptr);
+                strcat(rv, data2);
+                free(data2);
                 right_node = (MT_OBJLIST *) curr_node->next;
             }
             strcat(rv, " & ");
@@ -2016,14 +2014,14 @@ char *Eqn_TranslateEQNARRAY(MTEquation * eqn, MT_PILE * pile)
 /*  handle right side */
 
             if (right_node) {
-                char *data;
+                char *data2;
                 if (right_only)
-                    data = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
+                    data2 = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
                 else
-                    data = Eqn_TranslateObjects(eqn, right_node);
+                    data2 = Eqn_TranslateObjects(eqn, right_node);
 
                 b_off = (uint32_t) strlen(rv);
-                rv = ToBuffer(data, rv, &b_off, &buf_limit);    /*  strcat( rv,data ); */
+                rv = ToBuffer(data2, rv, &b_off, &buf_limit);    /*  strcat( rv,data ); */
             }
 
             obj_list = (MT_OBJLIST *) obj_list->next;

@@ -1799,18 +1799,14 @@ FILE *RTFOpenLibFile(char *file, char *mode)
  * the host system doesn't use linefeeds.
  */
 
-
-static void DefaultMsgProc(s)
-char *s;
+static void DefaultMsgProc(char *s)
 {
     fprintf(stderr, "%s", s);
 }
 
+static RTFFuncMsgPtr msgProc = DefaultMsgProc;
 
-static RTFFuncPtr msgProc = DefaultMsgProc;
-
-
-void RTFSetMsgProc(RTFFuncPtr proc)
+void RTFSetMsgProc(RTFFuncMsgPtr proc)
 {
     msgProc = proc;
 }
@@ -1842,11 +1838,9 @@ static void DefaultPanicProc(char *s)
     exit(1);
 }
 
+static RTFFuncMsgPtr panicProc = DefaultPanicProc;
 
-static RTFFuncPtr panicProc = DefaultPanicProc;
-
-
-void RTFSetPanicProc(RTFFuncPtr proc)
+void RTFSetPanicProc(RTFFuncMsgPtr proc)
 {
     panicProc = proc;
 }
