@@ -2662,12 +2662,37 @@ static int ishex(char c)
 /*
  * Save the hex-encoded object data and as binary bytes in objectFileName
  */
+static int ReadHexPair(void)
+{
+	int hexNumber;
+	RTFGetToken();   
+	
+	if (!ishex(rtfTextBuf[0])) {
+		fprintf(stderr, "oddness encountered in hex data\n");
+		return -1;
+	}
+	
+	hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
+
+	RTFGetToken();   
+	
+	if (!ishex(rtfTextBuf[0])) {
+		fprintf(stderr, "oddness encountered in hex data\n");
+		return -1;
+	}
+	
+	return hexNumber + RTFCharToHex(rtfTextBuf[0]);
+}
+
+/*
+ * Save the hex-encoded object data and as binary bytes in objectFileName
+ */
 static void ReadObjectData(char *objectFileName, int type, int offset)
 {
-    char dummyBuf[20];
+    char dummyBuf[20],m[10];
     char *OLE_MARK = "d0cf11e0";
     FILE *objFile;
-    int i;
+    int i, value;
     uint8_t hexNumber;
     uint8_t hexEvenOdd = 0;       /* should be even at the end */
 
@@ -2687,38 +2712,47 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     if (!objFile)
         RTFPanic("Cannot open input file %s\n", objectFileName);
 
-/*
- * The offset to the data should be a constant, but it seems to
- * vary from one RTF file to the next.  Perhaps there is some
- * Microsoft documentation that explains how many bytes exactly
- * there is before we get to the chewy nuguat.  After adding
- * several hacks to shift and squirm, the simplest thing is just
- * to skip to a sequence of bytes that should start each OLE
- * object.  This is what is done now.
- */
-
-    i = 0;
-    while (i < 8) {
-        RTFGetToken();
-        if (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d)
-            continue;
-
-        if (rtfTextBuf[0] == OLE_MARK[i])
-            i++;
-        else if (rtfTextBuf[0] == OLE_MARK[0])
-            i = 1;
-        else if (ishex(rtfTextBuf[0]))
-            i = 0;
-        else
-            break;
-    }
-
-    if (i<8) {
+/* OLE header 
+ * (uint) version  e.g. 01000100 = 8 hex digits
+ * (uint) format   e.g. 02000000 = 8 hex digits
+ * ( int) type name length (int) e.g. 0f000000 = 15 * 2 hex digits
+ * ( str) type name  e.g. 4571 7561 7469 6f6e 2e44 534d 5434 00
+ * 0000 0000 0000 0000 000e 0000 = 24 hex digits
+ *
+ * two examples with spaces added to clarify
+ * 01050000 02000000 0b000000 4571756174696f6e2e3300         00000000 00000000 000e0000
+ * 01000100 02000000 0f000000 4571756174696f6e2e44534d543400 00000000 00000000 000e0000
+*/
+	/* skip three ints of 8 characters each */
+    for (i=0; i<24; i++)  RTFGetToken();
+    	
+    /* skip the null terminated string */
+    do {
+    	value = ReadHexPair();
+	} while (value>0);
+	
+    if (value==-1) {
         RTFMsg("* OLE object does not have proper header\n");
         fclose(objFile);
         return;
     }
 
+	/* skip three ints of 8 characters each */
+    for (i=0; i<24; i++)  RTFGetToken();
+
+	/* skip three ints of 8 characters each */
+	for (i=0;i<8;i++) {
+		RTFGetToken();
+		m[i] = rtfTextBuf[0];
+    }
+    m[8] = '\0';
+	
+	if (strcmp(m,OLE_MARK) != 0) {
+        fprintf(stderr, "* OLE marker is wrong '%s' != '%s'\n", m, OLE_MARK);
+        fclose(objFile);
+        return;
+    }
+		
     fputc(0xd0, objFile);
     fputc(0xcf, objFile);
     fputc(0x11, objFile);

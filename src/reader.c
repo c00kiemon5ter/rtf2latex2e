@@ -1155,7 +1155,7 @@ static void ReadFontTbl(void)
                 }
                 *bp = '\0';
                 fp->rtfFName = RTFStrSave(buf);
-/*                fprintf(stderr,"fontname=%s\n",buf);*/
+                /* fprintf(stderr,"%05d fontname=%s\n",fp->rtfFNum, buf); */
                 if (fp->rtfFName == NULL)
                     RTFPanic("%s: cannot allocate font name", fn);
                     
@@ -1176,7 +1176,7 @@ static void ReadFontTbl(void)
         if (old == 0) {         /* need to see "}" here */
             (void) RTFGetToken();
             if (!RTFCheckCM(rtfGroup, rtfEndGroup))
-                RTFPanic("%s: missing \"}\"", fn);
+                RTFPanic("%s: missing '}' at end of \\fonttbl", fn);
         }
     }
     
