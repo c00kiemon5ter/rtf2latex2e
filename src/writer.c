@@ -163,7 +163,12 @@ void ExamineToken(char * tag)
 
     printf("* Major is %3d", rtfMajor);
     if (rtfClass == rtfText) {
-        printf(" raw='%c' \n", rtfMajor);
+        if (rtfMajor == 0x0A)
+        	printf(" raw=LF \n");
+        else if (rtfMajor == 0x0D)
+        	printf(" raw= CR \n");
+        else
+        	printf(" raw='%c' \n", rtfMajor);        
     } else if (rtfClass == rtfGroup) {
         printf(" (%s)\n", rtfMajor? "rtfEndGroup" : "rtfBeginGroup");
     } else {
@@ -2016,7 +2021,7 @@ static int HexData(void)
     /* if we fall into a group, skip the whole she-bang */
     if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0) {
         RTFPeekToken();
-        if ((int) (rtfTextBuf[0]) == 10) {
+        while ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13) {
             RTFGetToken();      /* skip any carriage returns */
             RTFPeekToken();     /* look at the next token to check if there is another row */
         }
@@ -2321,7 +2326,6 @@ static void IncludeGraphics(char *pictureType)
 /* This function reads in a picture */
 static void ReadPicture(void)
 {
-/*     char *fn = "ReadPicture"; */
     requireGraphicxPackage = true;
     picture.type = unknownPict;
     picture.width = 0;
@@ -2331,7 +2335,7 @@ static void ReadPicture(void)
     picture.scaleX = 100;
     picture.scaleY = 100;
 
-/*     RTFMsg("%s: Starting ...\n",fn); */
+/*     RTFMsg("Starting ReadPicture ...\n"); */
 
     /* skip everything until we reach hex data */
     while (!HexData());
@@ -2342,33 +2346,33 @@ static void ReadPicture(void)
     /* Process picture */
     switch (picture.type) {
     case pict:
-/*         RTFMsg("* Warning: PICT format image encountered.\n"); */
+        RTFMsg("* Image: Apple PICT format\n");
         ConvertHexPicture("pict");
         IncludeGraphics("pict");
         break;
     case wmf:
-/*         RTFMsg("* Warning: WMF format image encountered.\n"); */
+        RTFMsg("* Image: Microsoft WMF format\n");
         ConvertHexPicture("wmf");
         IncludeGraphics("wmf");
         break;
     case emf:
-/*         RTFMsg("* Warning: EMF format image encountered.\n"); */
+        RTFMsg("* Image: Microsoft EMF format\n");
         ConvertHexPicture("emf");
         IncludeGraphics("emf");
         break;
     case png:
-/*         RTFMsg("* Warning: PNG format image encountered.\n"); */
+        RTFMsg("* Image: PNG\n");
         ConvertHexPicture("png");
         IncludeGraphics("png");
         break;
     case jpeg:
-/*         RTFMsg("* Warning: JPEG format image encountered.\n"); */
+        RTFMsg("* Image: JPEG\n");
         ConvertHexPicture("jpg");
         IncludeGraphics("jpg");
         break;
     default:
         ConvertHexPicture("???");
-        printf("* Warning: unknown picture type encountered.\n");
+        printf("* Warning: unknown picture type encountered\n");
         IncludeGraphics("unknown");
         break;
     }
@@ -3040,7 +3044,7 @@ static void ReadObject(void)
 
     case WordPictureClass:
     case MSGraphChartClass:
-        ExamineToken("WordPictureClass");
+        /*ExamineToken("WordPictureClass");*/
         while (!ReachedResult());
         ReadPicture();
         break;
