@@ -369,7 +369,7 @@ void RTFRouteToken(void)
  * closing brace.
  */
 
-void RTFDoGroup(int execute, int level)
+static void RTFDoGroup(int execute, int level)
 {
 	if (level<=0) {fprintf(stderr,"trying doGroup at braceLevel 0??\n"); return;}
 
@@ -399,7 +399,7 @@ void RTFSkipToLevel(int level)
     RTFDoGroup(NO_EXECUTE,level);
 }
 
-int RTFToToken(int class, int major, int minor, int execute)
+static int RTFToToken(int class, int major, int minor, int execute)
 {
     short level = RTFGetBraceLevel();
 
@@ -522,12 +522,6 @@ short RTFPeekToken(void)
     return (rtfClass);
 }
 
-/* compare two short integer entries */
-int shortcmp(const void *v1, const void *v2)
-{
-     return (*(short *)v1 - *(short *)v2);
-}
-
 /* 
  * slow, slow lookup because binary search fails for me
  */
@@ -546,8 +540,8 @@ static int find932Index(short value)
 }
 
 static void RTFSet932Token(unsigned char firstByte)
-{	
-	int index;
+{
+	int index932;
 	unsigned int value;
 	char *s1, *s2;
 	
@@ -568,27 +562,27 @@ static void RTFSet932Token(unsigned char firstByte)
 	/* one byte character */
 	if (0xA0<firstByte && firstByte<0xE0) {
 		value = firstByte;
-		index = find932Index(value);
+		index932 = find932Index(value);
 	} else {
 		s1 = strdup(rtfTextBuf);
 		_RTFGetToken2();
 		s2 = strdup_together(s1,rtfTextBuf);
 		value = firstByte*256+rtfMajor;
-		index = find932Index(value);
+		index932 = find932Index(value);
 		strcpy(rtfTextBuf,s2);
 		free(s2);
 		free(s1);
 	}
 	
-	if (index == -1) {
+	if (index932 == -1) {
 		rtfMinor = '?';
 	} else {
 		rtfClass = rtfControl;
 		rtfMajor = rtfDestination;
 		rtfMinor = rtfUnicodeFake;	
-		rtfParam = cp932CharCode[index];
+		rtfParam = cp932CharCode[index932];
 	}
-//	fprintf(stderr,"value is %u, index is %d, index[%d]=%u, charcode[%d]=%u\n", value, index, index, (unsigned short) cp932Index[index],index, (unsigned short) cp932CharCode[index]);
+//	fprintf(stderr,"value is %u, index is %d, index[%d]=%u, charcode[%d]=%u\n", value, index932, index932, (unsigned short) cp932Index[index932],index932, (unsigned short) cp932CharCode[index932]);
 }
 
 /* 
@@ -610,7 +604,7 @@ static int find936Index(short value)
 
 static void RTFSet936Token(unsigned char firstByte)
 {	
-	int index;
+	int index936;
 	unsigned int value;
 	char *s1, *s2;
 	
@@ -624,20 +618,20 @@ static void RTFSet936Token(unsigned char firstByte)
 	_RTFGetToken2();
 	s2 = strdup_together(s1,rtfTextBuf);
 	value = firstByte*256+rtfMajor;
-	index = find936Index(value);
+	index936 = find936Index(value);
 	strcpy(rtfTextBuf,s2);
 	free(s2);
 	free(s1);
 	
-	if (index == -1) {
+	if (index936 == -1) {
 		rtfMinor = '?';
 	} else {
 		rtfClass = rtfControl;
 		rtfMajor = rtfDestination;
 		rtfMinor = rtfUnicodeFake;
-		rtfParam = cp936CharCode[index];
+		rtfParam = cp936CharCode[index936];
 	}
-//	fprintf(stderr,"value is %u, index is %d, index[%d]=%u, charcode[%d]=%u\n", value, index, index, (unsigned short) cp936Index[index],index, (unsigned short) cp936CharCode[index]);
+//	fprintf(stderr,"value is %u, index is %d, index[%d]=%u, charcode[%d]=%u\n", value, index936, index936, (unsigned short) cp936Index[index936],index936, (unsigned short) cp936CharCode[index936]);
 }
 
 static void _RTFGetToken(void)
@@ -1604,7 +1598,7 @@ static void Lookup(char *s)
     RTFCtrl *rp;
     char c1, c2;
 /* short        i; */
-    short index, result;
+    short LookupIndex, result;
     short lower, upper;
 
     ++s;                        /* skip over the leading \ character */
@@ -1614,8 +1608,8 @@ static void Lookup(char *s)
     upper = nCtrls - 1;
 
     for (;;) {
-        index = (lower + upper) / 2;
-        rp = rtfCtrl[index];
+        LookupIndex = (lower + upper) / 2;
+        rp = rtfCtrl[LookupIndex];
         /*
          * Do quick check against first character to avoid function
          * call if possible.  If character matches, then call strcmp().
@@ -1634,9 +1628,9 @@ static void Lookup(char *s)
         if (lower >= upper)     /* can't subdivide range further, */
             break;              /* so token wasn't found */
         if (result < 0)
-            upper = index - 1;
+            upper = LookupIndex - 1;
         else
-            lower = index + 1;
+            lower = LookupIndex + 1;
     }
     rtfClass = rtfUnknown;
 }
@@ -1771,7 +1765,7 @@ int RTFHexStrToInt(char * s)
  */
 
 
-static FILE *(*libFileOpen) () = NULL;
+static FILE *(*libFileOpen) (char *file, char *mode) = NULL;
 
 void RTFSetOpenLibFileProc(FILE * (*proc) (char *file, char *mode))
 {
@@ -1970,7 +1964,7 @@ void RTFParserState(int op)
 {
 	static size_t saved_file_position = 0;
     static int savedbraceLevel = 0;
-	static char prevChar = 0;
+	static char statePrevChar = 0;
 	static short *saved_charStyleStack[MAX_STACK];
 	static parStyleStruct  saved_parStyleStack[MAX_STACK];
 	static textStyleStruct saved_textStyleStack[MAX_STACK];
@@ -1993,7 +1987,7 @@ void RTFParserState(int op)
     	memcpy(saved_textStyleStack, textStyleStack, MAX_STACK * sizeof(textStyleStruct));
     	saved_paragraphWritten = paragraphWritten;
     	saved_textStyleWritten = textStyleWritten;
-		prevChar = RTFPushedChar();
+		statePrevChar = RTFPushedChar();
 		saved_file_position = ftell(ifp);
 		savedbraceLevel = RTFGetBraceLevel();
     	savedClass = rtfClass;
@@ -2012,7 +2006,7 @@ void RTFParserState(int op)
 	if (op == RESTORE_PARSER) {
 		fseek(ifp, saved_file_position, 0);
 		RTFSimpleInit();
-		RTFSetPushedChar(prevChar);
+		RTFSetPushedChar(statePrevChar);
     	memcpy(charStyleStack, saved_charStyleStack, MAX_STACK * sizeof(short));
     	memcpy(parStyleStack, saved_parStyleStack, MAX_STACK * sizeof(parStyleStruct));
     	memcpy(textStyleStack, saved_textStyleStack, MAX_STACK * sizeof(textStyleStruct));

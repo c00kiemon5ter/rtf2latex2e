@@ -37,8 +37,8 @@
 # include	<stdio.h>
 # include	"tokenscan.h"
 
-typedef void (*VoidProc) ();
-typedef char * (*CharPtrProc) ();
+typedef void (*VoidProc) (char *p);
+typedef char * (*CharPtrProc) (void);
 
 static char	*CanonScan (void);
 

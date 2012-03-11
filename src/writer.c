@@ -41,8 +41,6 @@ void __cole_dump(void *_m, void *_start, uint32_t length, char *msg);
 
 # define  UNDEFINED_COLUMN_VALUE -10000
 
-void RTFSetOutputStream(FILE * stream);
-
 extern FILE *ifp, *ofp;
 
 # define EQUATION_OFFSET 35
@@ -147,7 +145,7 @@ char *UnicodeGreekToLatex[];
 /*
  * a useful diagnostic (debugging) function to examine the token just read.
  */
-void ExamineToken(char * tag)
+static void ExamineToken(char * tag)
 {
     printf("********** %s **********\n", tag);
     printf("* Token is %s\n", rtfTextBuf);
@@ -876,10 +874,10 @@ static cellStruct *CellGetByPosition(int therow, int thecol)
 /* returns the width of the current cell in points*/
 static int CellWidth(cellStruct *cell)
 {
-	int left = (table.rightColumnBorders)[cell->col];
-	int right = (table.rightColumnBorders)[cell->col+cell->columnSpan];
+	int cleft = (table.rightColumnBorders)[cell->col];
+	int cright = (table.rightColumnBorders)[cell->col+cell->columnSpan];
 	
-	return (right-left)/20;
+	return (cright-cleft)/20;
 }
 
 /*
@@ -1762,7 +1760,7 @@ static void DrawTableRowLine(int rowNum)
 ...
 \end{tabular}
 */
-static void DoTablePreamble()
+static void DoTablePreamble(void)
 {
 	char buf[200];
 	int i, width;
@@ -2513,7 +2511,7 @@ static void ReadNextGraphic(void)
  * based on a GPL implementation in OpenTTD found under GPL v2
  */
 
-char *my_strcasestr(const char *haystack, const char *needle)
+static char *my_strcasestr(const char *haystack, const char *needle)
 {
     size_t hay_len = strlen(haystack);
     size_t needle_len = strlen(needle);
@@ -2801,10 +2799,10 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 /*
  * After an equation look for an equation number
  */
-char * EqnNumberString(void)
+static char * EqnNumberString(void)
 {
     char theNumber[10], comma[2], *s, *t;
-    int index=0;
+    int stringIndex=0;
     
     theNumber[0]='\0';
     comma[0]='\0';
@@ -2861,22 +2859,22 @@ char * EqnNumberString(void)
             char c=rtfTextBuf[0];
 
             /* eqn numbers must start with '(', '[', or a digit */
-            if (index==0 && !(isdigit(c) || c == '(' || c == ']') ) break;
+            if (stringIndex==0 && !(isdigit(c) || c == '(' || c == ']') ) break;
                         
-            theNumber[index]=c;
-            index++;
+            theNumber[stringIndex]=c;
+            stringIndex++;
             if (c==')' || c==']') break;
         }
         
         RTFGetToken();
-    } while (rtfClass != rtfEOF && index<10);
+    } while (rtfClass != rtfEOF && stringIndex<10);
 
-    if (index == 0) {
+    if (stringIndex == 0) {
         RTFUngetToken();
         return strdup(comma);
     }
 
-    theNumber[index]='\0';
+    theNumber[stringIndex]='\0';
     s=strdup_together(comma,"\\eqno");
     t=strdup_together(s,theNumber);
     free(s);

@@ -269,10 +269,10 @@ short ReadPrefFile(char *file)
  * and an RTF translator's corresponding output sequences.  Each line consists
  * of a standard character name and the output sequence for that character.
  *
- * outMap is an array of strings into which the sequences should be placed.
+ * thisOutMap is an array of strings into which the sequences should be placed.
  * It should be declared like this in the calling program:
  *
- *      char *outMap[rtfSC_MaxChar];
+ *      char *thisOutMap[rtfSC_MaxChar];
  *
  * reinit should be non-zero if outMap should be initialized before reading the
  * file, zero otherwise.  (This allows the map to be constructed by reading
@@ -285,7 +285,7 @@ short ReadPrefFile(char *file)
  * library directory.
  */
 
-short RTFReadOutputMap(char *file, char *outMap[], short reinit)
+short RTFReadOutputMap(char *file, char *thisOutMap[], short reinit)
 {
     FILE *f;
     char buf[rtfBufSiz];
@@ -301,8 +301,8 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
 
     if (reinit) {
         for (i = 0; i < rtfSC_MaxChar; i++) {
-            RTFFree(outMap[i]);
-            outMap[i] = NULL;
+            RTFFree(thisOutMap[i]);
+            thisOutMap[i] = NULL;
         }
     }
 
@@ -356,7 +356,7 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
         
         if ((seq = RTFStrSave(seq)) == NULL)
             RTFPanic("%s: out of memory", fn);
-        outMap[stdCode] = seq;
+        thisOutMap[stdCode] = seq;
     }
     scanner.scanEscape = scanEscape;
     TSSetScanner(&scanner);
@@ -367,7 +367,7 @@ short RTFReadOutputMap(char *file, char *outMap[], short reinit)
 /*
  * One time initialization of user preferences from r2l-pref
  */
-void InitUserPrefs(void)
+static void InitUserPrefs(void)
 {
     prefs[pPageWidth] = 8.5 * 20 * 72;  /*twips*/
     prefs[pPageLeft] = 1.0 * 20 * 72;
@@ -525,7 +525,7 @@ static int read936CharCodes(void)
 /*
  * Initialize all character sets needed to interpret the RTF data
  */
-void InitCharSets(void)
+static void InitCharSets(void)
 {
     if (!RTFReadCharSetMap("rtf-encoding.cp1250", cp1250CharCode))
         RTFPanic("Cannot read character mapping for code page 1250!\n");
@@ -702,8 +702,7 @@ static void InitLatexEncoding(void)
  * will be copied.  Always NUL terminates (unless siz == 0).
  * Returns strlen(src); if retval >= siz, truncation occurred.
  */
-size_t
-my_strlcpy(char *dst, const char *src, size_t siz)
+static size_t my_strlcpy(char *dst, const char *src, size_t siz)
 {
         char *d = dst;
         const char *s = src;
@@ -735,8 +734,7 @@ my_strlcpy(char *dst, const char *src, size_t siz)
  * Returns strlen(src) + MIN(siz, strlen(initial dst)).
  * If retval >= siz, truncation occurred.
  */
-size_t
-my_strlcat(char *dst, const char *src, size_t siz)
+static size_t my_strlcat(char *dst, const char *src, size_t siz)
 {
         char *d = dst;
         const char *s = src;

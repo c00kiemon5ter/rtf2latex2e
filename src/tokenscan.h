@@ -14,8 +14,8 @@ typedef	struct TSScanner	TSScanner;
 
 struct TSScanner
 {
-	void	(*scanInit) ();
-	char	*(*scanScan) ();
+	void	(*scanInit) (char *p);
+	char	*(*scanScan) (void);
 	char	*scanDelim;
 	char	*scanQuote;
 	char	*scanEscape;
