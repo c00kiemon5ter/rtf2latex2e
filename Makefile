@@ -3,9 +3,6 @@ VERSION = 2-0-2
 #reasonable default set of compiler flags while developing
 #CFLAGS = -g -D_FORTIFY_SOURCE=2 -Wall -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wshadow -Wstrict-prototypes -Wformat=2
 
-#release flags 
-CFLAGS =
-
 PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
 #PLATFORM?=-DMSWIN  # Windows
 #PLATFORM?=-DMSDOS  # DOS - w2p.bat does not work under command.com
@@ -22,12 +19,12 @@ exec_prefix?=$(prefix)
 BINARY_NAME=rtf2latex2e
 
 # Location of binary, man, info, and support files - adapt as needed
-packagename  =rtf2latex2e
-bindir      ?=$(exec_prefix)/bin
-datarootdir ?=$(prefix)/share
-datadir     ?=$(datarootdir)
-docdir      ?=$(datarootdir)/doc/$(packagename)
-pdfdir      ?=$(docdir)
+package-name = rtf2latex2e
+bindir      ?= $(exec_prefix)/bin
+datarootdir ?= $(prefix)/share
+datadir     ?= $(datarootdir)
+docdir      ?= $(datarootdir)/doc/$(package-name)
+pdfdir      ?= $(docdir)
 
 #Uncomment next 2 lines for Windows:
 #bindir    =
@@ -118,10 +115,10 @@ src/eqn.o: src/eqn.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/rtf2latex
 	$(CC) $(PLATFORM) $(CFLAGS) -c src/eqn.c -o src/eqn.o
 
 src/init.o: src/init.c
-	$(CC) $(PLATFORM) -DPREFS_DIR=\"$(datadir)/$(packagename)\" $(CFLAGS) -c src/init.c -o src/init.o
+	$(CC) $(PLATFORM) -DPREFS_DIR=\"$(datadir)/$(package-name)\" $(CFLAGS) -c src/init.c -o src/init.o
 
 src/main.o: src/main.c
-	$(CC) $(PLATFORM) -DPREFS_DIR=\"$(datadir)/$(packagename)\" -DVERSION=\"$(VERSION)\" $(CFLAGS) -c src/main.c -o src/main.o
+	$(CC) $(PLATFORM) -DPREFS_DIR=\"$(datadir)/$(package-name)\" -DVERSION=\"$(VERSION)\" $(CFLAGS) -c src/main.c -o src/main.o
 
 src/mygetopt.o: src/mygetopt.c src/mygetopt.h
 	$(CC) $(PLATFORM) $(CFLAGS) -c src/mygetopt.c -o src/mygetopt.o
@@ -172,19 +169,19 @@ dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $
 	zip -r rtf2latex2e-$(VERSION) rtf2latex2e-$(VERSION)
 	rm -rf rtf2latex2e-$(VERSION)
 	
-install: rtf2latex2e doc
+install: rtf2latex2e
 	mkdir -p                $(DESTDIR)$(bindir)
-	mkdir -p                $(DESTDIR)$(datadir)/$(packagename)
+	mkdir -p                $(DESTDIR)$(datadir)/$(package-name)
 	
 	cp $(BINARY_NAME)       $(DESTDIR)$(bindir)
-	cp $(PREFS)             $(DESTDIR)$(datadir)/$(packagename)
+	cp $(PREFS)             $(DESTDIR)$(datadir)/$(package-name)
 	
 	@echo "******************************************************************"
 	@echo "*** rtf2latex2e successfully installed as \"$(BINARY_NAME)\""
 	@echo "*** in directory \"$(bindir)\""
 	@echo "***"
 	@echo "*** rtf2latex2e was compiled to search for its configuration files in"
-	@echo "***           \"$(datarootdir)/$(packagename)\" "
+	@echo "***           \"$(datarootdir)/$(package-name)\" "
 	@echo "***"
 	@echo "*** If the configuration files are moved then either"
 	@echo "***   1) set the environment variable RTFPATH to this new location, or"
