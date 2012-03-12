@@ -77,32 +77,32 @@ print_usage(void)
     fprintf(stdout, "  -f               fractional document, omit latex preamble\n");
     fprintf(stdout, "  -D               make a new directory for latex and extracted images\n");
     fprintf(stdout, "  -e #             equation conversion options\n");
-    fprintf(stdout, "      -e1              convert to latex\n");
-    fprintf(stdout, "      -e2              insert image\n");
-    fprintf(stdout, "      -e4              keep intermediate eqn file\n");
-    fprintf(stdout, "      -e8              insert eqn file name in latex document\n");
+    fprintf(stdout, "      -e 1              convert to latex\n");
+    fprintf(stdout, "      -e 2              insert image\n");
+    fprintf(stdout, "      -e 4              keep intermediate eqn file\n");
+    fprintf(stdout, "      -e 8              insert eqn file name in latex document\n");
     fprintf(stdout, "  -n               natural latex formatting ... easiest to edit\n");
     fprintf(stdout, "  -p #             paragraph conversion options\n");
-    fprintf(stdout, "      -p1              'heading 1' style -> '\\section{}'\n");
-    fprintf(stdout, "      -p2              indenting\n");
-    fprintf(stdout, "      -p4              space between paragraphs\n");
-    fprintf(stdout, "      -p8              line spacing\n");
-    fprintf(stdout, "      -p16             margins\n");
-    fprintf(stdout, "      -p32             alignment\n");
+    fprintf(stdout, "      -p 1              'heading 1' style -> '\\section{}'\n");
+    fprintf(stdout, "      -p 2              convert indenting\n");
+    fprintf(stdout, "      -p 4              convert space between paragraphs\n");
+    fprintf(stdout, "      -p 8              convert line spacing\n");
+    fprintf(stdout, "      -p 16             convert margins\n");
+    fprintf(stdout, "      -p 32             convert alignment\n");
     fprintf(stdout, "  -P path          path to preferred preference directory\n");
     fprintf(stdout, "  -t #             text conversion options\n");
-    fprintf(stdout, "      -t1              font size\n");
-    fprintf(stdout, "      -t2              font color\n");
-    fprintf(stdout, "      -t4              font formatting\n");
-    fprintf(stdout, "      -t8              replace tabs with spaces\n");
+    fprintf(stdout, "      -t 1              convert text size\n");
+    fprintf(stdout, "      -t 2              convert text color\n");
+    fprintf(stdout, "      -t 4              convert text formatting\n");
+    fprintf(stdout, "      -t 8              replace tabs with spaces\n");
     fprintf(stdout, "  -T #             table conversion options\n");
-    fprintf(stdout, "      -T1              keep column widths\n");
-    fprintf(stdout, "      -T2              keep column alignment\n");
+    fprintf(stdout, "      -T 1              keep column widths\n");
+    fprintf(stdout, "      -T 2              keep column alignment\n");
     fprintf(stdout, "  -v               version information\n");
     fprintf(stdout, "\n");
     fprintf(stdout, "Examples:\n");
     fprintf(stdout, "  rtf2latex2e foo              convert foo.rtf to foo.tex\n");
-    fprintf(stdout, "  rtf2latex2e -p 33 -t 4 foo   minimal latex mark-up\n");
+    fprintf(stdout, "  rtf2latex2e -n foo           minimal mark-up\n");
     fprintf(stdout, "  rtf2latex2e -e 15 foo        help identify failed equation conversion\n");
     fprintf(stdout, "  rtf2latex2e foo-eqn003.eqn   debug third equation (after above command)\n");
     fprintf(stdout, "  rtf2latex2e -D foo           put foo.tex and images in foo-latex dir\n");
@@ -293,6 +293,7 @@ main(int argc, char **argv)
             cli_paragraph = 63;
             cli_text = 7;
             cli_equation = 1;
+            cli_table = 3;
             break;
 
         case 'D':
@@ -309,8 +310,9 @@ main(int argc, char **argv)
 
         case 'n':
             cli_paragraph = 33;
-            cli_text = 20;
+            cli_text = 12;
             cli_equation = 1;
+            cli_table = 0;
             break;
 
         case 'p':
@@ -360,7 +362,7 @@ main(int argc, char **argv)
         prefs[pConvertTextSize]  = cli_text & 1;
         prefs[pConvertTextColor] = cli_text & 2;
         prefs[pConvertTextForm]  = cli_text & 4;
-        prefs[pConvertTextNoTab] = cli_text & 16;
+        prefs[pConvertTextNoTab] = cli_text & 8;
     }
 
     if (cli_equation >= 0) {

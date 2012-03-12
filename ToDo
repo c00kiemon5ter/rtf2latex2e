@@ -5,3 +5,6 @@ Post 2-0-0 Improvements
    support for font changing
    incorporate SafeBuf stuff?
    fix-up enc-utf8x.rtf translation
+   
+   look at CR/LF issues
+   go back to removing .ltx files
