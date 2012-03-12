@@ -25,6 +25,7 @@ datarootdir ?= $(prefix)/share
 datadir     ?= $(datarootdir)
 docdir      ?= $(datarootdir)/doc/$(package-name)
 pdfdir      ?= $(docdir)
+mandir      ?= $(datarootdir)/man
 
 #Uncomment next 2 lines for Windows:
 #bindir    =
@@ -62,10 +63,10 @@ PREFS        = pref/latex-encoding                pref/latex-encoding.mac       
                pref/rtf-encoding.cp1251           
 
 DOCS         = doc/GPL_license            doc/ChangeLog \
-               doc/rtf2latexSWP.tex       doc/rtfReader.tex          doc/rtf2latexDoc.tex    \
-               doc/Makefile
+               doc/rtfReader.tex          doc/rtf2latexDoc.tex    \
+               doc/Makefile               doc/rtf2latex2e.1
                
-PDFS         = doc/rtf2latexSWP.pdf       doc/rtfReader.pdf          doc/rtf2latexDoc.pdf  
+PDFS         = doc/rtfReader.pdf          doc/rtf2latexDoc.pdf  
 
 TEST         = test/Makefile              test/arch.rtf              test/arch-mac.rtf       \
                test/equation.rtf          test/fig-jpeg.rtf          test/multiline.rtf      \
@@ -132,7 +133,7 @@ src/tokenscan.o: src/tokenscan.c src/tokenscan.h
 src/writer.o: src/writer.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/tokenscan.h src/cole.h src/cole_support.h src/rtf2latex2e.h src/eqn.h
 	$(CC) $(PLATFORM) $(CFLAGS) -c src/writer.c -o src/writer.o
 
-pdf : doc/rtf2latexSWP.tex doc/rtfReader.tex doc/rtf2latexDoc.tex
+pdf : doc/rtfReader.tex doc/rtf2latexDoc.tex
 	cd doc && $(MAKE)
 
 check:
@@ -175,6 +176,7 @@ install: rtf2latex2e
 	
 	cp $(BINARY_NAME)       $(DESTDIR)$(bindir)
 	cp $(PREFS)             $(DESTDIR)$(datadir)/$(package-name)
+	cp doc/rtf2latex2e.1    $(DESTDIR)$(mandir)/man1
 	
 	@echo "******************************************************************"
 	@echo "*** rtf2latex2e successfully installed as \"$(BINARY_NAME)\""
@@ -191,7 +193,6 @@ install: rtf2latex2e
 
 install-pdf: 
 	mkdir -p $(pdfdir)
-	cp doc/rtf2latexSWP.pdf $(DESTDIR)$(pdfdir)
 	cp doc/rtfReader.pdf    $(DESTDIR)$(pdfdir)
 	cp doc/rtf2latexDoc.pdf $(DESTDIR)$(pdfdir)
 

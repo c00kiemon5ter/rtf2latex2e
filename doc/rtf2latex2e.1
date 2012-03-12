@@ -1,0 +1,166 @@
+.TH rtf2latex2e "March 11, 2012"
+.SH NAME
+rtf2latex2e \- convert RTF file to LaTeX format
+.SH SYNOPSIS
+.B
+rtf2latex2e 
+[options ...] file.tex
+.SH DESCRIPTION
+.I
+rtf2latex2e 
+converts a text file in rich text format (RTF) to a text
+file in LaTeX format.  Text styles, symbols, equations,
+tables, and footnotes are handled.  
+.I
+rtf2latex2e 
+also extracts and saves any image files found inside the RTF file.  
+The resulting LaTeX file and included images can be typeset using LaTeX
+but, of course, image formats unsupported by LaTeX will need to
+be converted to an image with a supported format.
+.SH OPTIONS
+.TP
+.B \-b
+Single option that chooses options that for
+the best match between LaTeX and RTF formatting.  (This fidelity
+is at the expense of readability and often the RTF makes poor
+choices for indentation and line spacing that are automatically
+provided by LaTeX.)  This option is equivalent to \'-e 1 -p 63 -t 7 -T 3\'
+.TP
+.B \-D
+Create a new directory named \'file-latex\' and save the converted 
+LaTeX and extracted images inside.
+.TP
+.B \-e #
+Manage equation conversion.  Multiple options (see below) can be 
+combined by adding individual options together. For example, if you would like both the equations that have been
+translated into TeX as well as the images of the equations 
+(because you don\'t trust 
+.I
+rtf2latex2e
+) then you might use \'-e 3\'
+so that you could see both in the typeset LaTeX file.
+.TP
+.B \-e 1
+Convert MathType equations (which includes basic
+Word Equation Editor equations) to LaTeX
+.TP
+.B \-e 2
+Include image of Math Type equations (which includes basic
+Word Equation Editor equations) in the LaTeX file
+.TP
+.B \-e 4
+Retain the intermediate .eqn files extracted for each equation.
+This is primarily useful as a debugging tool.
+.TP
+.B \-e 8
+Insert the name of the .eqn file into the text of the LaTeX file.
+Obviously this is most useful when the previous option is selected as well.
+.TP
+.B \-f
+Create a fractional LaTeX document.  The LaTeX preamble is omitted
+and the resulting file can be processed using \\include{file.tex} 
+in another document.
+.TP
+.B \-h
+Help!
+.TP
+.B \-n
+Convenience option to produce a natural LaTeX document that is easy to edit.
+This option discards a lot of paragraph mark-up and futzing with line
+spacing.  Consequently the results will probably not look like the original
+RTF file, but isn\'t that why you converted the file in the first
+place?  This option is equivalent to \'-e 1 -p 33 -t 12 -T 0\'
+.TP
+.B \-p #
+Manage paragraph conversion.  The number is additive
+so if you want to preserve only indenting and line spacing
+then use -p 6
+.TP
+.B \-p 1 
+Conversion of basic paragraph formatting to LaTeX structures.
+For example, enable mapping of \'heading 1\' style to \'\\section{}\'
+.TP
+.B \-p 2
+Retain paragraph indention of RTF document.
+.TP
+.B \-p 4
+Retain spacing between paragraphs as in RTF document.
+.TP
+.B \-p 8
+Retain paragraph line spacing of RTF document.
+.TP
+.B \-p 16
+Retain margins used in RTF document.
+.TP
+.B \-p 32
+Retain paragraph alignment (e.g., justified, left, right) in RTF document.
+.TP
+.B \-P path
+path to support files (See FILES below).  The directory that the files
+were originally installed is shown at the end of the help text
+from @code{rtf2latex2e -h}
+.TP
+.B \-t #
+Manage text conversion.  Combine options by adding them together.
+Why isn\'t there a way to retain the actual fonts (e.g., Helvetica)?
+Because that is hard.
+.TP
+.B \-t 1
+Retain text size of RTF document.
+.TP
+.B \-t 2
+Retain text colors in RTF document.
+.TP
+.B \-t 4
+Retain text formatting (bold, italic) of RTF document.
+.TP
+.B \-t 8
+Replace tabs with spaces (because tabs are useless in LaTeX).
+.TP
+.B \-T #
+Manage table conversion.  Table conversion kind of works,
+but the impedance mismatch between the way that RTF handles
+tables and LaTeX does them is horrific.  Often it is 
+.TP
+.B \-T 1
+keep column widths
+.TP
+.B \-T 2
+keep column alignment
+.SH FILES
+There are a bunch of other files used
+by 
+.I
+rtf2latex2e.  
+These are usually located in /usr/local/share/rtf2latex2e
+but may have been installed elsewhere by your packaging system.  The
+files most amenable to tweaking by humans are
+.nf
+    latex-encoding   file used to map symbols to LaTeX commands
+    r2l-head         LaTeX commands inserted in every LaTeX preamble
+    r2l-map          mapping between RTF styles and LaTeX commands
+    r2l-pref         default preferences for rtf2latex2e
+.fi
+The other files consist of tables to facilitate conversion of RTF commands
+and symbols. 
+.SH EXAMPLE
+.nf
+rtf2latex2e foo              convert foo.rtf to foo.tex
+rtf2latex2e -n foo           minimal excess mark-up
+rtf2latex2e -e 15 foo        help identify failed equation conversion
+rtf2latex2e foo-eqn003.eqn   debug third equation (after above command)
+rtf2latex2e -D foo           put foo.tex and images in foo-latex
+rtf2latex2e foo.rtfd         convert directory and put result in foo-latex
+.fi
+.SH BUGS
+Some might consider RTF to be a bug.  Markup for table conversion is still
+too convoluted.  Good free utilities for converting PICT and EMF files to
+EPS or PDF are not readily available for all platforms.
+.SH AUTHOR
+Most recently Scott Prahl.  The original RTF reader written in 1994 by
+Paul DuBois was heavily modified and adapted by Ujwal Sathyam in 2001.  Wilfried
+Hennings maintains the Windows port.
+.SH AVAILABILITY
+.I
+rtf2latex2e
+is GPL licensed and available from SourceForge at http://rtf2latex2e.sourceforge.net
