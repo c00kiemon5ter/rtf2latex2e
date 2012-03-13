@@ -1,11 +1,9 @@
 SRCS = Makefile Release-notes.txt GPL_license \
        rtf2latexDoc.tex rtf2latex2e.1
-PDF  = rtf2latexDoc.pdf
-WEB  = header.html footer.html
+WEB  = header.html footer.html web/index.html web/logo.png \
+       web/arrow.gif web/style.css web/docs.html
 
-all: $(PDF)
-
-html: web/usage.html web/manpage.html
+all: rtf2latexDoc.pdf web/usage.html web/manpage.html
 
 rtf2latexDoc.pdf : rtf2latexDoc.tex
 	pdflatex rtf2latexDoc
@@ -30,7 +28,8 @@ web/usage.html: header.html footer.html rtf2latexDoc.tex
 	rm -f rtf2latexDoc.aux rtf2latexDoc.haux rtf2latexDoc.htoc
 	rm -f rtf2latexDoc.log rtf2latexDoc.out rtf2latexDoc.html
 
-install-html: web/usage.html web/manpage.html 
+install: web/usage.html web/manpage.html rtf2latexDoc.pdf
+	cp rtf2latexDoc.pdf web
 	rsync -ave ssh web/ web.sourceforge.net:/home/project-web/rtf2latex2e/htdocs
 	
 clean:
