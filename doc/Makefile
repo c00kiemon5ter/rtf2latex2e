@@ -1,21 +1,38 @@
 SRCS = Makefile Release-notes.txt GPL_license \
-       rtf2latexDoc.tex rtf2latexSWP.tex rtfReader.tex
-PDF  = rtf2latexDoc.pdf rtf2latexSWP.pdf rtfReader.pdf
+       rtf2latexDoc.tex rtf2latex2e.1
+PDF  = rtf2latexDoc.pdf
+WEB  = header.html footer.html
 
 all: $(PDF)
 
-%.pdf:	%.tex
-	pdflatex $<
-
-rtf2latexSWP.pdf : rtf2latexSWP.tex
-	pdflatex rtf2latexSWP
-
-rtfReader.pdf : rtfReader.tex
-	pdflatex rtfReader
+html: web/usage.html web/manpage.html
 
 rtf2latexDoc.pdf : rtf2latexDoc.tex
 	pdflatex rtf2latexDoc
+	pdflatex rtf2latexDoc
 
+web/manpage.html: header.html footer.html rtf2latex2e.1
+	man ./rtf2latex2e.1 | man2html --pgsize=100000 --bare > mid.html
+	perl -pi.bak -e 's/^ {7}//' mid.html
+	cat header.html mid.html footer.html > man.html
+	sed "s/HHTITLEHH/rtf2latex2e: manpage/" man.html > web/manpage.html
+	rm mid.html mid.html.bak man.html
+
+web/usage.html: header.html footer.html rtf2latexDoc.tex
+	pdflatex rtf2latexDoc
+	pdflatex rtf2latexDoc
+	hevea rtf2latexDoc.tex
+	tail -n +50 rtf2latexDoc.html > temp1.html
+	sed -n -e :a -e '1,7!{P;N;D;};N;ba' temp1.html > temp2.html
+	cat header.html temp2.html footer.html > temp3.html
+	sed "s/HHTITLEHH/rtf2latex2e: User's Manual/" temp3.html > web/usage.html
+	rm -f temp1.html temp2.html temp3.html
+	rm -f rtf2latexDoc.aux rtf2latexDoc.haux rtf2latexDoc.htoc
+	rm -f rtf2latexDoc.log rtf2latexDoc.out rtf2latexDoc.html
+
+install-html: web/usage.html web/manpage.html 
+	rsync -ave ssh web/ web.sourceforge.net:/home/project-web/rtf2latex2e/htdocs
+	
 clean:
 	$(RM) *.log *.aux *.out
 	
