@@ -11,7 +11,8 @@ rtf2latexDoc.pdf : rtf2latexDoc.tex
 
 web/manpage.html: header.html footer.html rtf2latex2e.1
 	man ./rtf2latex2e.1 | man2html --pgsize=100000 --bare > mid.html
-	perl -pi.bak -e 's/^ {7}//' mid.html
+	# remove first four spaces from each lines
+	perl -pi.bak -e 's/^ {2}//' mid.html
 	cat header.html mid.html footer.html > man.html
 	sed "s/HHTITLEHH/rtf2latex2e: manpage/" man.html > web/manpage.html
 	rm mid.html mid.html.bak man.html

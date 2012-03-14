@@ -21,23 +21,19 @@ div#logo {
 		background-repeat: no-repeat;
 }
 
-h2 {
-		color: #ffffff;
-		font-size: 14px;
-		font-weight: bold;
-}
-
-h3 {
-		color: #ffffff;
-		font-size: 12px;
-		font-weight: bold;
-}
-
 b {
 		color: #ffffff;
 		font-weight: bold;
 }
 
+pre,
+code,
+kbd,
+samp,
+tt{
+  font-family:courier, "courier new", monospace;
+  font-size:1em;
+}
 div#footer {
 		width: 780px;
 		clear: both;
@@ -83,13 +79,19 @@ div#content a[href]:hover {
 h1 {
 		color: #bbc6b6;
 		font-weight: bold;
-		font-size: 20pt;
+		font-size: 24pt;
 }
 
 h2 {
 		color: #bbc6b6;
 		font-weight: bold;
 		font-size: 15pt;
+}
+
+h3 {
+		color: #bbc6b6;
+		font-size: 12pt;
+		font-weight: bold;
 }
 
 div#content {
