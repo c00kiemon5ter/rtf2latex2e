@@ -14,7 +14,7 @@ web/manpage.html: header.html footer.html rtf2latex2e.1
 	# remove first four spaces from each lines
 	perl -pi.bak -e 's/^ {2}//' mid.html
 	cat header.html mid.html footer.html > man.html
-	sed "s/HHTITLEHH/rtf2latex2e: manpage/" man.html > web/manpage.html
+	sed "s/HHTITLEHH/rtf2latex2e: man page/" man.html > web/manpage.html
 	rm mid.html mid.html.bak man.html
 
 web/usage.html: header.html footer.html rtf2latexDoc.tex
