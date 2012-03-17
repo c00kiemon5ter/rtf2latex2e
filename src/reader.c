@@ -84,22 +84,22 @@ static char *outputName = NULL;
 
 static int RTFBraceLevel(int level)
 {
-	static int braceLevel;
-	if (level == -99)
-		return braceLevel;
-	
-	braceLevel = level;
-	return braceLevel;
+    static int braceLevel;
+    if (level == -99)
+        return braceLevel;
+
+    braceLevel = level;
+    return braceLevel;
 }
 
 static void RTFSetBraceLevel(int level) 
 {
-	(void) RTFBraceLevel(level);
+    (void) RTFBraceLevel(level);
 }
 
 int RTFGetBraceLevel(void)
 {
-	return RTFBraceLevel(-99);
+    return RTFBraceLevel(-99);
 }
 
 /*
@@ -371,13 +371,13 @@ void RTFRouteToken(void)
 
 static void RTFDoGroup(int execute, int level)
 {
-	if (level<=0) {fprintf(stderr,"trying doGroup at braceLevel 0??\n"); return;}
+    if (level<=0) {fprintf(stderr,"trying doGroup at braceLevel 0??\n"); return;}
 
     while (RTFGetToken() != rtfEOF) {
 
         if (RTFGetBraceLevel() < level) 
-        	return;
-        	
+            return;
+
         if (execute) RTFRouteToken();
     }
 }
@@ -403,16 +403,16 @@ static int RTFToToken(int class, int major, int minor, int execute)
 {
     short level = RTFGetBraceLevel();
 
-	if (level==0) {fprintf(stderr,"trying to skip to something a braceLevel 0??\n"); return 0;}
-	
+    if (level==0) {fprintf(stderr,"trying to skip to something a braceLevel 0??\n"); return 0;}
+
     while (RTFGetToken() != rtfEOF) {
-    
+
         if (RTFCheckCMM(class,major,minor))
-    		return 1;
+            return 1;
 
         if (RTFGetBraceLevel() < level)
             return 0;
-            
+
         if (execute) RTFRouteToken();
     }
     return 0;
@@ -420,12 +420,12 @@ static int RTFToToken(int class, int major, int minor, int execute)
 
 int RTFSkipToToken(int class, int major, int minor)
 {
-	return RTFToToken(class, major, minor, NO_EXECUTE);
+    return RTFToToken(class, major, minor, NO_EXECUTE);
 }
 
 int RTFExecuteToToken(int class, int major, int minor)
 {
-	return RTFToToken(class, major, minor, EXECUTE);
+    return RTFToToken(class, major, minor, EXECUTE);
 }
 
 /* 
@@ -433,28 +433,28 @@ int RTFExecuteToToken(int class, int major, int minor)
  */
 char *RTFGetTextWord(void)
 {
-	char word[256];
-	int len = 0;
-	short level = RTFGetBraceLevel();
-	
-	/* Skip over spaces */
+    char word[256];
+    int len = 0;
+    short level = RTFGetBraceLevel();
+
+    /* Skip over spaces */
     while (rtfClass != rtfText || (rtfClass == rtfText && rtfTextBuf[0] == ' ')) {
-    	RTFGetToken();
-    	if (rtfClass == rtfEOF) return NULL;
-    	if (level > RTFGetBraceLevel()) return NULL;
+        RTFGetToken();
+        if (rtfClass == rtfEOF) return NULL;
+        if (level > RTFGetBraceLevel()) return NULL;
     }
 
-	/* Collect the word */
-	while (rtfClass == rtfText) {
-		word[len] = rtfTextBuf[0];
-		len++;
-    	if (RTFGetToken() == rtfEOF) return NULL;
-    	if (level > RTFGetBraceLevel()) break;
-    	if (rtfTextBuf[0] == ' ') break;
-    	if (len >= 256) break;
-	}
-	word[len]='\0';
-	return strdup(word);
+    /* Collect the word */
+    while (rtfClass == rtfText) {
+        word[len] = rtfTextBuf[0];
+        len++;
+        if (RTFGetToken() == rtfEOF) return NULL;
+        if (level > RTFGetBraceLevel()) break;
+        if (rtfTextBuf[0] == ' ') break;
+        if (len >= 256) break;
+    }
+    word[len]='\0';
+    return strdup(word);
 }
 
 
@@ -527,62 +527,62 @@ short RTFPeekToken(void)
  */
 static int find932Index(short value)
 {
-	int i;
-	
-	for (i=0; i<cp932IndexSize; i++)
-		if (cp932Index[i] == value) return i;
-		
-	//short *ptr = (short *)bsearch(&value, cp932Index, cp932IndexSize, sizeof(short), shortcmp);
-    
+    int i;
+
+    for (i=0; i<cp932IndexSize; i++)
+        if (cp932Index[i] == value) return i;
+
+    //short *ptr = (short *)bsearch(&value, cp932Index, cp932IndexSize, sizeof(short), shortcmp);
+
    // if (ptr) return ptr-cp932Index;
-    	
+
     return -1;
 }
 
 static void RTFSet932Token(unsigned char firstByte)
 {
-	int index932;
-	unsigned int value;
-	char *s1, *s2;
-	
-	/* ASCII ... leave alone */
-	if (firstByte<0x80) {
-        rtfMinor = cp1252CharCode[firstByte];
-		return;
-	}
+    int index932;
+    unsigned int value;
+    char *s1, *s2;
 
-	/* this should not happen */
-	if (firstByte==0x80 || firstByte==0xA0 || firstByte==0xFD || firstByte==0xFE || firstByte==0xFF) {
-		rtfClass = rtfUnknown;
-		rtfParam = rtfNoParam;
-		rtfTextBuf[0] = '\0';
-		return;
-	}
-	
-	/* one byte character */
-	if (0xA0<firstByte && firstByte<0xE0) {
-		value = firstByte;
-		index932 = find932Index(value);
-	} else {
-		s1 = strdup(rtfTextBuf);
-		_RTFGetToken2();
-		s2 = strdup_together(s1,rtfTextBuf);
-		value = firstByte*256+rtfMajor;
-		index932 = find932Index(value);
-		strcpy(rtfTextBuf,s2);
-		free(s2);
-		free(s1);
-	}
-	
-	if (index932 == -1) {
-		rtfMinor = '?';
-	} else {
-		rtfClass = rtfControl;
-		rtfMajor = rtfDestination;
-		rtfMinor = rtfUnicodeFake;	
-		rtfParam = cp932CharCode[index932];
-	}
-//	fprintf(stderr,"value is %u, index is %d, index[%d]=%u, charcode[%d]=%u\n", value, index932, index932, (unsigned short) cp932Index[index932],index932, (unsigned short) cp932CharCode[index932]);
+    /* ASCII ... leave alone */
+    if (firstByte<0x80) {
+        rtfMinor = cp1252CharCode[firstByte];
+        return;
+    }
+
+    /* this should not happen */
+    if (firstByte==0x80 || firstByte==0xA0 || firstByte==0xFD || firstByte==0xFE || firstByte==0xFF) {
+        rtfClass = rtfUnknown;
+        rtfParam = rtfNoParam;
+        rtfTextBuf[0] = '\0';
+        return;
+    }
+
+    /* one byte character */
+    if (0xA0<firstByte && firstByte<0xE0) {
+        value = firstByte;
+        index932 = find932Index(value);
+    } else {
+        s1 = strdup(rtfTextBuf);
+        _RTFGetToken2();
+        s2 = strdup_together(s1,rtfTextBuf);
+        value = firstByte*256+rtfMajor;
+        index932 = find932Index(value);
+        strcpy(rtfTextBuf,s2);
+        free(s2);
+        free(s1);
+    }
+
+    if (index932 == -1) {
+        rtfMinor = '?';
+    } else {
+        rtfClass = rtfControl;
+        rtfMajor = rtfDestination;
+        rtfMinor = rtfUnicodeFake;  
+        rtfParam = cp932CharCode[index932];
+    }
+//  fprintf(stderr,"value is %u, index is %d, index[%d]=%u, charcode[%d]=%u\n", value, index932, index932, (unsigned short) cp932Index[index932],index932, (unsigned short) cp932CharCode[index932]);
 }
 
 /* 
@@ -590,48 +590,48 @@ static void RTFSet932Token(unsigned char firstByte)
  */
 static int find936Index(short value)
 {
-	int i;
-	
-	for (i=0; i<cp936IndexSize; i++)
-		if (cp936Index[i] == value) return i;
-		
-	//short *ptr = (short *)bsearch(&value, cp936Index, cp936IndexSize, sizeof(short), shortcmp);
-    
+    int i;
+
+    for (i=0; i<cp936IndexSize; i++)
+        if (cp936Index[i] == value) return i;
+
+    //short *ptr = (short *)bsearch(&value, cp936Index, cp936IndexSize, sizeof(short), shortcmp);
+
    // if (ptr) return ptr-cp936Index;
-    	
+
     return -1;
 }
 
 static void RTFSet936Token(unsigned char firstByte)
-{	
-	int index936;
-	unsigned int value;
-	char *s1, *s2;
-	
-	/* ASCII ... leave alone */
-	if (firstByte<0x80) {
-        rtfMinor = cp1252CharCode[firstByte];
-		return;
-	}
+{   
+    int index936;
+    unsigned int value;
+    char *s1, *s2;
 
-	s1 = strdup(rtfTextBuf);
-	_RTFGetToken2();
-	s2 = strdup_together(s1,rtfTextBuf);
-	value = firstByte*256+rtfMajor;
-	index936 = find936Index(value);
-	strcpy(rtfTextBuf,s2);
-	free(s2);
-	free(s1);
-	
-	if (index936 == -1) {
-		rtfMinor = '?';
-	} else {
-		rtfClass = rtfControl;
-		rtfMajor = rtfDestination;
-		rtfMinor = rtfUnicodeFake;
-		rtfParam = cp936CharCode[index936];
-	}
-//	fprintf(stderr,"value is %u, index is %d, index[%d]=%u, charcode[%d]=%u\n", value, index936, index936, (unsigned short) cp936Index[index936],index936, (unsigned short) cp936CharCode[index936]);
+    /* ASCII ... leave alone */
+    if (firstByte<0x80) {
+        rtfMinor = cp1252CharCode[firstByte];
+        return;
+    }
+
+    s1 = strdup(rtfTextBuf);
+    _RTFGetToken2();
+    s2 = strdup_together(s1,rtfTextBuf);
+    value = firstByte*256+rtfMajor;
+    index936 = find936Index(value);
+    strcpy(rtfTextBuf,s2);
+    free(s2);
+    free(s1);
+
+    if (index936 == -1) {
+        rtfMinor = '?';
+    } else {
+        rtfClass = rtfControl;
+        rtfMajor = rtfDestination;
+        rtfMinor = rtfUnicodeFake;
+        rtfParam = cp936CharCode[index936];
+    }
+//  fprintf(stderr,"value is %u, index is %d, index[%d]=%u, charcode[%d]=%u\n", value, index936, index936, (unsigned short) cp936Index[index936],index936, (unsigned short) cp936CharCode[index936]);
 }
 
 static void _RTFGetToken(void)
@@ -655,7 +655,7 @@ static void _RTFGetToken(void)
      */
 
     _RTFGetToken2();
-    
+
     if (rtfClass == rtfText) {   /* map RTF char to standard code */
 
         if (curCharCode==cp932CharCode) {
@@ -668,7 +668,7 @@ static void _RTFGetToken(void)
             return;
         }
 
-       	rtfMinor = RTFMapChar(rtfMajor);
+        rtfMinor = RTFMapChar(rtfMajor);
         return;
     }
 
@@ -677,19 +677,19 @@ static void _RTFGetToken(void)
         if (fp) curCharCode = fp->rtfFCharCode;
         return;
     }
-    
+
     /* \cchs indicates any characters not belonging to the default document character
      * set and tells which character set they do belong to. Macintosh character sets 
      * are represented by values greater than 255. The values for N correspond to the 
      * values for the \ fcharset control word.
      */
     if (RTFCheckCMM(rtfControl, rtfCharAttr, rtfCharCharSet)) {
-    
+
         if (rtfParam>255) {
             curCharCode = cp1252CharCode;
             return;
         }
-        
+
         switch (rtfParam) {
         case 1:
             curCharCode = genCharCode;
@@ -771,23 +771,23 @@ static void _RTFGetToken2(void)
         }
         return;
     }
-    
+
     /* get the character following the backslash */
     c = GetChar();
-    
+
     /* \<newline>text         ---> \par text */
     /* \<newline><spaces>text ---> \text */
     if (c == '\n' || c == '\r') {
         while (c == '\n' || c == '\r')  
             c = GetChar();
-    
+
         if (1||c != ' ') {
             pushedChar = c;
             strcpy(rtfTextBuf,"\\par");
             Lookup("\\par"); 
             return;
         }
-        
+
         while (c == ' ') 
             c = GetChar();
 
@@ -795,7 +795,7 @@ static void _RTFGetToken2(void)
         rtfTextBuf[2] = '\0';
         rtfTextLen = 2;
     }
-    
+
 
     if (c == EOF) {
         /* early eof, whoops (class is rtfUnknown) */
@@ -849,9 +849,9 @@ static void _RTFGetToken2(void)
 
     if (c != EOF)
         rtfTextBuf[rtfTextLen - 1] = '\0';
-    
+
     Lookup(rtfTextBuf);         /* sets class, major, minor */
-    
+
     if (c != EOF)
         rtfTextBuf[rtfTextLen - 1] = c;
 
@@ -997,7 +997,7 @@ short RTFMapChar(short c)
 {
     if (c < 0 || c >= CHAR_SET_SIZE)
         return (rtfSC_nothing);
-		
+
     return (curCharCode[c]);
 }
 
@@ -1042,7 +1042,7 @@ static void ReadFontTbl(void)
 
         if (RTFCheckCM(rtfGroup, rtfEndGroup))
             break;
-            
+
         if (rtfClass==rtfText && rtfMinor == rtfSC_space)
             continue;
 
@@ -1054,7 +1054,7 @@ static void ReadFontTbl(void)
             else                /* can't tell! */
                 RTFPanic("%s: Cannot determine format", fn);
         }
-        
+
         if (old == 0) {         /* need to find "{" here */
             if (!RTFCheckCM(rtfGroup, rtfBeginGroup))
                 RTFPanic("%s: xmissing \"{\"", fn);
@@ -1083,17 +1083,17 @@ static void ReadFontTbl(void)
         while (rtfClass != rtfEOF && !RTFCheckCM(rtfText, ';')) {
 
             if (rtfClass == rtfControl) {
-            
+
                 switch (rtfMajor) {
                 default:
                     /* ignore token but announce it */
                     RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf); 
                     break;
-                    
+
                 case rtfFontFamily:
                     fp->rtfFFamily = rtfMinor;
                     break;
-                    
+
                 case rtfCharAttr:
                     switch (rtfMinor) {
                     default:
@@ -1103,7 +1103,7 @@ static void ReadFontTbl(void)
                         break;
                     }
                     break;
-                    
+
                 case rtfFontAttr:
                     switch (rtfMinor) {
 
@@ -1120,9 +1120,9 @@ static void ReadFontTbl(void)
                     case rtfFontCharSet:
                         fp->rtfFCharSet = rtfParam;
                         if (rtfParam == 128 || rtfParam == 78)  /* Japanese */
-                        	fp->rtfFCharCode = cp932CharCode;
+                            fp->rtfFCharCode = cp932CharCode;
                         if (rtfParam == 134 || rtfParam == 80)  /* Chinese GB2312 */
-                        	fp->rtfFCharCode = cp936CharCode;
+                            fp->rtfFCharCode = cp936CharCode;
                         break;
                     case rtfFontPitch:
                         fp->rtfFPitch = rtfParam;
@@ -1137,10 +1137,10 @@ static void ReadFontTbl(void)
                     }
                     break;
                 }
-                
+
             } else if (RTFCheckCM(rtfGroup, rtfBeginGroup)) {   /* dest */
                 RTFSkipGroup(); /* ignore for now */
-                
+
             } else if (rtfClass == rtfText) {   /* font name */
                 bp = buf;
                 while (rtfClass != rtfEOF && !RTFCheckCM(rtfText, ';')) {
@@ -1152,10 +1152,10 @@ static void ReadFontTbl(void)
                 /* fprintf(stderr,"%05d fontname=%s\n",fp->rtfFNum, buf); */
                 if (fp->rtfFName == NULL)
                     RTFPanic("%s: cannot allocate font name", fn);
-                    
+
                 if (strcasecmp(fp->rtfFName,"Symbol")==0)
                     fp->rtfFCharCode = symCharCode;
-                    
+
                 /* already have next token; don't read another at bottom of loop */
                 continue;
             } else {
@@ -1173,7 +1173,7 @@ static void ReadFontTbl(void)
                 RTFPanic("%s: missing '}' at end of \\fonttbl", fn);
         }
     }
-    
+
     if (fp == NULL || fp->rtfFNum == -1)
         RTFPanic("File does not contain a valid font table");
 
@@ -1181,9 +1181,9 @@ static void ReadFontTbl(void)
  * Could check other pieces of structure here, too, I suppose.
  */
     for (fp = fontList; fp != NULL; fp = fp->rtfNextFont) {
-		if (fp->rtfFName == NULL)
-			fp->rtfFName = strdup("noName");
-//		fprintf(stderr, "Font %3d, cs=%3d, lookup=%p, name='%s'\n", fp->rtfFNum, fp->rtfFCharSet, fp->rtfFCharCode, fp->rtfFName);
+        if (fp->rtfFName == NULL)
+            fp->rtfFName = strdup("noName");
+//      fprintf(stderr, "Font %3d, cs=%3d, lookup=%p, name='%s'\n", fp->rtfFNum, fp->rtfFCharSet, fp->rtfFCharCode, fp->rtfFName);
     }
 
     RTFRouteToken();            /* feed "}" back to router */
@@ -1192,7 +1192,7 @@ static void ReadFontTbl(void)
         RTFFont *fp1 = RTFGetFont(defaultFontNumber);
         if (fp1) curCharCode = fp1->rtfFCharCode;
     }
-    
+
 }
 
 /*
@@ -1236,13 +1236,13 @@ void ReadColorTbl(void)
             case rtfBlue:
                 cp->rtfCBlue = rtfParam;
                 break;
-                
+
             case rtfShade:
             case rtfTint:
             case rtfColorHyperlink:
             case rtfColorAccent:
             case rtfColorTextTwo:
-            	break;
+                break;
             }
             RTFGetToken();
         }
@@ -1268,7 +1268,7 @@ static short Style2LatexItem(char *name)
 
     for (i = 0; i < MAX_STYLE_MAPPINGS; i++) {
         if (!Style2LatexStyle[i]) return -1; 
-        
+
         if (strcasecmp(name, Style2LatexStyle[i]) == 0)
             return i;
     }
@@ -1320,7 +1320,7 @@ static void ReadStyleSheet(void)
             if (rtfClass == rtfControl) {
                 if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
                     continue;   /* ignore "\*" */
-                    
+
                 if (RTFCheckMM(rtfParAttr, rtfStyleNum)) {
                     sp->rtfSNum = rtfParam;
                     sp->rtfSType = rtfParStyle;
@@ -1367,7 +1367,7 @@ static void ReadStyleSheet(void)
                 sep->rtfSEText = RTFStrSave(rtfTextBuf);
                 if (! sep->rtfSEText)
                     RTFPanic("%s: cannot allocate style element text", fn);
-                    
+
                 if (sepLast == NULL)
                     sp->rtfSSEList = sep;       /* first element */
                 else            /* add to end */
@@ -1404,7 +1404,7 @@ static void ReadStyleSheet(void)
             }
         }
         (void) RTFGetToken();
-   
+
         while (!RTFCheckCM(rtfGroup, rtfEndGroup)) {
             RTFGetToken();
             if (rtfClass == rtfEOF) {
@@ -1425,7 +1425,7 @@ static void ReadStyleSheet(void)
          */
         if (sp->rtfSName == NULL)
             RTFPanic("%s: missing style name", fn);
-            
+
         if (sp->rtfSNum < 0) {
             if (strncmp(buf, "Normal", 6) != 0 && strncmp(buf, "Standard", 8) != 0) {
                 RTFMsg("%s: style is '%s'\n",fn, buf);
@@ -1434,13 +1434,13 @@ static void ReadStyleSheet(void)
             }
             sp->rtfSNum = rtfNormalStyleNum;
         }
-        
+
         /* this provides direct access to the right style mapping without
            needing to compare all the style names every time we want to know
            If there is no mapping, then the index is just set to -1 */
         if (sp->rtfSNum < MAX_STYLE_MAPPINGS)
             Style2LatexMapIndex[sp->rtfSNum] = Style2LatexItem(sp->rtfSName);
-        
+
         if (sp->rtfSNextPar == -1)      /* if \snext not given, */
             sp->rtfSNextPar = sp->rtfSNum;      /* next is itself */
     }
@@ -1660,7 +1660,7 @@ void DebugMessage(void)
 
 char * RTFAlloc(size_t size)
 {
-	char * memory = malloc(size);
+    char * memory = malloc(size);
 
     if (!memory) {
         RTFPanic("Cannot allocate needed memory\n");
@@ -1929,7 +1929,7 @@ void RTFInitStack(void)
 
 void RTFPushStack(void)
 {
-	int level = RTFGetBraceLevel();
+    int level = RTFGetBraceLevel();
     charStyleStack[level] = curCharCode;
     parStyleStack[level] = paragraph;
     textStyleStack[level] = textStyle;
@@ -1939,12 +1939,12 @@ void RTFPushStack(void)
     if (level >= MAX_STACK)
         RTFMsg("Exceeding stack capacity of %d items\n",MAX_STACK);
     else
-    	RTFSetBraceLevel(level);
+        RTFSetBraceLevel(level);
 }
 
 void RTFPopStack(void)
 {
-	int level = RTFGetBraceLevel();
+    int level = RTFGetBraceLevel();
     level--;
 
     if (level < 0) {
@@ -1962,14 +1962,14 @@ extern FILE *ifp, *ofp;
 
 void RTFParserState(int op)
 {
-	static size_t saved_file_position = 0;
+    static size_t saved_file_position = 0;
     static int savedbraceLevel = 0;
-	static char statePrevChar = 0;
-	static short *saved_charStyleStack[MAX_STACK];
-	static parStyleStruct  saved_parStyleStack[MAX_STACK];
-	static textStyleStruct saved_textStyleStack[MAX_STACK];
-	static parStyleStruct  saved_paragraphWritten;
-	static textStyleStruct saved_textStyleWritten;
+    static char statePrevChar = 0;
+    static short *saved_charStyleStack[MAX_STACK];
+    static parStyleStruct  saved_parStyleStack[MAX_STACK];
+    static textStyleStruct saved_textStyleStack[MAX_STACK];
+    static parStyleStruct  saved_paragraphWritten;
+    static textStyleStruct saved_textStyleWritten;
     static int savedpushedClass;
     static int savedpushedMajor;
     static int savedpushedMinor;
@@ -1980,51 +1980,51 @@ void RTFParserState(int op)
     static int savedMajor;
     static int savedMinor;
     static int savedParam;
-	
-	if (op == SAVE_PARSER) {
-    	memcpy(saved_charStyleStack, charStyleStack, MAX_STACK * sizeof(short));
-    	memcpy(saved_parStyleStack, parStyleStack, MAX_STACK * sizeof(parStyleStruct));
-    	memcpy(saved_textStyleStack, textStyleStack, MAX_STACK * sizeof(textStyleStruct));
-    	saved_paragraphWritten = paragraphWritten;
-    	saved_textStyleWritten = textStyleWritten;
-		statePrevChar = RTFPushedChar();
-		saved_file_position = ftell(ifp);
-		savedbraceLevel = RTFGetBraceLevel();
-    	savedClass = rtfClass;
-    	savedMajor = rtfMajor;
-    	savedMinor = rtfMinor;
-    	savedParam = rtfParam;
-    	strcpy(savedTextBuf,rtfTextBuf);
-    	savedpushedClass = pushedClass;
-    	savedpushedMajor = pushedMajor;
-    	savedpushedMinor = pushedMinor;
-    	savedpushedParam = pushedParam;
-    	strcpy(savedpushedTextBuf,pushedTextBuf);
-		return;
-	}
 
-	if (op == RESTORE_PARSER) {
-		fseek(ifp, saved_file_position, 0);
-		RTFSimpleInit();
-		RTFSetPushedChar(statePrevChar);
-    	memcpy(charStyleStack, saved_charStyleStack, MAX_STACK * sizeof(short));
-    	memcpy(parStyleStack, saved_parStyleStack, MAX_STACK * sizeof(parStyleStruct));
-    	memcpy(textStyleStack, saved_textStyleStack, MAX_STACK * sizeof(textStyleStruct));
-		RTFSetBraceLevel(savedbraceLevel);
-		curCharCode = charStyleStack[savedbraceLevel];
-		paragraph = parStyleStack[savedbraceLevel];
-		textStyle = textStyleStack[savedbraceLevel];
-    	paragraphWritten = saved_paragraphWritten;
-    	textStyleWritten = saved_textStyleWritten;
-    	rtfClass = savedClass;
-    	rtfMajor = savedMajor;
-    	rtfMinor = savedMinor;
-    	rtfParam = savedParam;
-    	strcpy(rtfTextBuf,savedTextBuf);
-    	pushedClass = savedpushedClass;
-    	pushedMajor = savedpushedMajor;
-    	pushedMinor = savedpushedMinor;
-    	pushedParam = savedpushedParam;
-    	strcpy(pushedTextBuf,savedpushedTextBuf);
-	}
+    if (op == SAVE_PARSER) {
+        memcpy(saved_charStyleStack, charStyleStack, MAX_STACK * sizeof(short));
+        memcpy(saved_parStyleStack, parStyleStack, MAX_STACK * sizeof(parStyleStruct));
+        memcpy(saved_textStyleStack, textStyleStack, MAX_STACK * sizeof(textStyleStruct));
+        saved_paragraphWritten = paragraphWritten;
+        saved_textStyleWritten = textStyleWritten;
+        statePrevChar = RTFPushedChar();
+        saved_file_position = ftell(ifp);
+        savedbraceLevel = RTFGetBraceLevel();
+        savedClass = rtfClass;
+        savedMajor = rtfMajor;
+        savedMinor = rtfMinor;
+        savedParam = rtfParam;
+        strcpy(savedTextBuf,rtfTextBuf);
+        savedpushedClass = pushedClass;
+        savedpushedMajor = pushedMajor;
+        savedpushedMinor = pushedMinor;
+        savedpushedParam = pushedParam;
+        strcpy(savedpushedTextBuf,pushedTextBuf);
+        return;
+    }
+
+    if (op == RESTORE_PARSER) {
+        fseek(ifp, saved_file_position, 0);
+        RTFSimpleInit();
+        RTFSetPushedChar(statePrevChar);
+        memcpy(charStyleStack, saved_charStyleStack, MAX_STACK * sizeof(short));
+        memcpy(parStyleStack, saved_parStyleStack, MAX_STACK * sizeof(parStyleStruct));
+        memcpy(textStyleStack, saved_textStyleStack, MAX_STACK * sizeof(textStyleStruct));
+        RTFSetBraceLevel(savedbraceLevel);
+        curCharCode = charStyleStack[savedbraceLevel];
+        paragraph = parStyleStack[savedbraceLevel];
+        textStyle = textStyleStack[savedbraceLevel];
+        paragraphWritten = saved_paragraphWritten;
+        textStyleWritten = saved_textStyleWritten;
+        rtfClass = savedClass;
+        rtfMajor = savedMajor;
+        rtfMinor = savedMinor;
+        rtfParam = savedParam;
+        strcpy(rtfTextBuf,savedTextBuf);
+        pushedClass = savedpushedClass;
+        pushedMajor = savedpushedMajor;
+        pushedMinor = savedpushedMinor;
+        pushedParam = savedpushedParam;
+        strcpy(pushedTextBuf,savedpushedTextBuf);
+    }
 }

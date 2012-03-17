@@ -162,11 +162,11 @@ static void ExamineToken(char * tag)
     printf("* Major is %3d", rtfMajor);
     if (rtfClass == rtfText) {
         if (rtfMajor == 0x0A)
-        	printf(" raw=LF \n");
+            printf(" raw=LF \n");
         else if (rtfMajor == 0x0D)
-        	printf(" raw= CR \n");
+            printf(" raw= CR \n");
         else
-        	printf(" raw='%c' \n", rtfMajor);        
+            printf(" raw='%c' \n", rtfMajor);        
     } else if (rtfClass == rtfGroup) {
         printf(" (%s)\n", rtfMajor? "rtfEndGroup" : "rtfBeginGroup");
     } else {
@@ -373,10 +373,10 @@ static void DefineColors(int ignoreUsedColors)
         Red = rtfColorPtr->rtfCRed / 255.0;
         Green = rtfColorPtr->rtfCGreen / 255.0;
         Blue = rtfColorPtr->rtfCBlue / 255.0;
-        
+
         if (Red==0 && Green==0 && Blue==0) 
             blackColor = i;
-        
+
         if (ignoreUsedColors || (!ignoreUsedColors && UsedColor[i])) {
             snprintf(buf, rtfBufSiz, "\\definecolor{color%02d}{rgb}",i);
             PutLitStr(buf);
@@ -391,7 +391,7 @@ static void DefineColors(int ignoreUsedColors)
 static void WriteColors(void)
 {
     ReadColorTbl();
-    
+
     if (!prefs[pConvertTextColor]) return;
     DefineColors(true);
 }
@@ -442,15 +442,15 @@ static int wroteBeginDocument = false;
 static int CheckForBeginDocument(void)
 {
     char buf[100];
-    
+
     if (insideHeaderFooter) return 0;
-    
+
     if (!wroteBeginDocument) {
 
         if (preambleOurDefs) free(preambleOurDefs);
         preambleOurDefs = malloc(1000);
         preambleOurDefs[0] = '\0';
-        
+
         if (prefs[pConvertPageSize]) {
             snprintf(buf, 100, "\\setlength{\\oddsidemargin}{%dpt}\n", 72 - prefs[pPageLeft]/20);
             strcat(preambleOurDefs,buf);
@@ -459,14 +459,14 @@ static int CheckForBeginDocument(void)
             snprintf(buf, 100, "\\setlength{\\textwidth}{%dpt}\n", (prefs[pPageWidth] - prefs[pPageLeft] - prefs[pPageRight])/20);
             strcat(preambleOurDefs,buf);
         }
-        
+
         if (!prefs[pConvertTextNoTab])
             strcat(preambleOurDefs,"\\newcommand{\\tab}{\\hspace{5mm}}\n\n");
         PutLitByteStr(preambleOurDefs);
 
         beginDocumentPos = ftell(ofp);
         if (g_shouldIncludePreamble)
-        	PutLitStr("\\begin{document}\n");
+            PutLitStr("\\begin{document}\n");
         wroteBeginDocument = true;
         return 1;
     }
@@ -519,9 +519,9 @@ static int SameTextStyle(void)
     if (textStyleWritten.subScript != textStyle.subScript) return false;
 
     if (!prefs[pConvertTextForm]) return true;
-    
+
     if (textStyleWritten.italic != textStyle.italic) return false;
-    
+
     if (textStyleWritten.bold != textStyle.bold)  return false;
 
     if (textStyleWritten.underlined != textStyle.underlined) return false;
@@ -597,9 +597,9 @@ static void WriteTextStyle(void)
     char buf[100];
 
     if (SameTextStyle()) return;
-    
+
     if (wroteBeginDocument || !insideHeaderFooter) StopTextStyle();
-    
+
     if (prefs[pConvertTextSize] && textStyleWritten.fontSize != textStyle.fontSize) {
         if (textStyle.fontSize != normalSize) {
             snprintf(buf, 100, "{%s{}", fontSizeList[textStyle.fontSize]);
@@ -772,9 +772,9 @@ static void SetTextStyle(void)
 static void setLineSpacing(void)
 {
     char buff[100];
-    
+
     if (!prefs[pConvertLineSpacing]) return;
-    
+
     if (paragraphWritten.lineSpacing == paragraph.lineSpacing)
         return;
 
@@ -802,7 +802,7 @@ static cellStruct * CellAllocate(void)
         exit(1);
     }
 
-	return cell;
+    return cell;
 }
 
 /*
@@ -824,10 +824,10 @@ static void CellInitialize(cellStruct *cell)
     cell->originalRight    = rtfParam;
     cell->index            = table.cellCount;
     cell->verticalMerge    = table.cellMergePar;
-	cell->leftBorder       = table.limboCellLeftBorder;
-	cell->rightBorder      = table.limboCellRightBorder;
-	cell->topBorder        = table.limboCellTopBorder;
-	cell->bottomBorder     = table.limboCellBottomBorder;
+    cell->leftBorder       = table.limboCellLeftBorder;
+    cell->rightBorder      = table.limboCellRightBorder;
+    cell->topBorder        = table.limboCellTopBorder;
+    cell->bottomBorder     = table.limboCellBottomBorder;
 }
 
 /*
@@ -874,10 +874,10 @@ static cellStruct *CellGetByPosition(int therow, int thecol)
 /* returns the width of the current cell in points*/
 static int CellWidth(cellStruct *cell)
 {
-	int cleft = (table.rightColumnBorders)[cell->col];
-	int cright = (table.rightColumnBorders)[cell->col+cell->columnSpan];
-	
-	return (cright-cleft)/20;
+    int cleft = (table.rightColumnBorders)[cell->col];
+    int cright = (table.rightColumnBorders)[cell->col+cell->columnSpan];
+
+    return (cright-cleft)/20;
 }
 
 /*
@@ -888,12 +888,12 @@ static int CellWidth(cellStruct *cell)
 
 static int rowsInMultirow(cellStruct * cell)
 {
-	int i;
-	for (i=cell->row+1; i < table.rows; i++) {
-		cellStruct *c = CellGetByPosition(i, cell->col);
-		if (c->verticalMerge != mergeAbove) break;
-	}
-	return i-cell->row;
+    int i;
+    for (i=cell->row+1; i < table.rows; i++) {
+        cellStruct *c = CellGetByPosition(i, cell->col);
+        if (c->verticalMerge != mergeAbove) break;
+    }
+    return i-cell->row;
 }
 
  *
@@ -907,18 +907,18 @@ static void CellMultirow(cellStruct * cell)
     int rows;
     char buf[rtfBufSiz];
 
-	rows = rowsInMultirow(cell);
-	
-    if (rows < 2) return;
-    
-	if (prefs[pConvertTableAlignment] && paragraph.alignment != left) 
-		snprintf(buf, rtfBufSiz, "\\multirow{%d}{*}{%s{}", rows, justificationList[paragraph.alignment]);
-	else
-		snprintf(buf, rtfBufSiz, "\\multirow{%d}{*}{ ", rows);
+    rows = rowsInMultirow(cell);
 
-	PutLitStr(buf);
-	table.multiRow = true;
-	requireMultirowPackage = true;
+    if (rows < 2) return;
+
+    if (prefs[pConvertTableAlignment] && paragraph.alignment != left) 
+        snprintf(buf, rtfBufSiz, "\\multirow{%d}{*}{%s{}", rows, justificationList[paragraph.alignment]);
+    else
+        snprintf(buf, rtfBufSiz, "\\multirow{%d}{*}{ ", rows);
+
+    PutLitStr(buf);
+    table.multiRow = true;
+    requireMultirowPackage = true;
 }
 */
 
@@ -931,7 +931,7 @@ static void NewSection(void)
         requireMultiColPackage = true;
         section.writtenCols = section.cols;
     }
-    
+
     section.newSection = false;
 }
 
@@ -954,7 +954,7 @@ static void NewParagraph(void)
     }
 
     if (section.newSection && !insideTable) NewSection();
-    
+
     if (prefs[pConvertParagraphStyle] && paragraph.styleIndex != -1) {
         PutLitStr(Style2LatexOpen[paragraph.styleIndex]);
         paragraphWritten.styleIndex = paragraph.styleIndex;
@@ -966,13 +966,13 @@ static void NewParagraph(void)
 //        ( insideTable && prefs[pConvertTableAlignment]    )) {
     if (!insideTable && prefs[pConvertParagraphAlignment]) {
         if (paragraphWritten.alignment != paragraph.alignment) {
-    
+
             if (paragraph.alignment == right)
                 PutLitStr("\\begin{flushright}\n");
-    
+
             if (paragraph.alignment == center)
                 PutLitStr("\\begin{center}\n");
-    
+
             paragraphWritten.alignment = paragraph.alignment;
         }
     }
@@ -1002,7 +1002,7 @@ static void NewParagraph(void)
         }
     }
 
-	suppressSpaceBetweenParagraphs = false;
+    suppressSpaceBetweenParagraphs = false;
 }
 
 static void EndSection(void)
@@ -1011,7 +1011,7 @@ static void EndSection(void)
         PutLitStr("\n\\end{multicols}\n");
         section.writtenCols = 1;
     }
-    
+
     if (section.newPage)
         PutLitStr("\\newpage\n");
 }
@@ -1026,11 +1026,11 @@ static void FinalizeParagraph(void)
     char buf[rtfBufSiz];
 
     if (insideHeaderFooter) return;
-    
+
     if (CheckForBeginDocument()) return;
 
     StopTextStyle();
-	
+
     if (prefs[pConvertParagraphStyle] && (paragraphWritten.styleIndex != -1)) {
         PutLitStr(Style2LatexClose[paragraphWritten.styleIndex]);
         suppressLineBreak = false;
@@ -1043,12 +1043,12 @@ static void FinalizeParagraph(void)
 
     if (insideTable && prefs[pConvertTableAlignment] ) {
         if (paragraphWritten.alignment == right || paragraphWritten.alignment == center){
-			paragraphWritten.alignment = -900;
-			paragraphWritten.leftIndent = -900;
-			paragraphWritten.lineSpacing = -900;
-		}
+            paragraphWritten.alignment = -900;
+            paragraphWritten.leftIndent = -900;
+            paragraphWritten.lineSpacing = -900;
+        }
     }
-    
+
     if ( !insideTable && paragraphWritten.alignment != paragraph.alignment) {
 
         if (g_debug_par_start) {
@@ -1058,19 +1058,19 @@ static void FinalizeParagraph(void)
 
         if (paragraphWritten.alignment == right){
             PutLitStr("\n\\end{flushright}");
-			paragraphWritten.alignment = -900;
-			paragraphWritten.leftIndent = -900;
-			paragraphWritten.lineSpacing = -900;
-		}
+            paragraphWritten.alignment = -900;
+            paragraphWritten.leftIndent = -900;
+            paragraphWritten.lineSpacing = -900;
+        }
 
         if (paragraphWritten.alignment == center){
             PutLitStr("\n\\end{center}");
-			paragraphWritten.alignment = -900;
-			paragraphWritten.leftIndent = -900;
-			paragraphWritten.lineSpacing = -900;
-		}
+            paragraphWritten.alignment = -900;
+            paragraphWritten.leftIndent = -900;
+            paragraphWritten.lineSpacing = -900;
+        }
     }
-    
+
     if (section.newSection) EndSection();
 }
 
@@ -1081,7 +1081,7 @@ static void FinalizeParagraph(void)
 static void EndParagraph(void)
 {
     FinalizeParagraph();
-	
+
     if (insideFootnote && !suppressSpaceBetweenParagraphs) {
         InsertNewLine();
         InsertNewLine();
@@ -1092,12 +1092,12 @@ static void EndParagraph(void)
         PutLitStr("\\linebreak{}\n");
         return;
     }
-    
+
     if (!suppressSpaceBetweenParagraphs) {
-    	InsertNewLine();
-    	InsertNewLine();
+        InsertNewLine();
+        InsertNewLine();
     }
-    
+
     if (section.newSection) EndSection();
 }
 
@@ -1110,32 +1110,32 @@ static void NewCell(void)
 {
     char buf[rtfBufSiz];
     cellStruct *cell = CellGetByIndex(table.cellCount);
-	
+
     if (cell->col != 0) PutLitStr(" & ");
 
     if (cell->columnSpan == 1) {
 
         if (prefs[pConvertTableAlignment] && paragraph.alignment != left) {
-			snprintf(buf,rtfBufSiz, "%s ", justificationList[paragraph.alignment]);
-			PutLitStr(buf);
-		}
+            snprintf(buf,rtfBufSiz, "%s ", justificationList[paragraph.alignment]);
+            PutLitStr(buf);
+        }
 
     } else {
 
         if (cell->col == 0) 
-        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{|p{%dpt}|}{", cell->columnSpan, CellWidth(cell));
+            snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{|p{%dpt}|}{", cell->columnSpan, CellWidth(cell));
         else
-        	snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{p{%dpt}|}{",  cell->columnSpan, CellWidth(cell));
+            snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{p{%dpt}|}{",  cell->columnSpan, CellWidth(cell));
         PutLitStr(buf);
 
         if (prefs[pConvertTableAlignment]) {   
-			if (paragraph.alignment!=left){
-			    snprintf(buf,rtfBufSiz, "%s ", justificationList[paragraph.alignment]);
-				PutLitStr(buf);
-			}
-			InsertNewLine();
+            if (paragraph.alignment!=left){
+                snprintf(buf,rtfBufSiz, "%s ", justificationList[paragraph.alignment]);
+                PutLitStr(buf);
+            }
+            InsertNewLine();
         }
-        
+
     } 
 
 //    if (cell->verticalMerge == mergeTop)
@@ -1146,36 +1146,36 @@ static void NewCell(void)
         PutLitStr(buf);
     }
     nowBetweenCells = false;
-	NewParagraph();
+    NewParagraph();
 }
 
 static void EndCell(void)
 {
     cellStruct *cell;
 
-	if (g_debug_table_writing) fprintf(stderr,"* Ending cell #%d\n", table.cellCount);
-    
-	if (nowBetweenCells) {
-		if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount);
-		NewCell();	
-	}
-	
-	nowBetweenCells = true;
-	FinalizeParagraph();
-//	StopTextStyle();
-	cell = CellGetByIndex(table.cellCount);
+    if (g_debug_table_writing) fprintf(stderr,"* Ending cell #%d\n", table.cellCount);
 
-//	if (cell->verticalMerge == mergeTop)
-	//	PutLitChar('}');
+    if (nowBetweenCells) {
+        if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount);
+        NewCell();  
+    }
+
+    nowBetweenCells = true;
+    FinalizeParagraph();
+//  StopTextStyle();
+    cell = CellGetByIndex(table.cellCount);
+
+//  if (cell->verticalMerge == mergeTop)
+    //  PutLitChar('}');
 
 //    if (prefs[pConvertTableAlignment])
-//		PutLitStr("\\end{minipage}");
-		
-    if (cell->columnSpan > 1) 
-		PutLitChar('}');
+//      PutLitStr("\\end{minipage}");
 
-	(table.cellCount)++;
-	paragraph.alignment = left;
+    if (cell->columnSpan > 1) 
+        PutLitChar('}');
+
+    (table.cellCount)++;
+    paragraph.alignment = left;
 }
 
 
@@ -1184,7 +1184,7 @@ static void setPreamblePackages(int ignoreUsedColor)
 {
     if (!preamblePackages) 
         preamblePackages = malloc(1024);
-    
+
     preamblePackages[0] = '\0';
     if (requireSetspacePackage)
         strcat(preamblePackages,"\\usepackage{setspace}\n");
@@ -1213,20 +1213,20 @@ static void setPreamblePackages(int ignoreUsedColor)
         strcat(preamblePackages,"\\usepackage[T2A]{fontenc}\n");
         strcat(preamblePackages,"\\usepackage[russian]{babel}\n");
     }
-    
+
     if (requireFancyHdrPackage) {
         strcat(preamblePackages,"\\usepackage{fancyhdr}\n");
         strcat(preamblePackages,"\\renewcommand{\\headrulewidth}{0pt}\n");
         strcat(preamblePackages,"\\renewcommand{\\footrulewidth}{0pt}\n");
     }
-    
+
     if (prefs[pConvertTextColor]) {
         int i=0;
         int needPackage=false;
-        
+
         for (i=0; i<256; i++) 
             if (UsedColor[i]) needPackage = true;
-        
+
         if (ignoreUsedColor || (!ignoreUsedColor && needPackage))
             strcat(preamblePackages,"\\usepackage{color}\n");
     }
@@ -1276,12 +1276,12 @@ static void WrapText(void)
 
 static void PrepareForChar(void)
 {
-	if (insideTable && nowBetweenCells) {
-		NewCell();
+    if (insideTable && nowBetweenCells) {
+        NewCell();
         return;
-	}
-	
-	if (nowBetweenParagraphs) {
+    }
+
+    if (nowBetweenParagraphs) {
 
         if (rtfMinor == rtfSC_space) {
             paragraph.extraIndent += 72;
@@ -1439,24 +1439,24 @@ static int GetColumnSpan(cellStruct * cell)
 {
     int i, j;
 
-	/* index of border that equals the left side of the cell */
+    /* index of border that equals the left side of the cell */
     for (i = 0; i < table.cols; i++) {
         if ((table.rightColumnBorders)[i] == cell->originalLeft)
             break;
     }
 
-	/* index of border that equals the right side of the cell */
+    /* index of border that equals the right side of the cell */
     for (j = i; j < table.cols + 1; j++){
         if ((table.rightColumnBorders)[j] == cell->originalRight)
             break;
     }
 
-//	fprintf(stderr, "sought (%5d,%5d), found (%5d,%5d), for (%d,%d)\n",
-	//        cell->originalLeft, cell->originalRight,
-	  //      (table.rightColumnBorders)[i],
-	    //    (table.rightColumnBorders)[j],
-	      //  i,j);
-	        
+//  fprintf(stderr, "sought (%5d,%5d), found (%5d,%5d), for (%d,%d)\n",
+    //        cell->originalLeft, cell->originalRight,
+      //      (table.rightColumnBorders)[i],
+        //    (table.rightColumnBorders)[j],
+          //  i,j);
+
     return (j - i);
 }
 
@@ -1491,22 +1491,22 @@ static void PrescanTable(void)
     foundRow = true;
     lastRow = false;
 
-	/*
-	 * Scan the whole table.  First, gather the cell layout information and then
-	 * check to see if another row of the table exists.  repeat until no more rows
-	 * are found.  The overall structure is
-	 * 
-	 * <row>     = (<tbldef> <cell>+ <tbldef> \row) | (<tbldef> <cell>+ \row) | (<cell>+ <tbldef> \row) 
-	 * <cell>    = (<nestrow>? <tbldef>?) & <textpar>+ \cell
-	 * <tbldef>  = \trowd \irowN  ... <celldef>+
-	 * <celldef> = ... \cellxN
-	 */
+    /*
+     * Scan the whole table.  First, gather the cell layout information and then
+     * check to see if another row of the table exists.  repeat until no more rows
+     * are found.  The overall structure is
+     * 
+     * <row>     = (<tbldef> <cell>+ <tbldef> \row) | (<tbldef> <cell>+ \row) | (<cell>+ <tbldef> \row) 
+     * <cell>    = (<nestrow>? <tbldef>?) & <textpar>+ \cell
+     * <tbldef>  = \trowd \irowN  ... <celldef>+
+     * <celldef> = ... \cellxN
+     */
 
     while (foundRow) {
         table.cols = 0;
 
         if (0 && g_debug_table_prescan) fprintf(stderr,"*********** starting row %d\n", table.rows);
-        
+
         /* Gather cell layout information ... the three possible token streams are:
          * 
          *  1) \trowd .... \cellxN ... \cellxM ... \trowd ... \cellxN ... \cellxM ...\row
@@ -1514,47 +1514,47 @@ static void PrescanTable(void)
          *  3)        .... \cellxN ... \cellxM ...\row
          */    
 
-    	if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
-    		gatherCellInfo = true;
-        	(table.cellsInRow)[table.rows] = 0;
+        if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
+            gatherCellInfo = true;
+            (table.cellsInRow)[table.rows] = 0;
         } else {
-        	InheritTableRowSettings();
-    		gatherCellInfo = false;
-    	}
-    		    	
+            InheritTableRowSettings();
+            gatherCellInfo = false;
+        }
+
         while (RTFGetToken() != rtfEOF) {
 
-			if (RTFCheckMM(rtfSpecialChar, rtfRow))
+            if (RTFCheckMM(rtfSpecialChar, rtfRow))
                 break;
 
             if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
-           		gatherCellInfo=false;
+                gatherCellInfo=false;
                 continue;
             }
 
             if (RTFCheckMM(rtfSpecialChar, rtfLastRow)) {
-            	lastRow = true;
+                lastRow = true;
                 continue;
             }
 
             if (RTFCheckCM(rtfControl, rtfTblAttr)) {
                 if (gatherCellInfo) RTFRouteToken();
             }
-            
+
             if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
                 RTFSkipGroup();   
         } 
-        
+
         if (0 && g_debug_table_prescan) fprintf(stderr,"* reached end of row %d\n", table.rows);
-		
-		(table.rows)++;
-		if (lastRow) break;
+
+        (table.rows)++;
+        if (lastRow) break;
 
         /* Look for another row, indicated by either \trowd or \intbl
          * \intbl should always follow \widctrpar
          */
-		
-		foundRow = false;
+
+        foundRow = false;
 
         while (RTFGetToken() != rtfEOF) {
 
@@ -1562,12 +1562,12 @@ static void PrescanTable(void)
                 foundRow = true;
                 break;
             }
-            
- 			/* \intbl must follow \widctlpar or the next paragraph is not part of the table */
+
+            /* \intbl must follow \widctlpar or the next paragraph is not part of the table */
             if (RTFCheckMM(rtfParAttr, rtfNoWidowControl) || RTFCheckMM(rtfParAttr, rtfWidowCtlPar)) {
-            	RTFGetToken();
-				if (!RTFCheckMM(rtfParAttr, rtfInTable)) break;
-			}
+                RTFGetToken();
+                if (!RTFCheckMM(rtfParAttr, rtfInTable)) break;
+            }
 
             if (RTFCheckMM(rtfParAttr, rtfInTable)) {
                 foundRow = true;
@@ -1641,7 +1641,7 @@ static void PrescanTable(void)
      * to decide if a cell spans multiple columns.
      */
     maxCol = 0;
-    
+
     for (i = 0; i < table.cellCount; i++) {
         cell = CellGetByIndex(i);
 
@@ -1653,17 +1653,17 @@ static void PrescanTable(void)
 
         previousCell = cell;
     }
-	
-	/* adjust spacing for extra intercolumn space added by latex */
+
+    /* adjust spacing for extra intercolumn space added by latex */
     for (i = 1; i <= table.cols; i++)
         (table.rightColumnBorders)[i] -= i*latexColumnSeparation;
-        
+
     /* if the table is wider than textWidth, scale it appropriately */
-	if (prefs[pConvertTableWidths] && table.rightColumnBorders[table.cols]+latexColumnSeparation*table.cols > textWidth) {
-		float scale = 1.0*(textWidth-latexColumnSeparation*table.cols)/table.rightColumnBorders[table.cols];
+    if (prefs[pConvertTableWidths] && table.rightColumnBorders[table.cols]+latexColumnSeparation*table.cols > textWidth) {
+        float scale = 1.0*(textWidth-latexColumnSeparation*table.cols)/table.rightColumnBorders[table.cols];
 
         for (i = 1; i <= table.cols; i++)
-        	table.rightColumnBorders[i] = (int) (table.rightColumnBorders[i]*scale+0.5);
+            table.rightColumnBorders[i] = (int) (table.rightColumnBorders[i]*scale+0.5);
     }
 
     if (g_debug_table_prescan) {
@@ -1700,11 +1700,11 @@ static void TableWriteRow(void)
 
         /* token that signals last row in table */
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfLastRow)) 
-        	continue;
+            continue;
 
         /* token that signals the end of the current cell */
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfCell)) {
-			EndCell();
+            EndCell();
             continue;
         }
 
@@ -1762,20 +1762,20 @@ static void DrawTableRowLine(int rowNum)
 */
 static void DoTablePreamble(void)
 {
-	char buf[200];
-	int i, width;
-	
-	width = (table.rightColumnBorders[table.cols]-table.rightColumnBorders[0])/20;
+    char buf[200];
+    int i, width;
 
-	snprintf(buf, 200, "\\begin{tabular}{");
-	PutLitStr(buf);
-	
-	for (i = 0; i < table.cols; i++) {
-		snprintf(buf, 200, "|>{\\raggedright}p{\%dpt}", (table.rightColumnBorders[i+1]-table.rightColumnBorders[i])/20);
-		PutLitStr(buf);
-	}
+    width = (table.rightColumnBorders[table.cols]-table.rightColumnBorders[0])/20;
 
-	PutLitStr("|}\n\\hline\n");
+    snprintf(buf, 200, "\\begin{tabular}{");
+    PutLitStr(buf);
+
+    for (i = 0; i < table.cols; i++) {
+        snprintf(buf, 200, "|>{\\raggedright}p{\%dpt}", (table.rightColumnBorders[i+1]-table.rightColumnBorders[i])/20);
+        PutLitStr(buf);
+    }
+
+    PutLitStr("|}\n\\hline\n");
 }
 
 /* 
@@ -1801,11 +1801,11 @@ static void DoTable(void)
     EndParagraph();
     NewParagraph();
 
-	oldwritten = paragraphWritten.alignment;
-	oldparagraph = paragraph.alignment;
-	paragraphWritten.alignment = left;
-	paragraph.alignment = left;
-	
+    oldwritten = paragraphWritten.alignment;
+    oldparagraph = paragraph.alignment;
+    paragraphWritten.alignment = left;
+    paragraph.alignment = left;
+
     requireTablePackage = true;
 
     /* throw away old cell information lists */
@@ -1819,7 +1819,7 @@ static void DoTable(void)
     table.cellCount = 0;
     insideTable = true;
 
-	DoTablePreamble();
+    DoTablePreamble();
 
     for (i = 0; i < table.rows; i++) {
         if (g_debug_table_writing) fprintf(stderr,"* Starting row #%d\n",i+1);
@@ -1841,8 +1841,8 @@ static void DoTable(void)
     insideTable = false;       /* end of table */
     table.multiRow = false;
 
-	paragraphWritten.alignment = oldwritten;
-	paragraph.alignment = oldparagraph;
+    paragraphWritten.alignment = oldwritten;
+    paragraph.alignment = oldparagraph;
 }
 
 /* set paragraph attributes that might be useful */
@@ -1865,7 +1865,7 @@ static void ParAttr(void)
     case rtfQuadRight:
         paragraph.alignment = right;
         break;
-        
+
     case rtfParDef:
         paragraph.firstIndent = 0;
         paragraph.leftIndent = 0;
@@ -1873,14 +1873,14 @@ static void ParAttr(void)
         paragraph.alignment = left;
         paragraph.styleIndex = -1;
         break;
-        
+
     case rtfStyleNum:
         if (prefs[pConvertParagraphStyle] && rtfParam < MAX_STYLE_MAPPINGS) 
             paragraph.styleIndex = Style2LatexMapIndex[rtfParam];
         else
             paragraph.styleIndex = -1;
         break;
-        
+
     case rtfFirstIndent:
         paragraph.firstIndent = rtfParam;
         break;
@@ -1903,7 +1903,7 @@ static void ParAttr(void)
 static void SectAttr(void)
 {
     if (insideHeaderFooter) return;
-    
+
     switch (rtfMinor) {
     case rtfColumns:
         section.cols = rtfParam;
@@ -1927,12 +1927,12 @@ void EndLaTeXFile(void)
     char* newname;
     char* oldname;
     char buffer[512];
-    
+
     /* last few bits */
     EndParagraph();
     EndSection();
     if (g_shouldIncludePreamble)
-    	PutLitStr("\n\n\\end{document}\n");
+        PutLitStr("\n\n\\end{document}\n");
 
     /* open new file, changing name from file.ltx to file.tex*/
     oldname = RTFGetOutputName();
@@ -1942,44 +1942,44 @@ void EndLaTeXFile(void)
     newname[len-2]='e';
     nfp = fopen(newname, "wb");
     if (!nfp) return;
-    
+
     /* prepare */
     RTFSetOutputStream(nfp);
     RTFSetOutputName(newname);
-    
-    if (g_shouldIncludePreamble) {
-		/* write improved header */
-		suppressLineBreak = false;
-		PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
-		InsertNewLine();
-		PutLitStr(preambleSecondText); /* from pref/r2l-pref     */
-		InsertNewLine();
-		PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
-		InsertNewLine();
-		PutLitStr(preambleEncoding);   /* from pref/latex-encoding */
-		InsertNewLine();
-		InsertNewLine();
-		setPreamblePackages(false);
-		PutLitStr(preamblePackages);   /* as needed */
-	
-		PutLitStr(preambleUserText);   /* from pref/r2l-head      */
-		InsertNewLine();
 
-		if (preambleFancyHeader){
-			PutLitByteStr("\\pagestyle{fancy}\n");
-			PutLitByteStr("\\rhead{}\n\\rfoot{}\n\\chead{}\n\\cfoot{}\n");
-			PutLitByteStr(preambleFancyHeader);
-			InsertNewLine();
-		}
-			
-		if (preambleFancyHeaderFirst){
-			PutLitByteStr("\\fancypagestyle{plain}{\n");
-			PutLitByteStr("  \\rhead{}\n  \\rfoot{}\n  \\chead{}\n  \\cfoot{}\n");
-			PutLitByteStr(preambleFancyHeaderFirst);
-			PutLitByteStr("}\n");
-			PutLitByteStr("\\thispagestyle{plain}\n");
-			InsertNewLine();
-		}
+    if (g_shouldIncludePreamble) {
+        /* write improved header */
+        suppressLineBreak = false;
+        PutLitStr(preambleFirstText);  /* from pref/r2l-pref     */
+        InsertNewLine();
+        PutLitStr(preambleSecondText); /* from pref/r2l-pref     */
+        InsertNewLine();
+        PutLitStr(preambleDocClass);   /* from pref/r2l-pref     */
+        InsertNewLine();
+        PutLitStr(preambleEncoding);   /* from pref/latex-encoding */
+        InsertNewLine();
+        InsertNewLine();
+        setPreamblePackages(false);
+        PutLitStr(preamblePackages);   /* as needed */
+
+        PutLitStr(preambleUserText);   /* from pref/r2l-head      */
+        InsertNewLine();
+
+        if (preambleFancyHeader){
+            PutLitByteStr("\\pagestyle{fancy}\n");
+            PutLitByteStr("\\rhead{}\n\\rfoot{}\n\\chead{}\n\\cfoot{}\n");
+            PutLitByteStr(preambleFancyHeader);
+            InsertNewLine();
+        }
+
+        if (preambleFancyHeaderFirst){
+            PutLitByteStr("\\fancypagestyle{plain}{\n");
+            PutLitByteStr("  \\rhead{}\n  \\rfoot{}\n  \\chead{}\n  \\cfoot{}\n");
+            PutLitByteStr(preambleFancyHeaderFirst);
+            PutLitByteStr("}\n");
+            PutLitByteStr("\\thispagestyle{plain}\n");
+            InsertNewLine();
+        }
     }
 
     InsertNewLine();
@@ -1995,7 +1995,7 @@ void EndLaTeXFile(void)
         numr = fread(buffer,1,512,ofp);
         fwrite(buffer,1,numr,nfp);
     }
-    
+
     /* close files and delete old one */
     free(newname);
     fclose(ofp);
@@ -2078,7 +2078,7 @@ static void WriteWMFHeader(FILE * pictureFile)
     } else {
         width = (int)(picture.width * picture.scaleX * 96.0 / rtfTpi / 100.0);
     }
-    
+
     height = picture.goalHeight;
     width = picture.goalWidth ;
     wmfhead[10] = (width) % 256;
@@ -2117,17 +2117,17 @@ static char * NewFigureName(char *fileSuffix)
     char dummyBuf[rtfBufSiz];
     char *name;
 
-	if (fileSuffix && fileSuffix[0] == '.') fileSuffix++;
+    if (fileSuffix && fileSuffix[0] == '.') fileSuffix++;
 
-    /* get input file name and create corresponding picture file name */	
+    /* get input file name and create corresponding picture file name */    
     name = strdup(RTFGetOutputName());
     if (strlen(name) > 4)
-    	name[strlen(name)-4] = '\0';
-    	
+        name[strlen(name)-4] = '\0';
+
     if (fileSuffix == NULL)
-    	snprintf(dummyBuf, rtfBufSiz, "%s-fig%03d.???", name, picture.count);
+        snprintf(dummyBuf, rtfBufSiz, "%s-fig%03d.???", name, picture.count);
     else
-    	snprintf(dummyBuf, rtfBufSiz, "%s-fig%03d.%s", name, picture.count, fileSuffix);
+        snprintf(dummyBuf, rtfBufSiz, "%s-fig%03d.%s", name, picture.count, fileSuffix);
 
     free(name);
     return strdup(dummyBuf);
@@ -2210,7 +2210,7 @@ static void IncludeGraphics(char *pictureType)
     int displayFigure = 0;
 
     if (insideTable || insideFootnote) return;
-    
+
     /* it seems that when cropping is -4319 or -6084 the picture is empty */
     if (picture.cropTop<-1000) return;
 
@@ -2226,10 +2226,10 @@ static void IncludeGraphics(char *pictureType)
 
             if (!err) {
              //   unlink(picture.name);
-             	free(picture.name);
-             	picture.name = pdfname;
+                free(picture.name);
+                picture.name = pdfname;
             } else
-            	free(pdfname);
+                free(pdfname);
         }
     }
 
@@ -2244,10 +2244,10 @@ static void IncludeGraphics(char *pictureType)
 
             if (!err) {
               //  unlink(picture.name);
-             	free(picture.name);
-             	picture.name = pdfname;
+                free(picture.name);
+                picture.name = pdfname;
             } else
-            	free(pdfname);
+                free(pdfname);
         }
     }
 #endif
@@ -2263,10 +2263,10 @@ static void IncludeGraphics(char *pictureType)
 
             if (!err) {
                 unlink(picture.name);
-             	free(picture.name);
-             	picture.name = pdfname;
+                free(picture.name);
+                picture.name = pdfname;
             } else
-            	free(pdfname);
+                free(pdfname);
         }
     }
 #endif
@@ -2306,11 +2306,11 @@ static void IncludeGraphics(char *pictureType)
         PutLitStr(dummyBuf);
         PutLitStr("}\n\n");
     }
-    
+
     snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%dpt, height=%dpt]{%s}\n", 
              width, height, filename);
     PutLitStr(dummyBuf);
-    
+
     if (displayFigure) {
         PutLitStr("%%\\caption{This should be the caption for \\texttt{");
         PutEscapedLitStr(filename);
@@ -2391,19 +2391,19 @@ static void ReadPicture(void)
 
 static char * FileDirectory(char *path)
 {
-	char *s, *dir;
-	
-	if (!path) return NULL;
-	
-	dir = strdup(path);
-	s = strrchr(dir,PATH_SEP);
-	if (s) {
-		*s ='\0';
-		return dir;
-	}
-	
-	free(dir);
-	return NULL;
+    char *s, *dir;
+
+    if (!path) return NULL;
+
+    dir = strdup(path);
+    s = strrchr(dir,PATH_SEP);
+    if (s) {
+        *s ='\0';
+        return dir;
+    }
+
+    free(dir);
+    return NULL;
 }
 
 static void CopyFile(char *in_path, char *out_path)
@@ -2412,14 +2412,14 @@ static void CopyFile(char *in_path, char *out_path)
     char buffer[512];
     size_t numr;
 
-	in = fopen(in_path,"rb");
-	out = fopen(out_path,"wb");
-	
-	if (!in || !out) {
-		fprintf(stderr, "failed to copy '%s' as '%s'\n", in_path, out_path);
-		return;
-	}
-	
+    in = fopen(in_path,"rb");
+    out = fopen(out_path,"wb");
+
+    if (!in || !out) {
+        fprintf(stderr, "failed to copy '%s' as '%s'\n", in_path, out_path);
+        return;
+    }
+
     while(!feof(in)){  
         numr = fread(buffer,1,512,in);
         fwrite(buffer,1,numr,out);
@@ -2442,47 +2442,47 @@ static void ReadNextGraphic(void)
     int height=0;
 
     requireGraphicxPackage = true;
-	if (nowBetweenParagraphs)
-		NewParagraph();
-		
-	filename = RTFGetTextWord();
-	
-	if (!filename) {
-		RTFSkipGroup();
-		return;
-	}
-	
-	/* determine the directory containing the rtf file */
+    if (nowBetweenParagraphs)
+        NewParagraph();
+
+    filename = RTFGetTextWord();
+
+    if (!filename) {
+        RTFSkipGroup();
+        return;
+    }
+
+    /* determine the directory containing the rtf file */
     rtf_path = RTFGetInputName();
     in_dir  = FileDirectory(rtf_path);
 
-	/* now establish the full path to the NextGraphic */
-	in_path=append_file_to_path(in_dir,filename);
-	if (in_dir) free(in_dir);
-	
-	/* create the path for the new graphic */
-    (picture.count)++;
-	fileSuffix=strrchr(filename,'.');
-	out_path=NewFigureName(fileSuffix);
-	free(filename);
+    /* now establish the full path to the NextGraphic */
+    in_path=append_file_to_path(in_dir,filename);
+    if (in_dir) free(in_dir);
 
-	CopyFile(in_path,out_path);
+    /* create the path for the new graphic */
+    (picture.count)++;
+    fileSuffix=strrchr(filename,'.');
+    out_path=NewFigureName(fileSuffix);
+    free(filename);
+
+    CopyFile(in_path,out_path);
 
     while (RTFGetToken() != rtfEOF) {
- 		if (RTFCheckCM(rtfGroup, rtfEndGroup)) break; 		
- 		if (rtfMinor == rtfNeXTGHeight) height = rtfParam/20;
- 		if (rtfMinor == rtfNeXTGWidth) width = rtfParam/20;
+        if (RTFCheckCM(rtfGroup, rtfEndGroup)) break;       
+        if (rtfMinor == rtfNeXTGHeight) height = rtfParam/20;
+        if (rtfMinor == rtfNeXTGWidth) width = rtfParam/20;
     }
-    
+
     /* skip everything until outer brace */
     RTFSkipGroup();
 
-	/* need the local name of the file */
-	out_name = strrchr(out_path,PATH_SEP);
-	if (out_name) 
-		out_name++;
-	else
-		out_name = out_path;
+    /* need the local name of the file */
+    out_name = strrchr(out_path,PATH_SEP);
+    if (out_name) 
+        out_name++;
+    else
+        out_name = out_path;
 
     PutLitStr("\\includegraphics");
     if (width || height) {
@@ -2543,13 +2543,13 @@ static int GetObjectClass(void)
 
     if (!RTFSkipToToken(rtfControl, rtfDestination, rtfObjClass))
         return -1;
-        
+
     s = RTFGetTextWord();
     if (s && s[0]) {
         strcpy(object.className, s);
         free(s);
     }
-    
+
 /* do we recognize this object class? */
     for (i = 0; objectClassList[i] != NULL; i++) {
         if (my_strcasestr(object.className, objectClassList[i])) {
@@ -2668,29 +2668,29 @@ static int ishex(char c)
  */
 static int ReadHexPair(void)
 {
-	int hexNumber;
-	
-	do {
-		RTFGetToken();
-	} while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
-	
-	if (!ishex(rtfTextBuf[0])) {
-		fprintf(stderr, "oddness encountered in hex data\n");
-		return -1;
-	}
-	
-	hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
+    int hexNumber;
 
-	do {
-		RTFGetToken();
-	} while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
-	
-	if (!ishex(rtfTextBuf[0])) {
-		fprintf(stderr, "oddness encountered in hex data\n");
-		return -1;
-	}
-	
-	return hexNumber + RTFCharToHex(rtfTextBuf[0]);
+    do
+        RTFGetToken();
+    while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
+
+    if (!ishex(rtfTextBuf[0])) {
+        fprintf(stderr, "oddness encountered in hex data\n");
+        return -1;
+    }
+
+    hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
+
+    do
+        RTFGetToken();
+    while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
+
+    if (!ishex(rtfTextBuf[0])) {
+        fprintf(stderr, "oddness encountered in hex data\n");
+        return -1;
+    }
+
+    return hexNumber + RTFCharToHex(rtfTextBuf[0]);
 }
 
 /*
@@ -2732,40 +2732,40 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
  * 01050000 02000000 0b000000 4571756174696f6e2e3300         00000000 00000000 000e0000
  * 01000100 02000000 0f000000 4571756174696f6e2e44534d543400 00000000 00000000 000e0000
 */
-	/* skip three ints of 4 hex pairs each */
+    /* skip three ints of 4 hex pairs each */
     for (i=0; i<12; i++)  ReadHexPair();
 
     /* skip the 00 hex-terminated string */
     do {
-    	value = ReadHexPair();
-    	/* fprintf(stderr,"%c", value); */
-	} while (value>0);
-	/* fprintf(stderr,"\n"); */
-	
+        value = ReadHexPair();
+//      fprintf(stderr,"%c", value);
+    } while (value>0);
+//  fprintf(stderr,"\n");
+
     if (value==-1) {
         RTFMsg("* OLE object does not have proper header\n");
         fclose(objFile);
         return;
     }
 
-	/* skip three ints of 4 hex characters each */
+    /* skip three ints of 4 hex characters each */
     for (i=0; i<12; i++)  ReadHexPair();
 
-	/* skip three ints of 8 characters each */
-	for (i=0;i<8;i++) {
-		RTFGetToken();
-		while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d)
-			RTFGetToken();   
-		m[i] = rtfTextBuf[0];
+    /* skip three ints of 8 characters each */
+    for (i=0;i<8;i++) {
+        do 
+            RTFGetToken();
+        while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
+        m[i] = rtfTextBuf[0];
     }
     m[8] = '\0';
-	
-	if (strcmp(m,OLE_MARK) != 0) {
+
+    if (strcmp(m,OLE_MARK) != 0) {
         fprintf(stderr, "* OLE marker is wrong '%s' != '%s'\n", m, OLE_MARK);
         fclose(objFile);
         return;
     }
-		
+
     fputc(0xd0, objFile);
     fputc(0xcf, objFile);
     fputc(0x11, objFile);
@@ -2812,7 +2812,7 @@ static char * EqnNumberString(void)
 {
     char theNumber[10], comma[2], *s, *t;
     int stringIndex=0;
-    
+
     theNumber[0]='\0';
     comma[0]='\0';
     /* skip to text following equation, stop looking a \par or \pard  */
@@ -2824,7 +2824,7 @@ static char * EqnNumberString(void)
             RTFUngetToken();
             return NULL;
         }
-        
+
         /* don't emit any tabs */
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfTab))
             continue;
@@ -2848,33 +2848,33 @@ static char * EqnNumberString(void)
                 comma[1]='\0';
                 continue;
             }
-            
+
             /* found a text character that might start an equation number*/
             break;
         }
 
         RTFRouteToken();
-        
+
     } while (rtfClass != rtfEOF);
-    
+
     /* collect the equation number */
     do {
         if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfPar)) {
             RTFUngetToken();
             break;;
         }
-        
+
         if (rtfClass == rtfText) {
             char c=rtfTextBuf[0];
 
             /* eqn numbers must start with '(', '[', or a digit */
             if (stringIndex==0 && !(isdigit(c) || c == '(' || c == ']') ) break;
-                        
+
             theNumber[stringIndex]=c;
             stringIndex++;
             if (c==')' || c==']') break;
         }
-        
+
         RTFGetToken();
     } while (rtfClass != rtfEOF && stringIndex<10);
 
@@ -2929,21 +2929,21 @@ boolean ConvertEquationFile(char *objectFileName)
             return (false);
         }
 
-		theEquation->m_inline = 1;
-		EqNo=NULL;
-		
-		if (insideTable) {
-			if (nowBetweenCells) NewCell();
-		} else if (nowBetweenParagraphs) {
-			theEquation->m_inline = 0;
-			suppressSpaceBetweenParagraphs=true;
-			EndParagraph();
-			if (lastCharWritten != '\n') 
-				PutLitChar('\n');
-			current_vspace = 0;
-			EqNo=EqnNumberString();
-		}
- 
+        theEquation->m_inline = 1;
+        EqNo=NULL;
+
+        if (insideTable) {
+            if (nowBetweenCells) NewCell();
+        } else if (nowBetweenParagraphs) {
+            theEquation->m_inline = 0;
+            suppressSpaceBetweenParagraphs=true;
+            EndParagraph();
+            if (lastCharWritten != '\n') 
+                PutLitChar('\n');
+            current_vspace = 0;
+            EqNo=EqnNumberString();
+        }
+
         if (g_eqn_insert_name) {
             PutLitStr("\\fbox{file://");
             PutEscapedLitStr(objectFileName);
@@ -2953,7 +2953,7 @@ boolean ConvertEquationFile(char *objectFileName)
 
         /* this returns the translated equation in m_latex record */
         Eqn_TranslateObjectList(theEquation, ostream, 0);
-            
+
         if (theEquation->m_inline){
             /* Add a space unless the last character was punctuation */
             if (lastCharWritten != ' ' && lastCharWritten != '(' && 
@@ -2965,7 +2965,7 @@ boolean ConvertEquationFile(char *objectFileName)
         PutLitStr(theEquation->m_latex);
         PutLitStr(EqNo);
         PutLitStr(theEquation->m_latex_end);
-        
+
         if (theEquation->m_inline) {
             /* Add a space unless the next character is punctuation */
             RTFPeekToken();
@@ -2977,7 +2977,7 @@ boolean ConvertEquationFile(char *objectFileName)
                     rtfTextBuf[0]!=']' && 
                     rtfTextBuf[0]!=')') PutLitChar(' ');
             } else 
-            	PutLitChar(' ');
+                PutLitChar(' ');
         }
 
         Eqn_Destroy(theEquation);
@@ -3059,14 +3059,14 @@ static void ReadObject(void)
 
     object.class = 0;
     strcpy(object.className, "");
-    
+
     RTFSkipToLevel(level);
 }
 
 
-/* 
+/*
  * Word97 through Word 2002 pictures are different
- * 
+ *
  *   {\*\shppict {\pict \emfblip ...}}{\nonshppict {\pict ...}} 
  *
  * \shppict identifies a Word 97 through Word 2002 picture
@@ -3078,16 +3078,16 @@ static void ReadWord97Picture(void)
 //  ExamineToken("Word97Object");
     RTFGetToken();
     if (rtfClass != rtfGroup) {RTFSkipGroup(); return;}
-    
+
     RTFGetToken();    /* should be pict */
     if (rtfMinor != rtfPict) {RTFSkipGroup(); return;}
-    
+
     RTFRouteToken();  /* handle pict */
     RTFGetToken();    /* should be } */
     RTFRouteToken();  /* handle last brace from shppict */
     RTFGetToken();    /* should be { */
     if (rtfClass != rtfGroup) {RTFSkipGroup(); return;}
-    
+
     RTFGetToken();    /* should be nonshppict */
     RTFSkipGroup();   /* because we don't want two pictures in latex file */
 }
@@ -3096,25 +3096,25 @@ static void ReadWord97Picture(void)
 static void ReadShapeProperty(void)
 {
     char *name, *value;
-    
+
     if (!RTFSkipToToken(rtfControl, rtfShapeAttr, rtfShapeName)) return; 
 
     name = RTFGetTextWord();
-    
+
     if (strcmp(name,"pib")==0) {
         RTFExecuteGroup();
         free(name);
         return;
     }
-        
+
     if (!RTFSkipToToken(rtfControl, rtfShapeAttr, rtfShapeValue)) return;
 
     value = RTFGetTextWord();
-    
+
     RTFSkipGroup();
-    
+
 //    fprintf(stderr,"shape, name=%s, value=%s\n",name,value);
-    
+
     if (strcasecmp(name,"relleft")==0)
         sscanf(value, "%d", &(shape.left));
     if (strcasecmp(name,"relright")==0)
@@ -3210,7 +3210,7 @@ static void ReadShape(void)
         RTFExecuteGroup();
         return;
     }
-    
+
     if (RTFSkipToToken(rtfControl,rtfShapeAttr,rtfShapeResult)) {
         RTFExecuteGroup();
     }
@@ -3218,24 +3218,24 @@ static void ReadShape(void)
 
 static void ReadUnicodeSkipN(void)
 {
-	textStyle.unicodeSkipN= rtfParam;
+    textStyle.unicodeSkipN= rtfParam;
 }
 
 static void ReadUnicode(void)
 {
     int thechar,i;
-    
+
     if (rtfParam<0)
         thechar = rtfParam + 65536;
     else    
         thechar = rtfParam;
-    
+
     if (rtfMinor == rtfUnicode) {
         /* \uNNNNY, drop Y as fallback char (assuming \uc1) */
         for (i=0; i<textStyle.unicodeSkipN; i++) 
-        	RTFGetToken();
+            RTFGetToken();
     }
-        
+
     PrepareForChar();
 
 //  fprintf(stderr, "Unicode --- %d, 0x%04X\n", thechar, thechar);
@@ -3369,7 +3369,7 @@ static void ReadSymbolField(void)
 
     /* convert the text symbol token to an int */
     major = atoi(buf);
-    
+
     /* do the mapping */
     curCharCode = symCharCode;
     minor = RTFMapChar(major);
@@ -3431,7 +3431,7 @@ static void ReadPageRefField(void)
     emitBookmark();
     PutLitStr("}");
     RTFRouteToken();
-    
+
     SkipFieldResult();
 }
 
@@ -3457,7 +3457,7 @@ static void ReadFieldInst(void)
 
     fieldName = RTFGetTextWord();
     if (fieldName == NULL) return;
-    
+
     if (strcasecmp(fieldName, "HYPERLINK") == 0 ) {
         if (prefs[pConvertHypertext])
             ReadHyperlinkField();
@@ -3494,7 +3494,7 @@ static void ReadFieldInst(void)
 
     /* Unsupported FIELD type ... the best we can do is bail from rtfFieldInst
        and hope rtfFieldResult can be processed  */
-    
+
     RTFSkipToLevel(level);
     free(fieldName);
 }
@@ -3512,27 +3512,27 @@ static void ReadBookmarkStart(void)
 static void HandleOptionalTokens(void)
 {
     RTFGetToken();
-    
+
     switch (rtfMinor) {
     case rtfBookmarkStart:
         ReadBookmarkStart();
         break;
-        
+
     case rtfFieldInst:
         ReadFieldInst();
         break;
-        
+
     case rtfWord97Picture:
         ReadWord97Picture();
         break;
-    
+
     case rtfDrawObject:
         break;
-    
+
     case rtfShapeInst:
     case rtfShapeResult:
         break;
-        
+
     default:
     //  ExamineToken("HandleOptionalTokesn"); 
         RTFSkipGroup();
@@ -3559,7 +3559,7 @@ static void SpecialChar(void)
         section.newSection = true;
         nowBetweenParagraphs = true;
         break;
-        
+
     case rtfNoBrkSpace:
         if (nowBetweenParagraphs)
             paragraph.extraIndent += 0;
@@ -3621,14 +3621,14 @@ static void DoHeaderFooter(void)
     size_t hfStartPos, hfEndPos, len;
     int isHeader, isFirst;
     int level = RTFGetBraceLevel();
-    
+
     if (insideHeaderFooter) return;
-    
+
     insideHeaderFooter = true;
     suppressLineBreak = true;
     isHeader = (rtfMinor == rtfHeader) || (rtfMinor == rtfHeaderFirst) ;
     isFirst  = (rtfMinor == rtfHeaderFirst) || (rtfMinor == rtfFooterFirst) ;
-    
+
     StopTextStyle();
 
     hfStartPos = ftell(ofp);
@@ -3667,14 +3667,14 @@ static void DoHeaderFooter(void)
     }
     StopTextStyle();
     PutLitStr("}\n");
-    
+
     /* copy header/footer  */
     hfEndPos = ftell(ofp);
     len = hfEndPos - hfStartPos;
-    
+
     /* Don't bother unless the header contains something */
     /* and we are still in the preamble */
-    
+
     if (len<=strlen(option)+2) {
         /* erase empty command */
         fseek(ofp, hfStartPos, 0);
@@ -3688,7 +3688,7 @@ static void DoHeaderFooter(void)
             fseek(ofp, hfStartPos, 0);
             fread(buff,1,len,ofp);
             buff[len] = '\0';
-            
+
             if (!isFirst) {
                 s = strdup_together(preambleFancyHeader,buff);
                 if (preambleFancyHeader) free(preambleFancyHeader);
@@ -3701,7 +3701,7 @@ static void DoHeaderFooter(void)
             fseek(ofp, hfStartPos, 0);
         }
     }
-    
+
     suppressLineBreak = false;
     insideHeaderFooter = false;
 }
@@ -3735,7 +3735,7 @@ static void Destination(void)
         ReadNextGraphic();
         break;
     case rtfUnicodeSkipN:
-		ReadUnicodeSkipN();
+        ReadUnicodeSkipN();
         break;
     case rtfUnicode:
     case rtfUnicodeFake:
@@ -3793,7 +3793,7 @@ static void RTFSetGenCharSet(void)
         genCharCode = cp850CharCode;
         break;
     }
-        
+
     /* check for the \ansicpg control word */
     RTFPeekToken();
     if (RTFCheckCMM(rtfControl, rtfFontAttr, rtfAnsiCodePage)) {  /* we will handle the token */
@@ -3828,7 +3828,7 @@ static void RTFSetGenCharSet(void)
                 break;
         }
     }
-    
+
     curCharCode = genCharCode;
 } 
 
@@ -3945,7 +3945,7 @@ static void ControlClass(void)
 int BeginLaTeXFile(void)
 {
     int i;
-    
+
     RTFSetDefaultFont(-1);
     insideFootnote = false;
     insideHyperlink = false;
@@ -3980,15 +3980,15 @@ int BeginLaTeXFile(void)
     table.theCell = NULL;
     table.cellMergePar = mergeNone;
     table.multiRow = false;
-    
+
     InitTextStyle();
     textStyleWritten = textStyle;
-    
+
     InitParagraphStyle();
     paragraphWritten = paragraph;
     nowBetweenParagraphs = true;
     suppressLineBreak = false;
-	suppressSpaceBetweenParagraphs=false;
+    suppressSpaceBetweenParagraphs=false;
 
     /* install class callbacks */
     RTFSetClassCallback(rtfText, TextClass);
@@ -4003,7 +4003,7 @@ int BeginLaTeXFile(void)
 
     for (i=0; i<256; i++)
         UsedColor[i] = 0;
-        
+
     WriteLaTeXHeader();
     return (1);
 }
