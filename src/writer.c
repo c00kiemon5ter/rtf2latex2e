@@ -2669,7 +2669,10 @@ static int ishex(char c)
 static int ReadHexPair(void)
 {
 	int hexNumber;
-	RTFGetToken();   
+	
+	do {
+		RTFGetToken();
+	} while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
 	
 	if (!ishex(rtfTextBuf[0])) {
 		fprintf(stderr, "oddness encountered in hex data\n");
@@ -2678,7 +2681,9 @@ static int ReadHexPair(void)
 	
 	hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
 
-	RTFGetToken();   
+	do {
+		RTFGetToken();
+	} while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
 	
 	if (!ishex(rtfTextBuf[0])) {
 		fprintf(stderr, "oddness encountered in hex data\n");
@@ -2717,23 +2722,25 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
         RTFPanic("Cannot open input file %s\n", objectFileName);
 
 /* OLE header 
- * (uint) version  e.g. 01000100 = 8 hex digits
- * (uint) format   e.g. 02000000 = 8 hex digits
- * ( int) type name length (int) e.g. 0f000000 = 15 * 2 hex digits
+ * (uint) version  e.g. 01000100 = 4 hex pairs
+ * (uint) format   e.g. 02000000 = 4 hex pairs
+ * ( int) type name length (int) e.g. 0f000000 = 4 hex pairs
  * ( str) type name  e.g. 4571 7561 7469 6f6e 2e44 534d 5434 00
- * 0000 0000 0000 0000 000e 0000 = 24 hex digits
+ * 00000000 00000000 000e0000 = 3 unknown ints = 12 hex pairs
  *
  * two examples with spaces added to clarify
  * 01050000 02000000 0b000000 4571756174696f6e2e3300         00000000 00000000 000e0000
  * 01000100 02000000 0f000000 4571756174696f6e2e44534d543400 00000000 00000000 000e0000
 */
-	/* skip three ints of 8 characters each */
-    for (i=0; i<24; i++)  RTFGetToken();
-    	
-    /* skip the null terminated string */
+	/* skip three ints of 4 hex pairs each */
+    for (i=0; i<12; i++)  ReadHexPair();
+
+    /* skip the 00 hex-terminated string */
     do {
     	value = ReadHexPair();
+    	/* fprintf(stderr,"%c", value); */
 	} while (value>0);
+	/* fprintf(stderr,"\n"); */
 	
     if (value==-1) {
         RTFMsg("* OLE object does not have proper header\n");
@@ -2741,12 +2748,14 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
         return;
     }
 
-	/* skip three ints of 8 characters each */
-    for (i=0; i<24; i++)  RTFGetToken();
+	/* skip three ints of 4 hex characters each */
+    for (i=0; i<12; i++)  ReadHexPair();
 
 	/* skip three ints of 8 characters each */
 	for (i=0;i<8;i++) {
 		RTFGetToken();
+		while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d)
+			RTFGetToken();   
 		m[i] = rtfTextBuf[0];
     }
     m[8] = '\0';
@@ -2767,7 +2776,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
         RTFGetToken();
 
         /* CR or LF in the hex stream should be skipped */
-        if (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d)
+        while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d)
             RTFGetToken();
 
         if (rtfClass == rtfGroup)
@@ -2778,7 +2787,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 
         RTFGetToken();
 
-        if (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d)
+        while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d)
             RTFGetToken();  /* should not happen */
 
         if (rtfClass == rtfGroup)
