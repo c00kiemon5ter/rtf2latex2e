@@ -1,4 +1,4 @@
-VERSION = 2-0-2
+VERSION = 2-1-0
 
 #reasonable default set of compiler flags while developing
 #CFLAGS = -g -D_FORTIFY_SOURCE=2 -Wall -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wshadow -Wstrict-prototypes -Wformat=2
@@ -62,11 +62,14 @@ PREFS        = pref/latex-encoding                pref/latex-encoding.mac       
                pref/cp936raw.txt                  pref/cp932raw.txt                  \
                pref/rtf-encoding.cp1251           
 
-DOCS         = doc/GPL_license            doc/ChangeLog \
-               doc/rtfReader.tex          doc/rtf2latexDoc.tex    \
-               doc/Makefile               doc/rtf2latex2e.1
+DOCS         = doc/GPL_license      doc/ChangeLog     \
+               doc/rtf2latexDoc.tex doc/rtf2latex2e.1 \
+               doc/Makefile                           \
+               doc/web/style.css    doc/web/docs.html \
+               doc/web/index.html   doc/web/logo.png  \
+               doc/web/arrow.gif
                
-PDFS         = doc/rtfReader.pdf          doc/rtf2latexDoc.pdf  
+PDFS         = doc/rtf2latexDoc.pdf  
 
 TEST         = test/Makefile              test/arch.rtf              test/arch-mac.rtf       \
                test/equation.rtf          test/fig-jpeg.rtf          test/multiline.rtf      \
