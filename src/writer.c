@@ -2268,7 +2268,11 @@ static void IncludeGraphics(char *pictureType)
     if (insideTable || insideFootnote) return;
 
     /* it seems that when cropping is -4319 or -6084 the picture is empty */
-    if (picture.cropTop<-1000) return;
+    if (picture.cropTop<-1000) {  
+        unlink(picture.name);
+    	(picture.count)--;  /* decrement the picture counter so useless file is overwritten*/
+    	return;
+    }
 
 #ifdef UNIX
     if (strcmp(pictureType, "pict") == 0) {
