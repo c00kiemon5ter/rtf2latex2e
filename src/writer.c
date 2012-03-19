@@ -2019,7 +2019,7 @@ static int HexData(void)
     /* if we fall into a group, skip the whole she-bang */
     if (RTFCheckCM(rtfGroup, rtfBeginGroup) != 0) {
         RTFPeekToken();
-        while ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13) {
+        while ((int) (rtfTextBuf[0]) == 0x0a || (int) (rtfTextBuf[0]) == 0x0d) {
             RTFGetToken();      /* skip any carriage returns */
             RTFPeekToken();     /* look at the next token to check if there is another row */
         }
@@ -2045,6 +2045,50 @@ static int HexData(void)
     }
     return (0);
 
+}
+
+/*
+ * return true for upper or lower case hex character
+ */
+static int ishex(char c)
+{
+    if ( '0' <= c && c <= '9' )
+        return 1;
+    if ('a' <= c && c <= 'f')
+        return 1;
+    if ('A' <= c && c <= 'F')
+        return 1;
+    return 0;
+}
+
+/*
+ * Read two characters of hex-encoded object data as an unsigned char
+ */
+static int ReadHexPair(void)
+{
+    int hexNumber;
+
+    do
+        RTFGetToken();
+    while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
+
+    if (!ishex(rtfTextBuf[0])) {
+        fprintf(stderr, "oddness encountered in hex data\n");
+        return -1;
+    }
+
+    hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
+
+    do
+        RTFGetToken();
+    while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
+
+    if (!ishex(rtfTextBuf[0])) {
+        fprintf(stderr, "oddness encountered in hex data\n");
+        return -1;
+    }
+
+    return hexNumber + RTFCharToHex(rtfTextBuf[0]);
 }
 
 /* 
@@ -2107,9 +2151,21 @@ static void WriteWMFHeader(FILE * pictureFile)
 
 static void WritePICTHeader(FILE * pictureFile)
 {
-    int i;
-    for (i = 0; i < 512; i++)
-        fputc(' ', pictureFile);
+    int i, h[12];
+
+    /* check for possibility of pre-existing 512 byte header */
+    for (i=0; i<12; i++) 
+        h[i]=ReadHexPair();
+    
+    /* magic numbers for version 1 and version 2 pict files */
+    if ( (h[10]==0x11 && h[11]==0x01) || (h[10]==0x00 && h[11]==0x11) )  {
+	    for (i = 0; i < 512; i++)
+	        fputc(' ', pictureFile);
+    }
+    
+    /* write out the header information */
+    for (i=0; i<12; i++) 
+        fputc(h[i], pictureFile);
 }
 
 static char * NewFigureName(char *fileSuffix)
@@ -2153,19 +2209,19 @@ static void ConvertHexPicture(char *fileSuffix)
         RTFPanic("Cannot open input file %s\n", picture.name);
 
     /* write appropriate header */
-    if (picture.type== pict)
+    if (picture.type== pict) 
         WritePICTHeader(pictureFile);
+    
     if (picture.type== wmf)
         WriteWMFHeader(pictureFile);
 
     /* now we have to read the hex code in pairs of two
      * (1 byte total) such as ff, a1, 4c, etc...*/
     while (!groupEnd) {
-        RTFGetToken();
 
-        /* CR or LF in the hex stream should be skipped */
-        if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
-            RTFGetToken();
+        do
+        	RTFGetToken();
+        while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
 
         if (rtfClass == rtfGroup)
             break;
@@ -2175,9 +2231,9 @@ static void ConvertHexPicture(char *fileSuffix)
             hexEvenOdd++;
         }
 
-        RTFGetToken();
-        if ((int) (rtfTextBuf[0]) == 10 || (int) (rtfTextBuf[0]) == 13)
-            RTFGetToken();
+        do
+        	RTFGetToken();
+        while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
 
         if (rtfClass == rtfGroup)
             break;
@@ -2652,53 +2708,13 @@ DecodeOLE(char *objectFileName, char *streamType,
     return 0;
 }
 
-static int ishex(char c)
-{
-    if ( '0' <= c && c <= '9' )
-        return 1;
-    if ('a' <= c && c <= 'f')
-        return 1;
-    if ('A' <= c && c <= 'F')
-        return 1;
-    return 0;
-}
-
-/*
- * Save the hex-encoded object data and as binary bytes in objectFileName
- */
-static int ReadHexPair(void)
-{
-    int hexNumber;
-
-    do
-        RTFGetToken();
-    while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
-
-    if (!ishex(rtfTextBuf[0])) {
-        fprintf(stderr, "oddness encountered in hex data\n");
-        return -1;
-    }
-
-    hexNumber = 16 * RTFCharToHex(rtfTextBuf[0]);
-
-    do
-        RTFGetToken();
-    while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
-
-    if (!ishex(rtfTextBuf[0])) {
-        fprintf(stderr, "oddness encountered in hex data\n");
-        return -1;
-    }
-
-    return hexNumber + RTFCharToHex(rtfTextBuf[0]);
-}
-
 /*
  * Save the hex-encoded object data and as binary bytes in objectFileName
  */
 static void ReadObjectData(char *objectFileName, int type, int offset)
 {
-    char dummyBuf[20],m[10];
+    char dummyBuf[20];
+    int m[4];
     char *OLE_MARK = "d0cf11e0";
     FILE *objFile;
     int i, value;
@@ -2751,25 +2767,18 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     /* skip three ints of 4 hex characters each */
     for (i=0; i<12; i++)  ReadHexPair();
 
-    /* skip three ints of 8 characters each */
-    for (i=0;i<8;i++) {
-        do 
-            RTFGetToken();
-        while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
-        m[i] = rtfTextBuf[0];
-    }
-    m[8] = '\0';
+    /* read the OLE marker next 8 chars should be d0cf11e0 */
+    for (i=0; i<4; i++) 
+    	m[i]=ReadHexPair();
 
-    if (strcmp(m,OLE_MARK) != 0) {
-        fprintf(stderr, "* OLE marker is wrong '%s' != '%s'\n", m, OLE_MARK);
+    if (m[0]!=0xd0 || m[1]!=0xcf || m[2]!=0x11 || m[3]!=0xe0) {
+        fprintf(stderr, "* OLE marker 0x'%02x%02x%02x%02x' is not 0xd0cf11e0\n", m[0], m[1], m[2], m[3], OLE_MARK);
         fclose(objFile);
         return;
     }
-
-    fputc(0xd0, objFile);
-    fputc(0xcf, objFile);
-    fputc(0x11, objFile);
-    fputc(0xe0, objFile);
+    
+    for (i=0; i<4; i++) 
+    	fputc(m[i], objFile);
 
     /* each byte is encoded as two hex chars ... ff, a1, 4c, ...*/
     while (1) {
