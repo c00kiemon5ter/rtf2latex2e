@@ -2000,7 +2000,7 @@ void EndLaTeXFile(void)
     free(newname);
     fclose(ofp);
     fclose(nfp);
-//    unlink(oldname);
+    unlink(oldname);
 }
 
 /* sets the output stream */
@@ -2265,8 +2265,6 @@ static void IncludeGraphics(char *pictureType)
     int width, height;
     int displayFigure = 0;
 
-    if (insideTable || insideFootnote) return;
-
     /* it seems that when cropping is -4319 or -6084 the picture is empty */
     if (picture.cropTop<-1000) {  
         unlink(picture.name);
@@ -2276,7 +2274,7 @@ static void IncludeGraphics(char *pictureType)
 
 #ifdef UNIX
     if (strcmp(pictureType, "pict") == 0) {
-        if (!system("command -v pict2pdf") ) {
+       if (!system("command -v pict2pdf") ) {
             int err;
             char *pdfname = strdup(picture.name);
             strcpy(pdfname + strlen(pdfname) - 4, "pdf");
@@ -2285,7 +2283,7 @@ static void IncludeGraphics(char *pictureType)
             err = system(dummyBuf);
 
             if (!err) {
-             //   unlink(picture.name);
+                unlink(picture.name);
                 free(picture.name);
                 picture.name = pdfname;
             } else
@@ -2303,7 +2301,7 @@ static void IncludeGraphics(char *pictureType)
             err = system(dummyBuf);
 
             if (!err) {
-              //  unlink(picture.name);
+              //  unlink(picture.name);  // wmf2eps has poor conversion
                 free(picture.name);
                 picture.name = pdfname;
             } else
@@ -2404,33 +2402,33 @@ static void ReadPicture(void)
     /* Process picture */
     switch (picture.type) {
     case pict:
-        RTFMsg("* Image: Apple PICT format\n");
+        RTFMsg("* Image %03d: Apple PICT format\n", picture.count+1);
         ConvertHexPicture("pict");
         IncludeGraphics("pict");
         break;
     case wmf:
-        RTFMsg("* Image: Microsoft WMF format\n");
+        RTFMsg("* Image %03d: Microsoft WMF format\n", picture.count+1);
         ConvertHexPicture("wmf");
         IncludeGraphics("wmf");
         break;
     case emf:
-        RTFMsg("* Image: Microsoft EMF format\n");
+        RTFMsg("* Image %03d: Microsoft EMF format\n", picture.count+1);
         ConvertHexPicture("emf");
         IncludeGraphics("emf");
         break;
     case png:
-        RTFMsg("* Image: PNG\n");
+        RTFMsg("* Image %03d: PNG\n", picture.count+1);
         ConvertHexPicture("png");
         IncludeGraphics("png");
         break;
     case jpeg:
-        RTFMsg("* Image: JPEG\n");
+        RTFMsg("* Image %03d: JPEG\n", picture.count+1);
         ConvertHexPicture("jpg");
         IncludeGraphics("jpg");
         break;
     default:
+        RTFMsg("* Image %03d: Unknown type\n", picture.count+1);
         ConvertHexPicture("???");
-        printf("* Warning: unknown picture type encountered\n");
         IncludeGraphics("unknown");
         break;
     }
