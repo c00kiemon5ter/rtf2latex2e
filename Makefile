@@ -1,5 +1,7 @@
 VERSION = 2-1-0
 
+CC:=gcc
+
 #reasonable default set of compiler flags while developing
 #CFLAGS = -g -D_FORTIFY_SOURCE=2 -Wall -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wshadow -Wstrict-prototypes -Wformat=2
 
