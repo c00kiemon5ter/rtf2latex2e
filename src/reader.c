@@ -1086,8 +1086,8 @@ static void ReadFontTbl(void)
 
                 switch (rtfMajor) {
                 default:
-                    /* ignore token but announce it */
-                    RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf); 
+                    /* ignore token but do not announce it */
+                    /*RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf);*/ 
                     break;
 
                 case rtfFontFamily:
@@ -1160,7 +1160,7 @@ static void ReadFontTbl(void)
                 continue;
             } else {
                 /* ignore token but and don't announce it */
-                RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf);
+                /*RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf);*/
 
             }
 
