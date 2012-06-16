@@ -146,7 +146,7 @@ char *UnicodeGreekToLatex[];
 /*
  * a useful diagnostic (debugging) function to examine the token just read.
  */
-static void ExamineToken(char * tag)
+void ExamineToken(char * tag)
 {
     printf("********** %s **********\n", tag);
     printf("* Token is %s\n", rtfTextBuf);
@@ -3011,6 +3011,112 @@ boolean ConvertEquationFile(char *objectFileName)
 }
 
 /*
+ * Convert file containing just equation
+ */
+
+boolean ConvertRawEquationFile(char *rawFileName)
+{
+    FILE *fp;
+    unsigned char *nativeStream;
+    char *EqNo;
+    MTEquation *theEquation;
+    uint32_t equationSize;
+    int x;
+
+	fp = fopen(rawFileName, "r");
+	x=fgetc(fp);
+//	fprintf(stderr, "%d == 0?\n", x); 
+	x=fgetc(fp);
+//	fprintf(stderr, "%d == 1?\n", x); 
+	equationSize = fgetc(fp);
+	equationSize = equationSize * 256 + fgetc(fp);
+//	fprintf(stderr, "equation size is %d\n", equationSize);
+	
+	nativeStream = (unsigned char *) malloc(equationSize+10);	
+	fread(nativeStream, 1, equationSize, fp);
+	fclose(fp);
+
+    theEquation = (MTEquation *) malloc(sizeof(MTEquation));
+    if (theEquation == NULL) {
+        RTFMsg("* error allocating memory for equation!\n");
+        free(nativeStream);
+        return (false);
+    }
+
+	if (!Eqn_Create(theEquation, nativeStream, equationSize)) {
+		RTFMsg("* could not create equation structure!\n");
+		free(nativeStream);
+		free(theEquation);
+		return (false);
+	}
+
+	theEquation->m_inline = 1;
+	theEquation->log_level = 2;
+	EqNo=NULL;
+
+	if (insideTable) {
+		if (nowBetweenCells) NewCell();
+	} else if (nowBetweenParagraphs) {
+		theEquation->m_inline = 0;
+		suppressSpaceBetweenParagraphs=true;
+		EndParagraph();
+		if (lastCharWritten != '\n') 
+			PutLitChar('\n');
+		current_vspace = 0;
+		EqNo=EqnNumberString();
+	}
+
+	if (g_eqn_insert_name) {
+		PutLitStr("\\fbox{file://");
+		PutEscapedLitStr(rawFileName);
+		PutLitStr("}");
+		requireHyperrefPackage = true;
+	}
+
+	/* this returns the translated equation in m_latex record */
+	Eqn_TranslateObjectList(theEquation, ostream, 0);
+
+	if (theEquation->m_inline){
+		/* Add a space unless the last character was punctuation */
+		if (lastCharWritten != ' ' && lastCharWritten != '(' && 
+			lastCharWritten != '[' && lastCharWritten != '{' ) 
+			   PutLitChar(' ');
+	}
+
+	PutLitStr(theEquation->m_latex_start);
+	PutLitStr(theEquation->m_latex);
+	PutLitStr(EqNo);
+	PutLitStr(theEquation->m_latex_end);
+
+	if (theEquation->m_inline) {
+		/* Add a space unless the next character is punctuation */
+		RTFPeekToken();
+		if (rtfClass == rtfText) {
+			if (rtfTextBuf[0]!='.' && 
+				rtfTextBuf[0]!=',' && 
+				rtfTextBuf[0]!=':' && 
+				rtfTextBuf[0]!=';' && 
+				rtfTextBuf[0]!=']' && 
+				rtfTextBuf[0]!=')') PutLitChar(' ');
+		} else 
+			PutLitChar(' ');
+	}
+
+	Eqn_Destroy(theEquation);
+
+
+    if (theEquation != NULL)
+        free(theEquation);
+
+    if (nativeStream != NULL)
+        free(nativeStream);
+
+    requireAmsSymbPackage = true;
+    requireAmsMathPackage = true;
+    return true;
+}
+
+/*
  * Translate an object containing a MathType equation
  */
 static boolean ReadEquation(void)
@@ -3291,7 +3397,7 @@ static void ReadUnicode(void)
     }
 
     /* directly translate greek */
-    if (913 <= thechar && thechar <= 969) {
+    if ((913 <= thechar && thechar <= 937) || (945 <= thechar && thechar <= 969)) {
         PutMathLitStr(UnicodeGreekToLatex[thechar-913]);
         return;
     }
@@ -4164,12 +4270,12 @@ char *UnicodeSymbolFontToLatex[] = {
 char *UnicodeGreekToLatex[] = {
     "A",
     "B",
-    "\\Gamma",
+    "\\Gamma", /*915*/
     "\\Delta",
     "E",
     "Z",
     "H",
-    "\\Theta",
+    "\\Theta",/*920*/
     "I",
     "K",
     "\\Lambda",
@@ -4179,7 +4285,7 @@ char *UnicodeGreekToLatex[] = {
     "O",
     "\\Pi",
     "P",
-    "", /* invalid character capital rho */
+    "", /* invalid character capital rho 930*/
     "\\Sigma",
     "T",
     "Y",
@@ -4187,13 +4293,13 @@ char *UnicodeGreekToLatex[] = {
     "X",
     "\\Psi",
     "\\Omega",
-    "\\\"I",
+    "\\\"I",  /* these should not be in math mode 938*/
     "\\\"Y",
     "\\'\\alpha",
     "\\'\\epsilon",
     "\\'\\eta",
     "\\'\\iota",
-    "\\\"u",
+    "\\\"u", /* 944 */
     "\\alpha",
     "\\beta",
     "\\gamma",

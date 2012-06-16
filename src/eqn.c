@@ -41,6 +41,7 @@
 # define        DEBUG_JOIN        0
 # define        DEBUG_LINE        0
 # define        DEBUG_FUNCTION    0
+# define        DEBUG_EQUATION    (DEBUG_PARSING || DEBUG_TRANSLATION || DEBUG_TEMPLATE)
 
 
 static MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_index, int num_objs);
@@ -59,7 +60,7 @@ extern char *Profile_PILEtranslation[];
 extern char *Profile_MT_CHARSET_ATTS[];
 extern char *Profile_CHARTABLE[];
 extern char *Profile_TEMPLATES[];
-extern char *Profile_TEMPLATES5[];
+extern char *Profile_TEMPLATES_5[];
 extern char *Template_EMBELLS[];
 
 char * typeFaceName[NUM_TYPEFACE_SLOTS] =
@@ -314,16 +315,18 @@ uint32_t GetProfileStr(char **section, char *key, char *data, int datalen)
     char **rover;
     size_t keylen;
 
+	data[0] = '\0';
     if (key == NULL) return 0;
     keylen = strlen(key);
     
     for (rover = &section[0]; *rover; ++rover) {
         if (strncmp(*rover, key, keylen) == 0) {
             strncpy(data, *rover + keylen + 1, (size_t) (datalen - 1));    /*  skip over = (no check for white space */
-            data[datalen - 1] = 0;      /*  null terminate */
+            data[datalen - 1] = '\0';      /*  null terminate */
             return ((uint32_t) strlen(data));
         }
     }
+
     return 0;
 }
 
@@ -910,6 +913,10 @@ static MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_ind
     if (eqn->m_mtef_ver < 5) {
         new_char->character = *(src + *src_index);
         (*src_index)++;
+        if (eqn->m_platform == PLATFORM_WIN) {
+			new_char->character |= *(src + *src_index) << 8;
+			(*src_index)++;
+        }
 
     } else {
     
@@ -982,7 +989,10 @@ static MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_ind
     new_tmpl->options = *(src + *src_index);
     (*src_index)++;
 
-    if (DEBUG_TEMPLATE || g_input_file_type==TYPE_EQN) 
+//	if (eqn->m_mtef_ver == 3 && 18 <= new_tmpl->selector && new_tmpl->selector <= 20)
+	//	new_tmpl->variation = new_tmpl->variation >> 8;
+
+    if (DEBUG_PARSING && DEBUG_TEMPLATE || g_input_file_type==TYPE_EQN) 
         fprintf(stderr, "TMPL : read sel=%2d var=0x%04x (%d.%d)\n", 
         (int) new_tmpl->selector, (unsigned int) new_tmpl->variation, (int) new_tmpl->selector, (int) new_tmpl->variation);
 
@@ -1099,6 +1109,7 @@ static MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
 
     /* FULL or SUB or SUB2 or SYM or SUBSYM */
     if (tag >= FULL && tag <= SUBSYM) {
+//    fprintf(stderr,"tag= %d\n",tag);
         new_size->type  = tag;
         new_size->lsize = tag - FULL;
         return new_size;
@@ -1146,6 +1157,7 @@ static MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
 */
 static MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_index, int num_objs)
 {
+    static int subroutine_depth = 0;
     unsigned char c, size, curr_tag;
     int i,id;
     int tally = 0;
@@ -1153,6 +1165,7 @@ static MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *
     MT_OBJLIST *curr;
     void *new_obj;
 
+    ++subroutine_depth;
     if (eqn->m_mtef_ver == 5)
         curr_tag = *(src + *src_index);
     else
@@ -1170,6 +1183,7 @@ if (DEBUG_PARSING || g_input_file_type==TYPE_EQN) {
         switch (curr_tag) {
         case END:
             (*src_index)++;
+            subroutine_depth--;
             return head;
             break;
 
@@ -1296,13 +1310,19 @@ if (DEBUG_PARSING || g_input_file_type==TYPE_EQN) {
             curr_tag = LoNibble(*(src + *src_index));
 
         tally++;
-        if (tally == num_objs)
+ 
+//        fprintf(stderr,"depth=%d number of objects/total = %d/%d\n", subroutine_depth, tally, num_objs);
+        
+        if (tally == num_objs) {
+    		subroutine_depth--;
             return head;
+        }
 
     }                           /*  while loop thru MathType Objects */
 
     (*src_index)++;             /*  step over end byte */
 
+    subroutine_depth--;
     return head;
 }
 
@@ -1349,7 +1369,18 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
     eqn->m_latex_end = NULL;
     eqn->m_latex = NULL;
 
+	if (g_input_file_type==TYPE_RAWEQN) {
+		fprintf(stderr, "skipping 0x %02X %02X %02X %02X\n", eqn->m_mtef_ver, eqn_stream[src_index++], eqn_stream[src_index++], eqn_stream[src_index++]);
+		eqn->m_mtef_ver = 0;
+	}
+		
     switch (eqn->m_mtef_ver) {
+    case 0:
+        eqn->m_mtef_ver = 5;
+        eqn->m_product = 0;
+        eqn->m_version = 0;
+        eqn->m_version_sub = 0;
+        break;
     case 1:
     case 101:
         eqn->m_platform = (eqn->m_mtef_ver == 101) ? 1 : 0;
@@ -1375,7 +1406,7 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
 
         /* the application key is a null terminated string */
         while (eqn_stream[src_index]) {
-            /*  fprintf(stderr, "%c", eqn_stream[src_index]); */
+            fprintf(stderr, "%d", eqn_stream[src_index]);
             src_index++;
             if (src_index == eqn_size) {
                 RTFMsg("The Application Key for the Equation is screwy!");
@@ -1394,9 +1425,9 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
         return (false);
     }
 
-    if (g_input_file_type==TYPE_EQN) {
+    if (g_input_file_type==TYPE_EQN || DEBUG_EQUATION) {
         fprintf(stderr,"* MTEF ver = %d\n", eqn->m_mtef_ver);
-        fprintf(stderr,"* Platform = %s\n", (eqn->m_platform) ? "Win" : "Mac");
+        fprintf(stderr,"* Platform = %s\n", (eqn->m_platform == PLATFORM_WIN) ? "Win" : "Mac");
         fprintf(stderr,"* Product  = %s\n", (eqn->m_product) ? "MathType" : "EqnEditor");
         fprintf(stderr,"* Version  = %d.%d\n", eqn->m_version, eqn->m_version_sub);
         fprintf(stderr,"* Type     = %s (ignored because it is unreliable)\n", eqn->m_inline ? "inline" : "display");
@@ -1455,6 +1486,7 @@ char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line)
     strcat(eqn->indent, "  ");
 
     if (line->ruler) {
+//    fprintf(stderr,"LINE---ruler\n");
         strs[num_strs].log_level = 0;
         strs[num_strs].do_delete = 1;
         strs[num_strs].ilk = Z_TEX;
@@ -1464,6 +1496,7 @@ char *Eqn_TranslateLINE(MTEquation * eqn, MT_LINE * line)
     }
 
     if (line->object_list) {
+//    fprintf(stderr,"LINE---object list\n");
         strs[num_strs].log_level = 0;
         strs[num_strs].do_delete = 1;
         strs[num_strs].ilk = Z_TEX;
@@ -2310,15 +2343,22 @@ int Eqn_GetTmplStr(MTEquation * eqn, uint8_t selector, uint16_t variation, EQ_ST
     char key[16];                /*  key = "20.1" */
     char ini_line[256];
     char *tmpl_ptr;
+    int result;
     int num_strs = 0;           /*  this becomes the return value */
 
-    snprintf(key, 16, "%d.%d", (int)selector, (int)variation); /*  ini_line = "msg,template" */
+    snprintf(key, 16, "%d.%d", (int)selector, (int)variation); 
 
     if (eqn->m_mtef_ver==5)
-        (void) GetProfileStr(Profile_TEMPLATES5, key, ini_line, 256);
+        result = GetProfileStr(Profile_TEMPLATES_5, key, ini_line, 256);
     else
-        (void) GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
+        result = GetProfileStr(Profile_TEMPLATES, key, ini_line, 256);
 
+	if (!result) {
+	    fprintf(stderr, "TMPL key='%s' not found in version %d Profile_TEMPLATE\n",key,eqn->m_mtef_ver);
+        exit(1);
+	}
+	
+//	fprintf(stderr,"ini_line='%s'\n", ini_line);
     tmpl_ptr = strchr(ini_line, ',');
 
     if (eqn->log_level >= 2) {
@@ -2363,14 +2403,16 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     if (eqn->m_mtef_ver == 5 && (tmpl->selector != 9))
         tmpl->variation &= 0x000f;
 
-    if (DEBUG_TEMPLATE || g_input_file_type==TYPE_EQN) 
-        fprintf(stderr,"TMPL : Processing (%d.%d)\n", (int)tmpl->selector, (int)tmpl->variation);
+    if (DEBUG_TEMPLATE || g_input_file_type==TYPE_EQN)
+        fprintf(stderr, "TMPL : selector = %d, variation=0x%04x (%d.%d)\n", 
+               (int) tmpl->selector, (unsigned int) tmpl->variation, (int) tmpl->selector, (int) tmpl->variation);
 
     num_strs = Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation, strs);
 
     the_template = strs[num_strs - 1].data;
     
-    if (DEBUG_TEMPLATE || g_input_file_type==TYPE_EQN) fprintf(stderr,"TMPL : num_strs=%d, strs[%d].data='%s'\n",num_strs,num_strs-1,the_template);
+    if (DEBUG_TEMPLATE || g_input_file_type==TYPE_EQN) 	
+    	fprintf(stderr,"TMPL : num_strs=%d, strs[%d].data='%s'\n",num_strs,num_strs-1,the_template);
 
     strcat(eqn->indent, "  ");
 
@@ -3155,7 +3197,7 @@ char *Profile_TEMPLATES[] = {
 };
 
 /* [TEMPLATES] */
-char *Profile_TEMPLATES5[] = {
+char *Profile_TEMPLATES_5[] = {
     "0.1=fence: angle-left only,\\left\\langle #1[M]\\right. ",
     "0.2=fence: angle-right only,\\left. #1[M]\\right\\rangle ",
     "0.3=fence: angle-both,\\left\\langle #1[M]\\right\\rangle ",

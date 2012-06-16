@@ -1082,12 +1082,12 @@ static void ReadFontTbl(void)
 
         while (rtfClass != rtfEOF && !RTFCheckCM(rtfText, ';')) {
 
-            if (rtfClass == rtfControl) {
+           if (rtfClass == rtfControl) {
 
                 switch (rtfMajor) {
                 default:
                     /* ignore token but do not announce it */
-                    /*RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf);*/ 
+                    /*RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf); */
                     break;
 
                 case rtfFontFamily:
@@ -1095,7 +1095,7 @@ static void ReadFontTbl(void)
                     break;
 
                 case rtfCharAttr:
-                    switch (rtfMinor) {
+                   switch (rtfMinor) {
                     default:
                         break;  /* ignore unknown? */
                     case rtfFontNum:
@@ -1142,30 +1142,33 @@ static void ReadFontTbl(void)
                 RTFSkipGroup(); /* ignore for now */
 
             } else if (rtfClass == rtfText) {   /* font name */
+                /* read until a semi-colon is encountered */
                 bp = buf;
                 while (rtfClass != rtfEOF && !RTFCheckCM(rtfText, ';')) {
                     *bp++ = rtfMajor;
                     (void) RTFGetToken();
                 }
                 *bp = '\0';
-                fp->rtfFName = RTFStrSave(buf);
-                /* fprintf(stderr,"%05d fontname=%s\n",fp->rtfFNum, buf); */
+
+                /*fprintf(stderr,"%05d fontname=%s\n",fp->rtfFNum, buf); */
+
+                fp->rtfFName = RTFStrSave(buf);     
                 if (fp->rtfFName == NULL)
                     RTFPanic("%s: cannot allocate font name", fn);
-
+				
+				/* Symbol font is unlike all others*/
                 if (strcasecmp(fp->rtfFName,"Symbol")==0)
                     fp->rtfFCharCode = symCharCode;
 
-                /* already have next token; don't read another at bottom of loop */
-                continue;
+                /* already have next token ';' don't read another at bottom of loop */
+               continue;
             } else {
                 /* ignore token but and don't announce it */
                 /*RTFMsg("%s: unknown token \"%s\"\n", fn, rtfTextBuf);*/
-
             }
 
             (void) RTFGetToken();
-        }
+       }
 
         if (old == 0) {         /* need to see "}" here */
             (void) RTFGetToken();
@@ -1237,6 +1240,7 @@ void ReadColorTbl(void)
                 cp->rtfCBlue = rtfParam;
                 break;
 
+            case rtfTextOne:
             case rtfShade:
             case rtfTint:
             case rtfColorHyperlink:

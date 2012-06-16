@@ -388,6 +388,7 @@ enum INPUT_FILE_TYPE {
     TYPE_RTF,        /* normal .rtf file */
     TYPE_EQN,        /* equation .eqn file */
     TYPE_RTFD,       /* .rtfd file */
+    TYPE_RAWEQN,     /* like .eqn file but without OLE wrapper */
     TYPE_UNKNOWN  
 };
 

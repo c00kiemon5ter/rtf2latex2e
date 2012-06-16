@@ -183,6 +183,7 @@ minor	rtfBlue			blue
 
 minor	rtfTint			ctint
 minor	rtfShade		cshade
+minor	rtfTextOne		ctextone
 minor	rtfColorHyperlink	chyperlink
 minor	rtfColorAccent	caccentone
 minor	rtfColorTextTwo	ctexttwo

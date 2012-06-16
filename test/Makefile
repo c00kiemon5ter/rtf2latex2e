@@ -79,6 +79,9 @@ science-latex/science.pdf : science-latex/science.tex
 	cd science-latex && $(LATEX) science $(LATEX_LOG)
 	cd science-latex && $(LATEX) science $(LATEX_LOG)
 
+enc-utf8x.pdf: enc-utf8x.tex
+	xelatex enc-utf8x.tex
+	
 %.tex:	%.rtf
 	$(RTF2LATEX) $(OPTIONS) $<
 

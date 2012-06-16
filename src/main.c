@@ -62,7 +62,7 @@ static void
 print_version(void)
 {
     fprintf(stdout, "rtf2latex2e %s\n\n", VERSION);
-    fprintf(stdout, "Copyright (C) 2011 Free Software Foundation, Inc.\n");
+    fprintf(stdout, "Copyright (C) 2012 Free Software Foundation, Inc.\n");
     fprintf(stdout, "This is free software; see the source for copying conditions.  There is NO\n");
     fprintf(stdout, "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
 }
@@ -133,6 +133,9 @@ static enum INPUT_FILE_TYPE identify_filename(char *name)
     if (len > 4 && strcasecmp(name+len-4,".eqn")==0)
         return TYPE_EQN;
         
+    if (len > 4 && strcasecmp(name+len-4,".rqn")==0)
+        return TYPE_RAWEQN;
+
     return TYPE_UNKNOWN;
 }
 
@@ -248,7 +251,7 @@ static char * make_output_filename(char * name)
         return out;
     }
 
-    if (!g_create_new_directory || g_input_file_type == TYPE_EQN) {
+    if (!g_create_new_directory || g_input_file_type == TYPE_EQN || g_input_file_type == TYPE_RAWEQN) {
         s = strdup(name);
         strcpy(s+strlen(s)-4, ".ltx");
         return s;
@@ -406,7 +409,7 @@ main(int argc, char **argv)
         RTFSetStream(ifp);
 
         /* look at second token to check if input file is of type rtf */
-        if (g_input_file_type != TYPE_EQN) {
+        if (g_input_file_type != TYPE_EQN && g_input_file_type != TYPE_RAWEQN) {
             cursorPos = ftell(ifp);
             RTFGetToken();
             RTFGetToken();
@@ -436,7 +439,10 @@ main(int argc, char **argv)
         if (BeginLaTeXFile()) {
             if (g_input_file_type == TYPE_EQN) 
                 (void) ConvertEquationFile(input_filename);
-            else
+            else if (g_input_file_type == TYPE_RAWEQN) {
+                (void) ConvertRawEquationFile(input_filename);
+            } else
+
                 RTFRead();
             EndLaTeXFile(); /* closes ofp */
         }

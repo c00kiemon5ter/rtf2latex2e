@@ -2,6 +2,9 @@
 
 #define _EQN_SUPPORT_H
 
+#define PLATFORM_MAC  0
+#define PLATFORM_WIN  1
+
 #define embDOT        2
 #define embDDOT       3
 #define embTDOT       4

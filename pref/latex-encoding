@@ -12,11 +12,14 @@
 # The '%' is NOT a COMMENT sign, it indicates that rtf2latex2e should insert the 
 # following string into the preamble of the generated LaTeX file
 
-# Use of this file requires the inputenc package with the utfx option.
-%\usepackage[utf8x]{inputenc}
-
-# Some symbols are not available in the default OT1 encoding
+%\usepackage{ifxetex} 
+%\ifxetex
+%\usepackage{fontspec}
+%\setmainfont[Mapping=tex-text]{STIXGeneral}
+%\else
 %\usepackage[T1]{fontenc}
+%\usepackage[utf8]{inputenc}
+%\fi
 
 # Access to \textcopyright, \textregistered and \texttrademark
 %\usepackage{textcomp}
