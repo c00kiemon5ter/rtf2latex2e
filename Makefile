@@ -106,7 +106,7 @@ src/rtfprep: src/tokenscan.o src/rtfprep.o
 
 rtf2latex2e: $(OBJS) $(HDRS)
 	$(CC) $(PLATFORM) $(CFLAGS) $(OBJS) -o $(BINARY_NAME)
-	cp $(BINARY_NAME) rtf2latex
+	cp -f $(BINARY_NAME) rtf2latex
 
 src/cole.o: src/cole.c src/cole.h src/cole_support.h
 	$(CC) $(PLATFORM) $(CFLAGS) -c src/cole.c -o src/cole.o
@@ -179,9 +179,9 @@ install: rtf2latex2e
 	mkdir -p                $(DESTDIR)$(bindir)
 	mkdir -p                $(DESTDIR)$(datadir)/$(package-name)
 	
-	cp $(BINARY_NAME)       $(DESTDIR)$(bindir)
-	cp $(PREFS)             $(DESTDIR)$(datadir)/$(package-name)
-	cp doc/rtf2latex2e.1    $(DESTDIR)$(mandir)/man1
+	cp -f -p $(PREFS)             $(DESTDIR)$(datadir)/$(package-name)
+	cp -f -p doc/rtf2latex2e.1    $(DESTDIR)$(mandir)/man1
+	cp -f -p $(BINARY_NAME)       $(DESTDIR)$(bindir)
 	
 	@echo "******************************************************************"
 	@echo "*** rtf2latex2e successfully installed as \"$(BINARY_NAME)\""
@@ -196,10 +196,13 @@ install: rtf2latex2e
 	@echo "***   3) edit the Makefile and recompile"
 	@echo "******************************************************************"
 
+install-prefs:
+	cp -f -p $(PREFS)             $(DESTDIR)$(datadir)/$(package-name)
+
 install-pdf: 
 	mkdir -p $(pdfdir)
-	cp doc/rtfReader.pdf    $(DESTDIR)$(pdfdir)
-	cp doc/rtf2latexDoc.pdf $(DESTDIR)$(pdfdir)
+	cp -f -p doc/rtfReader.pdf    $(DESTDIR)$(pdfdir)
+	cp -f -p doc/rtf2latexDoc.pdf $(DESTDIR)$(pdfdir)
 
 clean: 
 	rm -f $(OBJS) $(RTFPREP_OBJS) $(BINARY_NAME) rtf2latex
