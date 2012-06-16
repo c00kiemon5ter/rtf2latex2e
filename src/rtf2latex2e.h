@@ -70,8 +70,8 @@ typedef struct
     int32_t height;
     int32_t goalWidth;
     int32_t goalHeight;
-    int32_t scaleX;
-    int32_t scaleY;
+    float scaleX;
+    float scaleY;
     int     llx;
     int     lly;
     int     urx;

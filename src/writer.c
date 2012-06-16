@@ -24,6 +24,7 @@
 # include <stdlib.h>
 # include <ctype.h>
 # include <unistd.h>
+# include <math.h>
 
 # include "rtf.h"
 # include "tokenscan.h"
@@ -2112,15 +2113,15 @@ static void WriteWMFHeader(FILE * pictureFile)
     int height, width;
 
     if (picture.goalHeight) {
-        height = (int)(picture.goalHeight * picture.scaleY * 96.0 / rtfTpi / 100.0);
+        height = (int)(picture.goalHeight * picture.scaleY * 96.0 / rtfTpi);
     } else {
-        height = (int)(picture.height * picture.scaleY * 96.0 / rtfTpi / 100.0);
+        height = (int)(picture.height * picture.scaleY * 96.0 / rtfTpi);
     }
 
     if (picture.goalWidth) {
-        width = (int)(picture.goalWidth * picture.scaleX * 96.0 / rtfTpi / 100.0);
+        width = (int)(picture.goalWidth * picture.scaleX * 96.0 / rtfTpi);
     } else {
-        width = (int)(picture.width * picture.scaleX * 96.0 / rtfTpi / 100.0);
+        width = (int)(picture.width * picture.scaleX * 96.0 / rtfTpi);
     }
 
     height = picture.goalHeight;
@@ -2262,52 +2263,42 @@ static void IncludeGraphics(char *pictureType)
 {
     char *filename;
     char dummyBuf[rtfBufSiz];
-    int width, height;
+    float trueWidth, trueHeight;
+    int finalWidth, finalHeight;
     int displayFigure = 0;
+    int isOpenOfficePDF = 0;
+    int pictConverted = 0;
 
     /* it seems that when cropping is -4319 or -6084 the picture is empty */
     if (picture.cropTop<-1000) {  
         unlink(picture.name);
-    	(picture.count)--;  /* decrement the picture counter so useless file is overwritten*/
+    	(picture.count)--;  /* decrement the picture counter to keep figures sequential*/
     	return;
     }
 
 #ifdef UNIX
     if (strcmp(pictureType, "pict") == 0) {
        if (!system("command -v pict2pdf") ) {
-            int err;
-            char *pdfname = strdup(picture.name);
-            strcpy(pdfname + strlen(pdfname) - 4, "pdf");
-
-            snprintf(dummyBuf, rtfBufSiz, "pict2pdf '%s' ", picture.name);            
-            err = system(dummyBuf);
-
-            if (!err) {
-                unlink(picture.name);
-                free(picture.name);
-                picture.name = pdfname;
-            } else
-                free(pdfname);
+            snprintf(dummyBuf, rtfBufSiz, "pict2pdf '%s' ", picture.name);
+            if (!system(dummyBuf)) {
+//                unlink(picture.name);
+				strcpy(strrchr(picture.name,'.')+1, "pdf");
+				pictConverted = 1;
+            } 
         }
     }
 
-    if (strcmp(pictureType, "wmf") == 0) {
-        if (!system("command -v wmf2eps") && !system("command -v epstopdf")) {
-            int err;
-            char *pdfname = strdup(picture.name);
-            strcpy(pdfname + strlen(pdfname) - 3, "pdf");
+	if (strcmp(pictureType, "wmf") == 0 || strcmp(pictureType, "emf") == 0 || (!pictConverted && strcmp(pictureType, "pict") == 0)) {
+	   if (!system("command -v convert2pdf ") ) {
+			snprintf(dummyBuf, rtfBufSiz, "convert2pdf '%s' ", picture.name);            
+			if (!system(dummyBuf)) {
+ //               unlink(picture.name);
+				isOpenOfficePDF = 1;
+				strcpy(strrchr(picture.name,'.')+1, "pdf");
+			}
+		}
+	}
 
-            snprintf(dummyBuf, rtfBufSiz, "wmf2eps '%s' | epstopdf --filter > '%s'", picture.name, pdfname);            
-            err = system(dummyBuf);
-
-            if (!err) {
-              //  unlink(picture.name);  // wmf2eps has poor conversion
-                free(picture.name);
-                picture.name = pdfname;
-            } else
-                free(pdfname);
-        }
-    }
 #endif
 #ifdef MSWIN
     if (strcmp(pictureType, "wmf") == 0) {
@@ -2328,19 +2319,22 @@ static void IncludeGraphics(char *pictureType)
         }
     }
 #endif
-
+	
     /* prefer picwgoal over picw */
     if (picture.goalWidth)
-        width = (int) (picture.goalWidth * picture.scaleX / 100.0 / 20.0 + 0.5);
+        trueWidth = picture.goalWidth / 20.0;
     else
-        width = (int) (picture.width * picture.scaleX / 100.0 + 0.5);
+        trueWidth = picture.width;
 
     /* prefer pichgoal over pich */
     if (picture.goalHeight)
-        height = (int) (picture.goalHeight * picture.scaleY / 100.0 / 20.0 + 0.5);
+        trueHeight = picture.goalHeight / 20.0;
     else
-        height = (int) (picture.height * picture.scaleY / 100.0 + 0.5);
+        trueHeight = picture.height;
 
+	finalWidth  = (int) roundf(trueWidth  * picture.scaleX);
+	finalHeight = (int) roundf(trueHeight * picture.scaleY);
+	
     filename = strrchr(picture.name, PATH_SEP);
     if (!filename)
         filename = picture.name;
@@ -2360,20 +2354,31 @@ static void IncludeGraphics(char *pictureType)
     if (0) {
         PutLitStr("\n\\fbox{");
         snprintf(dummyBuf,rtfBufSiz,"crop (t,b)=(%d,%d), scaled (w,h)=(%d,%d)\n",
-        picture.cropTop,picture.cropBottom,width,height);
+        picture.cropTop,picture.cropBottom,finalWidth,finalHeight);
         PutLitStr(dummyBuf);
         PutLitStr("}\n\n");
     }
 
-    snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%dpt, height=%dpt]{%s}\n", 
-             width, height, filename);
+	if (isOpenOfficePDF) {
+		int lm, tm, rm, bm;  /* left top right bottom margins*/
+		lm = (int) roundf((612-trueWidth)/2);
+		rm = (int) roundf(612-trueWidth-lm);
+		tm = (int) roundf((792-trueHeight)/2);
+		bm = (int) roundf(792-trueHeight-tm);
+    	snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[trim=%dpt %dpt %dpt %dpt, clip=true, width=%dpt, height=%dpt]{%s}\n", 
+             lm, tm, rm, bm, finalWidth, finalHeight, filename);
+    } else {
+        snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%dpt, height=%dpt, keepaspectratio=true]{%s}\n", 
+             finalWidth, finalHeight, filename);
+	}
+
     PutLitStr(dummyBuf);
 
     if (displayFigure) {
         PutLitStr("%%\\caption{This should be the caption for \\texttt{");
         PutEscapedLitStr(filename);
         PutLitStr("}.}\n");
-        PutLitStr("%%\\end{figure}");
+        PutLitStr("%%\\end{figure}\n");
         EndParagraph();
         nowBetweenParagraphs = true;
     }
@@ -2388,8 +2393,8 @@ static void ReadPicture(void)
     picture.height = 0;
     picture.goalWidth = 0;
     picture.goalHeight = 0;
-    picture.scaleX = 100;
-    picture.scaleY = 100;
+    picture.scaleX = 1.00;
+    picture.scaleY = 1.00;
 
 /*     RTFMsg("Starting ReadPicture ...\n"); */
 
@@ -2442,8 +2447,8 @@ static void ReadPicture(void)
     picture.height = 0;
     picture.goalWidth = 0;
     picture.goalHeight = 0;
-    picture.scaleX = 100;
-    picture.scaleY = 100;
+    picture.scaleX = 1.00;
+    picture.scaleY = 1.00;
     picture.name = NULL;
 }
 
@@ -3868,7 +3873,7 @@ static void PictureAttr(void)
         picture.goalHeight = rtfParam;
         break;
     case rtfPicScaleX:
-        picture.scaleX = rtfParam;
+        picture.scaleX = rtfParam/100.0;
         break;
     case rtfPicWid:
         picture.width = rtfParam;
@@ -3877,7 +3882,7 @@ static void PictureAttr(void)
         picture.height = rtfParam;
         break;
     case rtfPicScaleY:
-        picture.scaleY = rtfParam;
+        picture.scaleY = rtfParam/100.0;
         break;
     case rtfPicCropTop:
         picture.cropTop = rtfParam;
