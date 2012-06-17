@@ -111,6 +111,7 @@ boolean requireFixLtx2ePackage;
 boolean requireHyperrefPackage;
 boolean requireAmsMathPackage;
 boolean requireFancyHdrPackage;
+boolean requireAMSSymbolPackage;
 size_t packagePos;
 size_t beginDocumentPos;
 boolean insideTable;
@@ -1205,9 +1206,11 @@ static void setPreamblePackages(int ignoreUsedColor)
         strcat(preamblePackages,"\\usepackage{fixltx2e}\n");
     if (requireAmsMathPackage)
         strcat(preamblePackages,"\\usepackage{amsmath}\n");
-    if (requireHyperrefPackage) {
+    if (requireHyperrefPackage)
         strcat(preamblePackages,"\\usepackage{hyperref}\n");
-    }
+    if (requireAMSSymbolPackage)
+        strcat(preamblePackages,"\\usepackage{amssymb}\n");
+
 
     /* almost certainly want these packages for russian */
     if (genCharCode == cp1251CharCode) {
@@ -1257,7 +1260,7 @@ static void WriteLaTeXHeader(void)
      * commands if necessary */
     packagePos = ftell(ofp);
 
-    for (j = 0; j < PACKAGES + 1; j++) {
+    for (j = 0; j <= PACKAGES; j++) {
         for (i = 0; i < 100; i++)
             PutLitChar(' ');
         PutLitChar('\n');
@@ -4089,6 +4092,7 @@ int BeginLaTeXFile(void)
     requireMultirowPackage = false;
     requireAmsMathPackage = false;
     requireFancyHdrPackage = true;
+    requireAMSSymbolPackage = true;
 
     preambleFancyHeader=NULL;
     preambleFancyHeaderFirst=NULL;
