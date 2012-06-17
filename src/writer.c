@@ -1336,6 +1336,7 @@ static void ReadFootnote(void)
 {
     int footnoteGL;
 
+	CheckForBeginDocument();
     StopTextStyle();
     footnoteGL = RTFGetBraceLevel();
     PutLitStr("\\footnote{");
