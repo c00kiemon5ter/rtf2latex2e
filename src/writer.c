@@ -3365,6 +3365,11 @@ static void ReadUnicode(void)
     PrepareForChar();
 
 //  fprintf(stderr, "Unicode --- %d, 0x%04X\n", thechar, thechar);
+    if (thechar == 8201) {
+        PutLitStr("\\,");
+        return;
+    }
+
     if (thechar == 8212) {
         PutLitStr("---");
         return;
