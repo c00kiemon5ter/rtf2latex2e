@@ -992,7 +992,7 @@ static MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_ind
 //	if (eqn->m_mtef_ver == 3 && 18 <= new_tmpl->selector && new_tmpl->selector <= 20)
 	//	new_tmpl->variation = new_tmpl->variation >> 8;
 
-    if (DEBUG_PARSING && DEBUG_TEMPLATE || g_input_file_type==TYPE_EQN) 
+    if ( (DEBUG_PARSING && DEBUG_TEMPLATE) || g_input_file_type==TYPE_EQN) 
         fprintf(stderr, "TMPL : read sel=%2d var=0x%04x (%d.%d)\n", 
         (int) new_tmpl->selector, (unsigned int) new_tmpl->variation, (int) new_tmpl->selector, (int) new_tmpl->variation);
 
@@ -1364,14 +1364,17 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
     eqn->atts_table = NULL;
     eqn->m_mode = EQN_MODE_TEXT;
     eqn->m_inline = 0;
-    eqn->m_mtef_ver = eqn_stream[src_index++];
     eqn->m_latex_start = NULL;
     eqn->m_latex_end = NULL;
     eqn->m_latex = NULL;
+    eqn->m_mtef_ver = 0;
 
-	if (g_input_file_type==TYPE_RAWEQN) {
-		fprintf(stderr, "skipping 0x %02X %02X %02X %02X\n", eqn->m_mtef_ver, eqn_stream[src_index++], eqn_stream[src_index++], eqn_stream[src_index++]);
-		eqn->m_mtef_ver = 0;
+	if (g_input_file_type != TYPE_RAWEQN) {
+    	eqn->m_mtef_ver = eqn_stream[0];
+		src_index++;
+	} else {
+		fprintf(stderr, "skipping 0x %02X %02X %02X %02X\n", eqn_stream[0], eqn_stream[1], eqn_stream[2], eqn_stream[3]);
+		src_index+=4;
 	}
 		
     switch (eqn->m_mtef_ver) {

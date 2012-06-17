@@ -31,6 +31,7 @@
 #include     "rtf2latex2e.h"
 #include     "eqn.h"
 #include     "init.h"
+boolean ConvertRawEquationFile(char *rawFileName); /* from writer.c */
 
 FILE         *ifp, *ofp;
 

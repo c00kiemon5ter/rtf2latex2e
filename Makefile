@@ -152,7 +152,7 @@ depend: $(SRCS)
 	$(CC) -MM $(SRCS) >makefile.depend
 	@echo "***** Append makefile.depend to Makefile manually ******"
 
-dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $(DOCS) Makefile
+dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $(DOCS) Makefile convert2pdf
 	make doc
 	mkdir -p           rtf2latex2e-$(VERSION)
 	mkdir -p           rtf2latex2e-$(VERSION)/pref
@@ -162,6 +162,7 @@ dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $
 	mkdir -p           rtf2latex2e-$(VERSION)/src
 	ln README          rtf2latex2e-$(VERSION)
 	ln Makefile        rtf2latex2e-$(VERSION)
+	ln convert2pdf     rtf2latex2e-$(VERSION)
 	ln $(SRCS)         rtf2latex2e-$(VERSION)/src
 	ln $(HDRS)         rtf2latex2e-$(VERSION)/src
 	ln $(RTFPREP_SRCS) rtf2latex2e-$(VERSION)/src
@@ -182,6 +183,7 @@ install: rtf2latex2e
 	cp -f -p $(PREFS)             $(DESTDIR)$(datadir)/$(package-name)
 	cp -f -p doc/rtf2latex2e.1    $(DESTDIR)$(mandir)/man1
 	cp -f -p $(BINARY_NAME)       $(DESTDIR)$(bindir)
+	cp -f -p convert2pdf          $(DESTDIR)$(bindir)
 	
 	@echo "******************************************************************"
 	@echo "*** rtf2latex2e successfully installed as \"$(BINARY_NAME)\""

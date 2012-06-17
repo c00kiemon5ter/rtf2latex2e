@@ -34,6 +34,8 @@
 # include "init.h"
 
 void __cole_dump(void *_m, void *_start, uint32_t length, char *msg);
+void ExamineToken(char * tag);
+boolean ConvertRawEquationFile(char *rawFileName);
 
 # define  MAX_BLANK_LINES       2
 # define  MATH_NONE_MODE        0
@@ -2726,7 +2728,6 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
 {
     char dummyBuf[20];
     int m[4];
-    char *OLE_MARK = "d0cf11e0";
     FILE *objFile;
     int i, value;
     uint8_t hexNumber;
@@ -2783,7 +2784,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     	m[i]=ReadHexPair();
 
     if (m[0]!=0xd0 || m[1]!=0xcf || m[2]!=0x11 || m[3]!=0xe0) {
-        fprintf(stderr, "* OLE marker 0x'%02x%02x%02x%02x' is not 0xd0cf11e0\n", m[0], m[1], m[2], m[3], OLE_MARK);
+        fprintf(stderr, "* OLE marker 0x'%02x%02x%02x%02x' is not 0xd0cf11e0\n", m[0], m[1], m[2], m[3]);
         fclose(objFile);
         return;
     }
