@@ -2307,13 +2307,13 @@ static void IncludeGraphics(char *pictureType)
 
 #endif
 #ifdef MSWIN
-    if (strcmp(pictureType, "wmf") == 0) {
-        if (!system("which wmf2eps") && !system("which epstopdf")) {
+    if (strcmp(pictureType, "wmf") == 0 || strcmp(pictureType, "emf") == 0) {
+        if (!system("which epstopdf")) {
             int err;
             char *pdfname = strdup(picture.name);
             strcpy(pdfname + strlen(pdfname) - 3, "pdf");
 
-            snprintf(dummyBuf, rtfBufSiz, "w2p.bat %s %s", picture.name, pdfname);            
+            snprintf(dummyBuf, rtfBufSiz, "emf2pdf.bat %s %s", picture.name, pdfname);            
             err = system(dummyBuf);
 
             if (!err) {
@@ -2322,6 +2322,21 @@ static void IncludeGraphics(char *pictureType)
                 picture.name = pdfname;
             } else
                 free(pdfname);
+        }
+        else {
+            int err;
+            char *epsname = strdup(picture.name);
+            strcpy(epsname + strlen(epsname) - 3, "eps");
+
+            snprintf(dummyBuf, rtfBufSiz, "emf2pdf.bat %s %s", picture.name, epsname);            
+            err = system(dummyBuf);
+
+            if (!err) {
+                unlink(picture.name);
+                free(picture.name);
+                picture.name = epsname;
+            } else
+                free(epsname);
         }
     }
 #endif
