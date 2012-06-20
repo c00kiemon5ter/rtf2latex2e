@@ -628,5 +628,21 @@ equations are once again converted.
 
 r159
 better fix for extra double-close of paragraph
-add new target to test/Makefile.  
+add new target to test/Makefile.
 now cd test && make pdf should go to completion
+
+r160
+update changelog through version 2-0-1 and move to doc folder
+
+r161
+Change version to 2-0-2
+
+r162
+add wmf->pdf conversion for unix systems that have
+both wmf2eps (from the libwmf package) and epstopdf
+
+r163
+remove internal conversion of pict to pdf in favor of using an
+external program.  This simplifies the Makefile and allows
+rtf2latex to be built 64-bit on MacOS.
+

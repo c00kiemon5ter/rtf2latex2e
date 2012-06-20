@@ -1,4 +1,4 @@
-VERSION = 2-1-0
+VERSION = 2-2-0
 
 CC:=gcc
 
@@ -7,7 +7,7 @@ CC:=gcc
 
 PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
 #PLATFORM?=-DMSWIN  # Windows
-#PLATFORM?=-DMSDOS  # DOS - w2p.bat does not work under command.com
+#PLATFORM?=-DMSDOS  # DOS - emf2pdf.bat does not work under command.com
 
 #Base directory - adapt as needed
 # Unix:
@@ -172,8 +172,8 @@ dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $
 	ln $(TEST)         rtf2latex2e-$(VERSION)/test
 	ln $(RTFD)         rtf2latex2e-$(VERSION)/test/sample.rtfd
 	ln $(EQNS)         rtf2latex2e-$(VERSION)/test
-#	tar cvf - rtf2latex2e-$(VERSION) | gzip > rtf2latex2e-$(VERSION).tar.gz
-	zip -r rtf2latex2e-$(VERSION) rtf2latex2e-$(VERSION)
+	tar cvf - rtf2latex2e-$(VERSION) | gzip > rtf2latex2e-$(VERSION).tar.gz
+#	zip -r rtf2latex2e-$(VERSION) rtf2latex2e-$(VERSION)
 	rm -rf rtf2latex2e-$(VERSION)
 	
 install: rtf2latex2e
