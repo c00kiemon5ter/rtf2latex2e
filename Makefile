@@ -5,35 +5,35 @@ CC:=gcc
 #reasonable default set of compiler flags while developing
 #CFLAGS = -g -D_FORTIFY_SOURCE=2 -Wall -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wshadow -Wstrict-prototypes -Wformat=2
 
-#PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
-PLATFORM?=-DMSWIN  # Windows
+PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
+#PLATFORM?=-DMSWIN  # Windows
 #PLATFORM?=-DMSDOS  # DOS - emf2pdf.bat does not work under command.com
 
 #Base directory - adapt as needed
 # Unix:
-#prefix?=/usr/local
-#exec_prefix?=$(prefix)
+prefix?=/usr/local
+exec_prefix?=$(prefix)
 
 #Uncomment next 2 lines for Windows
-prefix_DRIVE=C:
-prefix?=$(prefix_DRIVE)/Progra~1/rtf2latex2e
+#prefix_DRIVE=C:
+#prefix?=$(prefix_DRIVE)/Progra~1/rtf2latex2e
 
 BINARY_NAME=rtf2latex2e
 
 # Location of binary, man, info, and support files - adapt as needed
-#package-name = rtf2latex2e
-#bindir      ?= $(exec_prefix)/bin
-#datarootdir ?= $(prefix)/share
-#datadir     ?= $(datarootdir)
-#docdir      ?= $(datarootdir)/doc/$(package-name)
-#pdfdir      ?= $(docdir)
-#mandir      ?= $(datarootdir)/man
-#prefsdir    ?= $(datadir)/$(package-name)
+package-name = rtf2latex2e
+bindir      ?= $(exec_prefix)/bin
+datarootdir ?= $(prefix)/share
+datadir     ?= $(datarootdir)
+docdir      ?= $(datarootdir)/doc/$(package-name)
+pdfdir      ?= $(docdir)
+mandir      ?= $(datarootdir)/man
+prefsdir    ?= $(datadir)/$(package-name)
 
 #Uncomment next 4 lines for Windows:
-bindir    =
-datadir   = $(prefix)/pref
-prefsdir  = $(datadir)
+#bindir    =
+#datadir   = $(prefix)/pref
+#prefsdir  = $(datadir)
 
 # Uncomment to get debugging information about OLE translation
 #CFLAGS:=$(CFLAGS) -DCOLE_VERBOSE
