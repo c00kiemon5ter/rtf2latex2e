@@ -9,7 +9,7 @@
 
 # Line that is inserted before \documentclass{}
 # Typically starts with % 
-preambleFirstText        %&LaTeX
+preambleFirstText        %&pdfLaTeX
 
 # Another line, just like the one above
 # Enclose in quotes because value contains spaces

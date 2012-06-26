@@ -5,33 +5,35 @@ CC:=gcc
 #reasonable default set of compiler flags while developing
 #CFLAGS = -g -D_FORTIFY_SOURCE=2 -Wall -Waggregate-return -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wshadow -Wstrict-prototypes -Wformat=2
 
-PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
-#PLATFORM?=-DMSWIN  # Windows
+#PLATFORM?=-DUNIX   # Mac OS X, Linux, BSD
+PLATFORM?=-DMSWIN  # Windows
 #PLATFORM?=-DMSDOS  # DOS - emf2pdf.bat does not work under command.com
 
 #Base directory - adapt as needed
 # Unix:
-prefix?=/usr/local
-exec_prefix?=$(prefix)
+#prefix?=/usr/local
+#exec_prefix?=$(prefix)
 
 #Uncomment next 2 lines for Windows
-#prefix_DRIVE=C:
-#prefix?=$(prefix_DRIVE)/PROGRA~1/rtf2latex2e
+prefix_DRIVE=C:
+prefix?=$(prefix_DRIVE)/Progra~1/rtf2latex2e
 
 BINARY_NAME=rtf2latex2e
 
 # Location of binary, man, info, and support files - adapt as needed
-package-name = rtf2latex2e
-bindir      ?= $(exec_prefix)/bin
-datarootdir ?= $(prefix)/share
-datadir     ?= $(datarootdir)
-docdir      ?= $(datarootdir)/doc/$(package-name)
-pdfdir      ?= $(docdir)
-mandir      ?= $(datarootdir)/man
+#package-name = rtf2latex2e
+#bindir      ?= $(exec_prefix)/bin
+#datarootdir ?= $(prefix)/share
+#datadir     ?= $(datarootdir)
+#docdir      ?= $(datarootdir)/doc/$(package-name)
+#pdfdir      ?= $(docdir)
+#mandir      ?= $(datarootdir)/man
+#prefsdir    ?= $(datadir)/$(package-name)
 
-#Uncomment next 2 lines for Windows:
-#bindir    =
-#datarootdir=$(prefix)/pref
+#Uncomment next 4 lines for Windows:
+bindir    =
+datadir   = $(prefix)/pref
+prefsdir  = $(datadir)
 
 # Uncomment to get debugging information about OLE translation
 #CFLAGS:=$(CFLAGS) -DCOLE_VERBOSE
@@ -121,10 +123,10 @@ src/eqn.o: src/eqn.c src/rtf.h src/rtf-ctrldef.h src/rtf-namedef.h src/rtf2latex
 	$(CC) $(PLATFORM) $(CFLAGS) -c src/eqn.c -o src/eqn.o
 
 src/init.o: src/init.c
-	$(CC) $(PLATFORM) -DPREFS_DIR=\"$(datadir)/$(package-name)\" $(CFLAGS) -c src/init.c -o src/init.o
+	$(CC) $(PLATFORM) -DPREFS_DIR=\"$(prefsdir)\" $(CFLAGS) -c src/init.c -o src/init.o
 
 src/main.o: src/main.c
-	$(CC) $(PLATFORM) -DPREFS_DIR=\"$(datadir)/$(package-name)\" -DVERSION=\"$(VERSION)\" $(CFLAGS) -c src/main.c -o src/main.o
+	$(CC) $(PLATFORM) -DPREFS_DIR=\"$(prefsdir)\" -DVERSION=\"$(VERSION)\" $(CFLAGS) -c src/main.c -o src/main.o
 
 src/mygetopt.o: src/mygetopt.c src/mygetopt.h
 	$(CC) $(PLATFORM) $(CFLAGS) -c src/mygetopt.c -o src/mygetopt.o
