@@ -1,7 +1,7 @@
 /*
  * RTF-to-LaTeX2e translation writer code.
  * (c) 1999 Ujwal S. Sathyam
- * (c) 2011 Scott Prahl
+ * (c) 2011, 2012 Scott Prahl
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -2295,8 +2295,8 @@ static void IncludeGraphics(char *pictureType)
     }
 
 	if (strcmp(pictureType, "wmf") == 0 || strcmp(pictureType, "emf") == 0 || (!pictConverted && strcmp(pictureType, "pict") == 0)) {
-	   if (!system("command -v convert2pdf ") ) {
-			snprintf(dummyBuf, rtfBufSiz, "convert2pdf '%s' ", picture.name);            
+	   if (!system("command -v vectorimage2pdf ") ) {
+			snprintf(dummyBuf, rtfBufSiz, "vectorimage2pdf '%s' ", picture.name);            
 			if (!system(dummyBuf)) {
  //               unlink(picture.name);
 				isOpenOfficePDF = 1;

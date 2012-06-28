@@ -16,7 +16,17 @@ rtf2latex2e
 also extracts and saves any image files found inside the RTF file.
 The resulting LaTeX file and included images can be typeset using LaTeX
 but, of course, image formats unsupported by LaTeX will need to
-be converted to an image with a supported format.
+be converted to an image with a supported format.  As of version 2.1
+a bash script 
+.I
+vectorimage2pdf
+is used to convert Apple PICT and Microsoft WMF and EMF files to 
+PDF format using jodconverter which in turn relies on OpenOffice/LibreOffice.
+JPEG and PNG image formats are not converted, but just emitted as
+files and included in the LaTeX document.  The general idea is to allow
+the converted document to be processed with
+.I
+pdflatex.
 .SH OPTIONS
 .TP
 .B \-b
@@ -65,9 +75,9 @@ in another document.
 Help!
 .TP
 .B \-n
-Convenience option to produce a natural LaTeX document that is easy to edit.
+Option to produce a \'natural\' LaTeX document that is easy to edit.
 This option discards a lot of paragraph mark-up and futzing with line
-spacing.  Consequently the results will probably not look like the original
+spacing.  Consequently the typeset results will probably look less like the original
 RTF file, but isn\'t that why you converted the file in the first
 place?  This option is equivalent to \'-e 1 -p 33 -t 12 -T 0\'
 .TP
@@ -159,5 +169,5 @@ EPS or PDF are not readily available for all platforms.
 .SH AVAILABILITY
 .I
 rtf2latex2e
-is GPL licensed and available from SourceForge at http://rtf2latex2e.sourceforge.net
+is GPL licensed (version 2) and available from SourceForge at http://rtf2latex2e.sourceforge.net
 
