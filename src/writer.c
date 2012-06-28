@@ -2262,7 +2262,6 @@ static void ConvertHexPicture(char *fileSuffix)
              picture.name);
 }
 
-
 /* 
  * Write appropriate commands to include the picture
  */
@@ -2278,7 +2277,6 @@ static void IncludeGraphics(char *pictureType)
     static pict2pdf_exists = -1;
     static unoconv_exists = -1;
 
-	
     /* it seems that when cropping is -4319 or -6084 the picture is empty */
     if (picture.cropTop<-1000) {  
         unlink(picture.name);
@@ -2288,10 +2286,10 @@ static void IncludeGraphics(char *pictureType)
 
 #ifdef UNIX
 	if (pict2pdf_exists == -1 && strcmp(pictureType, "pict") == 0)
-       pict2pdf_exists = (system("command -v pict2pdf")) ? 1 : 0;
-        
+       pict2pdf_exists = system("command -v pict2pdf") ? 0 : 1;
+    
 	if (unoconv_exists == -1 && (strcmp(pictureType, "wmf") == 0 || strcmp(pictureType, "emf") == 0))
-       unoconv_exists = (system("command -v unoconv")) ? 1 : 0;
+       unoconv_exists = system("command -v unoconv") ? 0 : 1;
 		
     if (strcmp(pictureType, "pict") == 0 && pict2pdf_exists == 1) {
 		snprintf(dummyBuf, rtfBufSiz, "pict2pdf '%s' ", picture.name);
