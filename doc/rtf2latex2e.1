@@ -1,4 +1,4 @@
-.TH rtf2latex2e "March 11, 2012"
+.TH rtf2latex2e "June 28, 2012"
 .SH NAME
 rtf2latex2e \- convert RTF file to LaTeX format
 .SH SYNOPSIS
@@ -19,14 +19,17 @@ but, of course, image formats unsupported by LaTeX will need to
 be converted to an image with a supported format.  As of version 2.1
 a bash script 
 .I
-vectorimage2pdf
+unoconv
 is used to convert Apple PICT and Microsoft WMF and EMF files to 
-PDF format using jodconverter which in turn relies on OpenOffice/LibreOffice.
+PDF format using OpenOffice/LibreOffice.
 JPEG and PNG image formats are not converted, but just emitted as
 files and included in the LaTeX document.  The general idea is to allow
 the converted document to be processed with
 .I
 pdflatex.
+.I
+pict2pdf
+is used to convert Apple PICT to PDF files if it is present.
 .SH OPTIONS
 .TP
 .B \-b

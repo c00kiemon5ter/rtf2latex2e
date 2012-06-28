@@ -1,4 +1,4 @@
-This is rtf2latex2e version 2.0 that
+This is rtf2latex2e version 2.2 that
 
  1. detects text style: bold, italic, color, big, small,...
  2. reads embedded figures: PICT, EMF, GIF, TIFF, WMF, PNG, JPEG
@@ -61,8 +61,11 @@ rtf2latex2e was developed on under Mac OS X but should compile
 under any Unix variant.  Windows users should compile under something
 like MinGW.
 
-To build rtf2latex2e, 
-change to the Unix directory directory, type:
+As of version 2.2.0, rtf2latex2e uses unoconv to convert EMF, WMF, 
+and PICT images to PDF files.  unoconv in turn use LibreOffice to
+do the actual conversion.  
+
+To build rtf2latex2e, change to the Unix directory directory, type:
 
 make
 make test
@@ -102,7 +105,7 @@ are only three styles defined at the moment.  These convert the style
 LEGAL STUFF:
 ============
 (c) Ujwal S. Sathyam and Scott A. Prahl, 1999, 
-(c) Scott A. Prahl, 2011
+(c) Scott A. Prahl, 2012
 
 The author provides this software as is and does not take any responsibility 
 for the consequences of running it (unless it is good, of course...). This is 
