@@ -181,6 +181,7 @@ dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $
 install: rtf2latex2e
 	mkdir -p                $(DESTDIR)$(bindir)
 	mkdir -p                $(DESTDIR)$(datadir)/$(package-name)
+	mkdir -p                $(DESTDIR)$(mandir)/man1
 	
 	cp -f -p $(PREFS)             $(DESTDIR)$(datadir)/$(package-name)
 	cp -f -p doc/rtf2latex2e.1    $(DESTDIR)$(mandir)/man1
