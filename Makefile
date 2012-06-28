@@ -69,7 +69,8 @@ PREFS        = pref/latex-encoding                pref/latex-encoding.mac       
 DOCS         = doc/GPL_license      doc/ChangeLog     \
                doc/rtf2latexDoc.tex doc/rtf2latex2e.1 \
                doc/Makefile                           \
-               doc/web/style.css    doc/web/docs.html \
+
+WEB          = doc/web/style.css    doc/web/docs.html \
                doc/web/index.html   doc/web/logo.png  \
                doc/web/arrow.gif
                
@@ -80,12 +81,13 @@ TEST         = test/Makefile              test/arch.rtf              test/arch-m
                test/mapping.rtf           test/rtf-misc.rtf          test/rtf.rtf            \
                test/table.rtf             test/test.rtf              test/moreEqns.rtf       \
                test/twoEqn.rtf            test/science.rtf           test/russian-short.rtf  \
-               test/enc-utf8x.rtf \
-               test/RtfInterpreterTest_0.rtf  test/RtfInterpreterTest_4.rtf  test/RtfInterpreterTest_8.rtf \
-               test/RtfInterpreterTest_1.rtf  test/RtfInterpreterTest_5.rtf  test/RtfInterpreterTest_9.rtf \
+               test/enc-utf8x.rtf         test/russian-short.tex \
+               test/RtfInterpreterTest_0.rtf  test/RtfInterpreterTest_4.rtf  test/RtfInterpreterTest_8.rtf  \
+               test/RtfInterpreterTest_1.rtf  test/RtfInterpreterTest_5.rtf  test/RtfInterpreterTest_9.rtf  \
                test/RtfInterpreterTest_2.rtf  test/RtfInterpreterTest_6.rtf  test/RtfInterpreterTest_10.rtf \
-               test/RtfInterpreterTest_3.rtf  test/RtfInterpreterTest_7.rtf  test/RtfInterpreterTest_11.rtf 
-
+               test/RtfInterpreterTest_3.rtf  test/RtfInterpreterTest_7.rtf  test/RtfInterpreterTest_11.rtf \
+               test/RtfInterpreterTest_12.rtf test/RtfInterpreterTest_13.rtf test/RtfInterpreterTest_14.rtf \
+               test/RtfInterpreterTest_15.rtf test/RtfInterpreterTest_16.rtf test/RtfInterpreterTest_17.rtf 
 
 RTFD         = test/sample.rtfd/TXT.rtf      test/sample.rtfd/amiga.gif \
                test/sample.rtfd/build.tiff   test/sample.rtfd/button_smile.jpeg \
@@ -148,28 +150,26 @@ test: rtf2latex2e
 	cd test && $(MAKE) clean
 	cd test && $(MAKE)
 
-checkfiles: $(SRCS) $(RTFPREP_SRCS) $(HDRS) $(PREFS) $(TEST) $(DOCS) Makefile
+checkfiles: $(SRCS) $(RTFPREP_SRCS) $(HDRS) $(PREFS) $(TEST) $(DOCS) $(WEB) Makefile
 
 depend: $(SRCS)
 	$(CC) -MM $(SRCS) >makefile.depend
 	@echo "***** Append makefile.depend to Makefile manually ******"
 
-dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $(DOCS) Makefile vectorimage2pdf
+dist: checkfiles doc $(SRCS) $(RTFPREP_SRC) $(HDRS) $(README) $(PREFS) $(TEST) $(DOCS) $(WEB) Makefile
 	make doc
-	mkdir -p           rtf2latex2e-$(VERSION)
 	mkdir -p           rtf2latex2e-$(VERSION)/pref
-	mkdir -p           rtf2latex2e-$(VERSION)/doc
-	mkdir -p           rtf2latex2e-$(VERSION)/test
+	mkdir -p           rtf2latex2e-$(VERSION)/doc/web
 	mkdir -p           rtf2latex2e-$(VERSION)/test/sample.rtfd
 	mkdir -p           rtf2latex2e-$(VERSION)/src
 	ln README          rtf2latex2e-$(VERSION)
 	ln Makefile        rtf2latex2e-$(VERSION)
-	ln vectorimage2pdf rtf2latex2e-$(VERSION)
 	ln $(SRCS)         rtf2latex2e-$(VERSION)/src
 	ln $(HDRS)         rtf2latex2e-$(VERSION)/src
 	ln $(RTFPREP_SRCS) rtf2latex2e-$(VERSION)/src
 	ln $(PREFS)        rtf2latex2e-$(VERSION)/pref
 	ln $(DOCS)         rtf2latex2e-$(VERSION)/doc
+	ln $(WEB)          rtf2latex2e-$(VERSION)/doc/web
 	ln $(PDFS)         rtf2latex2e-$(VERSION)/doc
 	ln $(TEST)         rtf2latex2e-$(VERSION)/test
 	ln $(RTFD)         rtf2latex2e-$(VERSION)/test/sample.rtfd
@@ -185,7 +185,6 @@ install: rtf2latex2e
 	cp -f -p $(PREFS)             $(DESTDIR)$(datadir)/$(package-name)
 	cp -f -p doc/rtf2latex2e.1    $(DESTDIR)$(mandir)/man1
 	cp -f -p $(BINARY_NAME)       $(DESTDIR)$(bindir)
-	cp -f -p vectorimage2pdf      $(DESTDIR)$(bindir)
 	
 	@echo "******************************************************************"
 	@echo "*** rtf2latex2e successfully installed as \"$(BINARY_NAME)\""
