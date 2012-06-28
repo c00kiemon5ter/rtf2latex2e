@@ -1409,7 +1409,7 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
 
         /* the application key is a null terminated string */
         while (eqn_stream[src_index]) {
-            fprintf(stderr, "%d", eqn_stream[src_index]);
+//            fprintf(stderr, "%d", eqn_stream[src_index]);
             src_index++;
             if (src_index == eqn_size) {
                 RTFMsg("The Application Key for the Equation is screwy!");

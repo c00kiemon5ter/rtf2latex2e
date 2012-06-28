@@ -1778,7 +1778,8 @@ static void DoTablePreamble(void)
     PutLitStr(buf);
 
     for (i = 0; i < table.cols; i++) {
-        snprintf(buf, 200, "|>{\\raggedright}p{\%dpt}", (table.rightColumnBorders[i+1]-table.rightColumnBorders[i])/20);
+    	int width = (table.rightColumnBorders[i+1]-table.rightColumnBorders[i])/20;
+        snprintf(buf, 200, "|>{\\raggedright}p{\%dpt}", width);
         PutLitStr(buf);
     }
 
@@ -2274,7 +2275,10 @@ static void IncludeGraphics(char *pictureType)
     int displayFigure = 0;
     int isOpenOfficePDF = 0;
     int pictConverted = 0;
+    static pict2pdf_exists = -1;
+    static unoconv_exists = -1;
 
+	
     /* it seems that when cropping is -4319 or -6084 the picture is empty */
     if (picture.cropTop<-1000) {  
         unlink(picture.name);
@@ -2283,25 +2287,31 @@ static void IncludeGraphics(char *pictureType)
     }
 
 #ifdef UNIX
-    if (strcmp(pictureType, "pict") == 0) {
-       if (!system("command -v pict2pdf") ) {
-            snprintf(dummyBuf, rtfBufSiz, "pict2pdf '%s' ", picture.name);
-            if (!system(dummyBuf)) {
+	if (pict2pdf_exists == -1 && strcmp(pictureType, "pict") == 0)
+       pict2pdf_exists = (system("command -v pict2pdf")) ? 1 : 0;
+        
+	if (unoconv_exists == -1 && (strcmp(pictureType, "wmf") == 0 || strcmp(pictureType, "emf") == 0))
+       unoconv_exists = (system("command -v unoconv")) ? 1 : 0;
+		
+    if (strcmp(pictureType, "pict") == 0 && pict2pdf_exists == 1) {
+		snprintf(dummyBuf, rtfBufSiz, "pict2pdf '%s' ", picture.name);
+		fprintf(stderr, ">> %s\n", dummyBuf);   
+		if (!system(dummyBuf)) {
 //                unlink(picture.name);
-				strcpy(strrchr(picture.name,'.')+1, "pdf");
-				pictConverted = 1;
-            } 
-        }
+			strcpy(strrchr(picture.name,'.')+1, "pdf");
+			pictConverted = 1;
+		} 
     }
 
-	if (strcmp(pictureType, "wmf") == 0 || strcmp(pictureType, "emf") == 0 || (!pictConverted && strcmp(pictureType, "pict") == 0)) {
-	   if (!system("command -v vectorimage2pdf ") ) {
-			snprintf(dummyBuf, rtfBufSiz, "vectorimage2pdf '%s' ", picture.name);            
-			if (!system(dummyBuf)) {
- //               unlink(picture.name);
-				isOpenOfficePDF = 1;
-				strcpy(strrchr(picture.name,'.')+1, "pdf");
-			}
+	if (unoconv_exists == 1 && (strcmp(pictureType, "wmf") == 0 || 
+	                            strcmp(pictureType, "emf") == 0 || 
+	                            (!pictConverted && strcmp(pictureType, "pict") == 0))) {
+		snprintf(dummyBuf, rtfBufSiz, "unoconv -f pdf '%s' ", picture.name);
+		fprintf(stderr, ">> %s\n", dummyBuf);   
+		if (!system(dummyBuf)) {
+//               unlink(picture.name);
+			isOpenOfficePDF = 1;
+			strcpy(strrchr(picture.name,'.')+1, "pdf");
 		}
 	}
 
@@ -2835,10 +2845,10 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     }
 
     if (fclose(objFile) != 0)
-        printf("* error closing object file %s\n", objectFileName);
+        fprintf(stderr,"* error closing object file %s\n", objectFileName);
 
     if (hexEvenOdd)
-        printf ("* Warning! Odd number of hex characters read for object!\n");
+        fprintf (stderr,"* Warning! Odd number of hex characters read for object!\n");
 }
 
 /*
