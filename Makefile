@@ -81,7 +81,7 @@ TEST         = test/Makefile              test/arch.rtf              test/arch-m
                test/mapping.rtf           test/rtf-misc.rtf          test/rtf.rtf            \
                test/table.rtf             test/test.rtf              test/moreEqns.rtf       \
                test/twoEqn.rtf            test/science.rtf           test/russian-short.rtf  \
-               test/enc-utf8x.rtf         test/russian-short.tex \
+               test/enc-utf8x.rtf         \
                test/RtfInterpreterTest_0.rtf  test/RtfInterpreterTest_4.rtf  test/RtfInterpreterTest_8.rtf  \
                test/RtfInterpreterTest_1.rtf  test/RtfInterpreterTest_5.rtf  test/RtfInterpreterTest_9.rtf  \
                test/RtfInterpreterTest_2.rtf  test/RtfInterpreterTest_6.rtf  test/RtfInterpreterTest_10.rtf \
