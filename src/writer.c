@@ -2316,7 +2316,7 @@ static void IncludeGraphics(char *pictureType)
 #endif
 #ifdef MSWIN
     if (strcmp(pictureType, "wmf") == 0 || strcmp(pictureType, "emf") == 0) {
-        if (!system("which epstopdf")) {
+        if (!system("which epstopdf > NUL")) {
             int err;
             char *pdfname = strdup(picture.name);
             strcpy(pdfname + strlen(pdfname) - 3, "pdf");

@@ -16,7 +16,7 @@ exec_prefix?=$(prefix)
 
 #Uncomment next 2 lines for Windows
 #prefix_DRIVE=C:
-#prefix?=$(prefix_DRIVE)/Progra~1/rtf2latex2e
+#prefix?=$(prefix_DRIVE)/PROGRA~1/rtf2latex2e
 
 BINARY_NAME=rtf2latex2e
 

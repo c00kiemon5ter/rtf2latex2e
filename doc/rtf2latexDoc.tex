@@ -54,7 +54,8 @@ our opinion, expecting a WYSIWYG reproduction is not practical and
 misses the point entirely.
 
 \section{Installation}
-The source code and compiled binaries for Windows systems are available at SourceForge.\footnote{\url{http://sourceforge.net/projects/rtf2latex2e/}}
+The source code and compiled binaries for Windows systems are available at
+SourceForge.\footnote{\url{http://sourceforge.net/projects/rtf2latex2e/}}
 
 \subsection{Unix Installation\label{Unix_install}}
 Open the \textit{rtf2latex2e} directory and type:
@@ -80,14 +81,18 @@ images can be edited in something like \textit{InkScape}.
 \subsection{MacOS X Installation}
 
 Follow the Unix installation directions to install \textit{rtf2latex2e}.
-Image conversion situation under MacOS X is more complicated.  You must install both \textit{LibreOffice} (version 3.5 or later) for MacOS X\footnote{\url{http://www.libreoffice.org/download}}
+Image conversion situation under MacOS X is more complicated.  You must install
+both \textit{LibreOffice} (version 3.5 or later) for
+MacOS X\footnote{\url{http://www.libreoffice.org/download}}
 as well as \textit{unoconv}.\footnote{\url{http://dag.wieers.com/home-made/unoconv}}
 \textit{OpenOffice} (as of 3.4.1) does not work because it
 does not contain all the necessary components to support conversion.
 
-Unfortunately, the distribution of \textit{unoconv} available
-at the moment (June 2012) does not work without modifying (1) the \textit{unoconv} script and a script within the \textit{LibreOffice} application. 
-First download the subversion copy of \textit{unoconv} and change the word `program' to `MacOS' in lines 136 and 137 to read
+Unfortunately, the distribution of \textit{unoconv} available at the moment
+(June 2012) does not work without modifying (1) the \textit{unoconv} script and
+a script within the \textit{LibreOffice} application. First download the
+subversion copy of \textit{unoconv} and change the word `program' to `MacOS' in
+lines 136 and 137 to read
 \begin{verbatim}
   if os.path.isfile(os.path.join(basepath,basis,'MacOS',bin)):
      nopath = os.path.join(basepath,basis,'MacOS')
@@ -100,12 +105,55 @@ Specifically, comment out line 47 by inserting a \texttt{\#} at the start to rea
   #export DYLD_LIBRARY_PATH
 \end{verbatim}
 
-Finally since conversion of \textit{.pict} with \textit{unoconv} is somewhat sketchy at the moment, you might also install want to install \textit{pict2pdf} to improve the translation of \textit{.pict}$\rightarrow$\textit{.pdf}. If \textit{pict2pdf} is installed, then {\rtf2latex2e} will use \textit{pict2pdf} for the conversion (otherwise it defaults to the \textit{unoconv}).\footnote{It is understandable that Apple has deprecated the \texttt{PICT} format and is pushing PDF.  \texttt{PICT} is an old format, true, but I am always stumbling across legacy \texttt{RTF} files with embedded \texttt{PICT} images.  The only way to properly convert the \texttt{PICT} vector image to a \texttt{PDF} vector images is to use the \texttt{QDPictCreateWithURL()} call.  This function is not available when compiling 64-bit binaries and therefore the \texttt{-m32} option is required while compiling and linking. Of course, this does not work at all under Lion (10.7) and therefore the binary needs to be compiled with Snow Leopard (10.6) or earlier.}  
+Finally since conversion of \textit{.pict} with \textit{unoconv} is somewhat
+sketchy at the moment, you might also install want to install \textit{pict2pdf}
+to improve the translation of \textit{.pict}$\rightarrow$\textit{.pdf}.
+If \textit{pict2pdf} is installed, then {\rtf2latex2e} will use \textit{pict2pdf} for
+the conversion (otherwise it defaults to
+the \textit{unoconv}).\footnote{It is understandable that Apple has deprecated the \texttt{PICT} format
+and is pushing PDF. \texttt{PICT} is an old format, true, but I am always stumbling
+across legacy \texttt{RTF} files with embedded \texttt{PICT} images. The only
+way to properly convert the \texttt{PICT} vector image to a \texttt{PDF} vector
+image is to use the \texttt{QDPictCreateWithURL()} call. This function is not
+available when compiling 64-bit binaries and therefore the \texttt{-m32} option
+is required while compiling and linking. Of course, this does not work at all
+under Lion (10.7) and therefore the binary needs to be compiled with Snow
+Leopard (10.6) or earlier.} 
 
 \subsection{Windows Installation}
-Windows users get a pre-compiled binary rtf2latex2e.exe to be run from
-the command prompt. Just run it with the RTF file to be converted as the argument.
-To compile, uncomment the following line in the Makefile
+Windows users get a zip-archive with a pre-compiled binary
+\textit{rtf2latex2e.exe} to be run from the command prompt.
+It can be installed in any folder from where execution is allowed, but
+following Windows security scheme, it should be installed where
+programs are usually installed, i.e.\ in a subfolder of the
+``Program Files'' folder, e.g.\\
+\verb|C:\Program Files\rtf2latex2e|\\
+or\\
+\verb|C:\Programme\rtf2latex2e|\\
+depending on the version and language of your Windows system.
+
+To install in the ``Program Files'' folder, you need administrator rights.
+Unpack the zip archive \textit{rtf2latex2e-2-2-1-Win.zip} in the ``Program Files''
+folder while retaining the folder structure.
+
+The program additionally needs the metafile2eps converter. To install this, 
+execute \textit{metafile2eps.exe} which you find in the subfolder \textit{emf2eps}.
+
+To start a conversion, run rtf2latex2e.exe with the RTF file to be converted
+as the argument. The program needs some configuration files (in the
+subfolder \textit{pref}) and needs to know where these are.
+
+The default for this folder in the Windows binary rtf2latex2e.exe is\\
+\verb|C:\PROGRA~1\rtf2latex2e\pref|\\
+which matches the ``Program Files'' folder in most Western languages.
+
+If rtf2latex2e.exe is installed in a folder different from\\
+\verb|C:\PROGRA~1\rtf2latex2e|,\\
+the pref folder must be specified,
+see below under ``The preference path option''.
+
+To compile for Windows, uncomment the following line
+and other lines as indicated in the Makefile
 \begin{verbatim}
     PLATFORM?=-DMSWIN # Windows
 \end{verbatim}
@@ -140,7 +188,10 @@ The option to create a new directory is interesting and useful
 \begin{verbatim}
   -D               make a new directory for latex and extracted images
 \end{verbatim}
-because \texttt{RTF} files often contain dozens of image files.  All these files are extracted during conversion and this will clutter your current working directory.  The \texttt{-D} option avoids this by placing all files in a new directory.  For example
+because \texttt{RTF} files often contain dozens of image files.
+All these files are extracted during conversion and this will clutter
+your current working directory.  The \texttt{-D} option avoids this by
+placing all files in a new directory.  For example
 \begin{verbatim}
     prompt> rtf2latex2e -D file.rtf
 \end{verbatim}
