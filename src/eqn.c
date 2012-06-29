@@ -1283,10 +1283,15 @@ if (DEBUG_PARSING || g_input_file_type==TYPE_EQN) {
             size = *(src + *src_index);
             (*src_index)++;
             size |= *(src + *src_index) << 8;
-            (*src_index) += size + 1;
+            
+            //Need to include a change to how the *src_index tag is incremented. 
+            //Although the MTEF v.5 documentation says otherwise, it appears the 
+            //index should be incremented by size-1, not size. 
+            (*src_index) += size; 
 
             fprintf(stderr, "Future tag = 0x%02x with size %d\n",curr_tag,size);
-            exit(1);
+            fprintf(stderr,"--> ignoring!\n");
+            tally--;
             break;
         }
 
