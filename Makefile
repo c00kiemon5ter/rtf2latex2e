@@ -1,4 +1,4 @@
-VERSION = 2-2-1
+VERSION = 2-2-2
 
 CC:=gcc
 
@@ -109,7 +109,7 @@ src/rtfprep: src/tokenscan.o src/rtfprep.o
 	$(CC) $(PLATFORM) $(LDFLAGS) $(CFLAGS) $(RTFPREP_OBJS) -o src/rtfprep
 
 rtf2latex2e: $(OBJS) $(HDRS)
-	$(CC) $(PLATFORM) $(CFLAGS) $(OBJS) -o $(BINARY_NAME)
+	$(CC) $(PLATFORM) $(CFLAGS) $(OBJS) -lm -o $(BINARY_NAME)
 	cp -f $(BINARY_NAME) rtf2latex
 
 src/cole.o: src/cole.c src/cole.h src/cole_support.h
