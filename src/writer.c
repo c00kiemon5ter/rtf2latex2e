@@ -3382,8 +3382,9 @@ static void ReadUnicode(void)
 
     if (rtfMinor == rtfUnicode) {
         /* \uNNNNY, drop Y as fallback char (assuming \uc1) */
-        for (i=0; i<textStyle.unicodeSkipN; i++) 
+        for (i=0; i<textStyle.unicodeSkipN; i++) {
             RTFGetToken();
+        }
     }
 
     PrepareForChar();
@@ -3424,6 +3425,31 @@ static void ReadUnicode(void)
         return;
     }
 
+	if (thechar == 64256) {
+		PutLitStr("ff");
+		return;
+	}
+	
+	if (thechar == 64257) {
+		PutLitStr("fi");
+		return;
+	}
+
+	if (thechar == 64258) {
+		PutLitStr("fl");
+		return;
+	}
+
+	if (thechar == 64259) {
+		PutLitStr("ffi");
+		return;
+	}
+
+	if (thechar == 64260) {
+		PutLitStr("ffl");
+		return;
+	}
+	
     if (0xC0 <= thechar && thechar <=0xFF) {
         PutLitChar(thechar);
         return;

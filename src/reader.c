@@ -475,7 +475,7 @@ short RTFGetToken(void)
             (*p) ();            /* give read hook a look at token */
 
         /* Silently discard newlines, carriage returns, nulls.  */
-        if (!(rtfClass == rtfText  && (rtfMajor == '\n' || rtfMajor == '\r' || rtfMajor == '\0')))
+        if (!(rtfClass == rtfText  && (rtfMajor == '\n' || rtfMajor == '\r')))
             break;
     }
     return (rtfClass);
