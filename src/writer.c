@@ -43,6 +43,7 @@ boolean ConvertRawEquationFile(char *rawFileName);
 # define  MATH_DISPLAY_MODE     2
 
 # define  UNDEFINED_COLUMN_VALUE -10000
+# define  ROUNDF(f) ((int)(f + 0.5))
 
 extern FILE *ifp, *ofp;
 
@@ -2361,8 +2362,8 @@ static void IncludeGraphics(char *pictureType)
     else
         trueHeight = picture.height;
 
-	finalWidth  = (int) roundf(trueWidth  * picture.scaleX);
-	finalHeight = (int) roundf(trueHeight * picture.scaleY);
+	finalWidth  = ROUNDF(trueWidth  * picture.scaleX);
+	finalHeight = ROUNDF(trueHeight * picture.scaleY);
 	
     filename = strrchr(picture.name, PATH_SEP);
     if (!filename)
@@ -2390,10 +2391,10 @@ static void IncludeGraphics(char *pictureType)
 
 	if (isOpenOfficePDF) {
 		int lm, tm, rm, bm;  /* left top right bottom margins*/
-		lm = (int) roundf((612-trueWidth)/2);
-		rm = (int) roundf(612-trueWidth-lm);
-		tm = (int) roundf((792-trueHeight)/2);
-		bm = (int) roundf(792-trueHeight-tm);
+		lm = ROUNDF((612-trueWidth)/2);
+		rm = ROUNDF(612-trueWidth-lm);
+		tm = ROUNDF((792-trueHeight)/2);
+		bm = ROUNDF(792-trueHeight-tm);
     	snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[trim=%dpt %dpt %dpt %dpt, clip=true, width=%dpt, height=%dpt]{%s}\n", 
              lm, tm, rm, bm, finalWidth, finalHeight, filename);
     } else {
