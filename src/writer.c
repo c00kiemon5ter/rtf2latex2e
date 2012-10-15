@@ -3639,12 +3639,62 @@ static void ReadPageRefField(void)
  
 static void ReadEquationField(void)
 {
-	char * contents;
+    int parenCount = 0;
+    int braceCount = 0;
+	int displayEquation = 0;
 	
-	contents = RTFGetFieldContents();
-//	fprintf(stderr,"field=%s\n",contents);
+	if (nowBetweenParagraphs) {
+		NewParagraph();
+		PutLitStr("$$");
+		displayEquation=1;
+	} else {
+    	StopTextStyle();
+		PutLitChar('$');
+	}
+		
+    while (RTFGetToken()) {
 
-	free(contents);
+        if (rtfClass == rtfGroup && rtfMajor == 0) braceCount++;
+        if (rtfClass == rtfGroup && rtfMajor == 1) braceCount--;
+        if (braceCount < 0) break;
+
+		if (rtfClass == rtfControl && rtfMajor == rtfCharAttr && rtfMinor == rtfItalic) continue;
+
+		if (rtfClass != rtfText) {
+			RTFRouteToken();
+			continue;
+		}
+		
+		if (rtfMajor != '\\') {
+			RTFRouteToken();
+			continue;
+		}
+
+		RTFGetToken();	
+		if (rtfMajor == ',' || rtfMajor == '(' || rtfMajor == ')' || rtfMajor == '[' || rtfMajor == ']') {
+			RTFRouteToken();
+			continue;
+		}
+		
+		/* At this point, the we should have one of the EQ directives */
+		
+		/* subscripts { EQ \\s\\up8(UB)\\s\\do8(2) } */
+		if (rtfMajor == 's') {
+			RTFGetToken();
+			if (rtfMajor == '\\') {
+				RTFGetToken();
+				if (rtfMajor == 'u') PutLitStr("^{");
+				if (rtfMajor == 'd') PutLitStr("_{");
+			}
+			RTFSkipToToken(rtfText,'(',9);
+			RTFExecuteToToken(rtfText,')',10);
+			PutLitChar('}');
+		}	
+	}
+    StopTextStyle();
+	PutLitChar('$');
+	if (displayEquation) PutLitChar('$');
+			
     SkipFieldResult();
 }
 
