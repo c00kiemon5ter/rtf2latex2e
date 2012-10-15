@@ -122,6 +122,7 @@ boolean insideFootnote;
 boolean insideHyperlink;
 boolean insideHeaderFooter;
 boolean insideShapeGroup;
+boolean insideEquation;
 int blackColor;
 
 char *preambleFancyHeader;
@@ -329,9 +330,9 @@ static void PutLitStr(char *s)
 static void PutMathLitStr(char *s)
 {
     if (s && *s) {
-        PutLitStr("$");
+        if (!insideEquation) PutLitStr("$");
         PutLitStr(s);
-        PutLitStr("$");
+        if (!insideEquation) PutLitStr("$");
     }
 }
 
@@ -605,7 +606,7 @@ static void WriteTextStyle(void)
 
     if (wroteBeginDocument || !insideHeaderFooter) StopTextStyle();
 
-    if (prefs[pConvertTextSize] && textStyleWritten.fontSize != textStyle.fontSize) {
+    if (prefs[pConvertTextSize] && textStyleWritten.fontSize != textStyle.fontSize && !insideEquation) {
         if (textStyle.fontSize != normalSize) {
             snprintf(buf, 100, "{%s{}", fontSizeList[textStyle.fontSize]);
             PutLitStr(buf);
@@ -613,20 +614,20 @@ static void WriteTextStyle(void)
         textStyleWritten.fontSize=textStyle.fontSize;
     }
 
-    if (textStyleWritten.superScript != textStyle.superScript) {
+    if (textStyleWritten.superScript != textStyle.superScript && !insideEquation) {
         if (textStyle.superScript)
             PutLitStr("\\textsuperscript{");
         textStyleWritten.superScript=textStyle.superScript;
     }
 
-    if (textStyleWritten.subScript != textStyle.subScript) {
+    if (textStyleWritten.subScript != textStyle.subScript && !insideEquation) {
         if (textStyle.subScript)
             PutLitStr("\\textsubscript{");
         textStyleWritten.subScript=textStyle.subScript;
         requireFixLtx2ePackage = true;
     }
 
-    if (prefs[pConvertTextColor] && textStyleWritten.foreColor != textStyle.foreColor) {
+    if (prefs[pConvertTextColor] && textStyleWritten.foreColor != textStyle.foreColor && !insideEquation) {
         if (textStyle.foreColor) {
             snprintf(buf, 100, "{\\color{color%02d} ", textStyle.foreColor);
             PutLitStr(buf);
@@ -637,7 +638,7 @@ static void WriteTextStyle(void)
 
     if (!prefs[pConvertTextForm]) return;
 
-    if (textStyleWritten.italic != textStyle.italic) {
+    if (textStyleWritten.italic != textStyle.italic && !insideEquation) {
         if (textStyle.italic)
             PutLitStr("\\textit{");
         textStyleWritten.italic=textStyle.italic;
@@ -645,24 +646,27 @@ static void WriteTextStyle(void)
 
     if (textStyleWritten.bold != textStyle.bold) {
         if (textStyle.bold)
-            PutLitStr("\\textbf{");
+        	if (insideEquation)
+            	PutLitStr("\\mathbf{");
+            else
+            	PutLitStr("\\textbf{");
         textStyleWritten.bold=textStyle.bold;
     }
 
-    if (textStyleWritten.underlined != textStyle.underlined) {
+    if (textStyleWritten.underlined != textStyle.underlined && !insideEquation) {
         if (textStyle.underlined)
             PutLitStr("\\emph{");
         requireUlemPackage = true;
         textStyleWritten.underlined=textStyle.underlined;
     }
 
-    if (textStyleWritten.smallCaps != textStyle.smallCaps) {
+    if (textStyleWritten.smallCaps != textStyle.smallCaps && !insideEquation) {
         if (textStyle.smallCaps)
             PutLitStr("\\textsc{");
         textStyleWritten.smallCaps=textStyle.smallCaps;
     }
 
-    if (textStyleWritten.dbUnderlined != textStyle.dbUnderlined) {
+    if (textStyleWritten.dbUnderlined != textStyle.dbUnderlined && !insideEquation) {
         if (textStyle.dbUnderlined)
             PutLitStr("\\uuline{");
         requireUlemPackage = true;
@@ -3652,13 +3656,12 @@ static void ReadEquationField(void)
 		PutLitChar('$');
 	}
 		
+	insideEquation = 1;
     while (RTFGetToken()) {
 
         if (rtfClass == rtfGroup && rtfMajor == 0) braceCount++;
         if (rtfClass == rtfGroup && rtfMajor == 1) braceCount--;
         if (braceCount < 0) break;
-
-		if (rtfClass == rtfControl && rtfMajor == rtfCharAttr && rtfMinor == rtfItalic) continue;
 
 		if (rtfClass != rtfText) {
 			RTFRouteToken();
@@ -3680,7 +3683,7 @@ static void ReadEquationField(void)
 		
 		/* subscripts { EQ \\s\\up8(UB)\\s\\do8(2) } */
 		if (rtfMajor == 's') {
-			RTFGetToken();
+			do {RTFGetToken();} while (rtfMajor == ' ');
 			if (rtfMajor == '\\') {
 				RTFGetToken();
 				if (rtfMajor == 'u') PutLitStr("^{");
@@ -3689,11 +3692,44 @@ static void ReadEquationField(void)
 			RTFSkipToToken(rtfText,'(',9);
 			RTFExecuteToToken(rtfText,')',10);
 			PutLitChar('}');
+			continue;
 		}	
+		
+		/* integrals { EQ \\i \\su(1,5,3) } */
+		if (rtfMajor == 'i') {
+			do {RTFGetToken();} while (rtfMajor == ' ');
+			if (rtfMajor == '\\') {
+				RTFGetToken();
+				if (rtfMajor == 's') PutLitStr("\\sum\\limits_{");
+				if (rtfMajor == 'p') PutLitStr("\\prod\\limits_{");
+				if (rtfMajor == 'i') PutLitStr("\\int\\limits_{");
+			}
+			RTFSkipToToken(rtfText,'(',9);
+			RTFExecuteToToken(rtfText,',',13);
+			RTFGetToken();
+			PutLitStr("}^{");
+			RTFExecuteToToken(rtfText,')',10);
+			PutLitChar('}');
+			continue;
+		}	
+
+		/* integrals { EQ \\f(2,RateChange) } */
+		if (rtfMajor == 'f' || rtfMajor == 'F') {
+			RTFSkipToToken(rtfText,'(',9);
+			PutLitStr("{");
+			RTFExecuteToToken(rtfText,',',13);
+			/* discard comma */
+			PutLitStr("\\over ");
+			RTFExecuteToToken(rtfText,')',10);
+			PutLitChar('}');
+			continue;
+		}	
+		
 	}
     StopTextStyle();
 	PutLitChar('$');
 	if (displayEquation) PutLitChar('$');
+	insideEquation = 0;
 			
     SkipFieldResult();
 }

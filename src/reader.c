@@ -407,7 +407,7 @@ static int RTFToToken(int class, int major, int minor, int execute)
 
     while (RTFGetToken() != rtfEOF) {
 
-        ExamineToken("RTFToToken");
+//        ExamineToken("RTFToToken");
         if (RTFCheckCMM(class,major,minor))
             return 1;
 
