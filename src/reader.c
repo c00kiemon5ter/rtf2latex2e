@@ -457,6 +457,43 @@ char *RTFGetTextWord(void)
     return strdup(word);
 }
 
+/* 
+ * return text to next unmatched closing brace
+ */
+char *RTFGetFieldContents(void)
+{
+    char fieldContents[1024];
+    int i;
+    int len = 0;
+    int braceCount = 0;
+
+    /* Collect the word */
+    while (rtfClass == rtfText || rtfClass == rtfGroup || rtfClass == rtfControl) {
+        if (RTFGetToken() == rtfEOF) return NULL;
+
+		i=0;
+		while (rtfTextBuf[i]) {
+        	fieldContents[len] = rtfTextBuf[i];
+            len++;
+            i++;
+        	if (len >= 1023) break;
+        }
+        
+        if (rtfClass == rtfControl) {
+        	fieldContents[len] = ' ';
+        	len++;
+        }
+        
+        if (rtfClass == rtfGroup && rtfMajor == 0) braceCount++;
+        if (rtfClass == rtfGroup && rtfMajor == 1) braceCount--;
+
+    	fieldContents[len]='\0';
+        if (braceCount < 0) break;
+        if (len >= 1024) break;
+    }
+    fieldContents[len]='\0';
+    return strdup(fieldContents);
+}
 
 /*
  * Read one token.  Call the read hook if there is one.  The

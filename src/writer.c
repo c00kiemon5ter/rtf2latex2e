@@ -3618,6 +3618,37 @@ static void ReadPageRefField(void)
 }
 
 /*
+ *  Try to convert Microsoft Equation Field to latex.  The problem is that we
+ *  now have rtf tokens mixed with the stupid field tokens.  For example 
+ *  \\i( {\i a}, {\i b}, {\i x dx}) should become \int_a^b x dx
+ *  I certainly want to leverage the current rtf token handling mechanism, but
+ *  somehow the following EQ commands need to be handled and special care needs
+ *  to be taken of the equation grouping commands '(' and ',' and ')'
+ *
+ *  Array switch: \a()
+ *  Bracket: \b()
+ *  Displace: \d()
+ *  Fraction: \f(,)
+ *  Integral: \i(,,)
+ *  List: \l()
+ *  Overstrike: \o()
+ *  Radical: \r(,)
+ *  Superscript or Subscript: \s()
+ *  Box: \x()
+ */
+ 
+static void ReadEquationField(void)
+{
+	char * contents;
+	
+	contents = RTFGetFieldContents();
+//	fprintf(stderr,"field=%s\n",contents);
+
+	free(contents);
+    SkipFieldResult();
+}
+
+/*
  *  Just emit \pageref{HToc268612944} for {\*\fldinst {...  PAGEREF _Toc268612944 \\h } ..}
 */
 static void ReadPageField(void)
@@ -3672,6 +3703,13 @@ static void ReadFieldInst(void)
         free(fieldName);
         return;
     }
+
+    if (strcasecmp(fieldName, "EQ") == 0) {
+        ReadEquationField();
+        free(fieldName);
+        return;
+    }
+
 //    RTFMsg("FIELD type is '%s'\n",fieldName);
 
     /* Unsupported FIELD type ... the best we can do is bail from rtfFieldInst

@@ -344,6 +344,7 @@ void RTFExecuteGroup (void);
 int 		RTFSkipToToken(int class, int major, int minor);
 int		 	RTFExecuteToToken(int class, int major, int minor);
 char 		*RTFGetTextWord(void);
+char *RTFGetFieldContents(void);
 void RTFExpandStyle (short n);
 short    RTFCheckCM(short class, short major);
 short    RTFCheckCMM(short class, short major, short minor);
