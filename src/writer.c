@@ -1285,6 +1285,140 @@ static void WrapText(void)
         PutLitChar('\n');
 }
 
+/*
+ *  Try to convert Microsoft Equation Field to latex.  The problem is that we
+ *  now have rtf tokens mixed with the stupid field tokens.  For example 
+ *  \\i( {\i a}, {\i b}, {\i x dx}) should become \int_a^b x dx
+ *  I certainly want to leverage the current rtf token handling mechanism, but
+ *  somehow the following EQ commands need to be handled and special care needs
+ *  to be taken of the equation grouping commands '(' and ',' and ')'
+ *
+ *  Array switch: \a()
+ *  Bracket: \b()
+ *  Displace: \d()
+ *  Fraction: \f(,)
+ *  Integral: \i(,,)
+ *  List: \l()
+ *  Overstrike: \o()
+ *  Radical: \r(,)
+ *  Superscript or Subscript: \s()
+ *  Box: \x()
+ */
+
+static void HandleMicrosoftEquationFieldCommand(void)
+{
+	/* subscripts { EQ \\s\\up8(UB)\\s\\do8(2) } */
+	if (rtfMajor == 's') {
+		do {RTFGetToken();} while (rtfMajor == ' ');
+		if (rtfMajor == '\\') {
+			RTFGetToken();
+			if (rtfMajor == 'u') PutLitStr("^{");
+			if (rtfMajor == 'd') PutLitStr("_{");
+		}
+		RTFSkipToToken(rtfText,'(',9);
+		RTFExecuteToToken(rtfText,')',10);
+		PutLitChar('}');
+		return;
+	}	
+	
+	/* integrals { EQ \\i \\su(1,5,3) } */
+	if (rtfMajor == 'i') {
+		do {RTFGetToken();} while (rtfMajor == ' ');
+		if (rtfMajor == '\\') {
+			RTFGetToken();
+			if (rtfMajor == 's') PutLitStr("\\sum\\limits_{");
+			if (rtfMajor == 'p') PutLitStr("\\prod\\limits_{");
+			if (rtfMajor == 'i') PutLitStr("\\int\\limits_{");
+		}
+		RTFSkipToToken(rtfText,'(',9);
+		RTFExecuteToToken(rtfText,',',13);
+		RTFGetToken();
+		PutLitStr("}^{");
+		RTFExecuteToToken(rtfText,')',10);
+		PutLitChar('}');
+		return;
+	}	
+
+	/* integrals { EQ \\f(2,RateChange) } */
+	if (rtfMajor == 'f' || rtfMajor == 'F') {
+		RTFSkipToToken(rtfText,'(',9);
+		PutLitStr("{");
+		RTFExecuteToToken(rtfText,',',13);
+		/* discard comma */
+		PutLitStr("\\over ");
+		RTFExecuteToToken(rtfText,')',10);
+		PutLitChar('}');
+		return;
+	}	
+	
+	/* roots { EQ \\r(3,x) } */
+	if (rtfMajor == 'r') {
+		RTFSkipToToken(rtfText,'(',9);
+		PutLitStr("\\sqrt[");
+		RTFExecuteToToken(rtfText,',',13);
+		/* discard comma */
+		PutLitStr("]{");
+		RTFExecuteToToken(rtfText,')',10);
+		PutLitChar('}');
+		return;
+	}	
+	
+	/* { braces EQ \\b \\bc\\{ (\\r(3,x)) }  */
+	if (rtfMajor == 'b') {
+		char open = '(';
+		char close = ')';
+		
+		do {RTFGetToken();} while (rtfMajor == ' ');
+
+		/* handle \\bc\\X \\lc\\X \\rc\\X */
+		if (rtfMajor == '\\') {
+			char type;
+			RTFGetToken();
+			type = rtfMajor;
+			RTFGetToken(); /* get and discard 'c' */
+			RTFGetToken(); 
+			
+			/* handle \\X */
+			if (rtfMajor == '\\') RTFGetToken();
+						
+			if (type == 'l') open = rtfMajor;
+			if (type == 'r') close = rtfMajor;
+			if (type == 'b') {
+				switch (open) {
+				case '<': close = '>'; break;
+				case '[': close = ']'; break;
+				case '{': close = '}'; break;
+				case '(': close = ')'; break;
+				default: close = open;
+				}
+			}	
+			RTFGetToken();
+			
+			/* handle possible second \\lc\\X or \\rc\\X */
+			if (rtfMajor == '\\') {
+				RTFGetToken();
+				type = rtfMajor;
+				RTFGetToken(); /* get and discard 'c' */
+				RTFGetToken(); 
+				
+				/* handle \\X */
+				if (rtfMajor == '\\') RTFGetToken();
+								
+				if (type == 'l') open = rtfMajor;
+				if (type == 'r') close = rtfMajor;
+			}
+		}
+		
+		RTFSkipToToken(rtfText,'(',9);
+		PutLitStr("\\left ");
+		PutLitChar(open);
+		RTFExecuteToToken(rtfText,')',10);
+		PutLitStr("\\right ");
+		PutLitChar(close);
+		return;
+	}	
+}
+
 static void PrepareForChar(void)
 {
     if (insideTable && nowBetweenCells) {
@@ -1314,6 +1448,11 @@ static void PrepareForChar(void)
             return;
         }
     }
+
+    if (insideEquation && rtfMinor == rtfSC_backslash) {
+    	RTFGetToken();
+		HandleMicrosoftEquationFieldCommand();
+	}
 
     if (rtfMinor >= rtfSC_therefore && rtfMinor < rtfSC_currency)
         requireAmsSymbPackage = true;
@@ -3621,6 +3760,7 @@ static void ReadPageRefField(void)
     SkipFieldResult();
 }
 
+
 /*
  *  Try to convert Microsoft Equation Field to latex.  The problem is that we
  *  now have rtf tokens mixed with the stupid field tokens.  For example 
@@ -3647,16 +3787,19 @@ static void ReadEquationField(void)
     int braceCount = 0;
 	int displayEquation = 0;
 	
-	if (nowBetweenParagraphs) {
-		NewParagraph();
-		PutLitStr("$$");
-		displayEquation=1;
-	} else {
-    	StopTextStyle();
-		PutLitChar('$');
+	if (insideEquation == 0) {
+		if (nowBetweenParagraphs) {
+			NewParagraph();
+			PutLitStr("\n$$\n");
+			displayEquation=1;
+		} else {
+			StopTextStyle();
+			PutLitChar('$');
+		}
 	}
+	suppressLineBreak = 1;
 		
-	insideEquation = 1;
+	insideEquation++;
     while (RTFGetToken()) {
 
         if (rtfClass == rtfGroup && rtfMajor == 0) braceCount++;
@@ -3680,56 +3823,16 @@ static void ReadEquationField(void)
 		}
 		
 		/* At this point, the we should have one of the EQ directives */
-		
-		/* subscripts { EQ \\s\\up8(UB)\\s\\do8(2) } */
-		if (rtfMajor == 's') {
-			do {RTFGetToken();} while (rtfMajor == ' ');
-			if (rtfMajor == '\\') {
-				RTFGetToken();
-				if (rtfMajor == 'u') PutLitStr("^{");
-				if (rtfMajor == 'd') PutLitStr("_{");
-			}
-			RTFSkipToToken(rtfText,'(',9);
-			RTFExecuteToToken(rtfText,')',10);
-			PutLitChar('}');
-			continue;
-		}	
-		
-		/* integrals { EQ \\i \\su(1,5,3) } */
-		if (rtfMajor == 'i') {
-			do {RTFGetToken();} while (rtfMajor == ' ');
-			if (rtfMajor == '\\') {
-				RTFGetToken();
-				if (rtfMajor == 's') PutLitStr("\\sum\\limits_{");
-				if (rtfMajor == 'p') PutLitStr("\\prod\\limits_{");
-				if (rtfMajor == 'i') PutLitStr("\\int\\limits_{");
-			}
-			RTFSkipToToken(rtfText,'(',9);
-			RTFExecuteToToken(rtfText,',',13);
-			RTFGetToken();
-			PutLitStr("}^{");
-			RTFExecuteToToken(rtfText,')',10);
-			PutLitChar('}');
-			continue;
-		}	
-
-		/* integrals { EQ \\f(2,RateChange) } */
-		if (rtfMajor == 'f' || rtfMajor == 'F') {
-			RTFSkipToToken(rtfText,'(',9);
-			PutLitStr("{");
-			RTFExecuteToToken(rtfText,',',13);
-			/* discard comma */
-			PutLitStr("\\over ");
-			RTFExecuteToToken(rtfText,')',10);
-			PutLitChar('}');
-			continue;
-		}	
+		HandleMicrosoftEquationFieldCommand();
 		
 	}
     StopTextStyle();
-	PutLitChar('$');
-	if (displayEquation) PutLitChar('$');
-	insideEquation = 0;
+	if (displayEquation) 
+		PutLitStr("\n$$\n");
+	else
+		PutLitChar('$');
+		
+	insideEquation--;
 			
     SkipFieldResult();
 }
