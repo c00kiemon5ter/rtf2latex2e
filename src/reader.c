@@ -519,6 +519,15 @@ short RTFGetToken(void)
     return (rtfClass);
 }
 
+short RTFGetNonWhiteSpaceToken(void)
+{
+    for (;;) {
+        RTFGetToken();
+        if (rtfClass != rtfText) break;
+        if (rtfMajor != ' ' && rtfMajor != '\n' && rtfMajor != '\r') break;
+    }
+    return (rtfClass);
+}
 
 /*
  * Install or return a token reader hook.

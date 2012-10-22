@@ -1309,7 +1309,7 @@ static void HandleMicrosoftEquationFieldCommand(void)
 {
 	/* subscripts { EQ \\s\\up8(UB)\\s\\do8(2) } */
 	if (rtfMajor == 's') {
-		do {RTFGetToken();} while (rtfMajor == ' ');
+		RTFGetNonWhiteSpaceToken();
 		if (rtfMajor == '\\') {
 			RTFGetToken();
 			if (rtfMajor == 'u') PutLitStr("^{");
@@ -1323,7 +1323,7 @@ static void HandleMicrosoftEquationFieldCommand(void)
 	
 	/* integrals { EQ \\i \\su(1,5,3) } */
 	if (rtfMajor == 'i') {
-		do {RTFGetToken();} while (rtfMajor == ' ');
+		RTFGetNonWhiteSpaceToken();
 		if (rtfMajor == '\\') {
 			RTFGetToken();
 			if (rtfMajor == 's') PutLitStr("\\sum\\limits_{");
@@ -1339,7 +1339,7 @@ static void HandleMicrosoftEquationFieldCommand(void)
 		return;
 	}	
 
-	/* integrals { EQ \\f(2,RateChange) } */
+	/* fractions { EQ \\f(2,RateChange) } */
 	if (rtfMajor == 'f' || rtfMajor == 'F') {
 		RTFSkipToToken(rtfText,'(',9);
 		PutLitStr("{");
@@ -1363,15 +1363,15 @@ static void HandleMicrosoftEquationFieldCommand(void)
 		return;
 	}	
 	
-	/* { braces EQ \\b \\bc\\{ (\\r(3,x)) }  */
+	/* braces { EQ \\b \\bc\\{ (\\r(3,x)) }  */
 	if (rtfMajor == 'b') {
 		char open = '(';
 		char close = ')';
 		
-		do {RTFGetToken();} while (rtfMajor == ' ');
+		RTFGetNonWhiteSpaceToken();
 
 		/* handle \\bc\\X \\lc\\X \\rc\\X */
-		if (rtfMajor == '\\') {
+		while (rtfMajor == '\\') {
 			char type;
 			RTFGetToken();
 			type = rtfMajor;
@@ -1392,31 +1392,65 @@ static void HandleMicrosoftEquationFieldCommand(void)
 				default: close = open;
 				}
 			}	
-			RTFGetToken();
-			
-			/* handle possible second \\lc\\X or \\rc\\X */
-			if (rtfMajor == '\\') {
-				RTFGetToken();
-				type = rtfMajor;
-				RTFGetToken(); /* get and discard 'c' */
-				RTFGetToken(); 
-				
-				/* handle \\X */
-				if (rtfMajor == '\\') RTFGetToken();
-								
-				if (type == 'l') open = rtfMajor;
-				if (type == 'r') close = rtfMajor;
-			}
+			RTFGetNonWhiteSpaceToken();
 		}
 		
 		RTFSkipToToken(rtfText,'(',9);
-		PutLitStr("\\left ");
+		PutLitStr("\\left");
+		if (open=='{') PutLitChar('\\');
 		PutLitChar(open);
 		RTFExecuteToToken(rtfText,')',10);
-		PutLitStr("\\right ");
+		PutLitStr("\\right");
+		if (close=='}') PutLitChar('\\');
 		PutLitChar(close);
 		return;
-	}	
+	}
+
+	/* arrays { EQ \\a \\al \\co2 \\vs3 \\hs3(Axy,Bxy,A,B) } */
+	if (rtfMajor == 'a') {
+		int columns = 1;
+		int align = 'l';
+		int elements = '1';
+		int i;
+		ExamineToken("array");
+		RTFGetNonWhiteSpaceToken();
+
+		/* handle \\al \\co2 \\vs3 \\hs3 */
+		while (rtfMajor == '\\') {
+			RTFGetToken();
+			if (rtfMajor == 'c') {
+				RTFGetToken(); /*discard 'o' */
+				RTFGetToken();
+				columns = rtfMajor - '0';
+			}
+			if (rtfMajor == 'a') {
+				RTFGetToken();
+				align = rtfMajor;
+			}
+			RTFGetNonWhiteSpaceToken();
+		}
+		
+		PutLitStr("\\begin{array}{");
+		for (i=0; i<columns; i++) {PutLitChar(align);}
+		PutLitStr("}\n");
+		
+		RTFGetToken();
+		while (rtfMajor != ')') {
+			if (rtfMajor != ',') 
+				RTFRouteToken();
+			else {
+				elements++;
+				if (elements % columns == 0) 
+					PutLitStr("\\\\\n");
+				else
+					PutLitStr(" & ");
+			}
+			RTFGetToken();
+		}	
+		PutLitStr("\n\\end{array}");
+		return;
+	}
+	
 }
 
 static void PrepareForChar(void)

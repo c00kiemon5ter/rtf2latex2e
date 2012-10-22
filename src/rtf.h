@@ -331,7 +331,8 @@ RTFFuncPtr 	RTFGetClassCallback(short class);
 void RTFSetDestinationCallback(short dest, RTFFuncPtr callback);
 RTFFuncPtr 	RTFGetDestinationCallback(short dest);
 void RTFRead (void);
-short	RTFGetToken (void);	/* writer should rarely need this */
+short RTFGetToken (void);
+short RTFGetNonWhiteSpaceToken(void);
 void RTFUngetToken (void);
 short	RTFPeekToken (void);
 void RTFSetToken(short class, short major, short minor, int32_t param, char *text);
