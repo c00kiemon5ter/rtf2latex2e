@@ -1107,3 +1107,6 @@
 # define		rtfxmlAttrName	763
 # define		rtfxmlAttrValue	764
 # define		rtfListLevel	765
+
+# define	rtfEquationFieldCmd	32
+# define	rtfEquationFieldLiteral	33

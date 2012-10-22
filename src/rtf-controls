@@ -1111,3 +1111,6 @@ minor	rtfxmlAttrNs	xmlattrns
 minor	rtfxmlAttrName	xmlattrname
 minor	rtfxmlAttrValue	xmlattrvalue
 minor	rtfListLevel	listlevel
+
+major	rtfEquationFieldCmd
+major	rtfEquationFieldLiteral

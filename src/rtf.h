@@ -333,6 +333,7 @@ RTFFuncPtr 	RTFGetDestinationCallback(short dest);
 void RTFRead (void);
 short RTFGetToken (void);
 short RTFGetNonWhiteSpaceToken(void);
+void RTFExecuteParentheses(void);
 void RTFUngetToken (void);
 short	RTFPeekToken (void);
 void RTFSetToken(short class, short major, short minor, int32_t param, char *text);
@@ -404,6 +405,7 @@ extern int g_eqn_keep_file;
 extern int g_eqn_insert_name;
 
 extern int g_shouldIncludePreamble;
+extern int insideEquation;
 
 # define SAVE_PARSER 11
 # define RESTORE_PARSER 12

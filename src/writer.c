@@ -122,7 +122,7 @@ boolean insideFootnote;
 boolean insideHyperlink;
 boolean insideHeaderFooter;
 boolean insideShapeGroup;
-boolean insideEquation;
+int insideEquation;
 int blackColor;
 
 char *preambleFancyHeader;
@@ -207,6 +207,7 @@ void ExamineToken(char * tag)
             case rtfNeXTGrAttr: printf(" (rtfNeXTGrAttr)\n"); break;
             case rtfShapeAttr: printf(" (rtfShapeAttr)\n"); break;
             case rtfAnsiCharAttr: printf(" (rtfAnsiCharAttr)\n"); break;
+            case rtfEquationFieldCmd: printf(" (rtfEquationFieldCmd)\n"); break;
             default: printf(" (unknown)\n"); break;
         }
     }
@@ -496,6 +497,7 @@ static void InitTextStyle(void)
     textStyle.foreColor = 0; /* black */
     textStyle.fontNumber = -1;
     textStyle.charCode = genCharCode;
+    textStyle.mathRoman = 0;
 
     textStyle.allCaps = 0;
     textStyle.backColor = 0;
@@ -537,6 +539,8 @@ static int SameTextStyle(void)
     if (textStyleWritten.dbUnderlined != textStyle.dbUnderlined) return false;
 
     if (textStyleWritten.charCode != textStyle.charCode) return false;
+
+    if (textStyleWritten.mathRoman != textStyle.mathRoman) return false;
 
     return true;
 }
@@ -592,6 +596,12 @@ static void StopTextStyle(void)
         PutLitStr("}");
         textStyleWritten.dbUnderlined=false;
     }
+
+    if (textStyleWritten.mathRoman) {
+        PutLitStr("}");
+        textStyleWritten.mathRoman=false;
+    }
+
 }
 
 /*
@@ -612,6 +622,12 @@ static void WriteTextStyle(void)
             PutLitStr(buf);
         }
         textStyleWritten.fontSize=textStyle.fontSize;
+    }
+
+    if (textStyleWritten.mathRoman != textStyle.mathRoman && insideEquation) {
+        if (textStyle.mathRoman)
+            PutLitStr("\\mathrm{");
+        textStyleWritten.mathRoman=textStyle.mathRoman;
     }
 
     if (textStyleWritten.superScript != textStyle.superScript && !insideEquation) {
@@ -706,6 +722,18 @@ static void SetTextStyle(void)
 {
     if (insideHyperlink)
         return;
+
+	if (insideEquation) {
+		switch (rtfMinor) {
+			case rtfPlain:
+				textStyle.mathRoman = (rtfParam) ? true : false;
+				break;
+			case rtfBold:
+				textStyle.bold = (rtfParam) ? true : false;
+				break;
+		}
+		return;
+	}
 
     switch (rtfMinor) {
     case rtfPlain:
@@ -1081,6 +1109,7 @@ static void FinalizeParagraph(void)
     }
 
     if (section.newSection) EndSection();
+    insideEquation = false;
 }
 
 /* 
@@ -1285,35 +1314,37 @@ static void WrapText(void)
         PutLitChar('\n');
 }
 
+static void MicrosoftEQFieldLiteral(void)
+{
+	PutLitChar(rtfMinor);
+}
+
 /*
- *  Try to convert Microsoft Equation Field to latex.  The problem is that we
- *  now have rtf tokens mixed with the stupid field tokens.  For example 
- *  \\i( {\i a}, {\i b}, {\i x dx}) should become \int_a^b x dx
- *  I certainly want to leverage the current rtf token handling mechanism, but
- *  somehow the following EQ commands need to be handled and special care needs
- *  to be taken of the equation grouping commands '(' and ',' and ')'
+ *  Convert Microsoft Equation Command to LaTeX.  The parser should call 
+ *  this routine when something like \\s is encountered within a EQ field.
  *
- *  Array switch: \a()
- *  Bracket: \b()
- *  Displace: \d()
- *  Fraction: \f(,)
- *  Integral: \i(,,)
- *  List: \l()
- *  Overstrike: \o()
- *  Radical: \r(,)
- *  Superscript or Subscript: \s()
- *  Box: \x()
+ *  Array switch: \\a()
+ *  Bracket: \\b()
+ *  Fraction: \\f(,)
+ *  Integral: \\i(,,)
+ *  Radical: \\r(,)
+ *  Superscript or Subscript: \\s()
+ *  
+ *  Displace: \\d()    not done
+ *  List: \\l()        not done
+ *  Overstrike: \\o()  not done
+ *  Box: \\x()         not done
  */
 
-static void HandleMicrosoftEquationFieldCommand(void)
-{
-	/* subscripts { EQ \\s\\up8(UB)\\s\\do8(2) } */
-	if (rtfMajor == 's') {
+static void MicrosoftEQFieldCommand(void)
+{	
+	/* subscript/superscript  \\s\\up8(UB)\\s\\do8(2)  */
+	if (rtfMinor == 's' || rtfMinor == 'S') {
+//		ExamineToken("EQ Subscript");
 		RTFGetNonWhiteSpaceToken();
-		if (rtfMajor == '\\') {
-			RTFGetToken();
-			if (rtfMajor == 'u') PutLitStr("^{");
-			if (rtfMajor == 'd') PutLitStr("_{");
+		if (rtfMajor == rtfEquationFieldCmd) {
+			if (rtfMinor == 'u') PutLitStr("^{");
+			if (rtfMinor == 'd') PutLitStr("_{");
 		}
 		RTFSkipToToken(rtfText,'(',9);
 		RTFExecuteToToken(rtfText,')',10);
@@ -1321,14 +1352,14 @@ static void HandleMicrosoftEquationFieldCommand(void)
 		return;
 	}	
 	
-	/* integrals { EQ \\i \\su(1,5,3) } */
-	if (rtfMajor == 'i') {
+	/* integrals \\i \\su(1,5,3) */
+	if (rtfMinor == 'i' || rtfMinor == 'I') {
+//		ExamineToken("EQ Integral");
 		RTFGetNonWhiteSpaceToken();
-		if (rtfMajor == '\\') {
-			RTFGetToken();
-			if (rtfMajor == 's') PutLitStr("\\sum\\limits_{");
-			if (rtfMajor == 'p') PutLitStr("\\prod\\limits_{");
-			if (rtfMajor == 'i') PutLitStr("\\int\\limits_{");
+		if (rtfMajor == rtfEquationFieldCmd) {
+			if (rtfMinor == 's') PutLitStr("\\sum\\limits_{");
+			if (rtfMinor == 'p') PutLitStr("\\prod\\limits_{");
+			if (rtfMinor == 'i') PutLitStr("\\int\\limits_{");
 		}
 		RTFSkipToToken(rtfText,'(',9);
 		RTFExecuteToToken(rtfText,',',13);
@@ -1339,51 +1370,50 @@ static void HandleMicrosoftEquationFieldCommand(void)
 		return;
 	}	
 
-	/* fractions { EQ \\f(2,RateChange) } */
-	if (rtfMajor == 'f' || rtfMajor == 'F') {
+	/* fractions \\f(2,RateChange) */
+	if (rtfMinor == 'f' || rtfMinor == 'F') {
+//		ExamineToken("EQ Fraction");
 		RTFSkipToToken(rtfText,'(',9);
 		PutLitStr("{");
 		RTFExecuteToToken(rtfText,',',13);
 		/* discard comma */
 		PutLitStr("\\over ");
-		RTFExecuteToToken(rtfText,')',10);
+		RTFExecuteParentheses();
 		PutLitChar('}');
 		return;
 	}	
 	
-	/* roots { EQ \\r(3,x) } */
-	if (rtfMajor == 'r') {
+	/* roots \\r(3,x) */
+	if (rtfMinor == 'r' || rtfMinor == 'R') {
+//		ExamineToken("EQ Root");
 		RTFSkipToToken(rtfText,'(',9);
 		PutLitStr("\\sqrt[");
 		RTFExecuteToToken(rtfText,',',13);
 		/* discard comma */
 		PutLitStr("]{");
-		RTFExecuteToToken(rtfText,')',10);
+		RTFExecuteParentheses();
 		PutLitChar('}');
 		return;
 	}	
 	
-	/* braces { EQ \\b \\bc\\{ (\\r(3,x)) }  */
-	if (rtfMajor == 'b') {
+	/* braces \\b \\bc\\{ (\\r(3,x))  */
+	if (rtfMinor == 'b' || rtfMinor == 'B') {
 		char open = '(';
 		char close = ')';
 		
+//		ExamineToken("EQ Brace");
 		RTFGetNonWhiteSpaceToken();
 
 		/* handle \\bc\\X \\lc\\X \\rc\\X */
-		while (rtfMajor == '\\') {
-			char type;
-			RTFGetToken();
-			type = rtfMajor;
+		while (rtfMajor == rtfEquationFieldCmd) {
+			char type = rtfMinor;
 			RTFGetToken(); /* get and discard 'c' */
 			RTFGetToken(); 
 			
-			/* handle \\X */
-			if (rtfMajor == '\\') RTFGetToken();
-						
-			if (type == 'l') open = rtfMajor;
-			if (type == 'r') close = rtfMajor;
+			if (type == 'l') open = rtfMinor;
+			if (type == 'r') close = rtfMinor;
 			if (type == 'b') {
+				open = rtfMinor;
 				switch (open) {
 				case '<': close = '>'; break;
 				case '[': close = ']'; break;
@@ -1395,11 +1425,13 @@ static void HandleMicrosoftEquationFieldCommand(void)
 			RTFGetNonWhiteSpaceToken();
 		}
 		
-		RTFSkipToToken(rtfText,'(',9);
+		if (rtfMajor != '(') RTFSkipToToken(rtfText,'(',9);
 		PutLitStr("\\left");
 		if (open=='{') PutLitChar('\\');
 		PutLitChar(open);
-		RTFExecuteToToken(rtfText,')',10);
+		
+		RTFExecuteParentheses();
+		
 		PutLitStr("\\right");
 		if (close=='}') PutLitChar('\\');
 		PutLitChar(close);
@@ -1407,23 +1439,21 @@ static void HandleMicrosoftEquationFieldCommand(void)
 	}
 
 	/* arrays { EQ \\a \\al \\co2 \\vs3 \\hs3(Axy,Bxy,A,B) } */
-	if (rtfMajor == 'a') {
+	if (rtfMinor == 'a' || rtfMinor == 'A') {
 		int columns = 1;
 		int align = 'l';
 		int elements = '1';
 		int i;
-		ExamineToken("array");
-		RTFGetNonWhiteSpaceToken();
 
+//		ExamineToken("EQ Array");
 		/* handle \\al \\co2 \\vs3 \\hs3 */
-		while (rtfMajor == '\\') {
-			RTFGetToken();
-			if (rtfMajor == 'c') {
+		while (rtfMajor == rtfEquationFieldCmd) {
+			if (rtfMinor == 'c') {
 				RTFGetToken(); /*discard 'o' */
 				RTFGetToken();
 				columns = rtfMajor - '0';
 			}
-			if (rtfMajor == 'a') {
+			if (rtfMinor == 'a') {
 				RTFGetToken();
 				align = rtfMajor;
 			}
@@ -1485,7 +1515,7 @@ static void PrepareForChar(void)
 
     if (insideEquation && rtfMinor == rtfSC_backslash) {
     	RTFGetToken();
-		HandleMicrosoftEquationFieldCommand();
+		MicrosoftEQFieldCommand();
 	}
 
     if (rtfMinor >= rtfSC_therefore && rtfMinor < rtfSC_currency)
@@ -3639,6 +3669,25 @@ static void ReadUnicode(void)
         return;
     }
 
+    /* directly translate special cursive greek */
+    if (976 == thechar) {
+        PutMathLitStr("\\beta");
+        return;
+    }
+    if (977 == thechar) {
+        PutMathLitStr("\\vartheta");
+        return;
+    }
+    if (981 == thechar) {
+        PutMathLitStr("\\varphi");
+        return;
+    }
+    if (982 == thechar) {
+        PutMathLitStr("\\varpi");
+        return;
+    }
+
+
     /* and also a bunch of wierd codepoints from the Symbol font
        that end up in a private code area of Unicode */
     if (61472 <= thechar && thechar <= 61632) {
@@ -3797,7 +3846,9 @@ static void ReadPageRefField(void)
 
 /*
  *  Try to convert Microsoft Equation Field to latex.  The problem is that we
- *  now have rtf tokens mixed with the stupid field tokens.  For example 
+ *  now have rtf tokens mixed with the stupid field tokens.  I hacked the parser
+ *  to handle read \\X in an equation and send it to HandleMicrosoftFieldCommand.
+ *  For example 
  *  \\i( {\i a}, {\i b}, {\i x dx}) should become \int_a^b x dx
  *  I certainly want to leverage the current rtf token handling mechanism, but
  *  somehow the following EQ commands need to be handled and special care needs
@@ -3834,37 +3885,20 @@ static void ReadEquationField(void)
 	suppressLineBreak = 1;
 		
 	insideEquation++;
-    while (RTFGetToken()) {
 
-        if (rtfClass == rtfGroup && rtfMajor == 0) braceCount++;
-        if (rtfClass == rtfGroup && rtfMajor == 1) braceCount--;
-        if (braceCount < 0) break;
+    RTFExecuteGroup();
 
-		if (rtfClass != rtfText) {
-			RTFRouteToken();
-			continue;
-		}
-		
-		if (rtfMajor != '\\') {
-			RTFRouteToken();
-			continue;
-		}
-
-		RTFGetToken();	
-		if (rtfMajor == ',' || rtfMajor == '(' || rtfMajor == ')' || rtfMajor == '[' || rtfMajor == ']') {
-			RTFRouteToken();
-			continue;
-		}
-		
-		/* At this point, the we should have one of the EQ directives */
-		HandleMicrosoftEquationFieldCommand();
-		
-	}
     StopTextStyle();
-	if (displayEquation) 
-		PutLitStr("\n$$\n");
-	else
-		PutLitChar('$');
+    
+	if (insideEquation == 1) {
+		if (displayEquation) {
+			PutLitStr("\n$$\n");
+			EndParagraph();
+			NewParagraph();
+			nowBetweenParagraphs = 1;
+		} else
+			PutLitChar('$');
+	}
 		
 	insideEquation--;
 			
@@ -4373,12 +4407,27 @@ static void ControlClass(void)
     case rtfShapeAttr:
         ShapeAttr();
         break;
+    case rtfEquationFieldCmd:
+        MicrosoftEQFieldCommand();
+        break;
+    case rtfEquationFieldLiteral:
+        MicrosoftEQFieldLiteral();
+        break;
     }
 
     /* handles {\*\keyword ...} */
 //  if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
 //      RTFSkipGroup();
 
+}
+
+/* needed to handle groups in math environment */
+static void GroupClass(void)
+{
+    if (!insideEquation) return;
+//    ExamineToken("Group");
+    if (rtfMajor == rtfEndGroup) 
+    	StopTextStyle();
 }
 
 /*
@@ -4437,6 +4486,7 @@ int BeginLaTeXFile(void)
     /* install class callbacks */
     RTFSetClassCallback(rtfText, TextClass);
     RTFSetClassCallback(rtfControl, ControlClass);
+    RTFSetClassCallback(rtfGroup, GroupClass);
 
     /* install destination callbacks */
     RTFSetDestinationCallback(rtfObjWid, ReadObjWidth);

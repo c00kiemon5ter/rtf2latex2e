@@ -429,6 +429,28 @@ int RTFExecuteToToken(int class, int major, int minor)
     return RTFToToken(class, major, minor, EXECUTE);
 }
 
+void RTFExecuteParentheses(void)
+{
+    short level = RTFGetBraceLevel();
+    int parens = 1;
+
+    if (level==0) {fprintf(stderr,"trying to execute parens at braceLevel 0??\n"); return;}
+
+    while (RTFGetToken() != rtfEOF) {
+
+    	if (rtfClass == rtfText) {
+    		if (rtfMajor == '(') parens++;
+    		if (rtfMajor == ')') parens--;
+    	}
+    	
+        if (parens == 0) return;
+
+        if (RTFGetBraceLevel() < level) return;
+
+        RTFRouteToken();
+    }
+}
+
 /* 
  * return the next (non-space) word delimited by whitespace
  */
@@ -851,9 +873,10 @@ static void _RTFGetToken2(void)
 
     if (!isalpha(c)) {
         /*
-         * Three possibilities here:
+         * Four possibilities here:
          * 1) hex encoded text char, e.g., \'d5, \'d3
-         * 2) special escaped text char, e.g., \{, \}
+         * 2) in word EQ field, e.g, \\a, \\b, \\f ...
+         * 3) special escaped text char, e.g., \{, \}
          * 3) control symbol, e.g., \_, \-, \|, \<10>
          */
         if (c == '\'') {        /* hex char */
@@ -866,6 +889,25 @@ static void _RTFGetToken2(void)
                 return;
             }
             /* early eof, whoops (class is rtfUnknown) */
+            return;
+        }
+
+        if (insideEquation && c == '\\') {
+            rtfClass = rtfControl;
+
+    		rtfMinor = GetChar();
+			if (rtfMinor == '\\') {  /* this handles \\\{ and the like */
+    			rtfMinor = GetChar();
+				rtfMajor = rtfEquationFieldLiteral;
+				return;
+			}
+
+            rtfMajor = rtfEquationFieldCmd;
+
+			/* special escaping for characters not used as syntax */
+			if (rtfMinor == ',' || rtfMinor == '(' || rtfMinor == ')' || 
+			                       rtfMajor == '[' || rtfMajor == ']')
+            	rtfMajor = rtfEquationFieldLiteral;
             return;
         }
 
