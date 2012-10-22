@@ -3847,23 +3847,7 @@ static void ReadPageRefField(void)
 /*
  *  Try to convert Microsoft Equation Field to latex.  The problem is that we
  *  now have rtf tokens mixed with the stupid field tokens.  I hacked the parser
- *  to handle read \\X in an equation and send it to HandleMicrosoftFieldCommand.
- *  For example 
- *  \\i( {\i a}, {\i b}, {\i x dx}) should become \int_a^b x dx
- *  I certainly want to leverage the current rtf token handling mechanism, but
- *  somehow the following EQ commands need to be handled and special care needs
- *  to be taken of the equation grouping commands '(' and ',' and ')'
- *
- *  Array switch: \a()
- *  Bracket: \b()
- *  Displace: \d()
- *  Fraction: \f(,)
- *  Integral: \i(,,)
- *  List: \l()
- *  Overstrike: \o()
- *  Radical: \r(,)
- *  Superscript or Subscript: \s()
- *  Box: \x()
+ *  to handle read \\X in an equation and send it to MicrosoftEQFieldCommand.
  */
  
 static void ReadEquationField(void)
@@ -3871,9 +3855,11 @@ static void ReadEquationField(void)
     int parenCount = 0;
     int braceCount = 0;
 	int displayEquation = 0;
+	int oldSuppressLineBreak;
 	
 	if (insideEquation == 0) {
 		if (nowBetweenParagraphs) {
+			EndParagraph();
 			NewParagraph();
 			PutLitStr("\n$$\n");
 			displayEquation=1;
@@ -3881,28 +3867,26 @@ static void ReadEquationField(void)
 			StopTextStyle();
 			PutLitChar('$');
 		}
+		oldSuppressLineBreak = suppressLineBreak;
+		suppressLineBreak = 1;
 	}
-	suppressLineBreak = 1;
-		
+	
 	insideEquation++;
-
     RTFExecuteGroup();
-
-    StopTextStyle();
+    SkipFieldResult();
+	insideEquation--;		
     
-	if (insideEquation == 1) {
+	if (insideEquation == 0) {
 		if (displayEquation) {
 			PutLitStr("\n$$\n");
 			EndParagraph();
-			NewParagraph();
-			nowBetweenParagraphs = 1;
-		} else
+		} else {
+		    StopTextStyle();
 			PutLitChar('$');
+		}
+		suppressLineBreak = oldSuppressLineBreak;
 	}
 		
-	insideEquation--;
-			
-    SkipFieldResult();
 }
 
 /*
