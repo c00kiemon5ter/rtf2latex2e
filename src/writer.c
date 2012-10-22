@@ -624,21 +624,29 @@ static void WriteTextStyle(void)
         textStyleWritten.fontSize=textStyle.fontSize;
     }
 
-    if (textStyleWritten.mathRoman != textStyle.mathRoman && insideEquation) {
+    if (textStyleWritten.mathRoman != textStyle.mathRoman) {
         if (textStyle.mathRoman)
             PutLitStr("\\mathrm{");
         textStyleWritten.mathRoman=textStyle.mathRoman;
     }
 
-    if (textStyleWritten.superScript != textStyle.superScript && !insideEquation) {
-        if (textStyle.superScript)
-            PutLitStr("\\textsuperscript{");
+    if (textStyleWritten.superScript != textStyle.superScript) {
+        if (textStyle.superScript) {
+        	if (insideEquation)
+            	PutLitStr("^{");
+        	else
+            	PutLitStr("\\textsuperscript{");
+        }
         textStyleWritten.superScript=textStyle.superScript;
     }
 
-    if (textStyleWritten.subScript != textStyle.subScript && !insideEquation) {
-        if (textStyle.subScript)
-            PutLitStr("\\textsubscript{");
+    if (textStyleWritten.subScript != textStyle.subScript) {
+        if (textStyle.subScript) {
+        	if (insideEquation)
+            	PutLitStr("_{");
+        	else
+            	PutLitStr("\\textsubscript{");
+        }
         textStyleWritten.subScript=textStyle.subScript;
         requireFixLtx2ePackage = true;
     }
@@ -725,12 +733,23 @@ static void SetTextStyle(void)
 
 	if (insideEquation) {
 		switch (rtfMinor) {
-			case rtfPlain:
-				textStyle.mathRoman = (rtfParam) ? true : false;
-				break;
-			case rtfBold:
-				textStyle.bold = (rtfParam) ? true : false;
-				break;
+		case rtfPlain:
+			InitTextStyle();
+			textStyle.mathRoman = (rtfParam) ? true : false;
+			break;
+		case rtfBold:
+			textStyle.bold = (rtfParam) ? true : false;
+			break;
+		case rtfSubScrShrink:
+		case rtfSubScript:
+			textStyle.subScript = (rtfParam) ? true : false;
+			textStyle.superScript = false;
+			break;
+		case rtfSuperScrShrink:
+		case rtfSuperScript:
+			textStyle.superScript = (rtfParam) ? true : false;
+			textStyle.subScript = false;
+			break;
 		}
 		return;
 	}
@@ -3867,6 +3886,8 @@ static void ReadEquationField(void)
 			StopTextStyle();
 			PutLitChar('$');
 		}
+		RTFPushStack();
+		InitTextStyle();
 		oldSuppressLineBreak = suppressLineBreak;
 		suppressLineBreak = 1;
 	}
@@ -3885,6 +3906,7 @@ static void ReadEquationField(void)
 			PutLitChar('$');
 		}
 		suppressLineBreak = oldSuppressLineBreak;
+		RTFPopStack();
 	}
 		
 }
