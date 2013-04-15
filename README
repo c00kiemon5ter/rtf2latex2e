@@ -1,9 +1,12 @@
+Release 2-2-2 adds conversion of Word's EQ fields
+and fixes the missing -lm flag in the gcc compiler call in Makefile
+
 This is rtf2latex2e version 2.2 that
 
  1. detects text style: bold, italic, color, big, small,...
  2. reads embedded figures: PICT, EMF, GIF, TIFF, WMF, PNG, JPEG
  3. reads tables: simple to semi-complex
- 4. equations: converts embedded MathType equations
+ 4. equations: converts embedded MathType equations and EQ fields
  5. symbols: converts most greek and math symbols
  6. reads footnotes (not in tables yet)
  7. translates hyperlinks using the hyperref package

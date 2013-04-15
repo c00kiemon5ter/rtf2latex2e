@@ -750,6 +750,10 @@ static void SetTextStyle(void)
 			textStyle.superScript = (rtfParam) ? true : false;
 			textStyle.subScript = false;
 			break;
+		case rtfNoSuperSub:
+			textStyle.superScript = false;
+			textStyle.subScript = false;
+			break;
 		}
 		return;
 	}
@@ -822,6 +826,10 @@ static void SetTextStyle(void)
     case rtfDeleted:
         RTFSkipGroup();
         break;
+	case rtfNoSuperSub:
+		textStyle.superScript = false;
+		textStyle.subScript = false;
+		break;
     }
 }
 
@@ -886,6 +894,10 @@ static void CellInitialize(cellStruct *cell)
     cell->bottomBorder     = table.limboCellBottomBorder;
 }
 
+static void CellPrint(cellStruct *cell)
+{
+    fprintf(stderr,"index=%d, originalRight=%d, row=%d, col=%d\n", cell->index, cell->originalRight, cell->row, cell->col);
+}
 /*
  * This function searches the cell list by cell index
  * returns NULL if not found
@@ -1166,6 +1178,7 @@ static void EndParagraph(void)
 static void NewCell(void)
 {
     char buf[rtfBufSiz];
+//    fprintf(stderr,"New Cell\n");
     cellStruct *cell = CellGetByIndex(table.cellCount);
 
     if (cell->col != 0) PutLitStr(" & ");
@@ -1220,6 +1233,7 @@ static void EndCell(void)
     nowBetweenCells = true;
     FinalizeParagraph();
 //  StopTextStyle();
+
     cell = CellGetByIndex(table.cellCount);
 
 //  if (cell->verticalMerge == mergeTop)
@@ -1589,6 +1603,7 @@ static void DoTableAttr(void)
 {
 cellStruct *cell;
 
+//ExamineToken("DoTableAttr");
     switch (rtfMinor) {
     case rtfRowLeftEdge:
         table.leftEdge = rtfParam;
@@ -1646,6 +1661,7 @@ static void InheritTableRowSettings(void)
 
     (table.cellsInRow)[prevRow + 1] = (table.cellsInRow)[prevRow];
 
+    fprintf(stderr,"InheritTableRowSettings()\n");
     for (i = 0; i < cellsInPrevRow; i++) {
         cell = CellGetByPosition(prevRow, i);
         newCell = CellAllocate();
@@ -1761,7 +1777,7 @@ static void PrescanTable(void)
             if (RTFCheckMM(rtfSpecialChar, rtfRow))
                 break;
 
-            if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
+            if (RTFCheckCMM(rtfControl, rtfTblAttr, rtfRowDef)) {
                 gatherCellInfo=false;
                 continue;
             }
@@ -1876,7 +1892,7 @@ static void PrescanTable(void)
      */
     maxCol = 0;
 
-    for (i = 0; i < table.cellCount; i++) {
+	for (i = 0; i < table.cellCount; i++) {
         cell = CellGetByIndex(i);
 
         cell->columnSpan = GetColumnSpan(cell);
@@ -2307,8 +2323,11 @@ static int ReadHexPair(void)
         RTFGetToken();
     while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
 
+    fprintf(stderr, "%c", rtfTextBuf[0]);
+
     if (!ishex(rtfTextBuf[0])) {
         fprintf(stderr, "oddness encountered in hex data\n");
+        fprintf(stderr, "bad character is %c %i\n", rtfTextBuf[0],rtfTextBuf[0]);
         return -1;
     }
 
@@ -2318,8 +2337,11 @@ static int ReadHexPair(void)
         RTFGetToken();
     while (rtfTextBuf[0] == 0x0a || rtfTextBuf[0] == 0x0d);
 
+        fprintf(stderr, "%c", rtfTextBuf[0]);
+
     if (!ishex(rtfTextBuf[0])) {
         fprintf(stderr, "oddness encountered in hex data\n");
+        fprintf(stderr, "bad character is %c %i\n", rtfTextBuf[0],rtfTextBuf[0]);
         return -1;
     }
 
@@ -2388,6 +2410,7 @@ static void WritePICTHeader(FILE * pictureFile)
 {
     int i, h[12];
 
+	fprintf(stderr, "WritePICTHeader\n");
     /* check for possibility of pre-existing 512 byte header */
     for (i=0; i<12; i++) 
         h[i]=ReadHexPair();
@@ -2984,10 +3007,13 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     uint8_t hexEvenOdd = 0;       /* should be even at the end */
 
     if (type == EquationClass) {
+		fprintf(stderr, "ReadObjectData (equation)\n");
         (oleEquation.count)++;
         snprintf(dummyBuf, 20, "-eqn%03d.eqn", oleEquation.count);
-    } else
+    } else {
+		fprintf(stderr, "ReadObjectData (object)\n");
         snprintf(dummyBuf, 20, ".obj");
+    }
 
     /* construct full path of file name (without .tex) */
     strcpy(objectFileName, RTFGetOutputName());
@@ -3011,14 +3037,18 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
  * 01000100 02000000 0f000000 4571756174696f6e2e44534d543400 00000000 00000000 000e0000
 */
     /* skip three ints of 4 hex pairs each */
-    for (i=0; i<12; i++)  ReadHexPair();
+    for (i=0; i<12; i++)  {
+       value = ReadHexPair();
+       fprintf(stderr,"%0x", value);
+    }
+  fprintf(stderr,"\n");
 
     /* skip the 00 hex-terminated string */
     do {
         value = ReadHexPair();
-//      fprintf(stderr,"%c", value);
+        fprintf(stderr,"%0x", value);
     } while (value>0);
-//  fprintf(stderr,"\n");
+  fprintf(stderr,"\n");
 
     if (value==-1) {
         RTFMsg("* OLE object does not have proper header\n");
@@ -3204,6 +3234,7 @@ boolean ConvertEquationFile(char *objectFileName)
         EqNo=NULL;
 
         if (insideTable) {
+/*            fprintf(stderr,"ConvertEquationFile()\n");*/
             if (nowBetweenCells) NewCell();
         } else if (nowBetweenParagraphs) {
             theEquation->m_inline = 0;
@@ -3652,6 +3683,11 @@ static void ReadUnicode(void)
         return;
     }
 
+    if (thechar == 8232) {  /* Unicode line separator */
+		InsertNewLine();
+        return;
+    }
+
 	if (thechar == 64256) {
 		PutLitStr("ff");
 		return;
@@ -3674,6 +3710,11 @@ static void ReadUnicode(void)
 
 	if (thechar == 64260) {
 		PutLitStr("ffl");
+		return;
+	}
+
+	if (thechar == 65533) {
+		PutLitStr("[Unknown Char]");
 		return;
 	}
 	

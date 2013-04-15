@@ -1,3 +1,54 @@
+r286 | prahl | 2013-04-09
+some fixes
+
+r285 | prahl | 2012-10-30
+adding .gitignore
+
+r284 | prahl | 2012-10-22
+minor tweaks to EQ fields
+
+r283 | prahl | 2012-10-22
+fix paragraph bug
+
+r282 | prahl | 2012-10-22
+more or less working EQ conversion
+
+r281 | prahl | 2012-10-22
+add RTFGetNonWhiteSpaceToken()()
+
+r280 | prahl | 2012-10-16
+support EQ braces
+
+r279 | prahl | 2012-10-15
+support for EQ fractions
+
+r278 | prahl | 2012-10-15
+support for sub and superscripts
+
+r277 | prahl | 2012-10-15
+first step towards supporting Word EQ commands
+
+r276 | prahl | 2012-10-07
+redefine roundf
+
+r275 | prahl | 2012-08-16
+fix parsing of unicode token followed by \'00
+
+r274 | prahl | 2012-08-16
+build fix for linux, inlucd math library when linking
+
+r273 | whennings | 2012-07-05
+updated emf2pdf.bat to allow blanks in folder names
+
+r272 | whennings | 2012-06-29
+updated documentation, Makefile, writer.c for the Windows version 2-2-1
+
+r271 | prahl | 2012-06-29
+remove russian-short.tex from makefile
+
+r270 | prahl | 2012-06-29
+final ChangeLog update before 2.2.1
+
 r269 | prahl | 2012-06-28
 patch future tag to fail better
 
