@@ -1591,7 +1591,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
 
     } else if (*math_attr == MA_FORCE_TEXT) {
         setMathMode(eqn, EQN_MODE_TEXT);
-	}
+    }
     if (!ztex && set_atts.use_codepoint) {
         if (thechar->character >= 32 && thechar->character <= 127) {
             zch = (char) thechar->character;
@@ -1605,6 +1605,23 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
                 ztex = (char *) malloc(strlen(buff) + 1);
                 strcpy(ztex, buff);
             }
+        } else { //Поддержка Unicode в формулах MathType
+            //Здесь начинается грандиозный костыль для русских букв в формулах
+            //Code which handles Russian letters in formulas starts here
+            //Скорее всего, вместо русской буквы должна была быть латинская, но девочка-секретарша,
+            //гордая знанием проклятого проприетарного матхтайпа, не обратила на это внимания.
+            //Probably the Russian letter was confused with Latin one
+            char* sequence;
+            switch((unsigned int)thechar->character){
+            case 0x0410: sequence="A"; break;
+            case 0x0412: sequence="B"; break;
+            case 0x0421: sequence="C"; break;
+            default:
+                sequence="\\mbox{^^d0^^%x}";
+            }
+            snprintf(buff,20,sequence, (thechar->character)%256 + 128);
+            ztex = (char *) malloc(strlen(buff) + 1);
+            strcpy(ztex, buff);
         }
     }
 
