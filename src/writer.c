@@ -172,7 +172,7 @@ void ExamineToken(char * tag)
         else if (rtfMajor == 0x0D)
             printf(" raw= CR \n");
         else
-            printf(" raw='%c' \n", rtfMajor);        
+            printf(" raw='%c' \n", rtfMajor);
     } else if (rtfClass == rtfGroup) {
         printf(" (%s)\n", rtfMajor? "rtfEndGroup" : "rtfBeginGroup");
     } else {
@@ -264,7 +264,7 @@ static void PutIntAsUtf8(int x)
 
 }
 
-/* 
+/*
  * Some environments fail if there is a blank line in
  * the argument ... e.g., \section{} will set suppressLineBreak
  * so, in this case, make sure that there is at least one char
@@ -275,7 +275,7 @@ static void PutIntAsUtf8(int x)
  * Furthermore, make sure that at most two '\n' are output
  * to the latex file at a time just for esthetic reasons.
  *
- * Finally, reset wrapCount to zero every time a '\n' is 
+ * Finally, reset wrapCount to zero every time a '\n' is
  * written to the LaTeX file so that WrapText() below can
  * work properly
  */
@@ -381,7 +381,7 @@ static void DefineColors(int ignoreUsedColors)
         Green = rtfColorPtr->rtfCGreen / 255.0;
         Blue = rtfColorPtr->rtfCBlue / 255.0;
 
-        if (Red==0 && Green==0 && Blue==0) 
+        if (Red==0 && Green==0 && Blue==0)
             blackColor = i;
 
         if (ignoreUsedColors || (!ignoreUsedColors && UsedColor[i])) {
@@ -705,9 +705,9 @@ static void WriteTextStyle(void)
 
 /*
  * This handles font changing
- * 
+ *
  * When switching fonts like Times -> Helvetica
- *  
+ *
  *   (1) the style might change from roman to sans serif
  *   (2) the character code translation may change because
  *       the font is encoded with a different codepage
@@ -779,12 +779,12 @@ static void SetTextStyle(void)
         break;
     case rtfNoUnderline:
         textStyle.underlined = false;
-        break;    
+        break;
     case rtfDbUnderline:
         textStyle.dbUnderlined = (rtfParam) ? true : false;
         break;
     case rtfForeColor:
-        if (rtfParam == blackColor) 
+        if (rtfParam == blackColor)
             textStyle.foreColor = 0;
         else
             textStyle.foreColor = rtfParam;
@@ -921,7 +921,7 @@ static cellStruct *CellGetByIndex(int cellNum)
 }
 
 /*
- * This function returns the cell from the current table 
+ * This function returns the cell from the current table
  * for the specified row and column
  */
 static cellStruct *CellGetByPosition(int therow, int thecol)
@@ -950,8 +950,8 @@ static int CellWidth(cellStruct *cell)
 
 /*
  * Given a cell in the first row of a multirow cell, count the number
- * of cells below that should be merged vertically 
- * 
+ * of cells below that should be merged vertically
+ *
  * unused at the moment
 
 static int rowsInMultirow(cellStruct * cell)
@@ -967,7 +967,7 @@ static int rowsInMultirow(cellStruct * cell)
  *
  * Counts the number of rows to be merged vertically for the
  * current column and writes the corresponding \multirow statement.
- * 
+ *
  * not used at the moment ... still needs work
  *
 static void CellMultirow(cellStruct * cell)
@@ -979,7 +979,7 @@ static void CellMultirow(cellStruct * cell)
 
     if (rows < 2) return;
 
-    if (prefs[pConvertTableAlignment] && paragraph.alignment != left) 
+    if (prefs[pConvertTableAlignment] && paragraph.alignment != left)
         snprintf(buf, rtfBufSiz, "\\multirow{%d}{*}{%s{}", rows, justificationList[paragraph.alignment]);
     else
         snprintf(buf, rtfBufSiz, "\\multirow{%d}{*}{ ", rows);
@@ -1030,7 +1030,7 @@ static void NewParagraph(void)
         return;
     }
 
-//    if ((!insideTable && prefs[pConvertParagraphAlignment]) || 
+//    if ((!insideTable && prefs[pConvertParagraphAlignment]) ||
 //        ( insideTable && prefs[pConvertTableAlignment]    )) {
     if (!insideTable && prefs[pConvertParagraphAlignment]) {
         if (paragraphWritten.alignment != paragraph.alignment) {
@@ -1085,7 +1085,7 @@ static void EndSection(void)
 }
 
 
-/* 
+/*
  * This routine just closes the environments that have been written
  */
 
@@ -1106,7 +1106,7 @@ static void FinalizeParagraph(void)
         return;
     }
 
-//    if ( (!insideTable && paragraphWritten.alignment != paragraph.alignment) || 
+//    if ( (!insideTable && paragraphWritten.alignment != paragraph.alignment) ||
 //         (insideTable && prefs[pConvertTableAlignment] && nowBetweenCells)) {
 
     if (insideTable && prefs[pConvertTableAlignment] ) {
@@ -1143,7 +1143,7 @@ static void FinalizeParagraph(void)
     insideEquation = false;
 }
 
-/* 
+/*
  * Closes last paragraph and insert some line feeds.
  */
 
@@ -1192,13 +1192,13 @@ static void NewCell(void)
 
     } else {
 
-        if (cell->col == 0) 
+        if (cell->col == 0)
             snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{|p{%dpt}|}{", cell->columnSpan, CellWidth(cell));
         else
             snprintf(buf, rtfBufSiz, "\\multicolumn{%d}{p{%dpt}|}{",  cell->columnSpan, CellWidth(cell));
         PutLitStr(buf);
 
-        if (prefs[pConvertTableAlignment]) {   
+        if (prefs[pConvertTableAlignment]) {
             if (paragraph.alignment!=left){
                 snprintf(buf,rtfBufSiz, "%s ", justificationList[paragraph.alignment]);
                 PutLitStr(buf);
@@ -1206,7 +1206,7 @@ static void NewCell(void)
             InsertNewLine();
         }
 
-    } 
+    }
 
 //    if (cell->verticalMerge == mergeTop)
 //        CellMultirow(cell);
@@ -1227,7 +1227,7 @@ static void EndCell(void)
 
     if (nowBetweenCells) {
         if (g_debug_table_writing) fprintf(stderr,"* cell #%d is empty\n", table.cellCount);
-        NewCell();  
+        NewCell();
     }
 
     nowBetweenCells = true;
@@ -1242,7 +1242,7 @@ static void EndCell(void)
 //    if (prefs[pConvertTableAlignment])
 //      PutLitStr("\\end{minipage}");
 
-    if (cell->columnSpan > 1) 
+    if (cell->columnSpan > 1)
         PutLitChar('}');
 
     (table.cellCount)++;
@@ -1253,7 +1253,7 @@ static void EndCell(void)
 
 static void setPreamblePackages(int ignoreUsedColor)
 {
-    if (!preamblePackages) 
+    if (!preamblePackages)
         preamblePackages = malloc(1024);
 
     preamblePackages[0] = '\0';
@@ -1297,7 +1297,7 @@ static void setPreamblePackages(int ignoreUsedColor)
         int i=0;
         int needPackage=false;
 
-        for (i=0; i<256; i++) 
+        for (i=0; i<256; i++)
             if (UsedColor[i]) needPackage = true;
 
         if (ignoreUsedColor || (!ignoreUsedColor && needPackage))
@@ -1353,7 +1353,7 @@ static void MicrosoftEQFieldLiteral(void)
 }
 
 /*
- *  Convert Microsoft Equation Command to LaTeX.  The parser should call 
+ *  Convert Microsoft Equation Command to LaTeX.  The parser should call
  *  this routine when something like \\s is encountered within a EQ field.
  *
  *  Array switch: \\a()
@@ -1362,7 +1362,7 @@ static void MicrosoftEQFieldLiteral(void)
  *  Integral: \\i(,,)
  *  Radical: \\r(,)
  *  Superscript or Subscript: \\s()
- *  
+ *
  *  Displace: \\d()    not done
  *  List: \\l()        not done
  *  Overstrike: \\o()  not done
@@ -1370,7 +1370,7 @@ static void MicrosoftEQFieldLiteral(void)
  */
 
 static void MicrosoftEQFieldCommand(void)
-{	
+{
 	/* subscript/superscript  \\s\\up8(UB)\\s\\do8(2)  */
 	if (rtfMinor == 's' || rtfMinor == 'S') {
 //		ExamineToken("EQ Subscript");
@@ -1383,8 +1383,8 @@ static void MicrosoftEQFieldCommand(void)
 		RTFExecuteToToken(rtfText,')',10);
 		PutLitChar('}');
 		return;
-	}	
-	
+	}
+
 	/* integrals \\i \\su(1,5,3) */
 	if (rtfMinor == 'i' || rtfMinor == 'I') {
 //		ExamineToken("EQ Integral");
@@ -1401,7 +1401,7 @@ static void MicrosoftEQFieldCommand(void)
 		RTFExecuteToToken(rtfText,')',10);
 		PutLitChar('}');
 		return;
-	}	
+	}
 
 	/* fractions \\f(2,RateChange) */
 	if (rtfMinor == 'f' || rtfMinor == 'F') {
@@ -1414,8 +1414,8 @@ static void MicrosoftEQFieldCommand(void)
 		RTFExecuteParentheses();
 		PutLitChar('}');
 		return;
-	}	
-	
+	}
+
 	/* roots \\r(3,x) */
 	if (rtfMinor == 'r' || rtfMinor == 'R') {
 //		ExamineToken("EQ Root");
@@ -1427,13 +1427,13 @@ static void MicrosoftEQFieldCommand(void)
 		RTFExecuteParentheses();
 		PutLitChar('}');
 		return;
-	}	
-	
+	}
+
 	/* braces \\b \\bc\\{ (\\r(3,x))  */
 	if (rtfMinor == 'b' || rtfMinor == 'B') {
 		char open = '(';
 		char close = ')';
-		
+
 //		ExamineToken("EQ Brace");
 		RTFGetNonWhiteSpaceToken();
 
@@ -1441,8 +1441,8 @@ static void MicrosoftEQFieldCommand(void)
 		while (rtfMajor == rtfEquationFieldCmd) {
 			char type = rtfMinor;
 			RTFGetToken(); /* get and discard 'c' */
-			RTFGetToken(); 
-			
+			RTFGetToken();
+
 			if (type == 'l') open = rtfMinor;
 			if (type == 'r') close = rtfMinor;
 			if (type == 'b') {
@@ -1454,17 +1454,17 @@ static void MicrosoftEQFieldCommand(void)
 				case '(': close = ')'; break;
 				default: close = open;
 				}
-			}	
+			}
 			RTFGetNonWhiteSpaceToken();
 		}
-		
+
 		if (rtfMajor != '(') RTFSkipToToken(rtfText,'(',9);
 		PutLitStr("\\left");
 		if (open=='{') PutLitChar('\\');
 		PutLitChar(open);
-		
+
 		RTFExecuteParentheses();
-		
+
 		PutLitStr("\\right");
 		if (close=='}') PutLitChar('\\');
 		PutLitChar(close);
@@ -1492,28 +1492,28 @@ static void MicrosoftEQFieldCommand(void)
 			}
 			RTFGetNonWhiteSpaceToken();
 		}
-		
+
 		PutLitStr("\\begin{array}{");
 		for (i=0; i<columns; i++) {PutLitChar(align);}
 		PutLitStr("}\n");
-		
+
 		RTFGetToken();
 		while (rtfMajor != ')') {
-			if (rtfMajor != ',') 
+			if (rtfMajor != ',')
 				RTFRouteToken();
 			else {
 				elements++;
-				if (elements % columns == 0) 
+				if (elements % columns == 0)
 					PutLitStr("\\\\\n");
 				else
 					PutLitStr(" & ");
 			}
 			RTFGetToken();
-		}	
+		}
 		PutLitStr("\n\\end{array}");
 		return;
 	}
-	
+
 }
 
 static void PrepareForChar(void)
@@ -1572,8 +1572,8 @@ static void TextClass(void)
     WrapText();
 }
 
-/* 
- * Put a footnote wrapper around whatever is inside the footnote. 
+/*
+ * Put a footnote wrapper around whatever is inside the footnote.
  */
 static void ReadFootnote(void)
 {
@@ -1593,9 +1593,9 @@ static void ReadFootnote(void)
     insideFootnote = false;
 }
 
-/* <celldef> = (\clmgf? & \clmrg? & \clvmgf? & \clvmrg? <celldgu>? & <celldgl>? & 
-               <cellalign>? & <celltop>? & <cellleft>? & <cellbot>? & <cellright>? & 
-               <cellshad>? & <cellflow>? & clFitText? & clNoWrap? & <cellwidth>? <cellrev>? & 
+/* <celldef> = (\clmgf? & \clmrg? & \clvmgf? & \clvmrg? <celldgu>? & <celldgl>? &
+               <cellalign>? & <celltop>? & <cellleft>? & <cellbot>? & <cellright>? &
+               <cellshad>? & <cellflow>? & clFitText? & clNoWrap? & <cellwidth>? <cellrev>? &
                <cellins>? & <celldel>? & <cellpad>? & <cellsp>?) \cellxN
 */
 
@@ -1719,7 +1719,7 @@ static int GetColumnSpan(cellStruct * cell)
  * counts how many rows there are in the table and the number of cells in each row.
  * In addition, it calculates the cell widths and builds an array of column borders.
  * The latter is useful in figuring out whether a cell spans
- * multiple columns. 
+ * multiple columns.
  *
  * Finally, it turns out that to support vertically merged cells, the
  * contents of each cell need to also be collected.  This has yet to be
@@ -1745,8 +1745,8 @@ static void PrescanTable(void)
      * Scan the whole table.  First, gather the cell layout information and then
      * check to see if another row of the table exists.  repeat until no more rows
      * are found.  The overall structure is
-     * 
-     * <row>     = (<tbldef> <cell>+ <tbldef> \row) | (<tbldef> <cell>+ \row) | (<cell>+ <tbldef> \row) 
+     *
+     * <row>     = (<tbldef> <cell>+ <tbldef> \row) | (<tbldef> <cell>+ \row) | (<cell>+ <tbldef> \row)
      * <cell>    = (<nestrow>? <tbldef>?) & <textpar>+ \cell
      * <tbldef>  = \trowd \irowN  ... <celldef>+
      * <celldef> = ... \cellxN
@@ -1758,11 +1758,11 @@ static void PrescanTable(void)
         if (0 && g_debug_table_prescan) fprintf(stderr,"*********** starting row %d\n", table.rows);
 
         /* Gather cell layout information ... the three possible token streams are:
-         * 
+         *
          *  1) \trowd .... \cellxN ... \cellxM ... \trowd ... \cellxN ... \cellxM ...\row
          *  2) \trowd .... \cellxN ... \cellxM ...\row
          *  3)        .... \cellxN ... \cellxM ...\row
-         */    
+         */
 
         if (RTFCheckMM(rtfTblAttr, rtfRowDef)) {
             gatherCellInfo = true;
@@ -1792,8 +1792,8 @@ static void PrescanTable(void)
             }
 
             if (RTFCheckMM(rtfSpecialChar, rtfOptDest))
-                RTFSkipGroup();   
-        } 
+                RTFSkipGroup();
+        }
 
         if (0 && g_debug_table_prescan) fprintf(stderr,"* reached end of row %d\n", table.rows);
 
@@ -1898,7 +1898,7 @@ static void PrescanTable(void)
         cell->columnSpan = GetColumnSpan(cell);
 
         /* update the column to account for multicolumn cells */
-        if (cell->col > 0) 
+        if (cell->col > 0)
             cell->col = previousCell->col + previousCell->columnSpan;
 
         previousCell = cell;
@@ -1949,7 +1949,7 @@ static void TableWriteRow(void)
         }
 
         /* token that signals last row in table */
-        if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfLastRow)) 
+        if (RTFCheckCMM(rtfControl, rtfSpecialChar, rtfLastRow))
             continue;
 
         /* token that signals the end of the current cell */
@@ -2029,13 +2029,13 @@ static void DoTablePreamble(void)
     PutLitStr("|}\n\\hline\n");
 }
 
-/* 
+/*
  * When we reach a table, we don't know anything about it.  Initially,
  * we need to know the number of columns and width of each column. Later,
  * we need to know if a cell spans multiple columns.  One day, the
  * borders on cells might be used ... but not now.
  *
- * Therefore, we prescan the data and collect information about every 
+ * Therefore, we prescan the data and collect information about every
  * cell into a linked list of cells.  The table structure is filled in
  * with information that describes the table as a whole and a pointer
  * to the linked list of cells.
@@ -2126,7 +2126,7 @@ static void ParAttr(void)
         break;
 
     case rtfStyleNum:
-        if (prefs[pConvertParagraphStyle] && rtfParam < MAX_STYLE_MAPPINGS) 
+        if (prefs[pConvertParagraphStyle] && rtfParam < MAX_STYLE_MAPPINGS)
             paragraph.styleIndex = Style2LatexMapIndex[rtfParam];
         else
             paragraph.styleIndex = -1;
@@ -2242,7 +2242,7 @@ void EndLaTeXFile(void)
     /* now copy the body of the document */
     fseek(ofp, beginDocumentPos, 0);
 
-    while(!feof(ofp)){  
+    while(!feof(ofp)){
         numr = fread(buffer,1,512,ofp);
         fwrite(buffer,1,numr,nfp);
     }
@@ -2348,7 +2348,7 @@ static int ReadHexPair(void)
     return hexNumber + RTFCharToHex(rtfTextBuf[0]);
 }
 
-/* 
+/*
  * Here we create an Aldus Placeable Metafile by including a 22-byte header
  */
 static void WriteWMFHeader(FILE * pictureFile)
@@ -2387,12 +2387,12 @@ static void WriteWMFHeader(FILE * pictureFile)
     wmfhead[12] = (height) % 256;
     wmfhead[13] = (height) / 256;
 
-    /* Normally, the resolution is 1440 twips per inch; however, this number may be changed 
-     * to scale the image. A value of 720 indicates that the image is double its 
-     * normal size, or scaled to a factor of 2:1. A value of 360 indicates a scale of 
-     * 4:1, while a value of 2880 indicates that the image is scaled down in size by 
+    /* Normally, the resolution is 1440 twips per inch; however, this number may be changed
+     * to scale the image. A value of 720 indicates that the image is double its
+     * normal size, or scaled to a factor of 2:1. A value of 360 indicates a scale of
+     * 4:1, while a value of 2880 indicates that the image is scaled down in size by
      * a factor of two. A value of 1440 indicates a 1:1 scale ratio.
-     * 
+     *
      * For now it is left as 1440 0x05A0
      */
 
@@ -2412,17 +2412,17 @@ static void WritePICTHeader(FILE * pictureFile)
 
 	fprintf(stderr, "WritePICTHeader\n");
     /* check for possibility of pre-existing 512 byte header */
-    for (i=0; i<12; i++) 
+    for (i=0; i<12; i++)
         h[i]=ReadHexPair();
-    
+
     /* magic numbers for version 1 and version 2 pict files */
     if ( (h[10]==0x11 && h[11]==0x01) || (h[10]==0x00 && h[11]==0x11) )  {
 	    for (i = 0; i < 512; i++)
 	        fputc(' ', pictureFile);
     }
-    
+
     /* write out the header information */
-    for (i=0; i<12; i++) 
+    for (i=0; i<12; i++)
         fputc(h[i], pictureFile);
 }
 
@@ -2433,7 +2433,7 @@ static char * NewFigureName(char *fileSuffix)
 
     if (fileSuffix && fileSuffix[0] == '.') fileSuffix++;
 
-    /* get input file name and create corresponding picture file name */    
+    /* get input file name and create corresponding picture file name */
     name = strdup(RTFGetOutputName());
     if (strlen(name) > 4)
         name[strlen(name)-4] = '\0';
@@ -2467,9 +2467,9 @@ static void ConvertHexPicture(char *fileSuffix)
         RTFPanic("Cannot open input file %s\n", picture.name);
 
     /* write appropriate header */
-    if (picture.type== pict) 
+    if (picture.type== pict)
         WritePICTHeader(pictureFile);
-    
+
     if (picture.type== wmf)
         WriteWMFHeader(pictureFile);
 
@@ -2512,7 +2512,7 @@ static void ConvertHexPicture(char *fileSuffix)
              picture.name);
 }
 
-/* 
+/*
  * Write appropriate commands to include the picture
  */
 static void IncludeGraphics(char *pictureType)
@@ -2528,7 +2528,7 @@ static void IncludeGraphics(char *pictureType)
     static unoconv_exists = -1;
 
     /* it seems that when cropping is -4319 or -6084 the picture is empty */
-    if (picture.cropTop<-1000) {  
+    if (picture.cropTop<-1000) {
         unlink(picture.name);
     	(picture.count)--;  /* decrement the picture counter to keep figures sequential*/
     	return;
@@ -2537,25 +2537,25 @@ static void IncludeGraphics(char *pictureType)
 #ifdef UNIX
 	if (pict2pdf_exists == -1 && strcmp(pictureType, "pict") == 0)
        pict2pdf_exists = system("command -v pict2pdf") ? 0 : 1;
-    
+
 	if (unoconv_exists == -1 && (strcmp(pictureType, "wmf") == 0 || strcmp(pictureType, "emf") == 0))
        unoconv_exists = system("command -v unoconv") ? 0 : 1;
-		
+
     if (strcmp(pictureType, "pict") == 0 && pict2pdf_exists == 1) {
 		snprintf(dummyBuf, rtfBufSiz, "pict2pdf '%s' ", picture.name);
-		fprintf(stderr, ">> %s\n", dummyBuf);   
+		fprintf(stderr, ">> %s\n", dummyBuf);
 		if (!system(dummyBuf)) {
 //                unlink(picture.name);
 			strcpy(strrchr(picture.name,'.')+1, "pdf");
 			pictConverted = 1;
-		} 
+		}
     }
 
-	if (unoconv_exists == 1 && (strcmp(pictureType, "wmf") == 0 || 
-	                            strcmp(pictureType, "emf") == 0 || 
+	if (unoconv_exists == 1 && (strcmp(pictureType, "wmf") == 0 ||
+	                            strcmp(pictureType, "emf") == 0 ||
 	                            (!pictConverted && strcmp(pictureType, "pict") == 0))) {
 		snprintf(dummyBuf, rtfBufSiz, "unoconv -f pdf '%s' ", picture.name);
-		fprintf(stderr, ">> %s\n", dummyBuf);   
+		fprintf(stderr, ">> %s\n", dummyBuf);
 		if (!system(dummyBuf)) {
 //               unlink(picture.name);
 			isOpenOfficePDF = 1;
@@ -2571,7 +2571,7 @@ static void IncludeGraphics(char *pictureType)
             char *pdfname = strdup(picture.name);
             strcpy(pdfname + strlen(pdfname) - 3, "pdf");
 
-            snprintf(dummyBuf, rtfBufSiz, "emf2pdf.bat %s %s", picture.name, pdfname);            
+            snprintf(dummyBuf, rtfBufSiz, "emf2pdf.bat %s %s", picture.name, pdfname);
             err = system(dummyBuf);
 
             if (!err) {
@@ -2586,7 +2586,7 @@ static void IncludeGraphics(char *pictureType)
             char *epsname = strdup(picture.name);
             strcpy(epsname + strlen(epsname) - 3, "eps");
 
-            snprintf(dummyBuf, rtfBufSiz, "emf2pdf.bat %s %s", picture.name, epsname);            
+            snprintf(dummyBuf, rtfBufSiz, "emf2pdf.bat %s %s", picture.name, epsname);
             err = system(dummyBuf);
 
             if (!err) {
@@ -2598,7 +2598,7 @@ static void IncludeGraphics(char *pictureType)
         }
     }
 #endif
-	
+
     /* prefer picwgoal over picw */
     if (picture.goalWidth)
         trueWidth = picture.goalWidth / 20.0;
@@ -2613,7 +2613,7 @@ static void IncludeGraphics(char *pictureType)
 
 	finalWidth  = ROUNDF(trueWidth  * picture.scaleX);
 	finalHeight = ROUNDF(trueHeight * picture.scaleY);
-	
+
     filename = strrchr(picture.name, PATH_SEP);
     if (!filename)
         filename = picture.name;
@@ -2644,10 +2644,10 @@ static void IncludeGraphics(char *pictureType)
 		rm = ROUNDF(612-trueWidth-lm);
 		tm = ROUNDF((792-trueHeight)/2);
 		bm = ROUNDF(792-trueHeight-tm);
-    	snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[trim=%dpt %dpt %dpt %dpt, clip=true, width=%dpt, height=%dpt]{%s}\n", 
+    	snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[trim=%dpt %dpt %dpt %dpt, clip=true, width=%dpt, height=%dpt]{%s}\n",
              lm, tm, rm, bm, finalWidth, finalHeight, filename);
     } else {
-        snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%dpt, height=%dpt, keepaspectratio=true]{%s}\n", 
+        snprintf(dummyBuf, rtfBufSiz, "\n\\includegraphics[width=%dpt, height=%dpt, keepaspectratio=true]{%s}\n",
              finalWidth, finalHeight, filename);
 	}
 
@@ -2762,7 +2762,7 @@ static void CopyFile(char *in_path, char *out_path)
         return;
     }
 
-    while(!feof(in)){  
+    while(!feof(in)){
         numr = fread(buffer,1,512,in);
         fwrite(buffer,1,numr,out);
     }
@@ -2770,9 +2770,9 @@ static void CopyFile(char *in_path, char *out_path)
     fclose(out);
 }
 
-/* 
- * This function reads in a picture 
- * 
+/*
+ * This function reads in a picture
+ *
  * {{\NeXTGraphic build.tiff \width740 \height740 \noorient}¬}
  *
  */
@@ -2811,7 +2811,7 @@ static void ReadNextGraphic(void)
     CopyFile(in_path,out_path);
 
     while (RTFGetToken() != rtfEOF) {
-        if (RTFCheckCM(rtfGroup, rtfEndGroup)) break;       
+        if (RTFCheckCM(rtfGroup, rtfEndGroup)) break;
         if (rtfMinor == rtfNeXTGHeight) height = rtfParam/20;
         if (rtfMinor == rtfNeXTGWidth) width = rtfParam/20;
     }
@@ -2821,7 +2821,7 @@ static void ReadNextGraphic(void)
 
     /* need the local name of the file */
     out_name = strrchr(out_path,PATH_SEP);
-    if (out_name) 
+    if (out_name)
         out_name++;
     else
         out_name = out_path;
@@ -3025,7 +3025,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     if (!objFile)
         RTFPanic("Cannot open input file %s\n", objectFileName);
 
-/* OLE header 
+/* OLE header
  * (uint) version  e.g. 01000100 = 4 hex pairs
  * (uint) format   e.g. 02000000 = 4 hex pairs
  * ( int) type name length (int) e.g. 0f000000 = 4 hex pairs
@@ -3060,7 +3060,7 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
     for (i=0; i<12; i++)  ReadHexPair();
 
     /* read the OLE marker next 8 chars should be d0cf11e0 */
-    for (i=0; i<4; i++) 
+    for (i=0; i<4; i++)
     	m[i]=ReadHexPair();
 
     if (m[0]!=0xd0 || m[1]!=0xcf || m[2]!=0x11 || m[3]!=0xe0) {
@@ -3068,8 +3068,8 @@ static void ReadObjectData(char *objectFileName, int type, int offset)
         fclose(objFile);
         return;
     }
-    
-    for (i=0; i<4; i++) 
+
+    for (i=0; i<4; i++)
     	fputc(m[i], objFile);
 
     /* each byte is encoded as two hex chars ... ff, a1, 4c, ...*/
@@ -3139,7 +3139,7 @@ static char * EqnNumberString(void)
 
         if (rtfClass == rtfText) {
             /* don't stop for spaces */
-            if (isspace(rtfTextBuf[0])) 
+            if (isspace(rtfTextBuf[0]))
                 continue;
 
             /* commas or periods are common punctuation following an equation
@@ -3189,7 +3189,7 @@ static char * EqnNumberString(void)
     t=strdup_together(s,theNumber);
     free(s);
 
-    return t;   
+    return t;
 }
 
 /*
@@ -3240,7 +3240,7 @@ boolean ConvertEquationFile(char *objectFileName)
             theEquation->m_inline = 0;
             suppressSpaceBetweenParagraphs=true;
             EndParagraph();
-            if (lastCharWritten != '\n') 
+            if (lastCharWritten != '\n')
                 PutLitChar('\n');
             current_vspace = 0;
             EqNo=EqnNumberString();
@@ -3258,8 +3258,8 @@ boolean ConvertEquationFile(char *objectFileName)
 
         if (theEquation->m_inline){
             /* Add a space unless the last character was punctuation */
-            if (lastCharWritten != ' ' && lastCharWritten != '(' && 
-                lastCharWritten != '[' && lastCharWritten != '{' ) 
+            if (lastCharWritten != ' ' && lastCharWritten != '(' &&
+                lastCharWritten != '[' && lastCharWritten != '{' )
                    PutLitChar(' ');
         }
 
@@ -3272,13 +3272,13 @@ boolean ConvertEquationFile(char *objectFileName)
             /* Add a space unless the next character is punctuation */
             RTFPeekToken();
             if (rtfClass == rtfText) {
-                if (rtfTextBuf[0]!='.' && 
-                    rtfTextBuf[0]!=',' && 
-                    rtfTextBuf[0]!=':' && 
-                    rtfTextBuf[0]!=';' && 
-                    rtfTextBuf[0]!=']' && 
+                if (rtfTextBuf[0]!='.' &&
+                    rtfTextBuf[0]!=',' &&
+                    rtfTextBuf[0]!=':' &&
+                    rtfTextBuf[0]!=';' &&
+                    rtfTextBuf[0]!=']' &&
                     rtfTextBuf[0]!=')') PutLitChar(' ');
-            } else 
+            } else
                 PutLitChar(' ');
         }
 
@@ -3311,14 +3311,14 @@ boolean ConvertRawEquationFile(char *rawFileName)
 
 	fp = fopen(rawFileName, "r");
 	x=fgetc(fp);
-//	fprintf(stderr, "%d == 0?\n", x); 
+//	fprintf(stderr, "%d == 0?\n", x);
 	x=fgetc(fp);
-//	fprintf(stderr, "%d == 1?\n", x); 
+//	fprintf(stderr, "%d == 1?\n", x);
 	equationSize = fgetc(fp);
 	equationSize = equationSize * 256 + fgetc(fp);
 //	fprintf(stderr, "equation size is %d\n", equationSize);
-	
-	nativeStream = (unsigned char *) malloc(equationSize+10);	
+
+	nativeStream = (unsigned char *) malloc(equationSize+10);
 	fread(nativeStream, 1, equationSize, fp);
 	fclose(fp);
 
@@ -3346,7 +3346,7 @@ boolean ConvertRawEquationFile(char *rawFileName)
 		theEquation->m_inline = 0;
 		suppressSpaceBetweenParagraphs=true;
 		EndParagraph();
-		if (lastCharWritten != '\n') 
+		if (lastCharWritten != '\n')
 			PutLitChar('\n');
 		current_vspace = 0;
 		EqNo=EqnNumberString();
@@ -3364,8 +3364,8 @@ boolean ConvertRawEquationFile(char *rawFileName)
 
 	if (theEquation->m_inline){
 		/* Add a space unless the last character was punctuation */
-		if (lastCharWritten != ' ' && lastCharWritten != '(' && 
-			lastCharWritten != '[' && lastCharWritten != '{' ) 
+		if (lastCharWritten != ' ' && lastCharWritten != '(' &&
+			lastCharWritten != '[' && lastCharWritten != '{' )
 			   PutLitChar(' ');
 	}
 
@@ -3378,13 +3378,13 @@ boolean ConvertRawEquationFile(char *rawFileName)
 		/* Add a space unless the next character is punctuation */
 		RTFPeekToken();
 		if (rtfClass == rtfText) {
-			if (rtfTextBuf[0]!='.' && 
-				rtfTextBuf[0]!=',' && 
-				rtfTextBuf[0]!=':' && 
-				rtfTextBuf[0]!=';' && 
-				rtfTextBuf[0]!=']' && 
+			if (rtfTextBuf[0]!='.' &&
+				rtfTextBuf[0]!=',' &&
+				rtfTextBuf[0]!=':' &&
+				rtfTextBuf[0]!=';' &&
+				rtfTextBuf[0]!=']' &&
 				rtfTextBuf[0]!=')') PutLitChar(' ');
-		} else 
+		} else
 			PutLitChar(' ');
 	}
 
@@ -3448,11 +3448,11 @@ static void ReadObject(void)
         if (prefs[pConvertEquation]) {
             res = ReadEquation();
             if (!res) fprintf(stderr, "failed to convert equation\n");
-        } 
+        }
 
         /* if unsuccessful, include the equation as a picture */
         if (!res || g_eqn_insert_image) {
-            if (RTFSkipToToken(rtfControl,rtfDestination, rtfPict)) 
+            if (RTFSkipToToken(rtfControl,rtfDestination, rtfPict))
                 ReadPicture();
         }
         break;
@@ -3475,10 +3475,10 @@ static void ReadObject(void)
 /*
  * Word97 through Word 2002 pictures are different
  *
- *   {\*\shppict {\pict \emfblip ...}}{\nonshppict {\pict ...}} 
+ *   {\*\shppict {\pict \emfblip ...}}{\nonshppict {\pict ...}}
  *
  * \shppict identifies a Word 97 through Word 2002 picture
- * \nonshppict indicates a {\pict} that Word not read on input and 
+ * \nonshppict indicates a {\pict} that Word not read on input and
  *             is for compatibility with other readers.
  */
 static void ReadWord97Picture(void)
@@ -3505,7 +3505,7 @@ static void ReadShapeProperty(void)
 {
     char *name, *value;
 
-    if (!RTFSkipToToken(rtfControl, rtfShapeAttr, rtfShapeName)) return; 
+    if (!RTFSkipToToken(rtfControl, rtfShapeAttr, rtfShapeName)) return;
 
     name = RTFGetTextWord();
 
@@ -3580,17 +3580,17 @@ static void ShapeAttr(void)
 }
 
 /*
- * The parameters following \shpgrp are the same as those following \shp. 
- * The order of the shapes inside a group is from bottom to top in z-order. 
- * Inside a \shpgrp, no {\shprslt ...} tokens are generated (that is, only 
- * the root-level shape can have a \shprslt token (this token describes the 
+ * The parameters following \shpgrp are the same as those following \shp.
+ * The order of the shapes inside a group is from bottom to top in z-order.
+ * Inside a \shpgrp, no {\shprslt ...} tokens are generated (that is, only
+ * the root-level shape can have a \shprslt token (this token describes the
  * entire group). For example:
  *
  *  {\shpgrp ... {\shp ... } {\shp ... } {\shprslt ... }}
  *
  *  {\shpgrp ... } can be substituted for {\shp ... } to create groups inside groups.
  *
- *  We _nearly_ always want to process the \shprslt group  
+ *  We _nearly_ always want to process the \shprslt group
  *      {\shp\pict...\pngblip} {\shprslt\pict...} => opt for png
  *      {\shp\pict...} {\shprslt\object Equation ...} => opt for equation
  *  for now, we always opt for the result group
@@ -3605,7 +3605,7 @@ static void ReadShapeGroup(void)
     insideShapeGroup = 0;
 }
 
-/* 
+/*
  * Shape
  *
  * {\shp <shpinfo> {\*\shpinst ... } {\*\shprslt ... } }
@@ -3622,7 +3622,7 @@ static void ReadShape(void)
     if (RTFSkipToToken(rtfControl,rtfShapeAttr,rtfShapeResult)) {
         RTFExecuteGroup();
     }
-}        
+}
 
 static void ReadUnicodeSkipN(void)
 {
@@ -3635,7 +3635,7 @@ static void ReadUnicode(void)
 
     if (rtfParam<0)
         thechar = rtfParam + 65536;
-    else    
+    else
         thechar = rtfParam;
 
     if (rtfMinor == rtfUnicode) {
@@ -3692,7 +3692,7 @@ static void ReadUnicode(void)
 		PutLitStr("ff");
 		return;
 	}
-	
+
 	if (thechar == 64257) {
 		PutLitStr("fi");
 		return;
@@ -3717,7 +3717,7 @@ static void ReadUnicode(void)
 		PutLitStr("[Unknown Char]");
 		return;
 	}
-	
+
     if (0xC0 <= thechar && thechar <=0xFF) {
         PutLitChar(thechar);
         return;
@@ -3909,14 +3909,14 @@ static void ReadPageRefField(void)
  *  now have rtf tokens mixed with the stupid field tokens.  I hacked the parser
  *  to handle read \\X in an equation and send it to MicrosoftEQFieldCommand.
  */
- 
+
 static void ReadEquationField(void)
 {
     int parenCount = 0;
     int braceCount = 0;
 	int displayEquation = 0;
 	int oldSuppressLineBreak;
-	
+
 	if (insideEquation == 0) {
 		if (nowBetweenParagraphs) {
 			EndParagraph();
@@ -3932,12 +3932,12 @@ static void ReadEquationField(void)
 		oldSuppressLineBreak = suppressLineBreak;
 		suppressLineBreak = 1;
 	}
-	
+
 	insideEquation++;
     RTFExecuteGroup();
     SkipFieldResult();
-	insideEquation--;		
-    
+	insideEquation--;
+
 	if (insideEquation == 0) {
 		if (displayEquation) {
 			PutLitStr("\n$$\n");
@@ -3949,7 +3949,7 @@ static void ReadEquationField(void)
 		suppressLineBreak = oldSuppressLineBreak;
 		RTFPopStack();
 	}
-		
+
 }
 
 /*
@@ -3957,7 +3957,7 @@ static void ReadEquationField(void)
 */
 static void ReadPageField(void)
 {
-    PutLitStr("\\thepage{}");    
+    PutLitStr("\\thepage{}");
     SkipFieldResult();
 }
 
@@ -4058,7 +4058,7 @@ static void HandleOptionalTokens(void)
         break;
 
     default:
-    //  ExamineToken("HandleOptionalTokesn"); 
+    //  ExamineToken("HandleOptionalTokesn");
         RTFSkipGroup();
         break;
     }
@@ -4079,7 +4079,7 @@ static void SpecialChar(void)
         nowBetweenParagraphs = true;
         break;
 
-    case rtfSect:    
+    case rtfSect:
         section.newSection = true;
         nowBetweenParagraphs = true;
         break;
@@ -4184,7 +4184,7 @@ static void DoHeaderFooter(void)
         break;
     }
 
-    PutLitStr(option);  
+    PutLitStr(option);
     while (RTFGetBraceLevel() && RTFGetBraceLevel() >= level) {
         RTFGetToken();
         RTFRouteToken();
@@ -4290,9 +4290,9 @@ static void Destination(void)
     }
 }
 
-/* 
+/*
  * In RTF, the code page is specified in at least three different places
- * 
+ *
  * (1) as the third token in the file, e.g., {\rtf1\ansi
  * (2) in the font table for each font e.g., \fcharset2
  * (3) by the code page token, e.g., \ansicpg1252
@@ -4302,7 +4302,7 @@ static void Destination(void)
  * changed to that.  Here we just change if it is the symbol font.
  */
 static void RTFSetGenCharSet(void)
-{   
+{
     switch(rtfMinor) {
     case rtfAnsiCharSet:
         genCharCode = cp1252CharCode;
@@ -4321,7 +4321,7 @@ static void RTFSetGenCharSet(void)
     /* check for the \ansicpg control word */
     RTFPeekToken();
     if (RTFCheckCMM(rtfControl, rtfFontAttr, rtfAnsiCodePage)) {  /* we will handle the token */
-        RTFGetToken(); 
+        RTFGetToken();
         switch (rtfParam) {
             case 437:
                 genCharCode=cp437CharCode;
@@ -4354,7 +4354,7 @@ static void RTFSetGenCharSet(void)
     }
 
     curCharCode = genCharCode;
-} 
+}
 
 static void PictureAttr(void)
 {
@@ -4403,7 +4403,7 @@ static void PictureAttr(void)
         break;
     case rtfPicCropRight:
         picture.cropRight = rtfParam;
-        break;      
+        break;
     }
 }
 
@@ -4473,7 +4473,7 @@ static void GroupClass(void)
 {
     if (!insideEquation) return;
 //    ExamineToken("Group");
-    if (rtfMajor == rtfEndGroup) 
+    if (rtfMajor == rtfEndGroup)
     	StopTextStyle();
 }
 
@@ -4550,8 +4550,8 @@ int BeginLaTeXFile(void)
 }
 
 
-/* characters from the Symbol font get written to private areas 
-   of unicode that are not well supported by latex.  This is 
+/* characters from the Symbol font get written to private areas
+   of unicode that are not well supported by latex.  This is
    simple translation table. */
 char *UnicodeSymbolFontToLatex[] = {
     " ",  /* 61472 or U+F020 */
