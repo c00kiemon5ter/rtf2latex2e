@@ -1,16 +1,16 @@
 /*  MathType equation to LaTeX converter
- * 
+ *
  *  Ported 2000.04.03 by Steve Swanson, steve@mackichan.com
  *  Initial implementation by Jack Medd.  Originally part of
  *  RTF to LaTeX converter in Scientific WorkPlace (http://www.mackichan.com).
- * 
+ *
  *  The MathType equation format were described at
  *    http://www.mathtype.com/support/tech/MTEF4.htm
  *    http://www.mathtype.com/support/tech/MTEF5.htm
  *    http://www.mathtype.com/support/tech/MTEF_storage.htm
  *    http://www.mathtype.com/support/tech/encodings/mtcode.stm
  *  Various undocumented details determined by debugging and intuition.
- * 
+ *
  *  Access to these pages is available at
  *  http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF5.htm
  *  http://web.archive.org/web/20010304110708/http://mathtype.com/support/tech/MTEF4.htm
@@ -318,7 +318,7 @@ uint32_t GetProfileStr(char **section, char *key, char *data, int datalen)
 	data[0] = '\0';
     if (key == NULL) return 0;
     keylen = strlen(key);
-    
+
     for (rover = &section[0]; *rover; ++rover) {
         if (strncmp(*rover, key, keylen) == 0) {
             strncpy(data, *rover + keylen + 1, (size_t) (datalen - 1));    /*  skip over = (no check for white space */
@@ -344,25 +344,25 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
         for (i=0; i<num_strs; i++)
             fprintf(stderr,"   is_line=%d, strs[%d].data=%s\n", strs[i].is_line, i, strs[i].data);
     }
-    
+
     *join = '\0';
 
     for (i=0; i<num_strs; i++) {
-    
+
         if (!strs[i].data) continue;
-            
+
         if (strs[i].log_level > eqn->log_level) continue;
-        
-        if (strs[i].ilk != Z_TMPL) { 
+
+        if (strs[i].ilk != Z_TMPL) {
             strcat(join, strs[i].data);
             continue;
         }
 
         /*  the current string is a TMPL and needs to be filled and added */
         /*  e.g., dat = "\sqrt[#2]{#1}" */
-        
+
         p = strs[i].data;
-        
+
         while (*p) {
 
             marker = strchr(p, '#');
@@ -370,26 +370,26 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
                 strcat(join, p);
                 break;
             }
-            
+
             *marker = '\0';
             strcat(join, p);
             p = marker + 1;
-                
+
 /*  #1[L][STARTSUB][ENDSUB]  ... substitute text according to byzantine scheme */
-            
-            /* only #1, #2, and #3 are used */  
+
+            /* only #1, #2, and #3 are used */
             id = *p - '1';
             if (id < 0 || id > 3) break;
             p++;
-            
+
             /* Extract the bracketed items */
             /* vars[0]="L", vars[1]="STARTSUB", vars[2]="ENDSUB" */
             /* only vars[1] and vars[2] are used */
-            
+
             vars[1] = NULL;
             vars[2] = NULL;
             j = 0;
-            while (*p == '[') {     
+            while (*p == '[') {
                 p++;
                 marker = strchr(p, ']');
                 if (!marker) break;
@@ -402,11 +402,11 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
             /*  only strs[] entries that have this flag set may be used for replacement */
             /*  The replacement text for #1 or #2 or #3 is the first, second, or third */
             /*  strs[] entry that has its flag set. */
-            
+
             thetex = NULL;
             for (j=i+1; j<num_strs; j++) {
                 if (strs[j].is_line == 0) continue;
-                            
+
                 if (id == 0) {
                     thetex = strs[j].data;
                     strs[j].log_level = 100; /*  mark this entry as used */
@@ -420,7 +420,7 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
             if (!thetex) continue;
 
             if (GetProfileStr(Profile_VARIABLES, vars[1], buf, 128)) {
-                
+
                 substition_text = buf;
                 marker = strchr(buf, ',');
 
@@ -435,7 +435,7 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
             strcat(join, thetex);
 
             if (GetProfileStr(Profile_VARIABLES, vars[2], buf, 128)) {
-                
+
                 substition_text = buf;
                 marker = strchr(buf, ',');
 
@@ -454,7 +454,7 @@ char *Eqn_JoinStrings(MTEquation * eqn, EQ_STRREC * strs, int num_strs)
             free(strs[i].data);
             strs[i].data = NULL;
         }
-            
+
     thetex = (char *) malloc(strlen(join)+1);
     strcpy(thetex, join);
     if (DEBUG_JOIN) fprintf(stderr,"final join='%s'\n", thetex);
@@ -625,14 +625,14 @@ void Eqn_Destroy(MTEquation * eqn)
         free(eqn->m_latex);
         eqn->m_latex = NULL;
     }
-    
+
 }
 
 static void setMathMode(MTEquation * eqn, int mode)
 {
     char s[50];
     if (DEBUG_MODE || g_input_file_type==TYPE_EQN) fprintf(stderr,"old=%d, new=%d\n",eqn->m_mode,mode);
-    
+
     switch (mode) {
     case EQN_MODE_TEXT:
         switch (eqn->m_mode) {
@@ -642,12 +642,12 @@ static void setMathMode(MTEquation * eqn, int mode)
             strcpy(s," $");
             if (eqn->m_latex_end) free(eqn->m_latex_end);
             eqn->m_latex_end = strdup(s);
-            break;     
+            break;
         case EQN_MODE_DISPLAY:
             strcpy(s," $$\n");
             if (eqn->m_latex_end) free(eqn->m_latex_end);
             eqn->m_latex_end = strdup(s);
-            break;          
+            break;
         case EQN_MODE_EQNARRAY:
             strcpy(s,"\\end{eqnarray}\n");
             if (eqn->m_latex_end) free(eqn->m_latex_end);
@@ -655,7 +655,7 @@ static void setMathMode(MTEquation * eqn, int mode)
             break;
         }
         break;
-        
+
     case EQN_MODE_INLINE:
         switch (eqn->m_mode) {
         case EQN_MODE_TEXT:
@@ -663,16 +663,16 @@ static void setMathMode(MTEquation * eqn, int mode)
             eqn->m_latex_start = strdup("$");
             break;
         case EQN_MODE_INLINE:
-            break;     
+            break;
         case EQN_MODE_DISPLAY:
             fprintf(stderr,"Bizarre case of switching from display to inline??\n");
-            break;          
+            break;
         case EQN_MODE_EQNARRAY:
             fprintf(stderr,"Bizarre case of switching from eqnarray to inline??\n");
             break;
         }
         break;
-   
+
     case EQN_MODE_DISPLAY:
         switch (eqn->m_mode) {
         case EQN_MODE_TEXT:
@@ -681,15 +681,15 @@ static void setMathMode(MTEquation * eqn, int mode)
             break;
         case EQN_MODE_INLINE:
             fprintf(stderr,"Bizarre case of switching from inline to display??\n");
-            break;     
+            break;
         case EQN_MODE_DISPLAY:
-            break;          
+            break;
         case EQN_MODE_EQNARRAY:
             fprintf(stderr,"Bizarre case of switching from eqnarry to display??\n");
             break;
         }
         break;
-        
+
     case EQN_MODE_EQNARRAY:
         switch (eqn->m_mode) {
         case EQN_MODE_TEXT:
@@ -698,18 +698,18 @@ static void setMathMode(MTEquation * eqn, int mode)
             break;
         case EQN_MODE_INLINE:
             fprintf(stderr,"Bizarre case of switching from inline to eqnarry??\n");
-            break;     
+            break;
         case EQN_MODE_DISPLAY:
             fprintf(stderr,"Bizarre case of switching from display to eqnarry??\n");
-            break;          
+            break;
         case EQN_MODE_EQNARRAY:
             break;
         }
         break;
     }
-    
+
     eqn->m_mode = mode;
-    
+
 /*    if (strlen(s))
     	return strdup(s);
     else
@@ -772,13 +772,13 @@ static MT_RULER *Eqn_inputRULER(MTEquation * eqn, unsigned char *src, int *src_i
     head = NULL;
     num_stops = *(src + *src_index);
     (*src_index)++;
-    
+
     for (i=0; i < num_stops; i++) {
         new_stop = (MT_TABSTOP *) malloc(sizeof(MT_TABSTOP));
         new_stop->next = NULL;
         new_stop->type = *(src + *src_index);
         (*src_index)++;
-        
+
         new_stop->offset = *(src + *src_index);
         (*src_index)++;
         new_stop->offset |= *(src + *src_index) << 8;
@@ -830,7 +830,7 @@ static MT_LINE *Eqn_inputLINE(MTEquation * eqn, unsigned char *src,
         new_line->line_spacing = *(src + *src_index);
         (*src_index)++;
     }
-    
+
     if (attrs & xfRULER)
         new_line->ruler = Eqn_inputRULER(eqn, src, src_index);
 
@@ -856,12 +856,12 @@ static MT_EMBELL *Eqn_inputEMBELL(MTEquation * eqn, unsigned char *src, int *src
         new_embell->nudge_y = 0;
 
         *src_index += GetAttribute(eqn, src+*src_index, &attrs);
-        
+
         if (attrs & xfLMOVE)
             *src_index += GetNudge(src + *src_index, &new_embell->nudge_x, &new_embell->nudge_y);
-        
+
         new_embell->embell = *(src + *src_index);
-        if (DEBUG_EMBELLS  || g_input_file_type==TYPE_EQN) 
+        if (DEBUG_EMBELLS  || g_input_file_type==TYPE_EQN)
             fprintf(stderr, "[%-3d] EMBELL --- embell=%d\n", *src_index, (int) new_embell->embell);
         (*src_index)++;
 
@@ -919,7 +919,7 @@ static MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_ind
         }
 
     } else {
-    
+
         /* nearly always have a 16 bit MT character */
         if (!(new_char->atts & CHAR_ENC_NO_MTCODE)) {
             new_char->character = *(src + *src_index);
@@ -927,13 +927,13 @@ static MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_ind
             new_char->character |= *(src + *src_index) << 8;
             (*src_index)++;
         }
-        
+
         /*  02 05 84 bc 03 6d 06 00  11 00 02 04 86  */
         if (new_char->atts & CHAR_ENC_CHAR_8) {
             new_char->character = *(src + *src_index);
             (*src_index)++;
         }
-        
+
         if (new_char->atts & CHAR_ENC_CHAR_16) {
             new_char->bits16 = *(src + *src_index);
             (*src_index)++;
@@ -944,7 +944,7 @@ static MT_CHAR *Eqn_inputCHAR(MTEquation * eqn, unsigned char *src, int *src_ind
 
     if (g_input_file_type==TYPE_EQN || DEBUG_CHAR) {
         fprintf(stderr, "          '%c' or 0x%04x,", (int)new_char->character, (unsigned int) new_char->character);
-        fprintf(stderr, " typeface = %d mtchar=%u, 16bit=%u ", 
+        fprintf(stderr, " typeface = %d mtchar=%u, 16bit=%u ",
                   (int) new_char->typeface-128, (unsigned int) new_char->mtchar, (unsigned int) new_char->bits16);
         fprintf(stderr, " attr = 0x%02x \n", (unsigned int) new_char->atts);
     }
@@ -992,8 +992,8 @@ static MT_TMPL *Eqn_inputTMPL(MTEquation * eqn, unsigned char *src, int *src_ind
 //	if (eqn->m_mtef_ver == 3 && 18 <= new_tmpl->selector && new_tmpl->selector <= 20)
 	//	new_tmpl->variation = new_tmpl->variation >> 8;
 
-    if ( (DEBUG_PARSING && DEBUG_TEMPLATE) || g_input_file_type==TYPE_EQN) 
-        fprintf(stderr, "TMPL : read sel=%2d var=0x%04x (%d.%d)\n", 
+    if ( (DEBUG_PARSING && DEBUG_TEMPLATE) || g_input_file_type==TYPE_EQN)
+        fprintf(stderr, "TMPL : read sel=%2d var=0x%04x (%d.%d)\n",
         (int) new_tmpl->selector, (unsigned int) new_tmpl->variation, (int) new_tmpl->selector, (int) new_tmpl->variation);
 
     new_tmpl->subobject_list = Eqn_GetObjectList(eqn, src, src_index, 0);
@@ -1113,11 +1113,11 @@ static MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
         new_size->type  = tag;
         new_size->lsize = tag - FULL;
         return new_size;
-    } 
-    
+    }
+
     option = *(src + *src_index);
     (*src_index)++;
-    
+
     /* large dsize */
     if (option == 100) {
         new_size->type = option;
@@ -1129,7 +1129,7 @@ static MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
         (*src_index)++;
         return new_size;
     }
-    
+
     /* explicit point size */
     if (option == 101) {
         new_size->type = option;
@@ -1138,8 +1138,8 @@ static MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
         new_size->lsize += (*(src + *src_index) << 8);
         (*src_index)++;
         return new_size;
-    } 
-    
+    }
+
     /* -128 < dsize < 128 */
     new_size->type = 0;
     new_size->lsize = option;
@@ -1152,7 +1152,7 @@ static MT_SIZE *Eqn_inputSIZE(MTEquation * eqn, unsigned char *src,
 /*
  * Convert MT equation into internal form
  * at each Eqn_inputXXX call, the src_index is set to the XXX tag
- * so that the hi nibble can be used to obtain the options in 
+ * so that the hi nibble can be used to obtain the options in
  * versions 1-4 of MTEF
 */
 static MT_OBJLIST *Eqn_GetObjectList(MTEquation * eqn, unsigned char *src, int *src_index, int num_objs)
@@ -1231,7 +1231,7 @@ if (DEBUG_PARSING || g_input_file_type==TYPE_EQN) {
             id = *(src + *src_index);
             (*src_index)++;
             if (DEBUG_FONT) fprintf(stderr,"          ");
-            while ((c = *(src + *src_index))) { 
+            while ((c = *(src + *src_index))) {
                 if (DEBUG_FONT) fprintf(stderr,"%c",c);
                 (*src_index)++;
             }
@@ -1283,11 +1283,11 @@ if (DEBUG_PARSING || g_input_file_type==TYPE_EQN) {
             size = *(src + *src_index);
             (*src_index)++;
             size |= *(src + *src_index) << 8;
-            
-            //Need to include a change to how the *src_index tag is incremented. 
-            //Although the MTEF v.5 documentation says otherwise, it appears the 
-            //index should be incremented by size-1, not size. 
-            (*src_index) += size; 
+
+            //Need to include a change to how the *src_index tag is incremented.
+            //Although the MTEF v.5 documentation says otherwise, it appears the
+            //index should be incremented by size-1, not size.
+            (*src_index) += size;
 
             fprintf(stderr, "Future tag = 0x%02x with size %d\n",curr_tag,size);
             fprintf(stderr,"--> ignoring!\n");
@@ -1315,9 +1315,9 @@ if (DEBUG_PARSING || g_input_file_type==TYPE_EQN) {
             curr_tag = LoNibble(*(src + *src_index));
 
         tally++;
- 
+
 //        fprintf(stderr,"depth=%d number of objects/total = %d/%d\n", subroutine_depth, tally, num_objs);
-        
+
         if (tally == num_objs) {
     		subroutine_depth--;
             return head;
@@ -1381,7 +1381,7 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
 		fprintf(stderr, "skipping 0x %02X %02X %02X %02X\n", eqn_stream[0], eqn_stream[1], eqn_stream[2], eqn_stream[3]);
 		src_index+=4;
 	}
-		
+
     switch (eqn->m_mtef_ver) {
     case 0:
         eqn->m_mtef_ver = 5;
@@ -1440,7 +1440,7 @@ int Eqn_Create(MTEquation * eqn, unsigned char *eqn_stream, int eqn_size)
         fprintf(stderr,"* Version  = %d.%d\n", eqn->m_version, eqn->m_version_sub);
         fprintf(stderr,"* Type     = %s (ignored because it is unreliable)\n", eqn->m_inline ? "inline" : "display");
     }
-    
+
     eqn->m_atts_table = Profile_MT_CHARSET_ATTS;
     Eqn_LoadCharSetAtts(eqn, Profile_MT_CHARSET_ATTS);
     eqn->m_char_table = Profile_CHARTABLE;
@@ -1529,7 +1529,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
     MT_CHARSET_ATTS set_atts;
     MT_EMBELL *embells;
     char buff[256];
-    int num_strs = 0; 
+    int num_strs = 0;
 
     char *ztex = (char *) NULL;
     char zch = 0;
@@ -1568,7 +1568,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
         char key[16];           /*  132.65m */
 
         snprintf(key, 16, "%d.%d", (int)thechar->typeface, (int)thechar->character);
-        if (DEBUG_CHAR) fprintf(stderr, "looking up char in table[%d] as %d.%d\n", 
+        if (DEBUG_CHAR) fprintf(stderr, "looking up char in table[%d] as %d.%d\n",
         (int)thechar->typeface - 129, (int) thechar->typeface, (int) thechar->character);
 
         if (*math_attr == 3) {
@@ -1587,7 +1587,7 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
     }
 
     if (*math_attr == MA_FORCE_MATH && eqn->m_mode == EQN_MODE_TEXT) {
-        setMathMode(eqn, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
+        setMathMode(eqn, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY);
 
     } else if (*math_attr == MA_FORCE_TEXT) {
         setMathMode(eqn, EQN_MODE_TEXT);
@@ -1633,46 +1633,46 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
         zdata[1] = 0;
     }
 
-    if (!zdata) 
+    if (!zdata)
         return num_strs;
 
     embells = thechar->embellishment_list;
-    
+
     while (embells) {
         char template[128];
         *template = '\0';
-        
+
         /* template will in the form "math template,text template" */
         if (embells->embell>1 && embells->embell<37)
             strcpy(template, Template_EMBELLS[embells->embell]);
-        
-        if (DEBUG_EMBELLS || g_input_file_type==TYPE_EQN) 
+
+        if (DEBUG_EMBELLS || g_input_file_type==TYPE_EQN)
             fprintf(stderr,"Yikes --- Template_EMBELLS[%d]='%s'!\n", (int) embells->embell,template);
 
         if (strlen(template)) {     /*  only bother if there is a character */
             char *join, *t_ptr, *j_ptr;
 
             t_ptr = strchr(template, ',');
-            
+
             if (!t_ptr) {
                 RTFPanic("Malformed EMBELL Template!\n");
                 exit(1);
             }
-            
+
             /* set string to first or second half of template depending on mode */
             if (eqn->m_mode != EQN_MODE_TEXT) {
                 *t_ptr = '\0';
                 t_ptr = template;
-            } else 
+            } else
                 t_ptr++;
 
             join = (char *) malloc(strlen(t_ptr) + strlen(zdata) + 16);
             j_ptr = join;
 
             if (DEBUG_EMBELLS || g_input_file_type==TYPE_EQN) fprintf(stderr,"Yikes --- replacement template is '%s'!\n",t_ptr);
-            
+
             /* replace %1 in template with zdata */
-            while (*t_ptr) {        
+            while (*t_ptr) {
                 if (*t_ptr == '%') {
                     t_ptr+=2;             /* skip over %1 */
                     strcpy(j_ptr, zdata);
@@ -1712,7 +1712,7 @@ char *Eqn_TranslateCHAR(MTEquation * eqn, MT_CHAR * thechar)
         SetComment(strs, 2, buf);
         num_strs++;
     }
-    if (DEBUG_CHAR || g_input_file_type==TYPE_EQN) 
+    if (DEBUG_CHAR || g_input_file_type==TYPE_EQN)
         fprintf(stderr, "CHAR : atts=%d,typeface=%3d=%10s, char='%c' = 0x%04x = %d\n",
                 (int)thechar->atts, (int)thechar->typeface, typeFaceName[thechar->typeface-128],
                 (char) thechar->character, (unsigned int)thechar->character, (int)thechar->character);
@@ -1746,9 +1746,9 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     nom[*advance] = '\0';
     while (curr_node && curr_node->tag == CHAR) {
         MT_CHAR *charptr = (MT_CHAR *) curr_node->obj_ptr;
-        if (!charptr || charptr->typeface != 130 || !isalpha((int) charptr->character)) 
+        if (!charptr || charptr->typeface != 130 || !isalpha((int) charptr->character))
             break;
-        
+
         nom[*advance] = (char) charptr->character;
         curr_node = (MT_OBJLIST *) curr_node->next;
         (*advance)++;
@@ -1756,9 +1756,9 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     nom[*advance] = '\0';
 
     if (*advance == 0) return NULL;
-    
+
     if (g_input_file_type==TYPE_EQN || DEBUG_FUNCTION) fprintf(stderr,"FUNC : name = '%s'\n", nom);
-    
+
     zlen = GetProfileStr(Profile_FUNCTIONS, nom, tex_func, 128);
 
     /* no function translation found, just emit these characters */
@@ -1773,7 +1773,7 @@ char *Eqn_TranslateFUNCTION(MTEquation * eqn, MT_OBJLIST * curr_node,
     }
 
 /*  place_holder for $ if needed
-    SetComment(strs + num_strs, 100, (char *) NULL);    
+    SetComment(strs + num_strs, 100, (char *) NULL);
     num_strs++;
 */
     strs[num_strs].log_level = 0;
@@ -1911,7 +1911,7 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
         strcat(thetex, "[t]");
     else if (matrix->valign == 2)
         strcat(thetex, "[b]");
-        
+
     /*  set alignment for all columns */
     if (matrix->h_just == MT_LEFT)
         col_align = "l";
@@ -1926,14 +1926,14 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
     obj_list = matrix->element_list;
     for (row = 0; row < matrix->rows; row++) {
 
-        if (row > 0) 
+        if (row > 0)
             strcat(thetex, " \\\\\n");
-        
+
         for (col=0; col<matrix->cols; col++) {
-        
+
             if (col>0) strcat(thetex, " & ");
 
-            while (obj_list && obj_list->tag != LINE) 
+            while (obj_list && obj_list->tag != LINE)
                 obj_list = (MT_OBJLIST *) obj_list->next;
 
             /* no column element found ... finish the line and exit */
@@ -1942,7 +1942,7 @@ char *Eqn_TranslateMATRIX(MTEquation * eqn, MT_MATRIX * matrix)
                     strcat(thetex, " & ");
                 break;
             }
-                
+
             cell = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
             strcat(thetex, cell);
             free(cell);
@@ -2109,7 +2109,7 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
     uint8_t row;
     uint32_t head_len;
     char *thetex, *line;
-    
+
     thetex = (char *) malloc(buf_limit);
 
     /* fprintf(stderr, "PILE : Translating Tabular PILE\n"); */
@@ -2157,11 +2157,11 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
     row = 1;
     for (obj_list = pile->line_list; obj_list != NULL; obj_list = (MT_OBJLIST *)obj_list->next) {
 
-        if (obj_list->tag != LINE) 
+        if (obj_list->tag != LINE)
             continue;
-        
+
         line = Eqn_TranslateLINE(eqn, (MT_LINE *) obj_list->obj_ptr);
-        
+
         if (strlen(line)>0) {
             if (row > 1) strcat(thetex, " \\\\\n");  /*  end previous row */
             strcat(thetex, line);
@@ -2170,7 +2170,7 @@ char *Eqn_TranslateTABULAR(MTEquation * eqn, MT_PILE * pile)
         free(line);
     }
 
-    if (row==2 && strlen(thetex) > head_len) 
+    if (row==2 && strlen(thetex) > head_len)
         strcat(thetex, "\n");
     strcat(thetex, "\\end{array}\n");
 
@@ -2371,7 +2371,7 @@ int Eqn_GetTmplStr(MTEquation * eqn, uint8_t selector, uint16_t variation, EQ_ST
     int result;
     int num_strs = 0;           /*  this becomes the return value */
 
-    snprintf(key, 16, "%d.%d", (int)selector, (int)variation); 
+    snprintf(key, 16, "%d.%d", (int)selector, (int)variation);
 
     if (eqn->m_mtef_ver==5)
         result = GetProfileStr(Profile_TEMPLATES_5, key, ini_line, 256);
@@ -2382,7 +2382,7 @@ int Eqn_GetTmplStr(MTEquation * eqn, uint8_t selector, uint16_t variation, EQ_ST
 	    fprintf(stderr, "TMPL key='%s' not found in version %d Profile_TEMPLATE\n",key,eqn->m_mtef_ver);
         exit(1);
 	}
-	
+
 //	fprintf(stderr,"ini_line='%s'\n", ini_line);
     tmpl_ptr = strchr(ini_line, ',');
 
@@ -2422,21 +2422,21 @@ char *Eqn_TranslateTMPL(MTEquation * eqn, MT_TMPL * tmpl)
     int num_strs;
     MT_OBJLIST *obj_list;
 
-    if (eqn->m_mode == EQN_MODE_TEXT) 
-        setMathMode(eqn, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY); 
+    if (eqn->m_mode == EQN_MODE_TEXT)
+        setMathMode(eqn, eqn->m_inline ? EQN_MODE_INLINE : EQN_MODE_DISPLAY);
 
     if (eqn->m_mtef_ver == 5 && (tmpl->selector != 9))
         tmpl->variation &= 0x000f;
 
     if (DEBUG_TEMPLATE || g_input_file_type==TYPE_EQN)
-        fprintf(stderr, "TMPL : selector = %d, variation=0x%04x (%d.%d)\n", 
+        fprintf(stderr, "TMPL : selector = %d, variation=0x%04x (%d.%d)\n",
                (int) tmpl->selector, (unsigned int) tmpl->variation, (int) tmpl->selector, (int) tmpl->variation);
 
     num_strs = Eqn_GetTmplStr(eqn, tmpl->selector, tmpl->variation, strs);
 
     the_template = strs[num_strs - 1].data;
-    
-    if (DEBUG_TEMPLATE || g_input_file_type==TYPE_EQN) 	
+
+    if (DEBUG_TEMPLATE || g_input_file_type==TYPE_EQN)
     	fprintf(stderr,"TMPL : num_strs=%d, strs[%d].data='%s'\n",num_strs,num_strs-1,the_template);
 
     strcat(eqn->indent, "  ");
@@ -2516,7 +2516,7 @@ char *Eqn_TranslatePILE(MTEquation * eqn, MT_PILE * pile)
     strs[num_strs].ilk = Z_TEX;
     strs[num_strs].is_line = 0;
 
-    setMathMode(eqn, EQN_MODE_DISPLAY); 
+    setMathMode(eqn, EQN_MODE_DISPLAY);
 
     if (pile->halign == MT_PILE_OPERATOR)
         strs[num_strs].data = Eqn_TranslateEQNARRAY(eqn, pile);
@@ -2550,7 +2550,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
         zcurr = (char *) NULL;
 
         if (DEBUG_TRANSLATION || g_input_file_type==TYPE_EQN) print_tag(curr_node->tag, 0);
-        
+
         switch (curr_node->tag) {
 
         case LINE:{
@@ -2564,7 +2564,7 @@ char *Eqn_TranslateObjects(MTEquation * eqn, MT_OBJLIST * the_list)
                 int advance = 0;
                 MT_CHAR *charptr = (MT_CHAR *) curr_node->obj_ptr;
                 if (!charptr) break;
-            
+
                 if (charptr->typeface == 130) {     /*  auto_recognize functions */
                     zcurr = Eqn_TranslateFUNCTION(eqn, curr_node, &advance);
                     while (advance > 1) {
@@ -2657,15 +2657,15 @@ void Eqn_TranslateObjectList(MTEquation * eqn, FILE * outfile,
         fputs("%Begin Equation\n", eqn->out_file);
 
     if (DEBUG_TRANSLATION || g_input_file_type==TYPE_EQN) fprintf(stderr,"new equation\n");
-    
+
     ztex = Eqn_TranslateObjects(eqn, eqn->o_list);
 
 	if (eqn->m_latex_start && ztex && *ztex) {
 		eqn->m_latex = ztex;
 		if (!eqn->m_latex_end) setMathMode(eqn, EQN_MODE_TEXT);
 		return;
-	} 
-	
+	}
+
 	if (eqn->m_latex_start) free(eqn->m_latex_start);
 	eqn->m_latex_start = NULL;
 	if (eqn->m_latex) free(eqn->m_latex);
@@ -2763,7 +2763,7 @@ char *Profile_MT_CHARSET_ATTS[] = {
     "146=1,1,0",
     "147=1,1,0",
     "148=1,1,0",
-    "149=1,1,0", 
+    "149=1,1,0",
     "150=1,1,0", /* EXPAND */
     "151=1,1,0", /* MARKER */
     "152=3,1,0", /* SPACE  */
@@ -3297,7 +3297,7 @@ char *Profile_TEMPLATES_5[] = {
     "19.0=union: limits top/bottom - both,\\dbigcup\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
     "20.0=intersection: limits top/bottom - both,\\dbigcap\\limits#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
     "21.0=integrals: single - both,\\int#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
-    "22.0=sum: single - both,\\sum#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",    
+    "22.0=sum: single - both,\\sum#2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP]#1[M] ",
     "23.0=limit: both,#1 #2[L][STARTSUB][ENDSUB]#3[L][STARTSUP][ENDSUP] ",
     "24.0=horizontal brace: lower,\\stackunder{#2[M]}{\\underbrace{#1[M]}} ",
     "24.1=horizontal brace: upper,\\stackrel{#2[M]}{\\overbrace{#1[M]}} ",
