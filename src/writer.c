@@ -3653,7 +3653,17 @@ static void ReadUnicode(void)
         return;
     }
 
+    if (thechar == 8211) {
+        PutLitStr("--");
+        return;
+    }
+
     if (thechar == 8212) {
+        PutLitStr("---");
+        return;
+    }
+
+    if (thechar == 8213) {
         PutLitStr("---");
         return;
     }
@@ -3685,6 +3695,16 @@ static void ReadUnicode(void)
 
     if (thechar == 8232) {  /* Unicode line separator */
 		InsertNewLine();
+        return;
+    }
+
+    if (thechar == 8470) {
+        PutLitStr("No.");
+        return;
+    }
+
+    if (thechar == 8722) {
+        PutLitStr("---");
         return;
     }
 
