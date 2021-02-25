@@ -1619,8 +1619,11 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
             char* sequence;
             switch((unsigned int)thechar->character){
             case 0x0410: sequence="A"; break;
+            case 0x0430: sequence="a"; break;
             case 0x0412: sequence="B"; break;
             case 0x0421: sequence="C"; break;
+            case 0x0441: sequence="c"; break;
+            case 0x211d: sequence="\\mathbb{R}"; break;
             default:
                 sequence="\\mbox{^^d0^^%x}";
             }
