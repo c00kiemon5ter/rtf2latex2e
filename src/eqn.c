@@ -1600,6 +1600,11 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
                 ztex = (char *) malloc(strlen(buff) + 1);
                 strcpy(ztex, buff);
             }
+            if (thechar->character == '\\') {
+                snprintf(buff,20,"\\setminus ");
+                ztex = (char *) malloc(strlen(buff) + 1);
+                strcpy(ztex, buff);
+            }
             if (thechar->typeface == 135) {
                 snprintf(buff,20,"\\mathbf{%c}", zch);
                 ztex = (char *) malloc(strlen(buff) + 1);
