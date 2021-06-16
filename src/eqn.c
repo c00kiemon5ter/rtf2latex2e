@@ -1625,9 +1625,9 @@ int Eqn_GetTexChar(MTEquation * eqn, EQ_STRREC * strs, MT_CHAR * thechar, int *m
             case 0x0441: sequence="c"; break;
             case 0x211d: sequence="\\mathbb{R}"; break;
             default:
-                sequence="\\mbox{^^d0^^%x}";
+                sequence="\\mbox{symbol ^^%d . ^^%d}";
             }
-            snprintf(buff,20,sequence, (thechar->character)%256 + 128);
+            snprintf(buff,32,sequence, thechar->typeface, thechar->character);
             ztex = (char *) malloc(strlen(buff) + 1);
             strcpy(ztex, buff);
         }
