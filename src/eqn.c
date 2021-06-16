@@ -2927,6 +2927,7 @@ char *Profile_CHARTABLE[] = {
     "134.120=\\xi ",
     "134.121=\\psi ",
     "134.122=\\zeta ",
+    "134.162=\\prime ",
     "134.163=\\leq ",
     "134.165=\\infty ",
     "134.171=\\leftrightarrow ",
